@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { UserPlus, Save, X } from 'lucide-react';
 
@@ -9,7 +8,8 @@ const RoleCreationForms = ({ userRole, formType }) => {
     phone: '',
     department: '',
     reportingTo: '',
-    permissions: []
+    permissions: [],
+    password: '' // ✅ Added password field
   });
 
   const formConfigs = {
@@ -35,20 +35,32 @@ const RoleCreationForms = ({ userRole, formType }) => {
 
   const config = formConfigs[formType] || formConfigs['create-employee'];
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Creating user:', { ...formData, role: config.role });
-    // In real app, this would create the user in the database
-    
-    // Reset form
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      department: '',
-      reportingTo: '',
-      permissions: []
-    });
+    try {
+      const response = await fetch('http://localhost:5007/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...formData, role: config.role }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        alert('User created successfully!');
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          department: '',
+          reportingTo: '',
+          permissions: [],
+          password: ''
+        });
+      } else {
+        alert('Error: ' + data.message);
+      }
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
   };
 
   const handlePermissionChange = (permission) => {
@@ -110,6 +122,20 @@ const RoleCreationForms = ({ userRole, formType }) => {
               onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="+91 9876543210"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Password *
+            </label>
+            <input
+              type="password"
+              required
+              value={formData.password}
+              onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Enter password"
             />
           </div>
 

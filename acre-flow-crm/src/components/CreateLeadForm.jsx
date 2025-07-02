@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -23,20 +22,40 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (formData.name && formData.email && formData.phone) {
-      onSave(formData);
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        location: '',
-        budget: '',
-        property: '',
-        status: 'Cold'
-      });
-      onClose();
+      try {
+        const response = await fetch('http://localhost:5007/api/leads', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formData)
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          alert('Lead created successfully!');
+          onSave && onSave(formData); // callback to parent if needed
+          setFormData({
+            name: '',
+            email: '',
+            phone: '',
+            location: '',
+            budget: '',
+            property: '',
+            status: 'Cold'
+          });
+          onClose();
+        } else {
+          alert('Error: ' + data.message);
+        }
+      } catch (error) {
+        alert('Failed to save lead: ' + error.message);
+      }
     }
   };
 
@@ -67,17 +86,13 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center">
-            Create New Lead
-          </DialogTitle>
+          <DialogTitle className="flex items-center">Create New Lead</DialogTitle>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
               <input
                 type="text"
                 name="name"
@@ -88,11 +103,9 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
                 required
               />
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
               <input
                 type="email"
                 name="email"
@@ -107,9 +120,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Phone Number *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
               <input
                 type="tel"
                 name="phone"
@@ -120,11 +131,9 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
                 required
               />
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Location
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
               <input
                 type="text"
                 name="location"
@@ -138,9 +147,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Budget Range
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Budget Range</label>
               <select
                 name="budget"
                 value={formData.budget}
@@ -153,11 +160,9 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
                 ))}
               </select>
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Property Type
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Property Type</label>
               <select
                 name="property"
                 value={formData.property}
@@ -173,9 +178,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Lead Status
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Lead Status</label>
             <select
               name="status"
               value={formData.status}
