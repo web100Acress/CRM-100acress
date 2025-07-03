@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { User, Users, UserPlus, Ticket, Building2, Home, LogOut, Settings } from 'lucide-react';
@@ -7,13 +6,11 @@ const Sidebar = ({ userRole, isCollapsed, onToggle }) => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // Clear user session and redirect to login
     localStorage.clear();
     navigate('/login');
     window.location.reload();
   };
 
-  // Get user info from localStorage
   const userName = localStorage.getItem('userName') || 'User';
   const userEmail = localStorage.getItem('userEmail') || '';
 
@@ -51,30 +48,25 @@ const Sidebar = ({ userRole, isCollapsed, onToggle }) => {
 
   const getRoleDisplayName = (role) => {
     switch (role) {
-      case 'super-admin':
-        return 'Super Admin';
-      case 'head-admin':
-        return 'Head Admin';
-      case 'team-leader':
-        return 'Team Leader';
-      case 'employee':
-        return 'Employee';
-      default:
-        return 'User';
+      case 'super-admin': return 'Super Admin';
+      case 'head-admin': return 'Head Admin';
+      case 'team-leader': return 'Team Leader';
+      case 'employee': return 'Employee';
+      default: return 'User';
     }
   };
 
   return (
-    <div className={`bg-white border-r border-gray-200 transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-64'} min-h-screen flex flex-col`}>
-      <div className="p-4 border-b border-gray-200">
+    <div className={`bg-slate-800 text-white border-r border-slate-700 transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-64'} min-h-screen flex flex-col`}>
+      <div className="p-4 border-b border-slate-700">
         <div className="flex items-center">
-          <div className="bg-green-600 text-white p-2 rounded-lg">
+          <div className="bg-blue-500 text-white p-2 rounded-lg">
             <Building2 className="h-6 w-6" />
           </div>
           {!isCollapsed && (
             <div className="ml-3">
-              <h1 className="text-lg font-bold text-gray-900">100acres.com</h1>
-              <p className="text-sm text-gray-500">CRM Dashboard</p>
+              <h1 className="text-lg font-bold text-white">100acres.com</h1>
+              <p className="text-sm text-slate-300">CRM Dashboard</p>
             </div>
           )}
         </div>
@@ -91,8 +83,8 @@ const Sidebar = ({ userRole, isCollapsed, onToggle }) => {
                   className={({ isActive }) =>
                     `flex items-center px-3 py-2 rounded-lg transition-colors ${
                       isActive
-                        ? 'bg-green-50 text-green-700 border-r-2 border-green-700'
-                        : 'text-gray-700 hover:bg-gray-50'
+                        ? 'bg-blue-600 text-white border-r-4 border-blue-400'
+                        : 'text-slate-300 hover:bg-slate-700 hover:text-white'
                     }`
                   }
                 >
@@ -105,21 +97,21 @@ const Sidebar = ({ userRole, isCollapsed, onToggle }) => {
         </ul>
       </nav>
 
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-slate-700">
         <div className="flex items-center mb-4">
-          <div className="bg-green-600 text-white p-2 rounded-full">
+          <div className="bg-white text-slate-800 p-2 rounded-full">
             <User className="h-4 w-4" />
           </div>
           {!isCollapsed && (
             <div className="ml-3">
-              <p className="text-sm font-medium text-gray-900">{userName}</p>
-              <p className="text-xs text-gray-500">{getRoleDisplayName(userRole)}</p>
+              <p className="text-sm font-medium text-white">{userName}</p>
+              <p className="text-xs text-slate-300">{getRoleDisplayName(userRole)}</p>
             </div>
           )}
         </div>
         <button
           onClick={handleLogout}
-          className="flex items-center w-full px-3 py-2 text-gray-700 hover:bg-red-50 hover:text-red-700 rounded-lg transition-colors"
+          className="flex items-center w-full px-3 py-2 text-slate-300 hover:bg-slate-700 hover:text-white rounded-lg transition-colors"
         >
           <LogOut className="h-5 w-5" />
           {!isCollapsed && <span className="ml-3">Logout</span>}

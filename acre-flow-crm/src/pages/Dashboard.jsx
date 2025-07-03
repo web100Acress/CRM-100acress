@@ -3,8 +3,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import DashboardStats from '../components/DashboardStats';
-import LeadTable from '../components/LeadTable';
-import TicketBoard from '../components/TicketBoard';
+// import LeadTable from '../components/LeadTable';
+// import TicketBoard from '../components/TicketBoard';
 import SuperAdminProfile from '../components/SuperAdminProfile';
 
 const Dashboard = ({ userRole = 'employee' }) => {
@@ -63,10 +63,10 @@ const Dashboard = ({ userRole = 'employee' }) => {
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           <div className="xl:col-span-2">
-            <LeadTable userRole={userRole} />
+            {/* <LeadTable userRole={userRole} /> */}
           </div>
           <div>
-            <TicketBoard userRole={userRole} />
+            {/* <TicketBoard userRole={userRole} /> */}
           </div>
         </div>
       </div>
