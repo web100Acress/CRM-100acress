@@ -29,6 +29,11 @@ const addFollowUp = async (id, followUpData) => {
   return lead;
 };
 
+const getFollowUps = async (id) => {
+  const lead = await Lead.findById(id);
+  return lead ? lead.followUps : null;
+};
+
 module.exports = {
   createLead,
   getLeads,
@@ -36,4 +41,5 @@ module.exports = {
   updateLead,
   deleteLead,
   addFollowUp,
+  getFollowUps,
 }; 

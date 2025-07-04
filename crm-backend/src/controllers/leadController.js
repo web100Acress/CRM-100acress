@@ -64,3 +64,16 @@ exports.addFollowUp = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.getFollowUps = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const lead = await leadService.getLeadById(id);
+    if (!lead) {
+      return res.status(404).json({ success: false, message: 'Lead not found' });
+    }
+    res.status(200).json({ success: true, data: lead.followUps || [] });
+  } catch (err) {
+    next(err);
+  }
+};

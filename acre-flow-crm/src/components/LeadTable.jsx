@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import FollowUpModal from "./FollowUpModal";
 import CreateLeadForm from "./CreateLeadForm";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 
 const LeadTable = ({ userRole, leads = [] }) => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -22,11 +23,15 @@ const LeadTable = ({ userRole, leads = [] }) => {
   const [showCreateLead, setShowCreateLead] = useState(false);
   const [loading, setLoading] = useState(true);
   const [leadsList, setLeadsList] = useState([]);
+  const [showFollowUpList, setShowFollowUpList] = useState(false);
+  const [followUpList, setFollowUpList] = useState([]);
+  const [followUpLoading, setFollowUpLoading] = useState(false);
+  const [followUpError, setFollowUpError] = useState("");
 
   useEffect(() => {
     const fetchLeads = async () => {
       try {
-        const response = await fetch("http://localhost:5007/api/leads");
+        const response = await fetch("http://localhost:5001/api/leads");
         if (!response.ok) throw new Error("Failed to fetch leads");
         const json = await response.json();
         setLeadsList(json.data || []);
@@ -108,6 +113,26 @@ const LeadTable = ({ userRole, leads = [] }) => {
       }
     } catch (error) {
       alert("Network error: " + error.message);
+    }
+  };
+
+  const handleViewFollowUps = async (lead) => {
+    setSelectedLead(lead);
+    setShowFollowUpList(true);
+    setFollowUpLoading(true);
+    setFollowUpError("");
+    try {
+      const res = await fetch(`http://localhost:5001/api/leads/${lead._id}/followups`, {
+        credentials: "include"
+      });
+      if (!res.ok) throw new Error("Failed to fetch follow-ups");
+      const data = await res.json();
+      setFollowUpList(data.data || []);
+    } catch (err) {
+      setFollowUpError(err.message || "Failed to fetch follow-ups");
+      setFollowUpList([]);
+    } finally {
+      setFollowUpLoading(false);
     }
   };
 
@@ -234,7 +259,11 @@ const LeadTable = ({ userRole, leads = [] }) => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex space-x-2">
-                    <button className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded">
+                    <button
+                      className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded"
+                      onClick={() => handleViewFollowUps(lead)}
+                      title="View Follow-ups"
+                    >
                       <Eye className="h-4 w-4" />
                     </button>
                     
@@ -282,6 +311,32 @@ const LeadTable = ({ userRole, leads = [] }) => {
         onClose={() => setShowCreateLead(false)}
         onSave={handleSaveLead}
       />
+
+      <Dialog open={showFollowUpList} onOpenChange={setShowFollowUpList}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Follow-ups for {selectedLead?.name}</DialogTitle>
+          </DialogHeader>
+          {followUpLoading ? (
+            <div className="text-center py-4">Loading...</div>
+          ) : followUpError ? (
+            <div className="text-red-600 text-center py-4">{followUpError}</div>
+          ) : followUpList.length === 0 ? (
+            <div className="text-gray-500 text-center py-4">No follow-ups found.</div>
+          ) : (
+            <ul className="divide-y divide-gray-200 max-h-72 overflow-y-auto">
+              {followUpList.map((fu, idx) => (
+                <li key={idx} className="py-2">
+                  <div className="font-semibold text-blue-700">{fu.author} <span className="text-xs text-gray-400">({fu.role})</span></div>
+                  <div className="text-sm text-gray-700">{fu.comment}</div>
+                  <div className="text-xs text-gray-500 mt-1">{fu.timestamp}</div>
+                  {fu.place && <div className="text-xs text-gray-400">Meeting: {fu.place}</div>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
     // </div>
   );
