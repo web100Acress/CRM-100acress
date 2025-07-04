@@ -1,7 +1,9 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { X, User, Calendar, AlertCircle } from 'lucide-react';
+
+const mockUsers = ['Alice', 'Bob', 'Charlie', 'David'];
 
 const CreateTicketModal = ({ isOpen, onClose, userRole }) => {
   const [formData, setFormData] = useState({
@@ -13,22 +15,25 @@ const CreateTicketModal = ({ isOpen, onClose, userRole }) => {
     category: 'general'
   });
 
-useEffect(() => {
-  const fetchLeads = async () => {
-    try {
-      const response = await fetch('http://localhost:5001/api/leads');
-      const data = await response.json();
-      setLeadsList(data);
-    } catch (error) {
-      console.error('Error fetching leads:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [leadsList, setLeadsList] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  fetchLeads();
-}, []);
+  useEffect(() => {
+    const fetchLeads = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch('http://localhost:5001/api/leads');
+        const data = await response.json();
+        setLeadsList(data);
+      } catch (error) {
+        console.error('Error fetching leads:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchLeads();
+  }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -36,7 +41,15 @@ useEffect(() => {
     // Here you would typically send the data to your backend
     onClose();
     // Reset form
-    
+    setFormData({
+      title: '',
+      description: '',
+      assignedTo: '',
+      priority: 'medium',
+      dueDate: '',
+      category: 'general'
+    });
+  };
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));

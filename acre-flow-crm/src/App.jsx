@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+
 import Dashboard from "./pages/Dashboard";
 import Leads from "./pages/Leads";
 import Tickets from "./pages/Tickets";
@@ -32,9 +33,7 @@ const App = () => {
 
     checkAuthStatus();
 
-    // Listen for storage changes (in case user logs out from another tab)
     window.addEventListener("storage", checkAuthStatus);
-
     return () => {
       window.removeEventListener("storage", checkAuthStatus);
     };
@@ -67,31 +66,19 @@ const App = () => {
             <Route
               path="/"
               element={
-                isLoggedIn ? (
-                  <Dashboard userRole={userRole} />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
+                isLoggedIn ? <Dashboard userRole={userRole} /> : <Navigate to="/login" replace />
               }
             />
             <Route
               path="/leads"
               element={
-                isLoggedIn ? (
-                  <Leads userRole={userRole} />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
+                isLoggedIn ? <Leads userRole={userRole} /> : <Navigate to="/login" replace />
               }
             />
             <Route
               path="/tickets"
               element={
-                isLoggedIn ? (
-                  <Tickets userRole={userRole} />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
+                isLoggedIn ? <Tickets userRole={userRole} /> : <Navigate to="/login" replace />
               }
             />
             <Route
@@ -134,18 +121,19 @@ const App = () => {
                 )
               }
             />
-
             <Route
               path="/settings"
               element={
                 isLoggedIn && userRole === "super-admin" ? (
-                  <Settings userRole={userRole} />
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold">Settings</h1>
+                    <p>Settings interface coming soon...</p>
+                  </div>
                 ) : (
                   <Navigate to="/" replace />
                 )
               }
             />
-
             <Route
               path="/team"
               element={
@@ -166,19 +154,6 @@ const App = () => {
                   <div className="p-6">
                     <h1 className="text-2xl font-bold">My Employees</h1>
                     <p>Employee management interface coming soon...</p>
-                  </div>
-                ) : (
-                  <Navigate to="/" replace />
-                )
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                isLoggedIn && userRole === "super-admin" ? (
-                  <div className="p-6">
-                    <h1 className="text-2xl font-bold">Settings</h1>
-                    <p>Settings interface coming soon...</p>
                   </div>
                 ) : (
                   <Navigate to="/" replace />
