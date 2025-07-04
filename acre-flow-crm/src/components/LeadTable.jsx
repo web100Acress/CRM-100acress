@@ -237,17 +237,21 @@ const LeadTable = ({ userRole, leads = [] }) => {
                     <button className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded">
                       <Eye className="h-4 w-4" />
                     </button>
+                    
                     <button
                       onClick={() => handleFollowUp(lead)}
                       className="text-green-600 hover:text-green-900 p-1 hover:bg-green-50 rounded relative"
                     >
                       <MessageSquare className="h-4 w-4" />
-                      {lead.followUps > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                          {lead.followUps}
-                        </span>
-                      )}
+                      {Array.isArray(lead.followUps) &&
+                        lead.followUps.length > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center">
+                            {lead.followUps.length}
+                          </span>
+                        )}
                     </button>
+
+
                     {userRole === "super-admin" && (
                       <button
                         onClick={() => handleDeleteLead(lead.id)}

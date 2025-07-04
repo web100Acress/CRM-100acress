@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Plus, Edit, Trash2, UserCheck, UserX } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Button } from '../components/ui/button';
 import {
   Table,
   TableBody,
@@ -9,11 +9,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from './ui/table';
-import AddEditUserModal from './AddEditUserModal';
-import DeleteUserModal from './DeleteUserModal';
+} from '../components/ui/table';
+import AddEditUserModal from '../components/AddEditUserModal';
+import DeleteUserModal from '../components/DeleteUserModal';
 import { useToast } from '@/hooks/use-toast';
-import DashboardLayout from './DashboardLayout'; // ✅ Make sure path is correct
+import DashboardLayout from '../components/DashboardLayout';
 
 const UserManagementContent = () => {
   const [users, setUsers] = useState([

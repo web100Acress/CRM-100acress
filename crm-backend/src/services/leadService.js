@@ -20,10 +20,20 @@ const deleteLead = async (id) => {
   return await Lead.findByIdAndDelete(id);
 };
 
+const addFollowUp = async (id, followUpData) => {
+  const lead = await Lead.findById(id);
+  if (!lead) return null;
+
+  lead.followUps.push(followUpData); // Make sure followUps is defined in schema
+  await lead.save();
+  return lead;
+};
+
 module.exports = {
   createLead,
   getLeads,
   getLeadById,
   updateLead,
   deleteLead,
+  addFollowUp,
 }; 

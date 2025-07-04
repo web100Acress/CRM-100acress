@@ -11,8 +11,7 @@ import CreateUser from "./pages/CreateUser";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
-import UserManagement from "./components/UserManagement";
-// import UserManagement from "./components/UserManagement";
+import UserManagement from "./pages/UserManagement";
 
 const queryClient = new QueryClient();
 
@@ -129,12 +128,13 @@ const App = () => {
               path="/users"
               element={
                 isLoggedIn && userRole === "super-admin" ? (
-                  <UserManagement />
+                  <UserManagement userRole={userRole} />
                 ) : (
                   <Navigate to="/" replace />
                 )
               }
             />
+
             <Route
               path="/settings"
               element={

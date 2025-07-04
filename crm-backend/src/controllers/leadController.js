@@ -47,3 +47,20 @@ exports.deleteLead = async (req, res, next) => {
     next(err);
   }
 }; 
+
+
+exports.addFollowUp = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const followUpData = req.body;
+
+    const updatedLead = await leadService.addFollowUp(id, followUpData);
+    if (!updatedLead) {
+      return res.status(404).json({ success: false, message: 'Lead not found' });
+    }
+
+    res.status(200).json({ success: true, data: updatedLead });
+  } catch (err) {
+    next(err);
+  }
+};
