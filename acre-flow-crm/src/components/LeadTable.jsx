@@ -27,6 +27,7 @@ const LeadTable = ({ userRole, leads = [] }) => {
   const [followUpList, setFollowUpList] = useState([]);
   const [followUpLoading, setFollowUpLoading] = useState(false);
   const [followUpError, setFollowUpError] = useState("");
+  const [users, setUsers] = useState([]);
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -43,7 +44,19 @@ const LeadTable = ({ userRole, leads = [] }) => {
       }
     };
 
+    const fetchUsers = async () => {
+      try {
+        const response = await fetch("http://localhost:5001/api/users", { credentials: "include" });
+        if (!response.ok) throw new Error("Failed to fetch users");
+        const json = await response.json();
+        setUsers(json.data || []);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
+    };
+
     fetchLeads();
+    fetchUsers();
   }, []);
 
   const filteredLeads = leadsList.filter((lead) => {
@@ -136,6 +149,21 @@ const LeadTable = ({ userRole, leads = [] }) => {
     }
   };
 
+  const handleAssignLead = async (leadId, userId) => {
+    try {
+      const response = await fetch(`http://localhost:5001/api/leads/${leadId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assignedTo: userId }),
+        credentials: "include"
+      });
+      if (!response.ok) throw new Error("Failed to assign lead");
+      setLeadsList((prev) => prev.map(lead => lead._id === leadId ? { ...lead, assignedTo: userId } : lead));
+    } catch (error) {
+      alert("Failed to assign lead: " + error.message);
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       <div className="p-6 border-b border-gray-200">
@@ -205,7 +233,7 @@ const LeadTable = ({ userRole, leads = [] }) => {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredLeads.map((lead) => (
-              <tr key={lead.id} className="hover:bg-gray-50">
+              <tr key={lead._id || lead.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div>
                     <div className="text-sm font-medium text-gray-900">
@@ -250,7 +278,17 @@ const LeadTable = ({ userRole, leads = [] }) => {
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div>
                     <div className="text-sm font-medium text-gray-900">
-                      {lead.assignedTo}
+                      <select
+                        className="border rounded px-2 py-1"
+                        value={lead.assignedTo || ""}
+                        onChange={e => handleAssignLead(lead._id, e.target.value)}
+                        disabled={!!lead.assignedTo}
+                      >
+                        <option value="">Unassigned</option>
+                        {users.map(user => (
+                          <option key={user._id} value={user.name}>{user.name} ({user.role})</option>
+                        ))}
+                      </select>
                     </div>
                     <div className="text-sm text-gray-500">
                       by {lead.assignedBy}
@@ -326,7 +364,7 @@ const LeadTable = ({ userRole, leads = [] }) => {
           ) : (
             <ul className="divide-y divide-gray-200 max-h-72 overflow-y-auto">
               {followUpList.map((fu, idx) => (
-                <li key={idx} className="py-2">
+                <li key={fu._id || idx} className="py-2">
                   <div className="font-semibold text-blue-700">{fu.author} <span className="text-xs text-gray-400">({fu.role})</span></div>
                   <div className="text-sm text-gray-700">{fu.comment}</div>
                   <div className="text-xs text-gray-500 mt-1">{fu.timestamp}</div>

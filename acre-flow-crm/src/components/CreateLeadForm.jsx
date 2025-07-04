@@ -27,7 +27,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
 
     if (formData.name && formData.email && formData.phone) {
       try {
-        const response = await fetch('http://localhost:5007/api/leads', {
+        const response = await fetch('http://localhost:5001/api/leads', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -156,7 +156,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
               >
                 <option value="">Select budget</option>
                 {budgetOptions.map(option => (
-                  <option key={option} value={option}>{option}</option>
+                  <option value={option} key={option}>{option}</option>
                 ))}
               </select>
             </div>
@@ -171,7 +171,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
               >
                 <option value="">Select property</option>
                 {propertyOptions.map(option => (
-                  <option key={option} value={option}>{option}</option>
+                  <option value={option} key={option}>{option}</option>
                 ))}
               </select>
             </div>
