@@ -3,7 +3,7 @@ import { Eye, EyeOff, AtSign, Hash } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
-  const [credentials, setCredentials] = useState({ username: '', password: '' });
+  const [credentials, setCredentials] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -44,14 +44,14 @@ const Login = () => {
   return (
     <>
       <div className="container">
-        {/* Left Red Side */}
+        {/* Left Side (Red) */}
         <div className="left">
           <h1 className="crm-title">C.R.M</h1>
           <p className="crm-subtitle">Customer Relationship Management</p>
-          <p className="crm-desc">Lorem Ipsum is simply dummy text of the printing and typesetting industry.</p>
+          <p className="crm-desc">Manage your business relationships, leads, and activities from one dashboard.</p>
         </div>
 
-        {/* Right Login Form Side */}
+        {/* Right Side (Login Form) */}
         <div className="right">
           <form className="login-box" onSubmit={handleSubmit}>
             <h2 className="login-heading">Sign In to C.R.M</h2>
@@ -61,10 +61,10 @@ const Login = () => {
             <div className="input-group">
               <AtSign className="input-icon" />
               <input
-                type="text"
+                type="email"
                 placeholder="Email"
-                value={credentials.username}
-                onChange={(e) => setCredentials({ ...credentials, username: e.target.value })}
+                value={credentials.email}
+                onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
                 required
               />
             </div>
@@ -84,28 +84,17 @@ const Login = () => {
             </div>
 
             <div className="options">
-              <label>
-                <input type="checkbox" /> Remember Me
-              </label>
+              <label><input type="checkbox" /> Remember Me</label>
               <a href="#">Forgot Password?</a>
             </div>
 
             <button className="login-btn" disabled={isLoading}>
               {isLoading ? 'Signing In...' : 'LOG IN'}
             </button>
-
-            <div className="credentials">
-              <p><strong>Test Credentials:</strong></p>
-              <p><strong>Super Admin:</strong> superadmin / super123</p>
-              <p><strong>Head Admin:</strong> headadmin / head123</p>
-              <p><strong>Team Leader:</strong> teamleader / tl123</p>
-              <p><strong>Employee:</strong> employee / emp123</p>
-            </div>
           </form>
         </div>
       </div>
 
-      {/* Optional CSS-in-JSX */}
       <style>{`
         .container {
           display: flex;
@@ -114,7 +103,7 @@ const Login = () => {
 
         .left {
           flex: 1;
-          background-color: red;
+          background-color: #dc2626;
           display: flex;
           flex-direction: column;
           justify-content: center;
@@ -130,21 +119,21 @@ const Login = () => {
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: -20rem;
+          padding: 2rem;
+          background: #f0fdf4;
         }
 
         .login-box {
           width: 100%;
-          max-width: 3000px;
-          min-width: 300px;
+          max-width: 400px;
           background: white;
           padding: 2rem;
-          border-radius: 0.5rem;
-          box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+          border-radius: 0.75rem;
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
         }
 
         .login-heading {
-          font-size: 1.25rem;
+          font-size: 1.5rem;
           text-align: center;
           color: #059669;
           margin-bottom: 1.5rem;
@@ -154,7 +143,7 @@ const Login = () => {
           display: flex;
           align-items: center;
           border: 1px solid #e5e7eb;
-          border-radius: 0.375rem;
+          border-radius: 0.5rem;
           margin-bottom: 1rem;
           padding: 0.5rem;
           background: #f9fafb;
@@ -182,7 +171,7 @@ const Login = () => {
         .options {
           display: flex;
           justify-content: space-between;
-          font-size: 0.85rem;
+          font-size: 0.875rem;
           margin-bottom: 1rem;
         }
 
@@ -193,7 +182,7 @@ const Login = () => {
           padding: 0.5rem;
           font-weight: bold;
           border-radius: 999px;
-          transition: 0.2s;
+          transition: background 0.2s ease;
         }
 
         .login-btn:hover {
@@ -207,28 +196,22 @@ const Login = () => {
           color: #b91c1c;
           font-size: 0.875rem;
           margin-bottom: 1rem;
-          border-radius: 0.375rem;
-        }
-
-        .credentials {
-          margin-top: 1.5rem;
-          font-size: 0.85rem;
-          color: #047857;
+          border-radius: 0.5rem;
         }
 
         .crm-title {
-          font-size: 2rem;
+          font-size: 2.5rem;
           font-weight: bold;
           margin-bottom: 0.5rem;
         }
 
         .crm-subtitle {
-          font-size: 1rem;
-          margin-bottom: 0.25rem;
+          font-size: 1.2rem;
+          margin-bottom: 0.5rem;
         }
 
         .crm-desc {
-          font-size: 0.875rem;
+          font-size: 0.9rem;
           max-width: 250px;
         }
 

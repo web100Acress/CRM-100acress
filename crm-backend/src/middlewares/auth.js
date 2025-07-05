@@ -1,5 +1,4 @@
-// Placeholder authentication middleware
+// Authentication middleware removed for open access
 module.exports = (req, res, next) => {
-  // Implement authentication logic here
   next();
 }; 
