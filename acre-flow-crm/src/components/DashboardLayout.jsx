@@ -1,59 +1,191 @@
-
 import React, { useState } from 'react';
 import { Menu, Bell, Search } from 'lucide-react';
 import Sidebar from './Sidebar';
-import { Card, CardContent } from './ui/card';
 
 const DashboardLayout = ({ children, userRole = 'employee' }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  const getRoleTitle = (role) => {
+    switch (role) {
+      case 'super-admin': return 'Super Admin';
+      case 'head-admin': return 'Head Admin';
+      case 'team-leader': return 'Team Leader';
+      case 'employee': return 'Employee';
+      default: return 'User';
+    }
+  };
+
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar 
-        userRole={userRole} 
-        isCollapsed={sidebarCollapsed}
-        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-      />
-      
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="bg-white border-b border-gray-100 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+    <>
+      <div className="dashboard-container">
+        <Sidebar
+          userRole={userRole}
+          isCollapsed={sidebarCollapsed}
+          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        />
+
+        <div className="main-content-wrapper">
+          {/* Header */}
+          <header className="dashboard-header">
+            <div className="header-left">
               <button
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="menu-button"
               >
-                <Menu className="h-5 w-5 text-gray-600" />
+                <Menu className="menu-icon" />
               </button>
-              <h1 className="text-xl font-semibold text-gray-800">
-                Hello {userRole === 'super-admin' ? 'Super Admin' : userRole === 'head-admin' ? 'Head Admin' : userRole === 'team-leader' ? 'Team Leader' : 'Employee'} 👋
-              </h1>
+              <h1 className="user-greeting">Hello {getRoleTitle(userRole)} 👋</h1>
             </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+
+            <div className="header-right">
+              <div className="search-wrapper">
+                <Search className="search-icon" />
                 <input
                   type="text"
-                  placeholder="      Search"
-                  className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
+                  placeholder="Search"
+                  className="search-input"
                 />
               </div>
-              <button className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <Bell className="h-5 w-5 text-gray-600" />
-                <span className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full h-2 w-2"></span>
+              <button className="notification-button">
+                <Bell className="bell-icon" />
+                <span className="notification-dot"></span>
               </button>
             </div>
-          </div>
-        </header>
+          </header>
 
-        {/* Main Content */}
-        <main className="flex-1 overflow-auto p-6 bg-gray-50">
-          {children}
-        </main>
+          {/* Main */}
+          <main className="main-content">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+
+      <style>{`
+        .dashboard-container {
+          display: flex;
+          height: 100vh;
+          background-color: #f9fafb;
+        }
+
+        .main-content-wrapper {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+        }
+
+        .dashboard-header {
+          background-color: white;
+          border-bottom: 1px solid #f3f4f6;
+          padding: 1rem 1.5rem;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .header-left {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+        }
+
+        .menu-button {
+          padding: 0.5rem;
+          border-radius: 0.5rem;
+          background: none;
+          border: none;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+
+        .menu-button:hover {
+          background-color: #f3f4f6;
+        }
+
+        .menu-icon {
+          width: 20px;
+          height: 20px;
+          color: #4b5563;
+        }
+
+        .user-greeting {
+          font-size: 1.25rem;
+          font-weight: 600;
+          color: #1f2937;
+        }
+
+        .header-right {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+        }
+
+        .search-wrapper {
+          position: relative;
+        }
+
+        .search-icon {
+          position: absolute;
+          left: 0.75rem;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #9ca3af;
+          width: 16px;
+          height: 16px;
+        }
+
+        .search-input {
+          padding: 0.5rem 1rem 0.5rem 2rem;
+          border: 1px solid #e5e7eb;
+          border-radius: 0.5rem;
+          background-color: #f9fafb;
+          outline: none;
+          transition: border 0.2s, box-shadow 0.2s;
+        }
+
+        .search-input:focus {
+          border-color: transparent;
+          box-shadow: 0 0 0 2px #3b82f6;
+        }
+
+        .notification-button {
+          position: relative;
+          background: none;
+          border: none;
+          padding: 0.5rem;
+          border-radius: 0.5rem;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+
+        .notification-button:hover {
+          background-color: #f3f4f6;
+        }
+
+        .bell-icon {
+          width: 20px;
+          height: 20px;
+          color: #4b5563;
+        }
+
+        .notification-dot {
+          position: absolute;
+          top: 0.4rem;
+          right: 0.4rem;
+          background-color: #ef4444;
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+        }
+
+        .main-content {
+          flex: 1;
+          overflow-y: auto;
+          padding: 1.5rem;
+          background-color: #f9fafb;
+        }
+      `}</style>
+    </>
   );
 };
 

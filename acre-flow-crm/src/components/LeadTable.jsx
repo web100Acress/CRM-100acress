@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
   Search,
-  Filter,
   Eye,
   MessageSquare,
   Phone,
@@ -10,12 +9,11 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import FollowUpModal from "./FollowUpModal";
 import CreateLeadForm from "./CreateLeadForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 
-const LeadTable = ({ userRole, leads = [] }) => {
+const LeadTable = ({ userRole }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedLead, setSelectedLead] = useState(null);
@@ -39,11 +37,9 @@ const LeadTable = ({ userRole, leads = [] }) => {
             'Content-Type': 'application/json'
           }
         });
-        if (!response.ok) throw new Error("Failed to fetch leads");
         const json = await response.json();
         setLeadsList(json.data || []);
       } catch (error) {
-        console.error("Error fetching leads:", error);
         alert("Error fetching leads: " + error.message);
       } finally {
         setLoading(false);
@@ -59,7 +55,6 @@ const LeadTable = ({ userRole, leads = [] }) => {
             'Content-Type': 'application/json'
           }
         });
-        if (!response.ok) throw new Error("Failed to fetch users");
         const json = await response.json();
         setUsers(json.data || []);
       } catch (error) {
@@ -81,16 +76,12 @@ const LeadTable = ({ userRole, leads = [] }) => {
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusColor = (status) => {
+  const getStatusClass = (status) => {
     switch (status?.toLowerCase()) {
-      case "hot":
-        return "bg-red-100 text-red-800";
-      case "warm":
-        return "bg-orange-100 text-orange-800";
-      case "cold":
-        return "bg-blue-100 text-blue-800";
-      default:
-        return "bg-gray-100 text-gray-800";
+      case "hot": return "status-hot";
+      case "warm": return "status-warm";
+      case "cold": return "status-cold";
+      default: return "status-default";
     }
   };
 
@@ -99,66 +90,28 @@ const LeadTable = ({ userRole, leads = [] }) => {
     setShowFollowUp(true);
   };
 
-  const handleCreateLead = () => {
-    setShowCreateLead(true);
-  };
+  const handleCreateLead = () => setShowCreateLead(true);
 
   const handleDeleteLead = async (leadId) => {
-    if (
-      window.confirm(
-        "Are you sure you want to delete this lead? This action cannot be undone."
-      )
-    ) {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:5001/api/leads/${leadId}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        const data = await response.json();
-        if (response.ok) {
-          setLeadsList((prev) => prev.filter((lead) => lead._id !== leadId));
-          alert('Lead deleted successfully!');
-        } else {
-          alert('Failed to delete lead: ' + (data.message || 'Unknown error'));
-        }
-      } catch (err) {
-        alert('Error deleting lead: ' + err.message);
-      }
-    }
-  };
-
-  const handleSaveLead = async (newLeadData) => {
-    const newLead = {
-      ...newLeadData,
-      assignedTo: localStorage.getItem("userName") || "Current User",
-      assignedBy: localStorage.getItem("userRole") || "Admin",
-      lastContact: new Date().toISOString().split("T")[0],
-      followUps: 0,
-    };
-
+    if (!window.confirm("Are you sure you want to delete this lead?")) return;
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch("http://localhost:5001/api/leads", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
+      const res = await fetch(`http://localhost:5001/api/leads/${leadId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(newLead),
+        }
       });
-
-      const result = await response.json();
-      if (response.ok) {
-        setLeadsList((prev) => [...prev, result.data]);
+      const data = await res.json();
+      if (res.ok) {
+        setLeadsList((prev) => prev.filter((l) => l._id !== leadId));
+        alert('Lead deleted');
       } else {
-        alert("Failed to create lead: " + (result.message || "Unknown error"));
+        alert(data.message || 'Failed');
       }
-    } catch (error) {
-      alert("Network error: " + error.message);
+    } catch (err) {
+      alert("Error: " + err.message);
     }
   };
 
@@ -175,225 +128,127 @@ const LeadTable = ({ userRole, leads = [] }) => {
           'Content-Type': 'application/json'
         }
       });
-      if (!res.ok) throw new Error("Failed to fetch follow-ups");
       const data = await res.json();
       setFollowUpList(data.data || []);
     } catch (err) {
-      setFollowUpError(err.message || "Failed to fetch follow-ups");
-      setFollowUpList([]);
+      setFollowUpError(err.message);
     } finally {
       setFollowUpLoading(false);
     }
   };
 
+  const getAssignableUsers = () => {
+    const currentUserId = localStorage.getItem('userId');
+    const currentUserRole = localStorage.getItem('userRole');
+    if (currentUserRole === 'super-admin') return users.filter(u => u.role === 'head-admin');
+    if (currentUserRole === 'head-admin') return users.filter(u => u.role === 'team-leader' || u._id === currentUserId);
+    if (currentUserRole === 'team-leader') return users.filter(u => u.role === 'employee' || u._id === currentUserId);
+    return [];
+  };
+
   const handleAssignLead = async (leadId, userId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5001/api/leads/${leadId}`, {
+      const res = await fetch(`http://localhost:5001/api/leads/${leadId}`, {
         method: "PUT",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ assignedTo: userId })
       });
-      if (!response.ok) throw new Error("Failed to assign lead");
-      setLeadsList((prev) => prev.map(lead => lead._id === leadId ? { ...lead, assignedTo: userId } : lead));
-    } catch (error) {
-      alert("Failed to assign lead: " + error.message);
+      if (!res.ok) throw new Error("Failed to assign lead");
+      setLeadsList((prev) =>
+        prev.map((lead) => (lead._id === leadId ? { ...lead, assignedTo: userId } : lead))
+      );
+    } catch (err) {
+      alert("Error: " + err.message);
     }
-  };
-
-  // Helper function to get assignable users based on current user role and lead
-  const getAssignableUsers = (lead) => {
-    const currentUserId = localStorage.getItem('userId');
-    const currentUserRole = localStorage.getItem('userRole');
-    let assignable = [];
-    if (currentUserRole === 'super-admin') {
-      assignable = users.filter(u => u.role === 'head-admin');
-    } else if (currentUserRole === 'head-admin') {
-      assignable = users.filter(u => u.role === 'team-leader' || u._id === currentUserId);
-    } else if (currentUserRole === 'team-leader') {
-      assignable = users.filter(u => u.role === 'employee' || u._id === currentUserId);
-    }
-    return assignable;
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-      <div className="p-2 border-b border-gray-200">
-        {/* <div className=""> */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          {/* <h2 className="text-xl font-semibold text-gray-900">Lead Management</h2> */}
-
-          <div className="flex flex-col sm:flex-row gap-3 items-end">
-            <div className="flex flex-row items-center gap-4 w-full sm:w-auto">
-              <div className="relative w-full sm:w-64">
-                <Search className="absolute left-1 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="        Search leads..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-8 py-2   border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div className="flex items-center gap-4 flex-wrap">
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-4 pr-8 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                >
-                  <option value="all">All Status</option>
-                  <option value="hot">Hot</option>
-                  <option value="warm">Warm</option>
-                  <option value="cold">Cold</option>
-                </select>
-              </div>
-              <Button
-                onClick={handleCreateLead}
-                className="bg-green-600 hover:bg-green-700 text-white flex items-center px-4 py-2 rounded-md text-sm"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create Lead
-              </Button>
-            </div>
-          </div>
+    <div className="lead-table-wrapper">
+      <div className="lead-table-header">
+        <div className="search-bar">
+          <Search size={16} />
+          <input
+            type="text"
+            placeholder="Search leads..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <option value="all">All</option>
+          <option value="hot">Hot</option>
+          <option value="warm">Warm</option>
+          <option value="cold">Cold</option>
+        </select>
+        <button className="create-lead-btn" onClick={handleCreateLead}>
+          <Plus size={16} /> Create Lead
+        </button>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Lead Info
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Contact
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Property
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Assignment
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
+      <table className="lead-table">
+        <thead>
+          <tr>
+            <th>Lead Info</th>
+            <th>Contact</th>
+            <th>Property</th>
+            <th>Status</th>
+            <th>Assign</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredLeads.map((lead) => (
+            <tr key={lead._id}>
+              <td>
+                <div>{lead.name}</div>
+                <div>ID: #{lead.id}</div>
+              </td>
+              <td>
+                <div><Phone size={14} /> {lead.phone}</div>
+                <div><Mail size={14} /> {lead.email}</div>
+                <div><MapPin size={14} /> {lead.location}</div>
+              </td>
+              <td>
+                <div>{lead.property}</div>
+                <div>{lead.budget}</div>
+              </td>
+              <td>
+                <span className={`status-badge ${getStatusClass(lead.status)}`}>
+                  {lead.status}
+                </span>
+              </td>
+              <td>
+                <select
+                  value={lead.assignedTo || ""}
+                  onChange={(e) => handleAssignLead(lead._id, e.target.value)}
+                  disabled={lead.assignedTo && lead.assignedTo !== localStorage.getItem('userId')}
+                >
+                  <option value="">Unassigned</option>
+                  {getAssignableUsers().map((u) => (
+                    <option key={u._id} value={u._id}>{u.name} ({u.role})</option>
+                  ))}
+                </select>
+              </td>
+              <td>
+                <button onClick={() => handleViewFollowUps(lead)}><Eye size={16} /></button>
+                <button onClick={() => handleFollowUp(lead)}><MessageSquare size={16} /></button>
+                {userRole === "super-admin" && (
+                  <button onClick={() => handleDeleteLead(lead._id)}>
+                    <Trash2 size={16} />
+                  </button>
+                )}
+              </td>
             </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {filteredLeads.map((lead) => (
-              <tr key={lead._id || lead.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">
-                      {lead.name}
-                    </div>
-                    <div className="text-sm text-gray-500">ID: #{lead.id}</div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="space-y-1">
-                    <div className="flex items-center text-sm text-gray-900">
-                      <Phone className="h-4 w-4 mr-2 text-gray-400" />
-                      {lead.phone}
-                    </div>
-                    <div className="flex items-center text-sm text-gray-500">
-                      <Mail className="h-4 w-4 mr-2 text-gray-400" />
-                      {lead.email}
-                    </div>
-                    <div className="flex items-center text-sm text-gray-500">
-                      <MapPin className="h-4 w-4 mr-2 text-gray-400" />
-                      {lead.location}
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">
-                      {lead.property}
-                    </div>
-                    <div className="text-sm text-gray-500">{lead.budget}</div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-                      lead.status
-                    )}`}
-                  >
-                    {lead.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">
-                      <select
-                        className="border rounded px-2 py-1"
-                        value={lead.assignedTo || ""}
-                        onChange={e => handleAssignLead(lead._id, e.target.value)}
-                        disabled={!(
-                          !lead.assignedTo || lead.assignedTo === localStorage.getItem('userId')
-                        )}
-                      >
-                        <option value="">Unassigned</option>
-                        {getAssignableUsers(lead).map(user => (
-                          <option key={user._id} value={user._id}>
-                            {user.name} ({user.role})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      by {lead.assignedBy}
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <div className="flex space-x-2">
-                    <button
-                      className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded"
-                      onClick={() => handleViewFollowUps(lead)}
-                      title="View Follow-ups"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </button>
-                    
-                    <button
-                      onClick={() => handleFollowUp(lead)}
-                      className="text-green-600 hover:text-green-900 p-1 hover:bg-green-50 rounded relative"
-                    >
-                      <MessageSquare className="h-4 w-4" />
-                      {Array.isArray(lead.followUps) &&
-                        lead.followUps.length > 0 && (
-                          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center">
-                            {lead.followUps.length}
-                          </span>
-                        )}
-                    </button>
-
-
-                    {userRole === "super-admin" && (
-                      <button
-                        onClick={() => handleDeleteLead(lead._id)}
-                        className="text-red-600 hover:text-red-900 p-1 hover:bg-red-50 rounded"
-                        title="Delete Lead"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          ))}
+        </tbody>
+      </table>
 
       {showFollowUp && selectedLead && (
         <FollowUpModal
@@ -406,7 +261,7 @@ const LeadTable = ({ userRole, leads = [] }) => {
       <CreateLeadForm
         isOpen={showCreateLead}
         onClose={() => setShowCreateLead(false)}
-        onSave={handleSaveLead}
+        onSave={() => {}}
       />
 
       <Dialog open={showFollowUpList} onOpenChange={setShowFollowUpList}>
@@ -415,27 +270,204 @@ const LeadTable = ({ userRole, leads = [] }) => {
             <DialogTitle>Follow-ups for {selectedLead?.name}</DialogTitle>
           </DialogHeader>
           {followUpLoading ? (
-            <div className="text-center py-4">Loading...</div>
+            <p>Loading...</p>
           ) : followUpError ? (
-            <div className="text-red-600 text-center py-4">{followUpError}</div>
+            <p>{followUpError}</p>
           ) : followUpList.length === 0 ? (
-            <div className="text-gray-500 text-center py-4">No follow-ups found.</div>
+            <p>No follow-ups found.</p>
           ) : (
-            <ul className="divide-y divide-gray-200 max-h-72 overflow-y-auto">
-              {followUpList.map((fu, idx) => (
-                <li key={fu._id || idx} className="py-2">
-                  <div className="font-semibold text-blue-700">{fu.author} <span className="text-xs text-gray-400">({fu.role})</span></div>
-                  <div className="text-sm text-gray-700">{fu.comment}</div>
-                  <div className="text-xs text-gray-500 mt-1">{fu.timestamp}</div>
-                  {fu.place && <div className="text-xs text-gray-400">Meeting: {fu.place}</div>}
+            <ul>
+              {followUpList.map((f, i) => (
+                <li key={i}>
+                  <strong>{f.author}</strong> ({f.role}): {f.comment}
+                  <br />
+                  <small>{f.timestamp}</small>
+                  {f.place && <div>Meeting: {f.place}</div>}
                 </li>
               ))}
             </ul>
           )}
         </DialogContent>
       </Dialog>
+      
+
+      {/* === Styles === */}
+      <style>{`
+  * {
+    font-family: 'Poppins', sans-serif;
+  }
+
+  .lead-table-wrapper {
+    padding: 24px;
+    border: 1px solid #ddd;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    overflow-x: auto;
+  }
+
+  .lead-table-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+
+  .search-bar {
+    display: flex;
+    align-items: center;
+    border: 1px solid #ccc;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background-color: #f9f9f9;
+    transition: box-shadow 0.2s ease;
+  }
+
+  .search-bar input {
+    border: none;
+    outline: none;
+    margin-left: 8px;
+    font-size: 14px;
+    background: transparent;
+    width: 180px;
+  }
+
+  .search-bar:focus-within {
+    box-shadow: 0 0 0 2px #3b82f6;
+    border-color: #3b82f6;
+  }
+
+  .create-lead-btn {
+    background-color: #22c55e;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background-color 0.3s ease;
+  }
+
+  .create-lead-btn:hover {
+    background-color: #16a34a;
+  }
+
+  .lead-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+
+  .lead-table thead {
+    background-color: #f3f4f6;
+  }
+
+  .lead-table th,
+  .lead-table td {
+    border: 1px solid #e5e7eb;
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 14px;
+  }
+
+  .lead-table tbody tr:hover {
+    background-color: #f9fafb;
+  }
+
+  .status-badge {
+    padding: 4px 10px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+    text-transform: capitalize;
+  }
+
+  .status-hot {
+    background-color: #fee2e2;
+    color: #b91c1c;
+  }
+
+  .status-warm {
+    background-color: #fef3c7;
+    color: #92400e;
+  }
+
+  .status-cold {
+    background-color: #dbeafe;
+    color: #1e40af;
+  }
+
+  .status-default {
+    background-color: #e5e7eb;
+    color: #374151;
+  }
+
+  select {
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: #fff;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+  }
+
+  select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59,130,246,0.4);
+  }
+
+  button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-right: 6px;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+    font-family: 'Poppins', sans-serif;
+  }
+
+  button:hover {
+    background-color: #f3f4f6;
+  }
+
+  @media (max-width: 768px) {
+    .search-bar input {
+      width: 100%;
+    }
+
+    .lead-table-header {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .lead-table {
+      font-size: 13px;
+    }
+
+    .lead-table th,
+    .lead-table td {
+      padding: 8px;
+    }
+  }
+`}</style>
+
+
     </div>
-    // </div>
   );
 };
 

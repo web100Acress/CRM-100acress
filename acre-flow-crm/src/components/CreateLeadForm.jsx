@@ -41,7 +41,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
 
         if (data.success) {
           alert('Lead created successfully!');
-          onSave && onSave(formData); // callback to parent if needed
+          onSave && onSave(formData);
           setFormData({
             name: '',
             email: '',
@@ -85,135 +85,208 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
   ];
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center">Create New Lead</DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="plain-dialog">
+          <DialogHeader>
+            <DialogTitle className="form-title">Create New Lead</DialogTitle>
+          </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Enter full name"
-                required
-              />
+          <form onSubmit={handleSubmit} className="lead-form">
+            <div className="form-row">
+              <div className="form-group">
+                <label>Full Name *</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  placeholder="Enter full name"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Email *</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  placeholder="Enter email"
+                  required
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Enter email"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
-              <input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="+91 9876543210"
-                required
-              />
+            <div className="form-row">
+              <div className="form-group">
+                <label>Phone Number *</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  placeholder="+91 9876543210"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Location</label>
+                <input
+                  type="text"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleInputChange}
+                  placeholder="City/Area"
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-              <input
-                type="text"
-                name="location"
-                value={formData.location}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="City/Area"
-              />
+            <div className="form-row">
+              <div className="form-group">
+                <label>Budget Range</label>
+                <select
+                  name="budget"
+                  value={formData.budget}
+                  onChange={handleInputChange}
+                >
+                  <option value="">Select budget</option>
+                  {budgetOptions.map(option => (
+                    <option value={option} key={option}>{option}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Property Type</label>
+                <select
+                  name="property"
+                  value={formData.property}
+                  onChange={handleInputChange}
+                >
+                  <option value="">Select property</option>
+                  {propertyOptions.map(option => (
+                    <option value={option} key={option}>{option}</option>
+                  ))}
+                </select>
+              </div>
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Budget Range</label>
+            <div className="form-group">
+              <label>Lead Status</label>
               <select
-                name="budget"
-                value={formData.budget}
+                name="status"
+                value={formData.status}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
-                <option value="">Select budget</option>
-                {budgetOptions.map(option => (
-                  <option value={option} key={option}>{option}</option>
-                ))}
+                <option value="Cold">Cold</option>
+                <option value="Warm">Warm</option>
+                <option value="Hot">Hot</option>
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Property Type</label>
-              <select
-                name="property"
-                value={formData.property}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              >
-                <option value="">Select property</option>
-                {propertyOptions.map(option => (
-                  <option value={option} key={option}>{option}</option>
-                ))}
-              </select>
+            <div className="form-actions">
+              <button type="button" onClick={onClose} className="btn btn-outline">
+                <X style={{ width: 16, height: 16, marginRight: 6 }} />
+                Cancel
+              </button>
+              <button type="submit" className="btn btn-primary">
+                <Save style={{ width: 16, height: 16, marginRight: 6 }} />
+                Create Lead
+              </button>
             </div>
-          </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Lead Status</label>
-            <select
-              name="status"
-              value={formData.status}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            >
-              <option value="Cold">Cold</option>
-              <option value="Warm">Warm</option>
-              <option value="Hot">Hot</option>
-            </select>
-          </div>
+      <style>{`
+        .plain-dialog {
+          max-width: 500px;
+          padding: 24px;
+        }
 
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="flex items-center"
-            >
-              <X className="h-4 w-4 mr-2" />
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="bg-green-600 hover:bg-green-700 text-white flex items-center"
-            >
-              <Save className="h-4 w-4 mr-2" />
-              Create Lead
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+        .form-title {
+          font-size: 20px;
+          font-weight: bold;
+          margin-bottom: 10px;
+        }
+
+        .lead-form {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        .form-row {
+          display: flex;
+          gap: 16px;
+          flex-direction: column;
+        }
+
+        @media (min-width: 600px) {
+          .form-row {
+            flex-direction: row;
+          }
+        }
+
+        .form-group {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .form-group label {
+          font-size: 14px;
+          font-weight: 500;
+          margin-bottom: 6px;
+          color: #374151;
+        }
+
+        .form-group input,
+        .form-group select {
+          padding: 10px;
+          font-size: 14px;
+          border: 1px solid #ccc;
+          border-radius: 6px;
+        }
+
+        .form-actions {
+          display: flex;
+          justify-content: flex-end;
+          gap: 10px;
+          padding-top: 12px;
+        }
+
+        .btn {
+          display: flex;
+          align-items: center;
+          padding: 10px 16px;
+          font-size: 14px;
+          border-radius: 6px;
+          font-weight: 500;
+          cursor: pointer;
+          border: none;
+        }
+
+        .btn-outline {
+          background-color: #f3f4f6;
+          color: #111827;
+          border: 1px solid #d1d5db;
+        }
+
+        .btn-outline:hover {
+          background-color: #e5e7eb;
+        }
+
+        .btn-primary {
+          background-color: #16a34a;
+          color: white;
+        }
+
+        .btn-primary:hover {
+          background-color: #15803d;
+        }
+      `}</style>
+    </>
   );
 };
 
