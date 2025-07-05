@@ -1,41 +1,41 @@
-import React, { useState } from 'react';
-import { Eye, EyeOff, AtSign, Hash } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import { Eye, EyeOff, AtSign, Hash } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
-  const [credentials, setCredentials] = useState({ email: '', password: '' });
+  const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
+    setError("");
 
     try {
-      const response = await fetch('http://localhost:5001/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("http://localhost:5001/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
       });
 
       const data = await response.json();
 
       if (response.ok && data.token) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('userRole', data.user.role);
-        localStorage.setItem('userEmail', data.user.email);
-        localStorage.setItem('userName', data.user.name);
-        localStorage.setItem('isLoggedIn', 'true');
-        navigate('/');
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("userRole", data.user.role);
+        localStorage.setItem("userEmail", data.user.email);
+        localStorage.setItem("userName", data.user.name);
+        localStorage.setItem("isLoggedIn", "true");
+        navigate("/");
         window.location.reload();
       } else {
-        setError(data.message || 'Invalid email or password');
+        setError(data.message || "Invalid email or password");
       }
     } catch (err) {
-      setError('Login failed. Please try again.');
+      setError("Login failed. Please try again.");
     }
 
     setIsLoading(false);
@@ -48,7 +48,10 @@ const Login = () => {
         <div className="left">
           <h1 className="crm-title">C.R.M</h1>
           <p className="crm-subtitle">Customer Relationship Management</p>
-          <p className="crm-desc">Manage your business relationships, leads, and activities from one dashboard.</p>
+          <p className="crm-desc">
+            Manage your business relationships, leads, and activities from one
+            dashboard.
+          </p>
         </div>
 
         {/* Right Side (Login Form) */}
@@ -64,7 +67,9 @@ const Login = () => {
                 type="email"
                 placeholder="Email"
                 value={credentials.email}
-                onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
+                onChange={(e) =>
+                  setCredentials({ ...credentials, email: e.target.value })
+                }
                 required
               />
             </div>
@@ -72,24 +77,32 @@ const Login = () => {
             <div className="input-group">
               <Hash className="input-icon" />
               <input
-                type={showPassword ? 'text' : 'password'}
+                type={showPassword ? "text" : "password"}
                 placeholder="Password"
                 value={credentials.password}
-                onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
+                onChange={(e) =>
+                  setCredentials({ ...credentials, password: e.target.value })
+                }
                 required
               />
-              <button type="button" className="eye-btn" onClick={() => setShowPassword(!showPassword)}>
+              <button
+                type="button"
+                className="eye-btn"
+                onClick={() => setShowPassword(!showPassword)}
+              >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
 
             <div className="options">
-              <label><input type="checkbox" /> Remember Me</label>
+              <label>
+                <input type="checkbox" /> Remember Me
+              </label>
               <a href="#">Forgot Password?</a>
             </div>
 
             <button className="login-btn" disabled={isLoading}>
-              {isLoading ? 'Signing In...' : 'LOG IN'}
+              {isLoading ? "Signing In..." : "LOG IN"}
             </button>
           </form>
         </div>
@@ -100,37 +113,37 @@ const Login = () => {
           display: flex;
           min-height: 100vh;
         }
-
-        .left {
-          flex: 1;
-          background-color: #dc2626;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-          color: white;
-          text-align: center;
-          padding: 2rem;
-          clip-path: ellipse(75% 100% at 0% 50%);
-        }
-
-        .right {
-          flex: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 2rem;
-          background: #f0fdf4;
-        }
-
+.left {
+  width: 50%;
+  background-color: #dc2626;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  text-align: center;
+  padding: 2rem;
+  clip-path: ellipse(75% 100% at 0% 50%);
+}
+.right {
+  width: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: #f0fdf4;
+}
         .login-box {
-          width: 100%;
-          max-width: 400px;
-          background: white;
-          padding: 2rem;
-          border-radius: 0.75rem;
-          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-        }
+  width: 100%;
+  max-width: 700px;
+  background: white;
+  padding: 3rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+  height: 50%;
+  max-height: 100%;
+}
+
 
         .login-heading {
           font-size: 1.5rem;
