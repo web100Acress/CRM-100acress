@@ -3,23 +3,42 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 
 const Login = () => {
-  const [credentials, setCredentials] = useState({ username: '', password: '' });
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const navigate = useNavigate();
 
-  const users = {
-    superadmin: { password: 'super123', role: 'super-admin', email: 'superadmin@100acres.com', name: 'Super Administrator' },
-    headadmin: { password: 'head123', role: 'head-admin', email: 'headadmin@100acres.com', name: 'Head Administrator' },
-    teamleader: { password: 'tl123', role: 'team-leader', email: 'teamleader@100acres.com', name: 'Team Leader' },
-    employee: { password: 'emp123', role: 'employee', email: 'employee@100acres.com', name: 'Employee' },
-  };
+  const [credentials, setCredentials] = useState({
+    email: '',
+    password: ''
+  });
+
+  const [credentials, setCredentials] = useState({ username: '', password: '' });
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+
+
+    try {
+      const response = await fetch('http://localhost:5001/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credentials)
+      });
+      const data = await response.json();
+      if (response.ok && data.token) {
+        // Store user session data
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('userRole', data.user.role);
+        localStorage.setItem('userEmail', data.user.email);
+        localStorage.setItem('userName', data.user.name);
+        localStorage.setItem('isLoggedIn', 'true');
+        navigate('/');
+        window.location.reload();
+      } else {
+        setError(data.message || 'Invalid email or password');
+      }
+    } catch (err) {
+      setError('Login failed. Please try again.');
 
     const user = users[credentials.username.toLowerCase()];
     if (user && user.password === credentials.password) {
@@ -31,11 +50,42 @@ const Login = () => {
       window.location.reload();
     } else {
       setError('Invalid username or password');
+
     }
     setIsLoading(false);
   };
 
   return (
+
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <div className="mx-auto w-20 h-20 bg-green-600 rounded-full flex items-center justify-center mb-4">
+            <Building2 className="h-10 w-10 text-white" />
+          </div>
+          <CardTitle className="text-3xl font-bold text-green-800">100acres.com</CardTitle>
+          <p className="text-sm text-gray-600 mt-2">CRM Login Portal</p>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-600">{error}</p>
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder   ="Enter email"
+                value={credentials.email}
+                onChange={(e) => setCredentials(prev => ({ ...prev, email: e.target.value }))}
+                required
+                className="focus:ring-green-500 focus:border-green-500"
+              />
+
     <>
       <div className="login-container">
         {/* LEFT RED SIDE */}
@@ -48,6 +98,7 @@ const Login = () => {
               <img src="https://avatars.githubusercontent.com/u/158815978?v=4" alt="100acres Logo" className="logo" />
               {/* <h2 className="title">100acres.com</h2> */}
               <p className="subtitle">CRM Login Portal</p>
+
             </div>
 
             <form onSubmit={handleSubmit} className="login-form">
@@ -65,6 +116,22 @@ const Login = () => {
                   required
                 />
               </div>
+
+              
+            </div>
+
+            <Button 
+              type="submit" 
+              className="w-full bg-green-600 hover:bg-green-700 transition-colors" 
+              disabled={isLoading}
+            >
+              {isLoading ? 'Signing In...' : 'Sign In'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+
 
               <div className="form-group">
                 <label htmlFor="password" className="form-label">Password</label>
@@ -243,6 +310,7 @@ const Login = () => {
         }
       `}</style>
     </>
+
   );
 };
 
