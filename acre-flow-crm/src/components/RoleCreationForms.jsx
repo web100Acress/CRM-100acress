@@ -9,7 +9,7 @@ const RoleCreationForms = ({ userRole, formType }) => {
     department: '',
     reportingTo: '',
     permissions: [],
-    password: '' // ✅ Added password field
+    password: ''
   });
 
   const formConfigs = {
@@ -77,148 +77,208 @@ const RoleCreationForms = ({ userRole, formType }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center">
-          <UserPlus className="h-6 w-6 text-blue-600 mr-3" />
-          <h2 className="text-xl font-semibold text-gray-900">{config.title}</h2>
+    <div className="role-form-container">
+      <div className="role-form-card">
+        <div className="role-form-header">
+          <UserPlus className="icon" />
+          <h2>{config.title}</h2>
         </div>
+
         {userRole === 'super-admin' && formType === 'create-admin' && (
-          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-800">
-              <strong>Super Admin Action:</strong> You are creating a Head Admin user. Head Admins can manage teams and create Team Leaders.
-            </p>
+          <div className="info-box">
+            <strong>Super Admin Action:</strong> You are creating a Head Admin user.
           </div>
         )}
+
+        <form onSubmit={handleSubmit} className="role-form">
+          <div className="form-grid">
+            <div>
+              <label>Full Name *</label>
+              <input
+                type="text"
+                required
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              />
+            </div>
+            <div>
+              <label>Email Address *</label>
+              <input
+                type="email"
+                required
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              />
+            </div>
+            <div>
+              <label>Phone Number *</label>
+              <input
+                type="tel"
+                required
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              />
+            </div>
+            <div>
+              <label>Password *</label>
+              <input
+                type="password"
+                required
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              />
+            </div>
+            <div>
+              <label>Department *</label>
+              <select
+                required
+                value={formData.department}
+                onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+              >
+                <option value="">Select Department</option>
+                {config.departments.map(dept => (
+                  <option key={dept} value={dept}>{dept}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label>Reporting To</label>
+              <input
+                type="text"
+                value={formData.reportingTo}
+                onChange={(e) => setFormData({ ...formData, reportingTo: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label>Permissions</label>
+            <div className="permissions-grid">
+              {config.permissions.map(permission => (
+                <label key={permission} className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={formData.permissions.includes(permission)}
+                    onChange={() => handlePermissionChange(permission)}
+                  />
+                  {permission.replace(/_/g, ' ')}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="form-actions">
+            <button type="button" className="btn cancel">
+              <X size={16} />
+              Cancel
+            </button>
+            <button type="submit" className="btn submit">
+              <Save size={16} />
+              Create {config.role.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+            </button>
+          </div>
+        </form>
       </div>
 
-      <form onSubmit={handleSubmit} className="p-6 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Full Name *
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter full name"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email Address *
-            </label>
-            <input
-              type="email"
-              required
-              value={formData.email}
-              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter email address"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Phone Number *
-            </label>
-            <input
-              type="tel"
-              required
-              value={formData.phone}
-              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="+91 9876543210"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Password *
-            </label>
-            <input
-              type="password"
-              required
-              value={formData.password}
-              onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter password"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Department *
-            </label>
-            <select
-              required
-              value={formData.department}
-              onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">Select Department</option>
-              {config.departments.map(dept => (
-                <option key={dept} value={dept}>{dept}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Reporting To
-            </label>
-            <input
-              type="text"
-              value={formData.reportingTo}
-              onChange={(e) => setFormData(prev => ({ ...prev, reportingTo: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Manager/Supervisor name"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Permissions
-          </label>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {config.permissions.map(permission => (
-              <label key={permission} className="flex items-center space-x-3">
-                <input
-                  type="checkbox"
-                  checked={formData.permissions.includes(permission)}
-                  onChange={() => handlePermissionChange(permission)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <span className="text-sm text-gray-700 capitalize">
-                  {permission.replace(/_/g, ' ')}
-                </span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
-          <button
-            type="button"
-            className="px-6 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center"
-          >
-            <X className="h-4 w-4 mr-2" />
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
-          >
-            <Save className="h-4 w-4 mr-2" />
-            Create {config.role.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-          </button>
-        </div>
-      </form>
+      <style>{`
+        .role-form-container {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: 40px 20px;
+        }
+        .role-form-card {
+          width: 100%;
+          max-width: 700px;
+          background: #fff;
+          border-radius: 10px;
+          box-shadow: 0 0 10px rgba(0,0,0,0.1);
+          border: 1px solid #ddd;
+          padding: 24px;
+        }
+        .role-form-header {
+          display: flex;
+          align-items: center;
+          margin-bottom: 20px;
+        }
+        .role-form-header h2 {
+          margin: 0;
+          font-size: 22px;
+          font-weight: 600;
+        }
+        .role-form-header .icon {
+          color: #1d4ed8;
+          margin-right: 10px;
+        }
+        .info-box {
+          background: #e0f2fe;
+          color: #0369a1;
+          padding: 12px;
+          border-radius: 6px;
+          margin-bottom: 20px;
+          font-size: 14px;
+        }
+        .role-form {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+        .form-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+          gap: 20px;
+        }
+        label {
+          display: block;
+          font-weight: 500;
+          margin-bottom: 6px;
+          color: #333;
+        }
+        input, select {
+          width: 100%;
+          padding: 10px;
+          border: 1px solid #ccc;
+          border-radius: 6px;
+          font-size: 14px;
+        }
+        .permissions-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+          gap: 10px;
+        }
+        .checkbox-label {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 14px;
+        }
+        .form-actions {
+          display: flex;
+          justify-content: flex-end;
+          gap: 10px;
+          border-top: 1px solid #eee;
+          padding-top: 20px;
+        }
+        .btn {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 10px 18px;
+          border: none;
+          font-weight: 500;
+          border-radius: 6px;
+          font-size: 14px;
+          cursor: pointer;
+        }
+        .btn.cancel {
+          background: #f3f4f6;
+          color: #333;
+        }
+        .btn.submit {
+          background: #2563eb;
+          color: #fff;
+        }
+      `}</style>
     </div>
   );
 };

@@ -45,12 +45,8 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
       let data = {};
       try {
         data = await res.json();
-      } catch (e) {
-        // If response is empty or not JSON, data stays as {}
-      }
-      if (!res.ok) {
-        throw new Error(data.message || "Failed to submit follow-up");
-      }
+      } catch (e) {}
+      if (!res.ok) throw new Error(data.message || "Failed to submit follow-up");
       setLoading(false);
       onClose();
     } catch (err) {
@@ -62,34 +58,27 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
   return ReactDOM.createPortal(
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 w-screen h-screen bg-black bg-opacity-40 z-40"></div>
-      {/* Modal Content Container */}
-      <div className="fixed inset-0 w-screen h-screen flex items-center justify-center z-50">
-        <div
-          className="bg-white rounded-xl shadow-2xl p-6 relative flex flex-col"
-          style={{ width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}
-        >
-          {/* Header */}
-          <button
-            className=" bg-red-50 absolute top-3 right-3 text-gray-500 hover:text-gray-700"
-            onClick={onClose}
-          >
-            <X className="w-6 h-6" />
-          </button>
-          <h2 className="text-2xl font-bold mb-6 text-center text-blue-700">
-            Add Follow-up
-          </h2>
+      <div className="modal-backdrop"></div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-5 flex-grow">
-            {error && <div className="text-red-600 text-sm mb-2">{error}</div>}
-            <div>
-              <label htmlFor="comment" className="block text-sm font-medium text-gray-700 mb-1">Comment</label>
+      {/* Modal Container */}
+      <div className="modal-container">
+        <div className="modal-box">
+          <button className="modal-close" onClick={onClose}>
+            <X className="icon" />
+          </button>
+
+          <h2 className="modal-title">Add Follow-up</h2>
+
+          <form onSubmit={handleSubmit} className="form">
+            {error && <div className="form-error">{error}</div>}
+
+            <div className="form-group">
+              <label htmlFor="comment">Comment</label>
               <textarea
                 id="comment"
                 name="comment"
                 rows="4"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 text-base focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
+                className="form-textarea"
                 value={formData.comment}
                 onChange={handleChange}
                 required
@@ -98,53 +87,53 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
               />
             </div>
 
-            <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-              <div className="flex-1">
-                <label htmlFor="author" className="block text-sm font-medium text-gray-700 mb-1">Author</label>
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="author">Author</label>
                 <input
                   type="text"
                   id="author"
                   name="author"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 text-base focus:ring-blue-500 focus:border-blue-500"
+                  className="form-input"
                   value={formData.author}
                   onChange={handleChange}
                   required
                   placeholder="Your Name"
                 />
               </div>
-              <div className="flex-1">
-                <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+              <div className="form-group">
+                <label htmlFor="role">Role</label>
                 <input
                   type="text"
                   id="role"
                   name="role"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 text-base bg-gray-100 cursor-not-allowed"
+                  className="form-input disabled"
                   value={formData.role}
                   disabled
                 />
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-              <div className="flex-1">
-                <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="date">Date</label>
                 <input
                   type="date"
                   id="date"
                   name="date"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 text-base focus:ring-blue-500 focus:border-blue-500"
+                  className="form-input"
                   value={formData.date}
                   onChange={handleChange}
                   required
                 />
               </div>
-              <div className="flex-1">
-                <label htmlFor="time" className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+              <div className="form-group">
+                <label htmlFor="time">Time</label>
                 <input
                   type="time"
                   id="time"
                   name="time"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 text-base focus:ring-blue-500 focus:border-blue-500"
+                  className="form-input"
                   value={formData.time}
                   onChange={handleChange}
                   required
@@ -152,13 +141,13 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
               </div>
             </div>
 
-            <div>
-              <label htmlFor="place" className="block text-sm font-medium text-gray-700 mb-1">Meeting Place</label>
+            <div className="form-group">
+              <label htmlFor="place">Meeting Place</label>
               <input
                 type="text"
                 id="place"
                 name="place"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 text-base focus:ring-blue-500 focus:border-blue-500"
+                className="form-input"
                 value={formData.place}
                 onChange={handleChange}
                 required
@@ -166,13 +155,13 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
               />
             </div>
 
-            <div>
-              <label htmlFor="relatedTo" className="block text-sm font-medium text-gray-700 mb-1">Related to</label>
+            <div className="form-group">
+              <label htmlFor="relatedTo">Related to</label>
               <input
                 type="text"
                 id="relatedTo"
                 name="relatedTo"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 text-base bg-gray-100 cursor-not-allowed"
+                className="form-input disabled"
                 value={formData.relatedTo}
                 disabled
               />
@@ -180,19 +169,148 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
 
             <button
               type="submit"
-              className="w-full mt-6 bg-blue-600 text-white py-3 rounded-lg flex justify-center items-center hover:bg-blue-700 transition duration-150 ease-in-out font-semibold text-lg disabled:opacity-60"
+              className="submit-btn"
               disabled={loading}
             >
               {loading ? (
-                <span className="animate-spin mr-2"><Send className="h-5 w-5" /></span>
+                <>
+                  <span className="spinner"><Send className="icon" /></span>
+                  Submitting...
+                </>
               ) : (
-                <Send className="h-5 w-5 mr-2" />
+                <>
+                  <Send className="icon" />
+                  Submit Follow-up
+                </>
               )}
-              {loading ? "Submitting..." : "Submit Follow-up"}
             </button>
           </form>
         </div>
       </div>
+
+      {/* CSS Styles */}
+      <style>{`
+        .modal-backdrop {
+          position: fixed;
+          inset: 0;
+          background-color: rgba(0, 0, 0, 0.4);
+          z-index: 40;
+        }
+        .modal-container {
+          position: fixed;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 50;
+        }
+        .modal-box {
+          background: #fff;
+          border-radius: 10px;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+          padding: 24px;
+          width: 100%;
+          max-width: 500px;
+          max-height: 90vh;
+          overflow-y: auto;
+          position: relative;
+        }
+        .modal-close {
+          position: absolute;
+          top: 12px;
+          right: 12px;
+          background-color: #fee2e2;
+          border: none;
+          padding: 4px;
+          border-radius: 4px;
+          cursor: pointer;
+        }
+        .modal-title {
+          font-size: 22px;
+          font-weight: bold;
+          color: #1d4ed8;
+          text-align: center;
+          margin-bottom: 20px;
+        }
+        .form {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+        .form-group {
+          display: flex;
+          flex-direction: column;
+        }
+        .form-group label {
+          font-size: 14px;
+          font-weight: 500;
+          margin-bottom: 6px;
+          color: #374151;
+        }
+        .form-input,
+        .form-textarea {
+          padding: 10px;
+          font-size: 14px;
+          border: 1px solid #ccc;
+          border-radius: 6px;
+        }
+        .form-input.disabled {
+          background-color: #f3f4f6;
+          cursor: not-allowed;
+        }
+        .form-textarea {
+          resize: vertical;
+          min-height: 80px;
+        }
+        .form-error {
+          color: red;
+          font-size: 14px;
+        }
+        .form-row {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+        @media (min-width: 600px) {
+          .form-row {
+            flex-direction: row;
+          }
+        }
+        .submit-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          background-color: #2563eb;
+          color: white;
+          padding: 12px;
+          font-size: 16px;
+          font-weight: 600;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: background 0.3s ease;
+        }
+        .submit-btn:hover {
+          background-color: #1e40af;
+        }
+        .submit-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+        .icon {
+          width: 18px;
+          height: 18px;
+        }
+        .spinner {
+          display: inline-block;
+          animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+          0% { transform: rotate(0); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </>,
     document.body
   );

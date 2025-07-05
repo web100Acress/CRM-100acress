@@ -1,12 +1,9 @@
 import React from 'react';
-import OverviewChart from './OverviewChart';
-import CustomerPieChart from './CustomerPieChart';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { User, Mail, Phone, Shield, UserPlus, Building2, Users, Ticket, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { User, Mail, Phone, Shield, UserPlus, Building2, Users, Ticket } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 
 const SuperAdminProfile = () => {
   const navigate = useNavigate();
@@ -29,67 +26,51 @@ const SuperAdminProfile = () => {
   };
 
   const statsData = [
-    { title: 'Total Users', value: '0', icon: Users, color: 'text-blue-600', cardBg: 'bg-gradient-to-r from-green-400 to-emerald-500' },
-    { title: 'Active Leads', value: '0', icon: Building2, color: 'text-green-600', cardBg: 'bg-green-50' },
-    { title: 'Open Tickets', value: '0', icon: Ticket, color: 'text-orange-600', cardBg: 'bg-orange-50' },
-    { title: 'System Health', value: '0.0%', icon: Shield, color: 'text-emerald-600', cardBg: 'bg-emerald-50' }
+    { title: 'Total Users', value: '0', icon: Users, color: 'text-blue-600', cardBg: 'bg-blue-100' },
+    { title: 'Active Leads', value: '0', icon: Building2, color: 'text-green-600', cardBg: 'bg-green-100' },
+    { title: 'Open Tickets', value: '0', icon: Ticket, color: 'text-orange-600', cardBg: 'bg-orange-100' },
+    { title: 'System Health', value: '0.0%', icon: Shield, color: 'text-emerald-600', cardBg: 'bg-emerald-100' }
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-xl border border-green-200">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-green-700 rounded-xl flex items-center justify-center shadow-lg">
-              <Building2 className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              {/* <h1 className="text-3xl font-bold text-gray-900">100acres.com</h1> */}
-              <p className="text-lg text-gray-600 font-medium">Super Admin Control Panel</p>
-            </div>
+    <>
+      <div className="superadmin-container">
+        <div className="superadmin-header">
+          <div className="superadmin-header-left">
+            <div className="header-icon"><Building2 className="icon-white" /></div>
+            <p className="panel-title">Super Admin Control Panel</p>
           </div>
-
-          {/* Actions */}
-          <div className="flex items-center space-x-3">
+          <div className="superadmin-header-right">
             <Popover>
               <PopoverTrigger asChild>
-                <button className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center hover:bg-green-700">
-                  <User className="h-5 w-5 text-white" />
-                </button>
+                <button className="icon-button green"><User className="icon-white" /></button>
               </PopoverTrigger>
-              <PopoverContent className="w-80">
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
-                      <Shield className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-base">{superAdminData.name}</h3>
-                      <Badge className="bg-green-100 text-green-800 text-xs">{superAdminData.role}</Badge>
-                    </div>
+              <PopoverContent className="popover-card">
+                <div className="profile-info">
+                  <div className="profile-avatar"><Shield className="icon-white" /></div>
+                  <div>
+                    <h3 className="profile-name">{superAdminData.name}</h3>
+                    <Badge className="role-badge">{superAdminData.role}</Badge>
                   </div>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2"><Building2 className="h-3 w-3" />{superAdminData.company}</div>
-                    <div className="flex items-center gap-2"><Mail className="h-3 w-3" />{superAdminData.email}</div>
-                    <div className="flex items-center gap-2"><Phone className="h-3 w-3" />{superAdminData.phone}</div>
-                  </div>
+                </div>
+                <div className="profile-details">
+                  <div className="profile-item"><Building2 className="small-icon" />{superAdminData.company}</div>
+                  <div className="profile-item"><Mail className="small-icon" />{superAdminData.email}</div>
+                  <div className="profile-item"><Phone className="small-icon" />{superAdminData.phone}</div>
                 </div>
               </PopoverContent>
             </Popover>
 
             <Popover>
               <PopoverTrigger asChild>
-                <button className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center hover:bg-blue-700">
-                  <Shield className="h-5 w-5 text-white" />
-                </button>
+                <button className="icon-button blue"><Shield className="icon-white" /></button>
               </PopoverTrigger>
-              <PopoverContent className="w-64">
-                <h4 className="font-semibold text-sm mb-2">System Permissions</h4>
-                <div className="space-y-1">
+              <PopoverContent className="popover-card-small">
+                <h4 className="permissions-title">System Permissions</h4>
+                <div className="permissions-list">
                   {superAdminData.permissions.map((permission, i) => (
-                    <div key={i} className="flex items-center gap-2     text-xs p-2 bg-green-50 rounded">
-                      <Shield className="h-3 w-3 text-green-600" />
+                    <div key={i} className="permission-item">
+                      <Shield className="small-icon green" />
                       <span>{permission}</span>
                     </div>
                   ))}
@@ -98,102 +79,214 @@ const SuperAdminProfile = () => {
             </Popover>
           </div>
         </div>
+
+        <div className="stats-grid">
+          {statsData.map((stat, index) => (
+            <Card key={index} className="stat-card">
+              <CardContent className="stat-card-content">
+                <div className="stat-card-body">
+                  <div className={`stat-icon ${stat.cardBg}`}><stat.icon className={`stat-icon-inner ${stat.color}`} /></div>
+                  <div>
+                    <p className="stat-title">{stat.title}</p>
+                    <p className="stat-value">{stat.value}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
 
-      {/* Stat Cards */}
-      <div className="flex flex-wrap gap-4">
-        {statsData.map((stat, index) => (
-          <Card key={index} className="flex-1 min-w-[200px] max-w-[300px] border shadow-md rounded-xl">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <div className={`rounded-full p-3 ${stat.cardBg} flex items-center justify-center`}>
-                  <stat.icon className={`w-5 h-5 ${stat.color}`} />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500 font-medium">{stat.title}</p>
-                  <p className="text-xl font-bold text-gray-800">{stat.value}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <style>{`
+        .superadmin-container {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+        }
 
-      {/* Charts Section */}
-      {/* <div className="flex gap-4 mt-6 w-full">
-        <div className="flex-[2] bg-white rounded-xl shadow-md p-5">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h3 className="text-lg font-bold">Overview</h3>
-              <p className="text-sm text-gray-400">Monthly Earning</p>
-            </div>
-            <select className="bg-gray-100 px-3 py-1 rounded text-sm">
-              <option>Quarterly</option>
-              <option>Monthly</option>
-            </select>
-          </div>
-          <OverviewChart />
-        </div> */}
+        .superadmin-header {
+          background: linear-gradient(to right, #f0fdf4, #eff6ff);
+          padding: 1.5rem;
+          border-radius: 1rem;
+          border: 1px solid #bbf7d0;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
 
-        {/* <div className="flex-[1] bg-white rounded-xl shadow-md p-5 flex flex-col items-center justify-center">
-          <h3 className="text-lg font-bold">Customers</h3>
-          <p className="text-sm text-gray-400 mb-4">Customers that buy products</p>
-          <CustomerPieChart />
-          <p className="text-center mt-2 text-sm text-gray-600">
-            <span className="font-bold text-lg text-black">65%</span> Total New Customers
-          </p>
-        </div>
-      </div> */}
+        .superadmin-header-left {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+        }
 
-      {/* Product Table */}
-      {/* <div className="bg-white rounded-xl shadow-md p-6 mt-6 w-full">
-        <div className="flex justify-between mb-4">
-          <h2 className="text-lg font-bold">Product Sell</h2>
-          <div className="flex gap-4">
-            <input type="text" placeholder="Search" className="px-3 py-2 bg-gray-100 border rounded-md text-sm" />
-            <button className="px-4 py-2 bg-gray-100 border rounded-md text-sm">Last 30 Days</button>
-          </div>
-        </div>
-        <div className="grid grid-cols-4 text-sm text-gray-400 border-b pb-2 mb-2">
-          <div className="col-span-2">Product Name</div>
-          <div>Stock</div>
-          <div className="flex justify-between"><span>Price</span><span>Total Sales</span></div>
-        </div>
-        {[
-          {
-            name: "Abstract 3D",
-            desc: "Lorem ipsum dolor sit amet.",
-            image: "/images/product1.png",
-            stock: "32 in stock",
-            price: "$45.99",
-            sales: 20
-          },
-          {
-            name: "Sarphens Illustration",
-            desc: "Lorem ipsum dolor sit amet.",
-            image: "/images/product2.png",
-            stock: "32 in stock",
-            price: "$45.99",
-            sales: 20
-          }
-        ].map((item, i) => (
-          <div key={i} className="grid grid-cols-4 items-center py-3 border-b">
-            <div className="col-span-2 flex items-center gap-4">
-              <img src={item.image} alt="" className="w-12 h-12 rounded-md object-cover" />
-              <div>
-                <p className="font-semibold">{item.name}</p>
-                <p className="text-sm text-gray-400">{item.desc}</p>
-              </div>
-            </div>
-            <div className="text-sm">{item.stock}</div>
-            <div className="flex justify-between text-sm">
-              <span>{item.price}</span>
-              <span className="text-gray-400">{item.sales}</span>
-            </div>
-          </div>
-        ))}
-      </div> */}
-    </div>
+        .header-icon {
+          width: 48px;
+          height: 48px;
+          background: linear-gradient(to bottom right, #16a34a, #15803d);
+          border-radius: 0.75rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .icon-white { color: white; width: 24px; height: 24px; }
+
+        .panel-title {
+          font-size: 1.125rem;
+          color: #4b5563;
+          font-weight: 500;
+        }
+
+        .superadmin-header-right {
+          display: flex;
+          gap: 0.75rem;
+        }
+
+        .icon-button {
+          width: 40px;
+          height: 40px;
+          border-radius: 9999px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .icon-button.green { background-color: #16a34a; }
+        .icon-button.green:hover { background-color: #15803d; }
+        .icon-button.blue { background-color: #2563eb; }
+        .icon-button.blue:hover { background-color: #1d4ed8; }
+
+        .popover-card, .popover-card-small {
+          padding: 1rem;
+          background: white;
+          border-radius: 0.75rem;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .profile-info {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          margin-bottom: 0.75rem;
+        }
+
+        .profile-avatar {
+          width: 40px;
+          height: 40px;
+          background-color: #16a34a;
+          border-radius: 9999px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .profile-name {
+          font-weight: 600;
+        }
+
+        .role-badge {
+          background-color: #bbf7d0;
+          color: #166534;
+          font-size: 0.75rem;
+        }
+
+        .profile-details {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+          font-size: 0.875rem;
+        }
+
+        .profile-item {
+          display: flex;
+          gap: 0.5rem;
+          align-items: center;
+        }
+
+        .small-icon {
+          width: 12px;
+          height: 12px;
+        }
+
+        .permissions-title {
+          font-weight: 600;
+          font-size: 0.875rem;
+          margin-bottom: 0.5rem;
+        }
+
+        .permissions-list {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        .permission-item {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          background-color: #f0fdf4;
+          padding: 0.5rem;
+          font-size: 0.75rem;
+          border-radius: 0.5rem;
+        }
+
+        .permission-item .green {
+          color: #16a34a;
+        }
+
+        .stats-grid {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 1rem;
+        }
+
+        .stat-card {
+          flex: 1;
+          min-width: 200px;
+          max-width: 300px;
+          border: 1px solid #e5e7eb;
+          border-radius: 1rem;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
+        .stat-card-content {
+          padding: 1rem;
+        }
+
+        .stat-card-body {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+        }
+
+        .stat-icon {
+          padding: 0.75rem;
+          border-radius: 9999px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .stat-icon-inner {
+          width: 20px;
+          height: 20px;
+        }
+
+        .stat-title {
+          font-size: 0.875rem;
+          color: #6b7280;
+          font-weight: 500;
+        }
+
+        .stat-value {
+          font-size: 1.25rem;
+          font-weight: 700;
+          color: #1f2937;
+        }
+      `}</style>
+    </>
   );
 };
 
