@@ -34,6 +34,7 @@ const Login = () => {
         localStorage.setItem('userRole', data.user.role);
         localStorage.setItem('userEmail', data.user.email);
         localStorage.setItem('userName', data.user.name);
+        localStorage.setItem('userId', data.user.id);
         localStorage.setItem('isLoggedIn', 'true');
         navigate('/');
         window.location.reload();
@@ -69,7 +70,7 @@ const Login = () => {
               <Input
                 id="email"
                 type="email"
-                placeholder   ="Enter email"
+                placeholder="Enter email"
                 value={credentials.email}
                 onChange={(e) => setCredentials(prev => ({ ...prev, email: e.target.value }))}
                 required
@@ -97,7 +98,6 @@ const Login = () => {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-              
             </div>
 
             <Button 

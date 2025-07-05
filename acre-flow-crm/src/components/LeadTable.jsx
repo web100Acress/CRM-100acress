@@ -32,7 +32,13 @@ const LeadTable = ({ userRole, leads = [] }) => {
   useEffect(() => {
     const fetchLeads = async () => {
       try {
-        const response = await fetch("http://localhost:5001/api/leads");
+        const token = localStorage.getItem('token');
+        const response = await fetch("http://localhost:5001/api/leads", {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
         if (!response.ok) throw new Error("Failed to fetch leads");
         const json = await response.json();
         setLeadsList(json.data || []);
@@ -46,7 +52,13 @@ const LeadTable = ({ userRole, leads = [] }) => {
 
     const fetchUsers = async () => {
       try {
-        const response = await fetch("http://localhost:5001/api/users", { credentials: "include" });
+        const token = localStorage.getItem('token');
+        const response = await fetch("http://localhost:5001/api/users", {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
         if (!response.ok) throw new Error("Failed to fetch users");
         const json = await response.json();
         setUsers(json.data || []);
@@ -98,11 +110,12 @@ const LeadTable = ({ userRole, leads = [] }) => {
       )
     ) {
       try {
+        const token = localStorage.getItem('token');
         const response = await fetch(`http://localhost:5001/api/leads/${leadId}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
-            // 'Authorization': `Bearer ${localStorage.getItem('token')}` // if using auth
+            'Authorization': `Bearer ${token}`
           }
         });
         const data = await response.json();
@@ -128,9 +141,13 @@ const LeadTable = ({ userRole, leads = [] }) => {
     };
 
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch("http://localhost:5001/api/leads", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(newLead),
       });
 
@@ -151,8 +168,12 @@ const LeadTable = ({ userRole, leads = [] }) => {
     setFollowUpLoading(true);
     setFollowUpError("");
     try {
+      const token = localStorage.getItem('token');
       const res = await fetch(`http://localhost:5001/api/leads/${lead._id}/followups`, {
-        credentials: "include"
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
       if (!res.ok) throw new Error("Failed to fetch follow-ups");
       const data = await res.json();
@@ -167,17 +188,35 @@ const LeadTable = ({ userRole, leads = [] }) => {
 
   const handleAssignLead = async (leadId, userId) => {
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch(`http://localhost:5001/api/leads/${leadId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ assignedTo: userId }),
-        credentials: "include"
+        headers: { 
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ assignedTo: userId })
       });
       if (!response.ok) throw new Error("Failed to assign lead");
       setLeadsList((prev) => prev.map(lead => lead._id === leadId ? { ...lead, assignedTo: userId } : lead));
     } catch (error) {
       alert("Failed to assign lead: " + error.message);
     }
+  };
+
+  // Helper function to get assignable users based on current user role and lead
+  const getAssignableUsers = (lead) => {
+    const currentUserId = localStorage.getItem('userId');
+    const currentUserRole = localStorage.getItem('userRole');
+    let assignable = [];
+    if (currentUserRole === 'super-admin') {
+      assignable = users.filter(u => u.role === 'head-admin');
+    } else if (currentUserRole === 'head-admin') {
+      assignable = users.filter(u => u.role === 'team-leader' || u._id === currentUserId);
+    } else if (currentUserRole === 'team-leader') {
+      assignable = users.filter(u => u.role === 'employee' || u._id === currentUserId);
+    }
+    return assignable;
   };
 
   return (
@@ -298,12 +337,15 @@ const LeadTable = ({ userRole, leads = [] }) => {
                         className="border rounded px-2 py-1"
                         value={lead.assignedTo || ""}
                         onChange={e => handleAssignLead(lead._id, e.target.value)}
-                        disabled={!!lead.assignedTo}
+                        disabled={!(
+                          !lead.assignedTo || lead.assignedTo === localStorage.getItem('userId')
+                        )}
                       >
                         <option value="">Unassigned</option>
-                        <option value="self">Self</option>
-                        {users.map(user => (
-                          <option key={user._id} value={user.name}>{user.name} ({user.role})</option>
+                        {getAssignableUsers(lead).map(user => (
+                          <option key={user._id} value={user._id}>
+                            {user.name} ({user.role})
+                          </option>
                         ))}
                       </select>
                     </div>

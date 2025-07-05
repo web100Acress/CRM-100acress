@@ -27,10 +27,12 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
 
     if (formData.name && formData.email && formData.phone) {
       try {
+        const token = localStorage.getItem('token');
         const response = await fetch('http://localhost:5001/api/leads', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify(formData)
         });
