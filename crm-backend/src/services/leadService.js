@@ -1,6 +1,27 @@
 const Lead = require('../models/leadModel');
+const User = require('../models/userModel');
 
-const createLead = async (leadData) => {
+const createLead = async (leadData, creator) => {
+  // Build assignmentChain: creator + assignee (if any)
+  const assignmentChain = [];
+  if (creator) {
+    assignmentChain.push({
+      userId: creator._id.toString(),
+      role: creator.role,
+      name: creator.name
+    });
+  }
+  if (leadData.assignedTo) {
+    const assignee = await User.findById(leadData.assignedTo);
+    if (assignee) {
+      assignmentChain.push({
+        userId: assignee._id.toString(),
+        role: assignee.role,
+        name: assignee.name
+      });
+    }
+  }
+  leadData.assignmentChain = assignmentChain;
   return await Lead.create(leadData);
 };
 
@@ -8,12 +29,40 @@ const getLeads = async () => {
   return await Lead.find();
 };
 
+const getLeadsForUser = async (user) => {
+  if (user.role === 'super-admin') {
+    return await Lead.find();
+  }
+  return await Lead.find({ 'assignmentChain.userId': user._id.toString() });
+};
+
 const getLeadById = async (id) => {
   return await Lead.findById(id);
 };
 
 const updateLead = async (id, updateData) => {
-  return await Lead.findByIdAndUpdate(id, updateData, { new: true });
+  const lead = await Lead.findById(id);
+  if (!lead) return null;
+  // If assignedTo is changing, add new assignee to assignmentChain if not already present
+  if (updateData.assignedTo) {
+    const alreadyInChain = lead.assignmentChain.some(
+      entry => entry.userId === updateData.assignedTo
+    );
+    if (!alreadyInChain) {
+      const assignee = await User.findById(updateData.assignedTo);
+      if (assignee) {
+        lead.assignmentChain.push({
+          userId: assignee._id.toString(),
+          role: assignee.role,
+          name: assignee.name
+        });
+      }
+    }
+  }
+  // Update other fields
+  Object.assign(lead, updateData);
+  await lead.save();
+  return lead;
 };
 
 const deleteLead = async (id) => {
@@ -37,6 +86,7 @@ const getFollowUps = async (id) => {
 module.exports = {
   createLead,
   getLeads,
+  getLeadsForUser,
   getLeadById,
   updateLead,
   deleteLead,

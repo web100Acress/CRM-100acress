@@ -25,6 +25,12 @@ const followUpSchema = new mongoose.Schema({
   }
 }, { _id: false });
 
+const assignmentChainSchema = new mongoose.Schema({
+  userId: { type: String, required: true },
+  role: { type: String, required: true },
+  name: { type: String, required: true }
+}, { _id: false });
+
 const leadSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true },
@@ -41,7 +47,7 @@ const leadSchema = new mongoose.Schema({
   assignedBy: String,
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   createdAt: { type: Date, default: Date.now },
-
+  assignmentChain: [assignmentChainSchema],
   followUps: [followUpSchema]
 });
 
