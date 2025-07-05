@@ -1,6 +1,11 @@
 const User = require('../models/userModel');
+const bcrypt = require('bcryptjs');
 
 const createUser = async (userData) => {
+  if (userData.password) {
+    const saltRounds = 10;
+    userData.password = await bcrypt.hash(userData.password, saltRounds);
+  }
   return await User.create(userData);
 };
 

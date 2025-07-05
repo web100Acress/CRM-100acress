@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,7 @@ import { Building2, Eye, EyeOff } from 'lucide-react';
 
 const Login = () => {
   const [credentials, setCredentials] = useState({
-    username: '',
+    email: '',
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -17,41 +16,33 @@ const Login = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  // User credentials for different roles
-  const users = {
-    'superadmin': { password: 'super123', role: 'super-admin', email: 'superadmin@100acres.com', name: 'Super Administrator' },
-    'headadmin': { password: 'head123', role: 'head-admin', email: 'headadmin@100acres.com', name: 'Head Administrator' },
-    'teamleader': { password: 'tl123', role: 'team-leader', email: 'teamleader@100acres.com', name: 'Team Leader' },
-    'employee': { password: 'emp123', role: 'employee', email: 'employee@100acres.com', name: 'Employee' }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
     try {
-      const user = users[credentials.username.toLowerCase()];
-      
-      if (user && user.password === credentials.password) {
+      const response = await fetch('http://localhost:5001/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credentials)
+      });
+      const data = await response.json();
+      if (response.ok && data.token) {
         // Store user session data
-        localStorage.setItem('userRole', user.role);
-        localStorage.setItem('userEmail', user.email);
-        localStorage.setItem('userName', user.name);
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('userRole', data.user.role);
+        localStorage.setItem('userEmail', data.user.email);
+        localStorage.setItem('userName', data.user.name);
         localStorage.setItem('isLoggedIn', 'true');
-        
-        // Redirect to dashboard
         navigate('/');
-        
-        // Reload to update the app state
         window.location.reload();
       } else {
-        setError('Invalid username or password');
+        setError(data.message || 'Invalid email or password');
       }
     } catch (err) {
       setError('Login failed. Please try again.');
     }
-    
     setIsLoading(false);
   };
 
@@ -74,13 +65,13 @@ const Login = () => {
             )}
             
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
-                id="username"
-                type="text"
-                placeholder="Enter username"
-                value={credentials.username}
-                onChange={(e) => setCredentials(prev => ({ ...prev, username: e.target.value }))}
+                id="email"
+                type="email"
+                placeholder   ="Enter email"
+                value={credentials.email}
+                onChange={(e) => setCredentials(prev => ({ ...prev, email: e.target.value }))}
                 required
                 className="focus:ring-green-500 focus:border-green-500"
               />
@@ -106,6 +97,7 @@ const Login = () => {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+              
             </div>
 
             <Button 
@@ -116,16 +108,6 @@ const Login = () => {
               {isLoading ? 'Signing In...' : 'Sign In'}
             </Button>
           </form>
-
-          <div className="mt-6 p-4 bg-green-50 rounded-lg">
-            <p className="text-sm text-green-800 font-medium mb-2">Test Credentials:</p>
-            <div className="text-xs text-green-700 space-y-1">
-              <p><strong>Super Admin:</strong> superadmin / super123</p>
-              <p><strong>Head Admin:</strong> headadmin / head123</p>
-              <p><strong>Team Leader:</strong> teamleader / tl123</p>
-              <p><strong>Employee:</strong> employee / emp123</p>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>

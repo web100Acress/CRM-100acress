@@ -9,13 +9,21 @@ router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
+    console.log('Login attempt:', { email, password });
     // Find user by email
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: 'User not found' });
-
+    if (!user) {
+      console.log('User not found for email:', email);
+      return res.status(404).json({ message: 'User not found' });
+    }
+    console.log('User found:', user.email, user.role);
     // Compare passwords
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
+    console.log('Password match:', isMatch);
+    if (!isMatch) {
+      console.log('Invalid password for user:', email);
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
 
     // Generate JWT token
     const token = jwt.sign(
@@ -24,6 +32,7 @@ router.post('/login', async (req, res) => {
       { expiresIn: '1d' }
     );
 
+    console.log('Login successful for:', email);
     res.status(200).json({ 
       token,
       user: {
@@ -34,6 +43,7 @@ router.post('/login', async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Login error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

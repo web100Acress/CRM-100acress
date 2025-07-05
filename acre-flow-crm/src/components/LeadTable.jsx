@@ -91,14 +91,30 @@ const LeadTable = ({ userRole, leads = [] }) => {
     setShowCreateLead(true);
   };
 
-  const handleDeleteLead = (leadId) => {
+  const handleDeleteLead = async (leadId) => {
     if (
       window.confirm(
         "Are you sure you want to delete this lead? This action cannot be undone."
       )
     ) {
-      setLeadsList((prev) => prev.filter((lead) => lead.id !== leadId));
-      console.log("Lead deleted:", leadId);
+      try {
+        const response = await fetch(`http://localhost:5001/api/leads/${leadId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            // 'Authorization': `Bearer ${localStorage.getItem('token')}` // if using auth
+          }
+        });
+        const data = await response.json();
+        if (response.ok) {
+          setLeadsList((prev) => prev.filter((lead) => lead._id !== leadId));
+          alert('Lead deleted successfully!');
+        } else {
+          alert('Failed to delete lead: ' + (data.message || 'Unknown error'));
+        }
+      } catch (err) {
+        alert('Error deleting lead: ' + err.message);
+      }
     }
   };
 
@@ -285,6 +301,7 @@ const LeadTable = ({ userRole, leads = [] }) => {
                         disabled={!!lead.assignedTo}
                       >
                         <option value="">Unassigned</option>
+                        <option value="self">Self</option>
                         {users.map(user => (
                           <option key={user._id} value={user.name}>{user.name} ({user.role})</option>
                         ))}
@@ -321,7 +338,7 @@ const LeadTable = ({ userRole, leads = [] }) => {
 
                     {userRole === "super-admin" && (
                       <button
-                        onClick={() => handleDeleteLead(lead.id)}
+                        onClick={() => handleDeleteLead(lead._id)}
                         className="text-red-600 hover:text-red-900 p-1 hover:bg-red-50 rounded"
                         title="Delete Lead"
                       >

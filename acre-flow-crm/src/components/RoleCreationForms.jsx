@@ -38,9 +38,13 @@ const RoleCreationForms = ({ userRole, formType }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:5001/api/users', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ ...formData, role: config.role }),
       });
       const data = await response.json();
@@ -79,6 +83,13 @@ const RoleCreationForms = ({ userRole, formType }) => {
           <UserPlus className="h-6 w-6 text-blue-600 mr-3" />
           <h2 className="text-xl font-semibold text-gray-900">{config.title}</h2>
         </div>
+        {userRole === 'super-admin' && formType === 'create-admin' && (
+          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-800">
+              <strong>Super Admin Action:</strong> You are creating a Head Admin user. Head Admins can manage teams and create Team Leaders.
+            </p>
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="p-6 space-y-6">
