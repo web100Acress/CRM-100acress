@@ -358,7 +358,7 @@ const LeadTable = ({ userRole }) => {
                     <span>Unassigned</span>
                   )}
                   {/* Assignment dropdown/buttons logic remains unchanged below */}
-                  {(!lead.assignedTo && canReassignLead(lead)) || String(lead.assignedTo) === String(currentUserId) ? (
+                  {((!lead.assignedTo && canReassignLead(lead)) || String(lead.assignedTo) === String(currentUserId)) && (
                     <>
                       <select
                         value={lead.assignedTo || ""}
@@ -374,146 +374,22 @@ const LeadTable = ({ userRole }) => {
                       </select>
                       {/* Forward button */}
                       {canForwardLead(lead) && (
-
-      {/* --- Table Container --- */}
-      <div className="table-container shadow-md rounded-lg overflow-hidden border border-gray-200">
-        <table className="lead-table min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">Lead Info</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">Contact</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">Property</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">Status</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">Assignment</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {loading ? (
-              <tr>
-                <td colSpan="6" className="text-center py-4 text-gray-500">Loading leads...</td>
-              </tr>
-            ) : filteredLeads.length === 0 ? (
-              <tr>
-                <td colSpan="6" className="text-center py-4 text-gray-500">No leads found.</td>
-              </tr>
-            ) : (
-              filteredLeads
-                .slice((currentPage - 1) * leadsPerPage, currentPage * leadsPerPage)
-                .map((lead) => (
-                  <tr key={lead._id} className="hover:bg-gray-50 transition-colors duration-150">
-                    <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200" data-label="Lead Info">
-                      <div className="text-sm font-medium text-gray-900">{lead.name}</div>
-                      <div className="text-xs text-gray-500">ID: #{lead.id}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200" data-label="Contact">
-                      <div className="flex items-center text-sm text-gray-700 mb-1">
-                        <Phone size={14} className="mr-2 text-gray-500" /> {lead.phone}
-                      </div>
-                      <div className="flex items-center text-sm text-gray-700 mb-1">
-                        <Mail size={14} className="mr-2 text-gray-500" /> {lead.email}
-                      </div>
-                      <div className="flex items-center text-sm text-gray-700">
-                        <MapPin size={14} className="mr-2 text-gray-500" /> {lead.location}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200" data-label="Property">
-                      <div className="text-sm text-gray-700">{lead.property}</div>
-                      <div className="text-xs text-gray-500">{lead.budget}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200" data-label="Status">
-                      <span className={`status-badge ${getStatusClass(lead.status)}`}>
-                        {lead.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 border-r border-gray-200" data-label="Assign">
-                      <div className="assignment-controls">
-                        {lead.assignmentChain && lead.assignmentChain.length > 0 && (
-                          <div className="assignment-chain mb-2">
-                            <small className="font-semibold text-gray-600">
-                              Chain:{" "}
-                              {lead.assignmentChain.map((entry, index) => (
-                                <span key={index} className={`chain-item ${entry.status}`}>
-                                  {entry.name} ({entry.role})
-                                  {index < lead.assignmentChain.length - 1 && " → "}
-                                </span>
-                              ))}
-                            </small>
-                          </div>
-                        )}
-
-                        {((!lead.assignedTo && canReassignLead(lead)) ||
-                          String(lead.assignedTo) === String(currentUserId)) && (
-                            <>
-                              <select
-                                value={lead.assignedTo || ""}
-                                onChange={(e) => handleAssignLead(lead._id, e.target.value)}
-                                disabled={
-                                  String(lead.assignedTo) !== String(currentUserId) &&
-                                  !canReassignLead(lead)
-                                }
-                                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm mb-2"
-                              >
-                                <option value="">Unassigned</option>
-                                {assignableUsers.map((u) => (
-                                  <option key={u._id} value={u._id}>
-                                    {u.name} ({u.role})
-                                  </option>
-                                ))}
-                              </select>
-
-                              {canForwardLead(lead) && (
-                                <button
-                                  className="forward-btn"
-                                  onClick={() => handleForwardLead(lead._id)}
-                                  disabled={forwardingLead === lead._id}
-                                  title="Forward to next level"
-                                >
-                                  <ArrowRight size={14} />
-                                  {forwardingLead === lead._id
-                                    ? "Forwarding..."
-                                    : "Forward"}
-                                </button>
-                              )}
-                            </>
-                          )}
-
-                        {canAssignToSelf(lead) && (
-                          <button
-                            className="self-assign-btn mt-2"
-                            onClick={() => handleAssignLead(lead._id, currentUserId)}
-                            title="Assign to myself"
-                          >
-                            <UserCheck size={14} />
-                            Self Assign
-                          </button>
-                        )}
-
-                        {!lead.assignmentChain?.length &&
-                          !((!lead.assignedTo && canReassignLead(lead)) ||
-                            String(lead.assignedTo) === String(currentUserId)) && (
-                            <span className="text-sm text-gray-500">Unassigned</span>
-                          )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" data-label="Actions">
-                      <div className="flex items-center justify-end space-x-2">
-
                         <button
-                          onClick={() => handleViewFollowUps(lead)}
-                          className="text-blue-600 hover:text-blue-900 transition-colors duration-150 p-2 rounded-full hover:bg-blue-100"
-                          title="View Follow-ups"
+                          className="forward-btn"
+                          onClick={() => handleForwardLead(lead._id)}
+                          disabled={forwardingLead === lead._id}
+                          title="Forward to next level"
                         >
-                          <Eye size={18} />
+                          <ArrowRight size={14} />
+                          {forwardingLead === lead._id ? "Forwarding..." : "Forward"}
                         </button>
-
                       )}
                     </>
-                  ) : null}
-                  {/* Self-assign button only for unassigned leads if eligible */}
+                  )}
+
                   {canAssignToSelf(lead) && (
                     <button
-                      className="self-assign-btn"
+                      className="self-assign-btn mt-2"
                       onClick={() => handleAssignLead(lead._id, currentUserId)}
                       title="Assign to myself"
                     >
@@ -521,6 +397,12 @@ const LeadTable = ({ userRole }) => {
                       Self Assign
                     </button>
                   )}
+
+                  {!lead.assignmentChain?.length &&
+                    !((!lead.assignedTo && canReassignLead(lead)) ||
+                      String(lead.assignedTo) === String(currentUserId)) && (
+                      <span className="text-sm text-gray-500">Unassigned</span>
+                    )}
                 </div>
               </td>
               <td>
@@ -544,32 +426,6 @@ const LeadTable = ({ userRole }) => {
           ))}
         </tbody>
       </table>
-
-                        <button
-                          onClick={() => handleFollowUp(lead)}
-                          className="text-green-600 hover:text-green-900 transition-colors duration-150 p-2 rounded-full hover:bg-green-100"
-                          title="Add Follow-up"
-                        >
-                          <MessageSquare size={18} />
-                        </button>
-                        {userRole === "super-admin" && (
-                          <button
-                            onClick={() => handleDeleteLead(lead._id)}
-                            className="text-red-600 hover:text-red-900 transition-colors duration-150 p-2 rounded-full hover:bg-red-100"
-                            title="Delete Lead"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
 
       {/* --- Pagination Controls --- */}
       <div className="pagination-controls mt-6 flex justify-center items-center space-x-4">
