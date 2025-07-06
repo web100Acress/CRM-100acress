@@ -28,7 +28,15 @@ const followUpSchema = new mongoose.Schema({
 const assignmentChainSchema = new mongoose.Schema({
   userId: { type: String, required: true },
   role: { type: String, required: true },
-  name: { type: String, required: true }
+  name: { type: String, required: true },
+  assignedAt: { type: Date, default: Date.now },
+  status: { 
+    type: String, 
+    enum: ['assigned', 'forwarded', 'completed', 'rejected'],
+    default: 'assigned'
+  },
+  completedAt: { type: Date },
+  notes: { type: String }
 }, { _id: false });
 
 const leadSchema = new mongoose.Schema({
