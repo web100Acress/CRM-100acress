@@ -5,6 +5,8 @@ import Sidebar from './Sidebar';
 const DashboardLayout = ({ children, userRole = 'employee' }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  const userName = typeof window !== 'undefined' ? localStorage.getItem('userName') : '';
+
   const getRoleTitle = (role) => {
     switch (role) {
       case 'super-admin': return 'Super Admin';
@@ -34,7 +36,9 @@ const DashboardLayout = ({ children, userRole = 'employee' }) => {
               >
                 <Menu className="menu-icon" />
               </button>
-              <h1 className="user-greeting">Hello {getRoleTitle(userRole)}</h1>
+              <h1 className="user-greeting">
+                Hello {userName ? `${userName} (${getRoleTitle(userRole)})` : getRoleTitle(userRole)}
+              </h1>
             </div>
 
             <div className="header-right">

@@ -1,12 +1,61 @@
-# Welcome to your Lovable project
+# 100acres.com CRM Frontend
 
-## Project info
+A modern CRM dashboard built with React, Vite, TypeScript, shadcn-ui, and Tailwind CSS.
 
-**URL**: https://lovable.dev/projects/32bbaf20-d098-4de6-aa40-52f5bedd91ed
+## Features
+
+- **Role-based Sidebar Navigation**: Sidebar menu adapts to user role (Super Admin, Head Admin, Team Leader, Employee) and highlights the active page with a clear, high-contrast style.
+- **Dynamic Greeting**: The dashboard header greets the logged-in user by name and role (e.g., "Hello Rajesh (Super Admin)").
+- **User Management**: Manage users with real backend data, including search, filter, and status toggling.
+- **Leads & Tickets**: Hierarchical lead assignment and ticket management workflows.
+- **Responsive UI**: Clean, modern, and mobile-friendly design.
+- **Accessibility**: Improved sidebar link visibility and keyboard navigation.
+
+## Getting Started
+
+### Prerequisites
+- Node.js & npm (recommended: use [nvm](https://github.com/nvm-sh/nvm#installing-and-updating))
+
+### Installation
+```sh
+# Clone the repository
+git clone <YOUR_GIT_URL>
+cd <YOUR_PROJECT_NAME>
+
+# Install dependencies
+npm install
+
+# Start the development server
+npm run dev
+```
+
+### Project Structure
+- `src/components/Sidebar.jsx`: Sidebar navigation, role-based links, and user info.
+- `src/components/DashboardLayout.jsx`: Main layout, header greeting, and sidebar integration.
+- `src/pages/`: Main app pages (Dashboard, Leads, Users, etc).
+
+## Technologies Used
+- React + Vite
+- TypeScript
+- shadcn-ui
+- Tailwind CSS
+- lucide-react (icons)
+
+## Recent UI/UX Improvements
+- Sidebar active link is now highly visible with a light background, bold left border, and dark text.
+- Greeting in the header is personalized with the user's name and role.
+- Sidebar navigation is fully role-based and responsive.
+
+## Deployment
+You can deploy using your preferred method or via [Lovable](https://lovable.dev/projects/32bbaf20-d098-4de6-aa40-52f5bedd91ed) (see original instructions below).
+
+---
+
+# Original Lovable Instructions
+
+(You may still use Lovable for cloud editing and deployment. See below for details.)
 
 ## How can I edit this code?
-
-There are several ways of editing your application.
 
 **Use Lovable**
 
@@ -49,20 +98,6 @@ npm run dev
 - Select the "Codespaces" tab.
 - Click on "New codespace" to launch a new Codespace environment.
 - Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/32bbaf20-d098-4de6-aa40-52f5bedd91ed) and click on Share -> Publish.
 
 ## Can I connect a custom domain to my Lovable project?
 
