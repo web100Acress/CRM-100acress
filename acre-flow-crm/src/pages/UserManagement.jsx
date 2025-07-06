@@ -5,7 +5,7 @@ import DeleteUserModal from '../components/DeleteUserModal'; // Assuming this pa
 import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '../components/DashboardLayout';
 
-const USERS_PER_PAGE = 10;
+const USERS_PER_PAGE_CONSTANT = 4; // Changed variable name to avoid conflict, keeping your desired 4
 
 const UserManagementContent = () => {
   const [users, setUsers] = useState([]);
@@ -18,6 +18,7 @@ const UserManagementContent = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  // Removed the duplicate USERS_PER_PAGE = 10; here
 
   const { toast } = useToast();
 
@@ -68,36 +69,36 @@ const UserManagementContent = () => {
   const getStatusBadgeColor = (status) =>
     status === 'active' ? 'badge badge-success' : 'badge badge-danger';
 
-  const filteredAndPaginatedUsers = useMemo(() => {
-    const filtered = users.filter(user => {
+  // Moved these useMemo hooks out of the Pagination component
+  const filteredUsers = useMemo(() => {
+    return users.filter(user => {
       const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesRole = roleFilter === 'all' || user.role === roleFilter;
       const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
       return matchesSearch && matchesRole && matchesStatus;
     });
-
-    if (currentPage > Math.ceil(filtered.length / USERS_PER_PAGE) && filtered.length > 0) {
-      setCurrentPage(1);
-    } else if (filtered.length === 0) {
-      setCurrentPage(1);
-    }
-
-    const startIndex = (currentPage - 1) * USERS_PER_PAGE;
-    const endIndex = startIndex + USERS_PER_PAGE;
-    return filtered.slice(startIndex, endIndex);
-  }, [users, searchTerm, roleFilter, statusFilter, currentPage]);
+  }, [users, searchTerm, roleFilter, statusFilter]);
 
   const totalPages = useMemo(() => {
-    const totalFiltered = users.filter(user => {
-      const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-      const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
-      return matchesSearch && matchesRole && matchesStatus;
-    }).length;
-    return Math.ceil(totalFiltered / USERS_PER_PAGE);
-  }, [users, searchTerm, roleFilter, statusFilter]);
+    return Math.ceil(filteredUsers.length / USERS_PER_PAGE_CONSTANT);
+  }, [filteredUsers]);
+
+  // Adjust currentPage if the number of filtered items changes or current page becomes invalid
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages); // Go to last valid page
+    } else if (totalPages === 0 && currentPage !== 1) {
+      setCurrentPage(1); // Reset to first page if no results
+    }
+  }, [totalPages, currentPage]);
+
+
+  const paginatedUsers = useMemo(() => {
+    const startIndex = (currentPage - 1) * USERS_PER_PAGE_CONSTANT;
+    const endIndex = startIndex + USERS_PER_PAGE_CONSTANT;
+    return filteredUsers.slice(startIndex, endIndex);
+  }, [filteredUsers, currentPage]);
 
 
   const handleToggleStatus = (userToToggle) => async () => {
@@ -166,6 +167,7 @@ const UserManagementContent = () => {
 
       const data = await response.json();
       if (response.ok && data.success) {
+        // Re-fetch all users to ensure pagination and filters are up-to-date
         const fetchResponse = await fetch('http://localhost:5001/api/users', {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -212,7 +214,16 @@ const UserManagementContent = () => {
       });
       const data = await response.json();
       if (response.ok && data.success) {
-        setUsers(users.filter(user => user._id !== selectedUser._id));
+        // Re-fetch all users to ensure pagination and filters are up-to-date
+        const fetchResponse = await fetch('http://localhost:5001/api/users', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        const fetchedData = await fetchResponse.json();
+        setUsers(fetchedData.data || []);
+
         toast({ title: "User Deleted", description: `${selectedUser.name} has been removed`, variant: "destructive" });
         setShowDeleteModal(false);
         setSelectedUser(null);
@@ -242,18 +253,27 @@ const UserManagementContent = () => {
     setShowDeleteModal(true);
   };
 
+  // Moved Pagination component outside and at the top level
   const Pagination = () => {
     const pageNumbers = [];
-    const maxPagesToShow = 5;
+    const maxPagesToShow = 5; // How many page number buttons to show directly
+
+    // Determine start and end page numbers for display
     let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
     let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
 
+    // Adjust startPage if endPage is limited by totalPages
     if (endPage - startPage + 1 < maxPagesToShow) {
       startPage = Math.max(1, endPage - maxPagesToShow + 1);
     }
 
     for (let i = startPage; i <= endPage; i++) {
       pageNumbers.push(i);
+    }
+
+    // Only render pagination if there's more than one page
+    if (totalPages <= 1) {
+      return null;
     }
 
     return (
@@ -266,6 +286,7 @@ const UserManagementContent = () => {
           <ChevronLeft size={16} /> Previous
         </button>
 
+        {/* Render "1" and "..." if necessary */}
         {startPage > 1 && (
           <>
             <button onClick={() => setCurrentPage(1)} className="pagination-btn">1</button>
@@ -273,6 +294,7 @@ const UserManagementContent = () => {
           </>
         )}
 
+        {/* Render the core page numbers */}
         {pageNumbers.map(number => (
           <button
             key={number}
@@ -283,6 +305,7 @@ const UserManagementContent = () => {
           </button>
         ))}
 
+        {/* Render "..." and last page if necessary */}
         {endPage < totalPages && (
           <>
             {endPage < totalPages - 1 && <span className="pagination-dots">...</span>}
@@ -344,11 +367,11 @@ const UserManagementContent = () => {
 
       <div className="user-table-container">
         <div className="table-header-info">
-          {/* <h2>All Users <span className="user-count">({users.length})</span></h2> */}
+           {/* <h2>All Users <span className="user-count">({filteredUsers.length})</span></h2> */}
           {/* <span className="active-count">{users.filter(u => u.status === 'active').length} Active Users</span> */}
         </div>
 
-        {filteredAndPaginatedUsers.length === 0 ? (
+        {paginatedUsers.length === 0 ? (
           <div className="no-users-message">
             <p>No users found matching your criteria.</p>
           </div>
@@ -364,7 +387,7 @@ const UserManagementContent = () => {
               <div>Actions</div>
             </div>
 
-            {filteredAndPaginatedUsers.map(user => (
+            {paginatedUsers.map(user => (
               <div key={user._id} className="user-grid-row">
                 <div data-label="User Info">
                   <strong>{user.name}</strong>
@@ -403,7 +426,8 @@ const UserManagementContent = () => {
         )}
       </div>
 
-      {totalPages > 1 && <Pagination />}
+      {/* Render Pagination component here */}
+      <Pagination />
 
       <AddEditUserModal
         isOpen={showAddModal || showEditModal}
@@ -417,6 +441,7 @@ const UserManagementContent = () => {
         user={selectedUser}
         onConfirm={handleDeleteUser}
       />
+
 
       <style>{`
         /* Google Fonts - Poppins */
