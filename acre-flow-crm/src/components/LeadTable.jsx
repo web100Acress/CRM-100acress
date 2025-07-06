@@ -40,7 +40,6 @@ const LeadTable = ({ userRole }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const leadsPerPage = 5;
 
-
   useEffect(() => {
     const fetchLeads = async () => {
       try {
@@ -319,6 +318,7 @@ const LeadTable = ({ userRole }) => {
             <th>Contact</th>
             <th>Property</th>
             <th>Status</th>
+            <th>Work Progress</th>
             <th>Assign</th>
             <th>Actions</th>
           </tr>
@@ -343,6 +343,48 @@ const LeadTable = ({ userRole }) => {
                 <span className={`status-badge ${getStatusClass(lead.status)}`}>
                   {lead.status}
                 </span>
+              </td>
+              <td>
+                {/* Work Progress: Only editable by current assignee */}
+                {String(lead.assignedTo) === String(currentUserId) ? (
+                  <select
+                    value={lead.workProgress || "pending"}
+                    onChange={async e => {
+                      const value = e.target.value;
+                      try {
+                        const token = localStorage.getItem('token');
+                        await fetch(`http://localhost:5001/api/leads/${lead._id}`, {
+                          method: 'PUT',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                          },
+                          body: JSON.stringify({ workProgress: value })
+                        });
+                        setLeadsList(prev => prev.map(l => l._id === lead._id ? { ...l, workProgress: value } : l));
+                      } catch (err) {
+                        alert('Failed to update work progress');
+                      }
+                    }}
+                    className="px-2 py-1 border rounded"
+                  >
+                    {(!lead.workProgress || lead.workProgress === "pending") && (
+                      <option value="pending">Pending</option>
+                    )}
+                    {lead.workProgress !== "done" && (
+                      <option value="inprogress">In Progress</option>
+                    )}
+                    <option value="done">Done</option>
+                  </select>
+                ) : (
+                  <span className="font-semibold">
+                    {lead.workProgress === "inprogress"
+                      ? "In Progress"
+                      : lead.workProgress === "done"
+                      ? "Done"
+                      : "Pending"}
+                  </span>
+                )}
               </td>
               <td>
                 <div className="assignment-controls">

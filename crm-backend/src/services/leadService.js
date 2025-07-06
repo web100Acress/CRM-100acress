@@ -75,7 +75,10 @@ const updateLead = async (id, updateData) => {
     }
   }
   
-  // Update other fields
+  // Update other fields, including workProgress
+  if ("workProgress" in updateData) {
+    lead.workProgress = updateData.workProgress;
+  }
   Object.assign(lead, updateData);
   await lead.save();
   return lead;
