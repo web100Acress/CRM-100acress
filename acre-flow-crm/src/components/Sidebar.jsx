@@ -91,15 +91,18 @@ const Sidebar = ({ userRole, isCollapsed, onToggle }) => {
               const Icon = item.icon;
               return (
                 <li key={item.path}>
-                  <NavLink
-                    to={item.path}
-                    className={({ isActive }) =>
-                      `sidebar-link ${isActive ? 'active' : ''}`
-                    }
-                  >
-                    <Icon className="icon" />
-                    {!isCollapsed && <span>{item.label}</span>}
-                  </NavLink>
+               <NavLink
+  to={item.path}
+  end={item.path === '/'} // exact match for "/"
+  className={({ isActive }) =>
+    `sidebar-link ${isActive ? 'active' : ''}`
+  }
+>
+
+  <Icon className="icon" />
+  {!isCollapsed && <span>{item.label}</span>}
+</NavLink>
+
                 </li>
               );
             })}

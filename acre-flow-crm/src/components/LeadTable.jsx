@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+ import { User } from 'lucide-react';
 import {
   Search,
   Eye,
@@ -544,41 +545,65 @@ const LeadTable = ({ userRole }) => {
 
       
       {/* Assignment Chain Modal */}
-      <Dialog open={!!chainModalLead} onOpenChange={() => setChainModalLead(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Assignment Chain</DialogTitle>
-          </DialogHeader>
-          {chainModalLead && chainModalLead.assignmentChain && chainModalLead.assignmentChain.length > 0 ? (
-            <ul style={{ padding: '0 0 0 1em' }}>
-              {chainModalLead.assignmentChain.map((entry, idx, arr) => {
-                const next = arr[idx + 1];
-                if (next) {
-                  return (
-                    <li key={idx} style={{ marginBottom: 6 }}>
-                      <b>{entry.name}</b> ({entry.role}) <span>assigned to</span> <b>{next.name}</b> ({next.role})
-                      {next.assignedAt && (
-                        <span> — <small>{new Date(next.assignedAt).toLocaleString()}</small></span>
-                      )}
-                    </li>
-                  );
-                } else {
-                  return (
-                    <li key={idx} style={{ marginBottom: 6 }}>
-                      <b>{entry.name}</b> ({entry.role}) <span>is the current assignee</span>
-                      {entry.assignedAt && (
-                        <span> — <small>{new Date(entry.assignedAt).toLocaleString()}</small></span>
-                      )}
-                    </li>
-                  );
-                }
-              })}
-            </ul>
-          ) : (
-            <p>No assignment chain available.</p>
-          )}
-        </DialogContent>
-      </Dialog>
+  
+
+<Dialog open={!!chainModalLead} onOpenChange={() => setChainModalLead(null)}>
+  <DialogContent className="min-w-[500px] max-h-[70vh] overflow-y-auto">
+    <DialogHeader>
+      <DialogTitle className="text-xl font-bold text-gray-800">
+        Assignment Chain
+      </DialogTitle>
+    </DialogHeader>
+
+    {chainModalLead?.assignmentChain?.length > 0 ? (
+      <div className="mt-4 overflow-hidden rounded-xl border border-gray-200 shadow-sm">
+        <table className="w-full text-sm text-left">
+          <thead className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
+            <tr>
+              <th className="px-4 py-3">Name</th>
+              <th className="px-4 py-3">Role</th>
+              <th className="px-4 py-3">Assigned To</th>
+              <th className="px-4 py-3">Assigned At</th>
+            </tr>
+          </thead>
+          <tbody>
+            {chainModalLead.assignmentChain.map((entry, idx, arr) => {
+              const next = arr[idx + 1];
+              const isLast = !next;
+
+              return (
+                <tr
+                  key={idx}
+                  className={`${
+                    isLast
+                      ? 'bg-green-50 text-green-800 font-semibold'
+                      : idx % 2 === 0
+                      ? 'bg-white'
+                      : 'bg-gray-50'
+                  }`}
+                >
+                  <td className="px-4 py-3">{entry.name}</td>
+                  <td className="px-4 py-3 capitalize">{entry.role}</td>
+                  <td className="px-4 py-3">
+                    {next ? next.name + ` (${next.role})` : '— Currently Assigned —'}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 text-xs">
+                    {next?.assignedAt || entry?.assignedAt
+                      ? new Date((next?.assignedAt || entry.assignedAt)).toLocaleString()
+                      : '—'}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    ) : (
+      <p className="text-gray-500 mt-4 text-sm">No assignment chain available.</p>
+    )}
+  </DialogContent>
+</Dialog>
+
       
 
 

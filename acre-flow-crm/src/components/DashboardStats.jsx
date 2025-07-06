@@ -36,51 +36,116 @@ const DashboardStats = ({ userRole }) => {
     ],
   };
 
-  const getColorClasses = (color) => {
-    const colors = {
-      blue: 'bg-blue-50 text-blue-600 border-blue-200',
-      green: 'bg-green-50 text-green-600 border-green-200',
-      orange: 'bg-orange-50 text-orange-600 border-orange-200',
-      purple: 'bg-purple-50 text-purple-600 border-purple-200',
-    };
-    return colors[color] || colors.blue;
-  };
+  const getColorClass = (color) => `icon-box ${color}`;
 
   const stats = baseStats[userRole] || baseStats['employee'];
 
   return (
-    <div className="flex flex-wrap gap-4 mb-6">
-      {stats.map((stat, index) => {
-        const Icon = stat.icon;
-        const changeColor = stat.change.startsWith('+')
-          ? 'text-green-600'
-          : stat.change.startsWith('-')
-          ? 'text-red-600'
-          : 'text-gray-600';
+    <>
+      <div className="dashboard-stats">
+        {stats.map((stat, index) => {
+          const Icon = stat.icon;
+          const changeClass = stat.change.startsWith('+')
+            ? 'change-up'
+            : stat.change.startsWith('-')
+            ? 'change-down'
+            : 'change-neutral';
 
-        return (
-          <div
-            key={index}
-            className="flex-1 min-w-[240px] bg-white rounded-xl shadow-sm border border-gray-200 p-5"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">{stat.label}</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
-                <p className={`text-sm mt-1 ${changeColor}`}>
-                  {stat.change} from last month
-                </p>
-              </div>
-              <div
-                className={`p-3 rounded-lg border ${getColorClasses(stat.color)}`}
-              >
-                <Icon className="h-6 w-6" />
+          return (
+            <div key={index} className="stat-card">
+              <div className="stat-content">
+                <div className="stat-info">
+                  <p className="label">{stat.label}</p>
+                  <p className="value">{stat.value}</p>
+                  <p className={`change ${changeClass}`}>
+                    {stat.change} from last month
+                  </p>
+                </div>
+                <div className={getColorClass(stat.color)}>
+                  <Icon className="icon" />
+                </div>
               </div>
             </div>
-          </div>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
+
+      <style>{`
+        .dashboard-stats {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 1rem;
+          margin-bottom: 1.5rem;
+        }
+        .stat-card {
+          flex: 1;
+          min-width: 240px;
+          background: #fff;
+          border-radius: 12px;
+          border: 1px solid #e5e7eb;
+          padding: 20px;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .stat-content {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .stat-info .label {
+          font-size: 14px;
+          color: #6b7280;
+          font-weight: 500;
+        }
+        .stat-info .value {
+          font-size: 24px;
+          font-weight: bold;
+          color: #111827;
+          margin-top: 4px;
+        }
+        .stat-info .change {
+          font-size: 14px;
+          margin-top: 6px;
+        }
+        .change-up {
+          color: #16a34a;
+        }
+        .change-down {
+          color: #dc2626;
+        }
+        .change-neutral {
+          color: #6b7280;
+        }
+        .icon-box {
+          padding: 12px;
+          border-radius: 8px;
+          border: 1px solid;
+        }
+        .icon-box.blue {
+          background: #eff6ff;
+          color: #2563eb;
+          border-color: #bfdbfe;
+        }
+        .icon-box.green {
+          background: #ecfdf5;
+          color: #059669;
+          border-color: #bbf7d0;
+        }
+        .icon-box.orange {
+          background: #fff7ed;
+          color: #ea580c;
+          border-color: #fed7aa;
+        }
+        .icon-box.purple {
+          background: #f5f3ff;
+          color: #7c3aed;
+          border-color: #ddd6fe;
+        }
+        .icon {
+          height: 24px;
+          width: 24px;
+        }
+      `}</style>
+    </>
   );
 };
 
