@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Search,
   Eye,
@@ -8,10 +8,13 @@ import {
   MapPin,
   Plus,
   Trash2,
+  ArrowRight,
+  UserCheck,
 } from "lucide-react";
 import FollowUpModal from "./FollowUpModal";
 import CreateLeadForm from "./CreateLeadForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import { useToast } from "../hooks/use-toast";
 
 const LeadTable = ({ userRole }) => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -25,7 +28,11 @@ const LeadTable = ({ userRole }) => {
   const [followUpList, setFollowUpList] = useState([]);
   const [followUpLoading, setFollowUpLoading] = useState(false);
   const [followUpError, setFollowUpError] = useState("");
-  const [users, setUsers] = useState([]);
+  const [assignableUsers, setAssignableUsers] = useState([]);
+  const [forwardingLead, setForwardingLead] = useState(null);
+  const { toast } = useToast();
+  const prevAssignedLeadIds = useRef(new Set());
+  const currentUserId = localStorage.getItem('userId');
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -39,6 +46,24 @@ const LeadTable = ({ userRole }) => {
         });
         const json = await response.json();
         setLeadsList(json.data || []);
+
+        // --- Notification logic ---
+        const newAssignedLeads = (json.data || []).filter(
+          lead => lead.assignedTo === currentUserId
+        );
+        const newAssignedIds = new Set(newAssignedLeads.map(l => l._id));
+        // Show toast for any new assignments
+        newAssignedLeads.forEach(lead => {
+          if (!prevAssignedLeadIds.current.has(lead._id)) {
+            toast({
+              title: "New Lead Assigned",
+              description: `You have been assigned a new lead: ${lead.name}`,
+              status: "info"
+            });
+          }
+        });
+        prevAssignedLeadIds.current = newAssignedIds;
+        // --- End notification logic ---
       } catch (error) {
         alert("Error fetching leads: " + error.message);
       } finally {
@@ -46,24 +71,24 @@ const LeadTable = ({ userRole }) => {
       }
     };
 
-    const fetchUsers = async () => {
+    const fetchAssignableUsers = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch("http://localhost:5001/api/users", {
+        const response = await fetch("http://localhost:5001/api/leads/assignable-users", {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
         const json = await response.json();
-        setUsers(json.data || []);
+        setAssignableUsers(json.data || []);
       } catch (error) {
-        console.error("Error fetching users:", error);
+        console.error("Error fetching assignable users:", error);
       }
     };
 
     fetchLeads();
-    fetchUsers();
+    fetchAssignableUsers();
   }, []);
 
   const filteredLeads = leadsList.filter((lead) => {
@@ -137,15 +162,6 @@ const LeadTable = ({ userRole }) => {
     }
   };
 
-  const getAssignableUsers = () => {
-    const currentUserId = localStorage.getItem('userId');
-    const currentUserRole = localStorage.getItem('userRole');
-    if (currentUserRole === 'super-admin') return users.filter(u => u.role === 'head-admin');
-    if (currentUserRole === 'head-admin') return users.filter(u => u.role === 'team-leader' || u._id === currentUserId);
-    if (currentUserRole === 'team-leader') return users.filter(u => u.role === 'employee' || u._id === currentUserId);
-    return [];
-  };
-
   const handleAssignLead = async (leadId, userId) => {
     try {
       const token = localStorage.getItem('token');
@@ -157,13 +173,106 @@ const LeadTable = ({ userRole }) => {
         },
         body: JSON.stringify({ assignedTo: userId })
       });
-      if (!res.ok) throw new Error("Failed to assign lead");
+      if (!res.ok) {
+        let errMsg = "Failed to assign lead";
+        try {
+          const errData = await res.json();
+          if (errData && errData.message) errMsg += ": " + errData.message;
+        } catch {}
+        throw new Error(errMsg);
+      }
       setLeadsList((prev) =>
         prev.map((lead) => (lead._id === leadId ? { ...lead, assignedTo: userId } : lead))
       );
     } catch (err) {
       alert("Error: " + err.message);
     }
+  };
+
+  const handleForwardLead = async (leadId) => {
+    try {
+      setForwardingLead(leadId);
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:5001/api/leads/${leadId}/forward`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ action: 'forward' })
+      });
+      
+      const data = await res.json();
+      if (res.ok) {
+        // Refresh the leads list
+        const leadsResponse = await fetch("http://localhost:5001/api/leads", {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        const leadsJson = await leadsResponse.json();
+        setLeadsList(leadsJson.data || []);
+        alert(data.message || 'Lead forwarded successfully');
+      } else {
+        alert(data.message || 'Failed to forward lead');
+      }
+    } catch (err) {
+      alert("Error: " + err.message);
+    } finally {
+      setForwardingLead(null);
+    }
+  };
+
+  const canForwardLead = (lead) => {
+    const currentUserId = localStorage.getItem('userId');
+    const currentUserRole = localStorage.getItem('userRole');
+    
+    // Only the current assignee can forward the lead
+    if (lead.assignedTo !== currentUserId) return false;
+    
+    // Check if there are users in the next level
+    const nextRole = {
+      'super-admin': 'head-admin',
+      'head-admin': 'team-leader',
+      'team-leader': 'employee'
+    }[currentUserRole];
+    
+    return nextRole && assignableUsers.some(user => user.role === nextRole);
+  };
+
+  const canAssignToSelf = (lead) => {
+    const currentUserId = localStorage.getItem('userId');
+    const currentUserRole = localStorage.getItem('userRole');
+    // Only team-leader and employee can assign to themselves, and only if the lead is unassigned
+    return ['team-leader', 'employee'].includes(currentUserRole) && !lead.assignedTo;
+  };
+
+  const canReassignLead = (lead) => {
+    const currentUserId = localStorage.getItem('userId');
+    const currentUserRole = localStorage.getItem('userRole');
+    
+    // Users can reassign leads they are assigned to
+    // Or if they have higher role than the current assignee
+    if (lead.assignedTo === currentUserId) return true;
+    
+    // If lead is unassigned, higher roles can assign it
+    if (!lead.assignedTo) {
+      return ['super-admin', 'head-admin', 'team-leader'].includes(currentUserRole);
+    }
+    
+    // Check if current user has higher role than assignee
+    const roleLevels = ['super-admin', 'head-admin', 'team-leader', 'employee'];
+    const currentUserLevel = roleLevels.indexOf(currentUserRole);
+    
+    // Find the assignee's role
+    const assigneeInChain = lead.assignmentChain?.find(entry => entry.userId === lead.assignedTo);
+    if (!assigneeInChain) return false;
+    
+    const assigneeLevel = roleLevels.indexOf(assigneeInChain.role);
+    
+    // Current user can reassign if they have higher role (lower index)
+    return currentUserLevel < assigneeLevel;
   };
 
   return (
@@ -225,16 +334,62 @@ const LeadTable = ({ userRole }) => {
                 </span>
               </td>
               <td>
-                <select
-                  value={lead.assignedTo || ""}
-                  onChange={(e) => handleAssignLead(lead._id, e.target.value)}
-                  disabled={lead.assignedTo && lead.assignedTo !== localStorage.getItem('userId')}
-                >
-                  <option value="">Unassigned</option>
-                  {getAssignableUsers().map((u) => (
-                    <option key={u._id} value={u._id}>{u.name} ({u.role})</option>
-                  ))}
-                </select>
+                <div className="assignment-controls">
+                  {/* Assignment chain always visible */}
+                  {lead.assignmentChain && lead.assignmentChain.length > 0 && (
+                    <div className="assignment-chain">
+                      <small>Chain: {lead.assignmentChain.map((entry, index) => (
+                        <span key={index} className={`chain-item ${entry.status}`}>
+                          {entry.name} ({entry.role})
+                          {index < lead.assignmentChain.length - 1 && ' → '}
+                        </span>
+                      ))}</small>
+                    </div>
+                  )}
+                  {(!lead.assignedTo && canReassignLead(lead)) || String(lead.assignedTo) === String(currentUserId) ? (
+                    <>
+                      <select
+                        value={lead.assignedTo || ""}
+                        onChange={(e) => handleAssignLead(lead._id, e.target.value)}
+                        disabled={String(lead.assignedTo) !== String(currentUserId) && !canReassignLead(lead)}
+                      >
+                        <option value="">Unassigned</option>
+                        {assignableUsers.map((u) => (
+                          <option key={u._id} value={u._id}>
+                            {u.name} ({u.role})
+                          </option>
+                        ))}
+                      </select>
+                      {/* Forward button */}
+                      {canForwardLead(lead) && (
+                        <button
+                          className="forward-btn"
+                          onClick={() => handleForwardLead(lead._id)}
+                          disabled={forwardingLead === lead._id}
+                          title="Forward to next level"
+                        >
+                          <ArrowRight size={14} />
+                          {forwardingLead === lead._id ? 'Forwarding...' : 'Forward'}
+                        </button>
+                      )}
+                    </>
+                  ) : null}
+                  {/* Self-assign button only for unassigned leads if eligible */}
+                  {canAssignToSelf(lead) && (
+                    <button
+                      className="self-assign-btn"
+                      onClick={() => handleAssignLead(lead._id, currentUserId)}
+                      title="Assign to myself"
+                    >
+                      <UserCheck size={14} />
+                      Self Assign
+                    </button>
+                  )}
+                  {/* Read-only: show current assignee if no controls */}
+                  {(!lead.assignmentChain || lead.assignmentChain.length === 0) && !((!lead.assignedTo && canReassignLead(lead)) || String(lead.assignedTo) === String(currentUserId)) && (
+                    <span>Unassigned</span>
+                  )}
+                </div>
               </td>
               <td>
                 <button onClick={() => handleViewFollowUps(lead)}><Eye size={16} /></button>
@@ -317,137 +472,199 @@ const LeadTable = ({ userRole }) => {
   background-color: #f9fafb;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
+  }
 
   .search-bar {
-    display: flex;
-    align-items: center;
-    border: 1px solid #ccc;
-    padding: 6px 10px;
-    border-radius: 6px;
-    background-color: #f9f9f9;
-    transition: box-shadow 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 8px 12px;
+  flex: 1;
+  max-width: 300px;
   }
 
   .search-bar input {
-    border: none;
-    outline: none;
-    margin-left: 8px;
-    font-size: 14px;
-    background: transparent;
-    width: 180px;
+  border: none;
+  outline: none;
+  width: 100%;
+  font-size: 14px;
   }
 
-  .search-bar:focus-within {
-    box-shadow: 0 0 0 2px #3b82f6;
-    border-color: #3b82f6;
+  .search-bar svg {
+  color: #6b7280;
   }
 
   .create-lead-btn {
-    background-color: #22c55e;
-    color: white;
-    border: none;
-    padding: 8px 14px;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: background-color 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
   }
 
   .create-lead-btn:hover {
-    background-color: #16a34a;
+  background: #2563eb;
   }
 
   .lead-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
   }
 
-  .lead-table thead {
-    background-color: #f3f4f6;
+  .lead-table th {
+  background: #f8fafc;
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 2px solid #e5e7eb;
   }
 
-  .lead-table th,
   .lead-table td {
-    border: 1px solid #e5e7eb;
-    padding: 10px 12px;
-    text-align: left;
-    font-size: 14px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: top;
   }
 
-  .lead-table tbody tr:hover {
-    background-color: #f9fafb;
+  .lead-table tr:hover {
+  background: #f9fafb;
   }
 
   .status-badge {
-    padding: 4px 10px;
-    border-radius: 9999px;
-    font-size: 12px;
-    font-weight: 600;
-    display: inline-block;
-    text-transform: capitalize;
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
   }
 
   .status-hot {
-    background-color: #fee2e2;
-    color: #b91c1c;
+  background: #fef2f2;
+  color: #dc2626;
   }
 
   .status-warm {
-    background-color: #fef3c7;
-    color: #92400e;
+  background: #fffbeb;
+  color: #d97706;
   }
 
   .status-cold {
-    background-color: #dbeafe;
-    color: #1e40af;
+  background: #f0f9ff;
+  color: #0284c7;
   }
 
   .status-default {
-    background-color: #e5e7eb;
-    color: #374151;
+  background: #f3f4f6;
+  color: #6b7280;
   }
 
-  select {
+  .lead-table button {
+  background: none;
+  border: none;
+  padding: 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.2s;
+  margin-right: 4px;
+  }
+
+  .lead-table button:hover {
+  background: #f3f4f6;
+  color: #374151;
+  }
+
+  .assignment-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .assignment-controls select {
     padding: 6px 8px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    background-color: #fff;
-    font-size: 14px;
-    transition: border-color 0.3s ease;
-  }
-
-  select:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 2px rgba(59,130,246,0.4);
-  }
-
-  button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    margin-right: 6px;
-    padding: 4px;
+    border: 1px solid #d1d5db;
     border-radius: 4px;
-    transition: background-color 0.2s ease;
-    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    background: white;
   }
 
-  button:hover {
-    background-color: #f3f4f6;
+  .forward-btn, .self-assign-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    background: white;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .forward-btn:hover {
+    background: #f0f9ff;
+    border-color: #3b82f6;
+    color: #3b82f6;
+  }
+
+  .self-assign-btn:hover {
+    background: #f0fdf4;
+    border-color: #22c55e;
+    color: #22c55e;
+  }
+
+  .forward-btn:disabled, .self-assign-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .assignment-chain {
+    margin-top: 4px;
+    font-size: 11px;
+    color: #6b7280;
+  }
+
+  .chain-item {
+    padding: 1px 3px;
+    border-radius: 3px;
+    font-size: 10px;
+  }
+
+  .chain-item.assigned {
+    background: #f0f9ff;
+    color: #0284c7;
+  }
+
+  .chain-item.forwarded {
+    background: #fffbeb;
+    color: #d97706;
+  }
+
+  .chain-item.completed {
+    background: #f0fdf4;
+    color: #22c55e;
+  }
+
+  .chain-item.rejected {
+    background: #fef2f2;
+    color: #dc2626;
   }
 
   @media (max-width: 768px) {
-    .search-bar input {
-      width: 100%;
+    .lead-table-wrapper {
+      padding: 16px;
     }
 
     .lead-table-header {
@@ -455,18 +672,29 @@ const LeadTable = ({ userRole }) => {
       align-items: stretch;
     }
 
+    .search-bar {
+      max-width: none;
+    }
+
     .lead-table {
-      font-size: 13px;
+      font-size: 12px;
     }
 
     .lead-table th,
     .lead-table td {
-      padding: 8px;
+      padding: 8px 12px;
+    }
+
+    .assignment-controls {
+      gap: 4px;
+    }
+
+    .forward-btn, .self-assign-btn {
+      font-size: 10px;
+      padding: 4px 6px;
     }
   }
-`}</style>
-
-
+      `}</style>
     </div>
   );
 };
