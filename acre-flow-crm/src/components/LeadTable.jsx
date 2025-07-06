@@ -309,7 +309,7 @@ const LeadTable = ({ userRole }) => {
   .lead-table-header {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 12 px;
   margin-bottom: 24px;
   align-items: center;
   justify-content: space-between;

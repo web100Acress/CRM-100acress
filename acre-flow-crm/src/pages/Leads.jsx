@@ -1,61 +1,79 @@
-import React from 'react';
-import DashboardLayout from '../components/DashboardLayout';
-import LeadTable from '../components/LeadTable';
+  import React from 'react';
+  import DashboardLayout from '../components/DashboardLayout';
+  import LeadTable from '../components/LeadTable';
 
-const Leads = ({ userRole = 'employee' }) => {
-  return (
-    <DashboardLayout userRole={userRole}>
-      <div className="leads-page-wrapper">
-        <div className="page-header">
-          <h1 className="page-title">Lead Management</h1>
-          <p className="page-subtitle">Manage and track your real estate leads</p>
+  const Leads = ({ userRole = 'employee' }) => {
+    return (
+      <DashboardLayout userRole={userRole}>
+        <div className="leads-page-wrapper">
+          <div className="page-header">
+            <h1 className="page-title">Lead Management</h1>
+            <p className="page-subtitle">Stay on top of your leads and convert more clients efficiently</p>
+          </div>
+          <div className="table-section">
+            <LeadTable userRole={userRole} />
+          </div>
         </div>
-        <LeadTable userRole={userRole} />
-      </div>
 
-      {/* Embedded CSS */}
-      <style>{`
-        .leads-page-wrapper {
-          padding: 24px;
-          background-color: #f9f9f9;
-          min-height: 100vh;
-        }
-
-        .page-header {
-          margin-bottom: 20px;
-        }
-
-        .page-title {
-          font-size: 24px;
-          font-weight: 700;
-          color: #1f2937;
-          margin: 0;
-          text-align: center;
-        }
-
-        .page-subtitle {
-          font-size: 15px;
-          color: #6b7280;
-          margin-top: 4px;
-          text-align: center;
-        }
-
-        @media (max-width: 768px) {
+        {/* Embedded CSS */}
+        <style>{`
           .leads-page-wrapper {
-            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: linear-gradient(to bottom right, #f3f4f6, #e5e7eb);
+          }
+
+          .page-header {
+            flex-shrink: 0;
+            padding: 32px 24px;
+            background-color: #ffffff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+            text-align: center;
+            border-bottom: 2px solid #e5e7eb;
           }
 
           .page-title {
-            font-size: 20px;
+            font-size: 32px;
+            font-weight: 800;
+            color: #111827;
+            margin: 0;
+            letter-spacing: -0.5px;
           }
 
           .page-subtitle {
-            font-size: 14px;
+            font-size: 16px;
+            color: #4b5563;
+            margin-top: 8px;
+            font-weight: 500;
           }
-        }
-      `}</style>
-    </DashboardLayout>
-  );
-};
 
-export default Leads;
+          .table-section {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+          }
+
+          @media (max-width: 768px) {
+            .page-header {
+              padding: 24px 16px;
+            }
+
+            .page-title {
+              font-size: 24px;
+            }
+
+            .page-subtitle {
+              font-size: 14px;
+            }
+
+            .table-section {
+              padding: 16px;
+            }
+          }
+        `}</style>
+      </DashboardLayout>
+    );
+  };
+
+  export default Leads;

@@ -34,7 +34,7 @@ const DashboardLayout = ({ children, userRole = 'employee' }) => {
               >
                 <Menu className="menu-icon" />
               </button>
-              <h1 className="user-greeting">Hello {getRoleTitle(userRole)} 👋</h1>
+              <h1 className="user-greeting">Hello {getRoleTitle(userRole)}</h1>
             </div>
 
             <div className="header-right">
@@ -75,7 +75,7 @@ const DashboardLayout = ({ children, userRole = 'employee' }) => {
         }
 
         .dashboard-header {
-          background-color: white;
+           background: linear-gradient(145deg, #1e293b, #111827);
           border-bottom: 1px solid #f3f4f6;
           padding: 1rem 1.5rem;
           display: flex;
@@ -89,18 +89,24 @@ const DashboardLayout = ({ children, userRole = 'employee' }) => {
           gap: 1rem;
         }
 
-        .menu-button {
-          padding: 0.5rem;
-          border-radius: 0.5rem;
-          background: none;
-          border: none;
-          cursor: pointer;
-          transition: background 0.2s;
-        }
+     .menu-button {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  background-color: #ffffff; /* solid white base */
+  border: 1px solid #e5e7eb; /* light gray border for structure */
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+}
 
-        .menu-button:hover {
-          background-color: #f3f4f6;
-        }
+.menu-button:hover {
+  background-color: #f9fafb; /* elegant hover */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* soft hover shadow */
+}
+
+.menu-button:active {
+  transform: scale(0.98); /* slight click effect */
+}
+
 
         .menu-icon {
           width: 20px;
@@ -111,7 +117,7 @@ const DashboardLayout = ({ children, userRole = 'employee' }) => {
         .user-greeting {
           font-size: 1.25rem;
           font-weight: 600;
-          color: #1f2937;
+          color: white;
         }
 
         .header-right {
@@ -149,6 +155,7 @@ const DashboardLayout = ({ children, userRole = 'employee' }) => {
         }
 
         .notification-button {
+         color: #9ca3af;
           position: relative;
           background: none;
           border: none;
@@ -159,13 +166,15 @@ const DashboardLayout = ({ children, userRole = 'employee' }) => {
         }
 
         .notification-button:hover {
-          background-color: #f3f4f6;
-        }
+  background-color: #334155; /* Tailwind's slate-800 */
+  color: #ffffff;
+}
+
 
         .bell-icon {
           width: 20px;
           height: 20px;
-          color: #4b5563;
+          color: white;
         }
 
         .notification-dot {
