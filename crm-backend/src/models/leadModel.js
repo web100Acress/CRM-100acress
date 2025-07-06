@@ -53,6 +53,11 @@ const leadSchema = new mongoose.Schema({
   budget: String,
   assignedTo: String,
   assignedBy: String,
+  workProgress: {
+    type: String,
+    enum: ['pending', 'inprogress', 'done'],
+    default: 'pending'
+  },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   createdAt: { type: Date, default: Date.now },
   assignmentChain: [assignmentChainSchema],
