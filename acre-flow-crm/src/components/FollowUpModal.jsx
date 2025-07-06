@@ -39,6 +39,8 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
       };
       const res = await fetch(`http://localhost:5001/api/leads/${lead._id}/followups`, {
         method: "POST",
+
+
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${localStorage.getItem('token')}`

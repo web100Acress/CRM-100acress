@@ -29,8 +29,8 @@ const Sidebar = ({ userRole, isCollapsed, onToggle }) => {
       { path: '/leads', icon: Building2, label: 'All Leads' },
       { path: '/users', icon: Users, label: 'Manage Users' },
       { path: '/create-admin', icon: UserPlus, label: 'Create Admin' },
-      { path: '/tickets', icon: Ticket, label: 'All Tickets' },
-      { path: '/settings', icon: Settings, label: 'Settings' }
+      // { path: '/tickets', icon: Ticket, label: 'All Tickets' },
+      // { path: '/settings', icon: Settings, label: 'Settings' }
     ],
     'head-admin': [
       { path: '/', icon: Home, label: 'Dashboard' },
@@ -127,7 +127,8 @@ const Sidebar = ({ userRole, isCollapsed, onToggle }) => {
 
       <style>{`
         .sidebar {
-          background-color: #1e293b;
+          background: linear-gradient(145deg, #1e293b, #111827);
+          box-shadow: 4px 0 12px rgba(0,0,0,0.3);
           color: white;
           border-right: 1px solid #334155;
           transition: width 0.3s ease;
@@ -135,6 +136,7 @@ const Sidebar = ({ userRole, isCollapsed, onToggle }) => {
           min-height: 100vh;
           display: flex;
           flex-direction: column;
+          font-family: 'Segoe UI', sans-serif;
         }
 
         .sidebar.collapsed {
@@ -142,7 +144,7 @@ const Sidebar = ({ userRole, isCollapsed, onToggle }) => {
         }
 
         .sidebar-header {
-          padding: 1rem;
+          padding: 1.25rem 1rem;
           border-bottom: 1px solid #334155;
           display: flex;
           align-items: center;
@@ -150,27 +152,28 @@ const Sidebar = ({ userRole, isCollapsed, onToggle }) => {
 
         .sidebar-logo {
           background-color: #3b82f6;
-          padding: 0.5rem;
-          border-radius: 0.5rem;
+          padding: 0.6rem;
+          border-radius: 0.75rem;
+          box-shadow: 0 4px 6px rgba(0,0,0,0.15);
         }
 
         .sidebar-title {
-          margin-left: 0.75rem;
+          margin-left: 0.85rem;
         }
 
         .sidebar-title h1 {
           font-size: 1rem;
-          font-weight: bold;
+          font-weight: 600;
         }
 
         .sidebar-title p {
           font-size: 0.75rem;
-          color: #cbd5e1;
+          color: #94a3b8;
         }
 
         .sidebar-nav {
           flex: 1;
-          padding: 1rem;
+          padding: 1rem 0.75rem;
         }
 
         .sidebar-nav ul {
@@ -182,22 +185,24 @@ const Sidebar = ({ userRole, isCollapsed, onToggle }) => {
         .sidebar-link {
           display: flex;
           align-items: center;
-          padding: 0.5rem 0.75rem;
-          border-radius: 0.5rem;
+          padding: 0.6rem 0.85rem;
+          margin-bottom: 0.5rem;
+          border-radius: 0.6rem;
           color: #cbd5e1;
           text-decoration: none;
-          transition: background 0.2s;
+          transition: all 0.2s ease-in-out;
         }
 
         .sidebar-link:hover {
           background-color: #334155;
-          color: white;
+          transform: translateX(2px);
         }
 
         .sidebar-link.active {
           background-color: #2563eb;
           color: white;
-          border-right: 4px solid #3b82f6;
+          font-weight: 600;
+          box-shadow: inset 2px 0 0 0 #3b82f6;
         }
 
         .sidebar-link .icon {
@@ -206,7 +211,8 @@ const Sidebar = ({ userRole, isCollapsed, onToggle }) => {
         }
 
         .sidebar-link span {
-          margin-left: 0.75rem;
+          margin-left: 0.85rem;
+          font-size: 0.95rem;
         }
 
         .sidebar-footer {
@@ -225,6 +231,7 @@ const Sidebar = ({ userRole, isCollapsed, onToggle }) => {
           color: #1e293b;
           padding: 0.5rem;
           border-radius: 999px;
+          box-shadow: 0 2px 4px rgba(255,255,255,0.1);
         }
 
         .icon-small {
@@ -237,8 +244,8 @@ const Sidebar = ({ userRole, isCollapsed, onToggle }) => {
         }
 
         .user-name {
-          font-size: 0.875rem;
-          font-weight: 500;
+          font-size: 0.9rem;
+          font-weight: 600;
         }
 
         .user-role {
@@ -253,15 +260,14 @@ const Sidebar = ({ userRole, isCollapsed, onToggle }) => {
           border: none;
           color: #cbd5e1;
           cursor: pointer;
-          padding: 0.5rem 0.75rem;
-          border-radius: 0.5rem;
+          padding: 0.6rem 0.85rem;
+          border-radius: 0.6rem;
           width: 100%;
-          transition: background 0.2s;
+          transition: background 0.2s ease;
         }
 
         .logout-btn:hover {
           background-color: #334155;
-          color: white;
         }
 
         .logout-btn .icon {
@@ -271,6 +277,7 @@ const Sidebar = ({ userRole, isCollapsed, onToggle }) => {
 
         .logout-btn span {
           margin-left: 0.75rem;
+          font-size: 0.95rem;
         }
       `}</style>
     </>
