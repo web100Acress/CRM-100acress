@@ -25,11 +25,13 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok && data.token) {
+        console.log('LOGIN USER:', data.user);
         localStorage.setItem("token", data.token);
         localStorage.setItem("userRole", data.user.role);
         localStorage.setItem("userEmail", data.user.email);
         localStorage.setItem("userName", data.user.name);
         localStorage.setItem("isLoggedIn", "true");
+        localStorage.setItem("userId", data.user._id);
         navigate("/");
         window.location.reload();
       } else {

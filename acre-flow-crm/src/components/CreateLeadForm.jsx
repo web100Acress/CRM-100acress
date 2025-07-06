@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { X, Save } from 'lucide-react';
@@ -11,8 +11,33 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
     location: '',
     budget: '',
     property: '',
-    status: 'Cold'
+    status: 'Cold',
+    assignedTo: ''
   });
+  const [assignableUsers, setAssignableUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchAssignableUsers();
+    }
+  }, [isOpen]);
+
+  const fetchAssignableUsers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch("http://localhost:5001/api/leads/assignable-users", {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const json = await response.json();
+      setAssignableUsers(json.data || []);
+    } catch (error) {
+      console.error("Error fetching assignable users:", error);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -26,6 +51,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
     e.preventDefault();
 
     if (formData.name && formData.email && formData.phone) {
+      setLoading(true);
       try {
         const token = localStorage.getItem('token');
         const response = await fetch('http://localhost:5001/api/leads', {
@@ -49,7 +75,8 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
             location: '',
             budget: '',
             property: '',
-            status: 'Cold'
+            status: 'Cold',
+            assignedTo: ''
           });
           onClose();
         } else {
@@ -57,6 +84,8 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
         }
       } catch (error) {
         alert('Failed to save lead: ' + error.message);
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -171,27 +200,44 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
               </div>
             </div>
 
-            <div className="form-group">
-              <label>Lead Status</label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
-              >
-                <option value="Cold">Cold</option>
-                <option value="Warm">Warm</option>
-                <option value="Hot">Hot</option>
-              </select>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Lead Status</label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
+                >
+                  <option value="Cold">Cold</option>
+                  <option value="Warm">Warm</option>
+                  <option value="Hot">Hot</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Assign To</label>
+                <select
+                  name="assignedTo"
+                  value={formData.assignedTo}
+                  onChange={handleInputChange}
+                >
+                  <option value="">Unassigned</option>
+                  {assignableUsers.map((user) => (
+                    <option key={user._id} value={user._id}>
+                      {user.name} ({user.role})
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className="form-actions">
-              <button type="button" onClick={onClose} className="btn btn-outline">
+              <button type="button" onClick={onClose} className="btn btn-outline" disabled={loading}>
                 <X style={{ width: 16, height: 16, marginRight: 6 }} />
                 Cancel
               </button>
-              <button type="submit" className="btn btn-primary">
+              <button type="submit" className="btn btn-primary" disabled={loading}>
                 <Save style={{ width: 16, height: 16, marginRight: 6 }} />
-                Create Lead
+                {loading ? 'Creating...' : 'Create Lead'}
               </button>
             </div>
           </form>

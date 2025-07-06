@@ -3,9 +3,10 @@ import { X, Send } from "lucide-react";
 import ReactDOM from "react-dom";
 
 const FollowUpModal = ({ lead, onClose, userRole }) => {
+  const userName = localStorage.getItem('userName') || '';
   const [formData, setFormData] = useState({
     comment: "",
-    author: "",
+    author: userName,
     role: userRole,
     date: "",
     time: "",
@@ -38,7 +39,9 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
       };
       const res = await fetch(`http://localhost:5001/api/leads/${lead._id}/followups`, {
         method: "POST",
-      headers: {
+
+
+        headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${localStorage.getItem('token')}`
         },
@@ -97,10 +100,9 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
                   type="text"
                   id="author"
                   name="author"
-                  className="form-input"
+                  className="form-input disabled"
                   value={formData.author}
-                  onChange={handleChange}
-                  required
+                  disabled
                   placeholder="Your Name"
                 />
               </div>
