@@ -66,19 +66,31 @@ const App = () => {
             <Route
               path="/"
               element={
-                isLoggedIn ? <Dashboard userRole={userRole} /> : <Navigate to="/login" replace />
+                isLoggedIn ? (
+                  <Dashboard userRole={userRole} />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
               }
             />
             <Route
               path="/leads"
               element={
-                isLoggedIn ? <Leads userRole={userRole} /> : <Navigate to="/login" replace />
+                isLoggedIn ? (
+                  <Leads userRole={userRole} />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
               }
             />
             <Route
               path="/tickets"
               element={
-                isLoggedIn ? <Tickets userRole={userRole} /> : <Navigate to="/login" replace />
+                isLoggedIn ? (
+                  <Tickets userRole={userRole} />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
               }
             />
             <Route
@@ -121,6 +133,7 @@ const App = () => {
                 )
               }
             />
+
             <Route
               path="/settings"
               element={
