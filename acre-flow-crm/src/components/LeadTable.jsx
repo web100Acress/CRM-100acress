@@ -33,6 +33,8 @@ const LeadTable = ({ userRole }) => {
   const { toast } = useToast();
   const prevAssignedLeadIds = useRef(new Set());
   const currentUserId = localStorage.getItem('userId');
+  const [currentPage, setCurrentPage] = useState(1);
+const leadsPerPage = 5;
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -300,7 +302,7 @@ const LeadTable = ({ userRole }) => {
           <Plus size={16} /> Create Lead
         </button>
       </div>
-
+<div className="table-container">
       <table className="lead-table">
         <thead>
           <tr>
@@ -313,7 +315,10 @@ const LeadTable = ({ userRole }) => {
           </tr>
         </thead>
         <tbody>
-          {filteredLeads.map((lead) => (
+         {filteredLeads
+  .slice((currentPage - 1) * leadsPerPage, currentPage * leadsPerPage)
+  .map((lead) => (
+
             <tr key={lead._id}>
               <td>
                 <div>{lead.name}</div>
@@ -405,6 +410,30 @@ const LeadTable = ({ userRole }) => {
         </tbody>
       </table>
 
+      </div>
+ <div className="pagination-controls">
+  <button
+    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+    disabled={currentPage === 1}
+  >
+    Previous
+  </button>
+
+  <span>
+    Page {currentPage} of {Math.ceil(filteredLeads.length / leadsPerPage)}
+  </span>
+
+  <button
+    onClick={() =>
+      setCurrentPage((prev) =>
+        prev < Math.ceil(filteredLeads.length / leadsPerPage) ? prev + 1 : prev
+      )
+    }
+    disabled={currentPage === Math.ceil(filteredLeads.length / leadsPerPage)}
+  >
+    Next
+  </button>
+</div>
       {showFollowUp && selectedLead && (
         <FollowUpModal
           lead={selectedLead}
@@ -452,14 +481,14 @@ const LeadTable = ({ userRole }) => {
     font-family: 'Poppins', sans-serif;
   }
 
-  .lead-table-wrapper {
-    padding: 24px;
-    border: 1px solid #ddd;
-    background: #fff;
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    overflow-x: auto;
-  }
+    .lead-table-wrapper {
+      padding: 24px;
+      border: 1px solid #ddd;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      overflow-x: auto;
+    }
 
   .lead-table-header {
   display: flex;
@@ -694,6 +723,51 @@ const LeadTable = ({ userRole }) => {
       padding: 4px 6px;
     }
   }
+
+  .table-container {
+  max-height: 500px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.lead-table thead th {
+  position: sticky;
+  top: 0;
+  background: #f8fafc;
+  z-index: 1;
+}
+  .pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.pagination-controls button {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.pagination-controls button:disabled {
+  background-color: #d1d5db;
+  cursor: not-allowed;
+}
+
+.pagination-controls span {
+  font-size: 14px;
+  color: #374151;
+}
+
+
       `}</style>
     </div>
   );
