@@ -34,7 +34,12 @@ const LeadTable = ({ userRole }) => {
   const { toast } = useToast();
   const prevAssignedLeadIds = useRef(new Set());
   const currentUserId = localStorage.getItem('userId');
+
   const [chainModalLead, setChainModalLead] = useState(null);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const leadsPerPage = 5;
+
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -203,7 +208,7 @@ const LeadTable = ({ userRole }) => {
         },
         body: JSON.stringify({ action: 'forward' })
       });
-      
+
       const data = await res.json();
       if (res.ok) {
         // Refresh the leads list
@@ -229,17 +234,17 @@ const LeadTable = ({ userRole }) => {
   const canForwardLead = (lead) => {
     const currentUserId = localStorage.getItem('userId');
     const currentUserRole = localStorage.getItem('userRole');
-    
+
     // Only the current assignee can forward the lead
     if (lead.assignedTo !== currentUserId) return false;
-    
+
     // Check if there are users in the next level
     const nextRole = {
       'super-admin': 'head-admin',
       'head-admin': 'team-leader',
       'team-leader': 'employee'
     }[currentUserRole];
-    
+
     return nextRole && assignableUsers.some(user => user.role === nextRole);
   };
 
@@ -253,55 +258,59 @@ const LeadTable = ({ userRole }) => {
   const canReassignLead = (lead) => {
     const currentUserId = localStorage.getItem('userId');
     const currentUserRole = localStorage.getItem('userRole');
-    
+
     // Users can reassign leads they are assigned to
     // Or if they have higher role than the current assignee
     if (lead.assignedTo === currentUserId) return true;
-    
+
     // If lead is unassigned, higher roles can assign it
     if (!lead.assignedTo) {
       return ['super-admin', 'head-admin', 'team-leader'].includes(currentUserRole);
     }
-    
+
     // Check if current user has higher role than assignee
     const roleLevels = ['super-admin', 'head-admin', 'team-leader', 'employee'];
     const currentUserLevel = roleLevels.indexOf(currentUserRole);
-    
+
     // Find the assignee's role
     const assigneeInChain = lead.assignmentChain?.find(entry => entry.userId === lead.assignedTo);
     if (!assigneeInChain) return false;
-    
+
     const assigneeLevel = roleLevels.indexOf(assigneeInChain.role);
-    
+
     // Current user can reassign if they have higher role (lower index)
     return currentUserLevel < assigneeLevel;
   };
 
   return (
     <div className="lead-table-wrapper">
+      {/* --- Header Section --- */}
       <div className="lead-table-header">
         <div className="search-bar">
-          <Search size={16} />
+          <Search size={18} className="text-gray-500" />
           <input
             type="text"
-            placeholder="Search leads..."
+            placeholder="Search by name, email, or phone..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            className="flex-grow outline-none text-sm placeholder-gray-400"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
+          className="px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
         >
-          <option value="all">All</option>
+          <option value="all">All Statuses</option>
           <option value="hot">Hot</option>
           <option value="warm">Warm</option>
           <option value="cold">Cold</option>
         </select>
-        <button className="create-lead-btn" onClick={handleCreateLead}>
-          <Plus size={16} /> Create Lead
+        <button className="create-lead-btn group" onClick={handleCreateLead}>
+          <Plus size={18} className="group-hover:rotate-90 transition-transform duration-200" /> Create Lead
         </button>
       </div>
+
 
       <table className="lead-table">
         <thead>
@@ -365,15 +374,139 @@ const LeadTable = ({ userRole }) => {
                       </select>
                       {/* Forward button */}
                       {canForwardLead(lead) && (
+
+      {/* --- Table Container --- */}
+      <div className="table-container shadow-md rounded-lg overflow-hidden border border-gray-200">
+        <table className="lead-table min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">Lead Info</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">Contact</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">Property</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">Status</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">Assignment</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {loading ? (
+              <tr>
+                <td colSpan="6" className="text-center py-4 text-gray-500">Loading leads...</td>
+              </tr>
+            ) : filteredLeads.length === 0 ? (
+              <tr>
+                <td colSpan="6" className="text-center py-4 text-gray-500">No leads found.</td>
+              </tr>
+            ) : (
+              filteredLeads
+                .slice((currentPage - 1) * leadsPerPage, currentPage * leadsPerPage)
+                .map((lead) => (
+                  <tr key={lead._id} className="hover:bg-gray-50 transition-colors duration-150">
+                    <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200" data-label="Lead Info">
+                      <div className="text-sm font-medium text-gray-900">{lead.name}</div>
+                      <div className="text-xs text-gray-500">ID: #{lead.id}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200" data-label="Contact">
+                      <div className="flex items-center text-sm text-gray-700 mb-1">
+                        <Phone size={14} className="mr-2 text-gray-500" /> {lead.phone}
+                      </div>
+                      <div className="flex items-center text-sm text-gray-700 mb-1">
+                        <Mail size={14} className="mr-2 text-gray-500" /> {lead.email}
+                      </div>
+                      <div className="flex items-center text-sm text-gray-700">
+                        <MapPin size={14} className="mr-2 text-gray-500" /> {lead.location}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200" data-label="Property">
+                      <div className="text-sm text-gray-700">{lead.property}</div>
+                      <div className="text-xs text-gray-500">{lead.budget}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200" data-label="Status">
+                      <span className={`status-badge ${getStatusClass(lead.status)}`}>
+                        {lead.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 border-r border-gray-200" data-label="Assign">
+                      <div className="assignment-controls">
+                        {lead.assignmentChain && lead.assignmentChain.length > 0 && (
+                          <div className="assignment-chain mb-2">
+                            <small className="font-semibold text-gray-600">
+                              Chain:{" "}
+                              {lead.assignmentChain.map((entry, index) => (
+                                <span key={index} className={`chain-item ${entry.status}`}>
+                                  {entry.name} ({entry.role})
+                                  {index < lead.assignmentChain.length - 1 && " → "}
+                                </span>
+                              ))}
+                            </small>
+                          </div>
+                        )}
+
+                        {((!lead.assignedTo && canReassignLead(lead)) ||
+                          String(lead.assignedTo) === String(currentUserId)) && (
+                            <>
+                              <select
+                                value={lead.assignedTo || ""}
+                                onChange={(e) => handleAssignLead(lead._id, e.target.value)}
+                                disabled={
+                                  String(lead.assignedTo) !== String(currentUserId) &&
+                                  !canReassignLead(lead)
+                                }
+                                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm mb-2"
+                              >
+                                <option value="">Unassigned</option>
+                                {assignableUsers.map((u) => (
+                                  <option key={u._id} value={u._id}>
+                                    {u.name} ({u.role})
+                                  </option>
+                                ))}
+                              </select>
+
+                              {canForwardLead(lead) && (
+                                <button
+                                  className="forward-btn"
+                                  onClick={() => handleForwardLead(lead._id)}
+                                  disabled={forwardingLead === lead._id}
+                                  title="Forward to next level"
+                                >
+                                  <ArrowRight size={14} />
+                                  {forwardingLead === lead._id
+                                    ? "Forwarding..."
+                                    : "Forward"}
+                                </button>
+                              )}
+                            </>
+                          )}
+
+                        {canAssignToSelf(lead) && (
+                          <button
+                            className="self-assign-btn mt-2"
+                            onClick={() => handleAssignLead(lead._id, currentUserId)}
+                            title="Assign to myself"
+                          >
+                            <UserCheck size={14} />
+                            Self Assign
+                          </button>
+                        )}
+
+                        {!lead.assignmentChain?.length &&
+                          !((!lead.assignedTo && canReassignLead(lead)) ||
+                            String(lead.assignedTo) === String(currentUserId)) && (
+                            <span className="text-sm text-gray-500">Unassigned</span>
+                          )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" data-label="Actions">
+                      <div className="flex items-center justify-end space-x-2">
+
                         <button
-                          className="forward-btn"
-                          onClick={() => handleForwardLead(lead._id)}
-                          disabled={forwardingLead === lead._id}
-                          title="Forward to next level"
+                          onClick={() => handleViewFollowUps(lead)}
+                          className="text-blue-600 hover:text-blue-900 transition-colors duration-150 p-2 rounded-full hover:bg-blue-100"
+                          title="View Follow-ups"
                         >
-                          <ArrowRight size={14} />
-                          {forwardingLead === lead._id ? 'Forwarding...' : 'Forward'}
+                          <Eye size={18} />
                         </button>
+
                       )}
                     </>
                   ) : null}
@@ -412,6 +545,58 @@ const LeadTable = ({ userRole }) => {
         </tbody>
       </table>
 
+                        <button
+                          onClick={() => handleFollowUp(lead)}
+                          className="text-green-600 hover:text-green-900 transition-colors duration-150 p-2 rounded-full hover:bg-green-100"
+                          title="Add Follow-up"
+                        >
+                          <MessageSquare size={18} />
+                        </button>
+                        {userRole === "super-admin" && (
+                          <button
+                            onClick={() => handleDeleteLead(lead._id)}
+                            className="text-red-600 hover:text-red-900 transition-colors duration-150 p-2 rounded-full hover:bg-red-100"
+                            title="Delete Lead"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+
+      {/* --- Pagination Controls --- */}
+      <div className="pagination-controls mt-6 flex justify-center items-center space-x-4">
+        <button
+          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200"
+        >
+          Previous
+        </button>
+        <span className="text-sm text-gray-700">
+          Page <span className="font-semibold">{currentPage}</span> of <span className="font-semibold">{Math.ceil(filteredLeads.length / leadsPerPage)}</span>
+        </span>
+        <button
+          onClick={() =>
+            setCurrentPage((prev) =>
+              prev < Math.ceil(filteredLeads.length / leadsPerPage) ? prev + 1 : prev
+            )
+          }
+          disabled={currentPage === Math.ceil(filteredLeads.length / leadsPerPage)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200"
+        >
+          Next
+        </button>
+      </div>
+
+      {/* --- Modals --- */}
       {showFollowUp && selectedLead && (
         <FollowUpModal
           lead={selectedLead}
@@ -423,34 +608,42 @@ const LeadTable = ({ userRole }) => {
       <CreateLeadForm
         isOpen={showCreateLead}
         onClose={() => setShowCreateLead(false)}
-        onSave={() => {}}
+        onSave={() => { /* Consider re-fetching leads here after a new lead is created */ }}
       />
 
       <Dialog open={showFollowUpList} onOpenChange={setShowFollowUpList}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px] bg-white p-6 rounded-lg shadow-xl">
           <DialogHeader>
-            <DialogTitle>Follow-ups for {selectedLead?.name}</DialogTitle>
+            <DialogTitle className="text-xl font-semibold text-gray-800 border-b pb-3 mb-4">Follow-ups for {selectedLead?.name}</DialogTitle>
           </DialogHeader>
           {followUpLoading ? (
-            <p>Loading...</p>
+            <p className="text-center text-gray-500 py-4">Loading follow-ups...</p>
           ) : followUpError ? (
-            <p>{followUpError}</p>
+            <p className="text-center text-red-500 py-4">Error: {followUpError}</p>
           ) : followUpList.length === 0 ? (
-            <p>No follow-ups found.</p>
+            <p className="text-center text-gray-500 py-4">No follow-ups found for this lead.</p>
           ) : (
-            <ul>
+            <ul className="space-y-4 max-h-80 overflow-y-auto pr-2">
               {followUpList.map((f, i) => (
-                <li key={i}>
-                  <strong>{f.author}</strong> ({f.role}): {f.comment}
-                  <br />
-                  <small>{f.timestamp}</small>
-                  {f.place && <div>Meeting: {f.place}</div>}
+                <li key={i} className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                  <div className="flex justify-between items-center mb-1">
+                    <strong className="text-gray-800">{f.author}</strong>
+                    <span className="text-xs font-medium text-gray-600 px-2 py-1 rounded-full bg-gray-200">{f.role}</span>
+                  </div>
+                  <p className="text-gray-700 text-sm mb-1">{f.comment}</p>
+                  {f.place && (
+                    <div className="flex items-center text-xs text-gray-600">
+                      <MapPin size={12} className="mr-1" /> Meeting at: {f.place}
+                    </div>
+                  )}
+                  <small className="block text-right text-gray-500 text-xs mt-2">{new Date(f.timestamp).toLocaleString()}</small>
                 </li>
               ))}
             </ul>
           )}
         </DialogContent>
       </Dialog>
+
       
       {/* Assignment Chain Modal */}
       <Dialog open={!!chainModalLead} onOpenChange={() => setChainModalLead(null)}>
@@ -489,254 +682,469 @@ const LeadTable = ({ userRole }) => {
         </DialogContent>
       </Dialog>
       
+
+
+
       {/* === Styles === */}
       <style>{`
-  * {
-    font-family: 'Poppins', sans-serif;
-  }
+        /* Base styles */
+        * {
+          font-family: 'Poppins', sans-serif;
+          box-sizing: border-box;
+        }
 
-  .lead-table-wrapper {
-    padding: 24px;
-    border: 1px solid #ddd;
-    background: #fff;
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    overflow-x: auto;
-  }
+        body {
+          background-color: #f4f7f6;
+        }
 
-  .lead-table-header {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12 px;
-  margin-bottom: 24px;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  background-color: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  }
+        .lead-table-wrapper {
+          display: flex;
+          flex-direction: column;
+          flex: 1;
+          padding: 24px;
+          background: #fff;
+          border-radius: 12px;
+          box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+          overflow: hidden;
+          min-height: 0;
+          margin: 20px;
+        }
 
-  .search-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: white;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  padding: 8px 12px;
-  flex: 1;
-  max-width: 300px;
-  }
+        .lead-table-header {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 16px;
+          margin-bottom: 24px;
+          align-items: center;
+          justify-content: space-between;
+          padding: 16px 20px;
+          background-color: #f9fafb;
+          border: 1px solid #e5e7eb;
+          border-radius: 10px;
+        }
 
-  .search-bar input {
-  border: none;
-  outline: none;
-  width: 100%;
-  font-size: 14px;
-  }
+        .search-bar {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          background: white;
+          border: 1px solid #d1d5db;
+          border-radius: 8px;
+          padding: 10px 14px;
+          flex: 1;
+          max-width: 350px;
+          box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+        }
 
-  .search-bar svg {
-  color: #6b7280;
-  }
+        .search-bar input {
+          border: none;
+          outline: none;
+          width: 100%;
+          font-size: 15px;
+          color: #374151;
+        }
 
-  .create-lead-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: #3b82f6;
-  color: white;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  }
+        .search-bar svg {
+          color: #9ca3af;
+        }
 
-  .create-lead-btn:hover {
-  background: #2563eb;
-  }
+        .lead-table-header select {
+          padding: 10px 14px;
+          border: 1px solid #d1d5db;
+          border-radius: 8px;
+          background-color: white;
+          font-size: 14px;
+          color: #374151;
+          appearance: none;
+          background-image: url('data:image/svg+xml;utf8,<svg fill="%236B7280" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M9.293 12.95l.707.707L15 8.707V7.293L10.707 3 9.293 4.414 12.586 7.707H5v2h7.586L9.293 14.293l1.414 1.414z" transform="rotate(90 10 10)"/></svg>');
+          background-repeat: no-repeat;
+          background-position: right 10px center;
+          background-size: 1em;
+          cursor: pointer;
+          transition: border-color 0.2s, box-shadow 0.2s;
+        }
 
-  .lead-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-  }
+        .lead-table-header select:focus {
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+        }
 
-  .lead-table th {
-  background: #f8fafc;
-  padding: 12px 16px;
-  text-align: left;
-  font-weight: 600;
-  color: #374151;
-  border-bottom: 2px solid #e5e7eb;
-  }
+        .create-lead-btn {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background: #3b82f6;
+          color: white;
+          border: none;
+          padding: 12px 20px;
+          border-radius: 8px;
+          font-size: 15px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background-color 0.2s, transform 0.2s;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
 
-  .lead-table td {
-  padding: 12px 16px;
-  border-bottom: 1px solid #f3f4f6;
-  vertical-align: top;
-  }
+        .create-lead-btn:hover {
+          background: #2563eb;
+          transform: translateY(-1px);
+        }
 
-  .lead-table tr:hover {
-  background: #f9fafb;
-  }
+        .create-lead-btn svg {
+          transition: transform 0.2s;
+        }
 
-  .status-badge {
-  display: inline-block;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
-  text-transform: uppercase;
-  }
+        .table-container {
+          flex: 1;
+          overflow-x: auto;
+          overflow-y: auto;
+          min-height: 0;
+          -webkit-overflow-scrolling: touch;
+        }
 
-  .status-hot {
-  background: #fef2f2;
-  color: #dc2626;
-  }
+        .lead-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 14px;
+        }
 
-  .status-warm {
-  background: #fffbeb;
-  color: #d97706;
-  }
+        .lead-table th {
+          background: #f1f5f9;
+          padding: 14px 18px;
+          text-align: left;
+          font-weight: 700;
+          color: #4a5568;
+          border-bottom: 2px solid #e2e8f0;
+          border-right: 1px solid #e2e8f0; /* Vertical border for headers */
+          white-space: nowrap;
+        }
 
-  .status-cold {
-  background: #f0f9ff;
-  color: #0284c7;
-  }
+        .lead-table th:last-child {
+          border-right: none; /* No right border for the last header */
+        }
 
-  .status-default {
-  background: #f3f4f6;
-  color: #6b7280;
-  }
+        .lead-table td {
+          padding: 14px 18px;
+          border-bottom: 1px solid #edf2f7;
+          border-right: 1px solid #edf2f7; /* Vertical border for cells */
+          vertical-align: middle;
+          color: #2d3748;
+        }
 
-  .lead-table button {
-  background: none;
-  border: none;
-  padding: 6px;
-  border-radius: 4px;
-  cursor: pointer;
-  color: #6b7280;
-  transition: all 0.2s;
-  margin-right: 4px;
-  }
+        .lead-table td:last-child {
+          border-right: none; /* No right border for the last cell in a row */
+        }
 
-  .lead-table button:hover {
-  background: #f3f4f6;
-  color: #374151;
-  }
+        .lead-table tr:hover {
+          background: #f5f8fa;
+        }
 
-  .assignment-controls {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
+        .lead-table td > div {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 4px;
+        }
+        .lead-table td > div:last-child {
+            margin-bottom: 0;
+        }
 
-  .assignment-controls select {
-    padding: 6px 8px;
-    border: 1px solid #d1d5db;
-    border-radius: 4px;
-    font-size: 12px;
-    background: white;
-  }
+        .lead-table td svg {
+          color: #9da6b4;
+        }
 
-  .forward-btn, .self-assign-btn {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 6px 8px;
-    border: 1px solid #d1d5db;
-    border-radius: 4px;
-    background: white;
-    font-size: 11px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
+        .status-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 6px 12px;
+          border-radius: 9999px;
+          font-size: 11px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
 
-  .forward-btn:hover {
-    background: #f0f9ff;
-    border-color: #3b82f6;
-    color: #3b82f6;
-  }
+        .status-hot {
+          background: #fee2e2;
+          color: #ef4444;
+        }
 
-  .self-assign-btn:hover {
-    background: #f0fdf4;
-    border-color: #22c55e;
-    color: #22c55e;
-  }
+        .status-warm {
+          background: #fff3da;
+          color: #f97316;
+        }
 
-  .forward-btn:disabled, .self-assign-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
+        .status-cold {
+          background: #e0f2fe;
+          color: #0284c7;
+        }
 
-  .assignment-chain {
-    margin-top: 4px;
-    font-size: 11px;
-    color: #6b7280;
-  }
+        .status-default {
+          background: #e5e7eb;
+          color: #6b7280;
+        }
 
-  .chain-item {
-    padding: 1px 3px;
-    border-radius: 3px;
-    font-size: 10px;
-  }
+        .lead-table button {
+          background: none;
+          border: none;
+          padding: 8px;
+          border-radius: 50%;
+          cursor: pointer;
+          color: #6b7280;
+          transition: all 0.2s;
+          margin: 0 4px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
 
-  .chain-item.assigned {
-    background: #f0f9ff;
-    color: #0284c7;
-  }
+        .lead-table button:hover {
+          background: #e2e8f0;
+          color: #374151;
+        }
 
-  .chain-item.forwarded {
-    background: #fffbeb;
-    color: #d97706;
-  }
+        .assignment-controls {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
 
-  .chain-item.completed {
-    background: #f0fdf4;
-    color: #22c55e;
-  }
+        .assignment-controls select {
+          padding: 8px 12px;
+          border: 1px solid #d1d5db;
+          border-radius: 6px;
+          font-size: 13px;
+          background: white;
+          color: #374151;
+          box-shadow: inset 0 1px 2px rgba(0,0,0,0.03);
+          transition: border-color 0.2s, box-shadow 0.2s;
+        }
 
-  .chain-item.rejected {
-    background: #fef2f2;
-    color: #dc2626;
-  }
+        .assignment-controls select:focus {
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+        }
 
-  @media (max-width: 768px) {
-    .lead-table-wrapper {
-      padding: 16px;
-    }
+        .forward-btn, .self-assign-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          padding: 8px 12px;
+          border: 1px solid #d1d5db;
+          border-radius: 6px;
+          background: white;
+          font-size: 12px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
 
-    .lead-table-header {
-      flex-direction: column;
-      align-items: stretch;
-    }
+        .forward-btn:hover {
+          background: #e0f2fe;
+          border-color: #60a5fa;
+          color: #2563eb;
+        }
 
-    .search-bar {
-      max-width: none;
-    }
+        .self-assign-btn:hover {
+          background: #e0faed;
+          border-color: #86efac;
+          color: #16a34a;
+        }
 
-    .lead-table {
-      font-size: 12px;
-    }
+        .forward-btn:disabled, .self-assign-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+          background-color: #f3f4f6;
+          color: #9ca3af;
+          border-color: #e5e7eb;
+        }
 
-    .lead-table th,
-    .lead-table td {
-      padding: 8px 12px;
-    }
+        .assignment-chain {
+          margin-top: 4px;
+          font-size: 11px;
+          color: #6b7280;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 4px;
+        }
 
-    .assignment-controls {
-      gap: 4px;
-    }
+        .chain-item {
+          padding: 2px 6px;
+          border-radius: 4px;
+          font-size: 10px;
+          white-space: nowrap;
+        }
 
-    .forward-btn, .self-assign-btn {
-      font-size: 10px;
-      padding: 4px 6px;
-    }
-  }
+        .chain-item.assigned {
+          background: #e0f2fe;
+          color: #0284c7;
+        }
+
+        .chain-item.forwarded {
+          background: #fff7ed;
+          color: #ea580c;
+        }
+
+        .chain-item.completed {
+          background: #dcfce7;
+          color: #22c55e;
+        }
+
+        .chain-item.rejected {
+          background: #fee2e2;
+          color: #dc2626;
+        }
+
+        /* Responsive Table */
+        @media (max-width: 768px) {
+          .lead-table-wrapper {
+            padding: 16px;
+            margin: 10px;
+          }
+
+          .lead-table-header {
+            flex-direction: column;
+            align-items: stretch;
+            padding: 12px;
+            gap: 12px;
+          }
+
+          .search-bar {
+            max-width: none;
+            padding: 8px 12px;
+          }
+
+          .lead-table-header select, .create-lead-btn {
+            width: 100%;
+            text-align: center;
+            justify-content: center;
+            padding: 10px;
+          }
+
+          .lead-table thead {
+            display: none;
+          }
+
+          .lead-table, .lead-table tbody, .lead-table tr, .lead-table td {
+            display: block;
+            width: 100%;
+          }
+
+          .lead-table tr {
+            margin-bottom: 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 12px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+          }
+
+          .lead-table td {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px dashed #e5e7eb;
+            border-right: none; /* Remove vertical border in mobile view */
+            white-space: normal;
+          }
+
+          .lead-table td:last-child {
+            border-bottom: none;
+          }
+
+          .lead-table td::before {
+            content: attr(data-label);
+            font-weight: 700;
+            color: #4b5563;
+            flex-basis: 40%;
+            flex-shrink: 0;
+            text-align: left;
+          }
+          .lead-table td > div {
+              justify-content: flex-end;
+              text-align: right;
+              flex-grow: 1;
+              gap: 6px;
+              margin-bottom: 0;
+          }
+          .lead-table td > div svg {
+              flex-shrink: 0;
+          }
+
+          .lead-table td .assignment-controls {
+            align-items: flex-end;
+            gap: 6px;
+          }
+
+          .lead-table td .assignment-controls select,
+          .lead-table td .forward-btn,
+          .lead-table td .self-assign-btn {
+            width: auto;
+            max-width: 150px;
+            font-size: 11px;
+            padding: 6px 10px;
+          }
+
+          .lead-table td .assignment-chain {
+              justify-content: flex-end;
+              text-align: right;
+              margin-top: 0;
+          }
+
+          .lead-table td .flex.items-center.justify-end.space-x-2 {
+              width: 100%;
+              justify-content: flex-end;
+          }
+        }
+
+        /* Pagination Styles */
+        .pagination-controls {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 20px;
+          margin-top: 30px;
+          padding: 10px 0;
+          border-top: 1px solid #e5e7eb;
+        }
+
+        .pagination-controls button {
+          background-color: #4f46e5;
+          color: white;
+          border: none;
+          padding: 10px 20px;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 15px;
+          font-weight: 600;
+          transition: background-color 0.2s ease, transform 0.1s;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .pagination-controls button:hover:not(:disabled) {
+          background-color: #4338ca;
+          transform: translateY(-1px);
+        }
+
+        .pagination-controls button:disabled {
+          background-color: #cbd5e1;
+          color: #94a3b8;
+          cursor: not-allowed;
+          box-shadow: none;
+        }
+
+        .pagination-controls span {
+          font-size: 15px;
+          color: #4a5568;
+        }
+
+        .pagination-controls span .font-semibold {
+            color: #2d3748;
+        }
       `}</style>
     </div>
   );
