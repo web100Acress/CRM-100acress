@@ -10,6 +10,7 @@ import {
   Trash2,
   ArrowRight,
   UserCheck,
+  Link as LinkIcon,
 } from "lucide-react";
 import FollowUpModal from "./FollowUpModal";
 import CreateLeadForm from "./CreateLeadForm";
@@ -33,6 +34,7 @@ const LeadTable = ({ userRole }) => {
   const { toast } = useToast();
   const prevAssignedLeadIds = useRef(new Set());
   const currentUserId = localStorage.getItem('userId');
+  const [chainModalLead, setChainModalLead] = useState(null);
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -335,17 +337,18 @@ const LeadTable = ({ userRole }) => {
               </td>
               <td>
                 <div className="assignment-controls">
-                  {/* Assignment chain always visible */}
-                  {lead.assignmentChain && lead.assignmentChain.length > 0 && (
-                    <div className="assignment-chain">
-                      <small>Chain: {lead.assignmentChain.map((entry, index) => (
-                        <span key={index} className={`chain-item ${entry.status}`}>
-                          {entry.name} ({entry.role})
-                          {index < lead.assignmentChain.length - 1 && ' → '}
-                        </span>
-                      ))}</small>
-                    </div>
+                  {/* Show only the current assignee in Assign column */}
+                  {lead.assignmentChain && lead.assignmentChain.length > 0 ? (
+                    <span>
+                      Assigned to: {(() => {
+                        const last = lead.assignmentChain[lead.assignmentChain.length - 1];
+                        return last ? `${last.name} (${last.role})` : 'Unassigned';
+                      })()}
+                    </span>
+                  ) : (
+                    <span>Unassigned</span>
                   )}
+                  {/* Assignment dropdown/buttons logic remains unchanged below */}
                   {(!lead.assignedTo && canReassignLead(lead)) || String(lead.assignedTo) === String(currentUserId) ? (
                     <>
                       <select
@@ -385,15 +388,19 @@ const LeadTable = ({ userRole }) => {
                       Self Assign
                     </button>
                   )}
-                  {/* Read-only: show current assignee if no controls */}
-                  {(!lead.assignmentChain || lead.assignmentChain.length === 0) && !((!lead.assignedTo && canReassignLead(lead)) || String(lead.assignedTo) === String(currentUserId)) && (
-                    <span>Unassigned</span>
-                  )}
                 </div>
               </td>
               <td>
-                <button onClick={() => handleViewFollowUps(lead)}><Eye size={16} /></button>
-                <button onClick={() => handleFollowUp(lead)}><MessageSquare size={16} /></button>
+                {/* Actions column: Add button to show assignment chain modal */}
+                <button
+                  className="chain-view-btn"
+                  title="View Assignment Chain"
+                  onClick={() => setChainModalLead(lead)}
+                >
+                  <LinkIcon size={18} />
+                </button>
+                <button onClick={() => handleViewFollowUps(lead)} title="View Follow-ups"><Eye size={16} /></button>
+                <button onClick={() => handleFollowUp(lead)} title="Add Follow-up"><MessageSquare size={16} /></button>
                 {userRole === "super-admin" && (
                   <button onClick={() => handleDeleteLead(lead._id)}>
                     <Trash2 size={16} />
@@ -445,7 +452,43 @@ const LeadTable = ({ userRole }) => {
         </DialogContent>
       </Dialog>
       
-
+      {/* Assignment Chain Modal */}
+      <Dialog open={!!chainModalLead} onOpenChange={() => setChainModalLead(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assignment Chain</DialogTitle>
+          </DialogHeader>
+          {chainModalLead && chainModalLead.assignmentChain && chainModalLead.assignmentChain.length > 0 ? (
+            <ul style={{ padding: '0 0 0 1em' }}>
+              {chainModalLead.assignmentChain.map((entry, idx, arr) => {
+                const next = arr[idx + 1];
+                if (next) {
+                  return (
+                    <li key={idx} style={{ marginBottom: 6 }}>
+                      <b>{entry.name}</b> ({entry.role}) <span>assigned to</span> <b>{next.name}</b> ({next.role})
+                      {next.assignedAt && (
+                        <span> — <small>{new Date(next.assignedAt).toLocaleString()}</small></span>
+                      )}
+                    </li>
+                  );
+                } else {
+                  return (
+                    <li key={idx} style={{ marginBottom: 6 }}>
+                      <b>{entry.name}</b> ({entry.role}) <span>is the current assignee</span>
+                      {entry.assignedAt && (
+                        <span> — <small>{new Date(entry.assignedAt).toLocaleString()}</small></span>
+                      )}
+                    </li>
+                  );
+                }
+              })}
+            </ul>
+          ) : (
+            <p>No assignment chain available.</p>
+          )}
+        </DialogContent>
+      </Dialog>
+      
       {/* === Styles === */}
       <style>{`
   * {

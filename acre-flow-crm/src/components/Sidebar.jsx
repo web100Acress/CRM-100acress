@@ -199,10 +199,10 @@ const Sidebar = ({ userRole, isCollapsed, onToggle }) => {
         }
 
         .sidebar-link.active {
-          background-color: #2563eb;
-          color: white;
-          font-weight: 600;
-          box-shadow: inset 2px 0 0 0 #3b82f6;
+          background-color: #e0e7ff;
+          color: #1e293b;
+          font-weight: 700;
+          box-shadow: inset 4px 0 0 0 #3b82f6;
         }
 
         .sidebar-link .icon {

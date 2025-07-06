@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Plus, Edit, Trash2, UserCheck, UserX } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -16,53 +16,8 @@ import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '../components/DashboardLayout';
 
 const UserManagementContent = () => {
-  const [users, setUsers] = useState([
-    {
-      id: 1,
-      name: 'John Doe',
-      email: 'john@100acres.com',
-      phone: '+91 9876543210',
-      role: 'head-admin',
-      department: 'Sales',
-      status: 'active',
-      lastLogin: '2024-01-15',
-      createdAt: '2024-01-01'
-    },
-    {
-      id: 2,
-      name: 'Sarah Wilson',
-      email: 'sarah@100acres.com',
-      phone: '+91 9876543211',
-      role: 'team-leader',
-      department: 'Marketing',
-      status: 'active',
-      lastLogin: '2024-01-14',
-      createdAt: '2024-01-02'
-    },
-    {
-      id: 3,
-      name: 'Mike Johnson',
-      email: 'mike@100acres.com',
-      phone: '+91 9876543212',
-      role: 'employee',
-      department: 'Sales',
-      status: 'inactive',
-      lastLogin: '2024-01-10',
-      createdAt: '2024-01-03'
-    },
-    {
-      id: 4,
-      name: 'Emily Davis',
-      email: 'emily@100acres.com',
-      phone: '+91 9876543213',
-      role: 'employee',
-      department: 'Customer Support',
-      status: 'active',
-      lastLogin: '2024-01-15',
-      createdAt: '2024-01-04'
-    }
-  ]);
-
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -72,6 +27,27 @@ const UserManagementContent = () => {
   const [selectedUser, setSelectedUser] = useState(null);
 
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('http://localhost:5001/api/users', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        const data = await response.json();
+        setUsers(data.data || []);
+      } catch (err) {
+        // Optionally show a toast or error
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUsers();
+  }, []);
 
   const getRoleDisplayName = (role) => {
     switch (role) {
@@ -223,27 +199,27 @@ const UserManagementContent = () => {
               </TableHeader>
               <TableBody>
                 {filteredUsers.map(user => (
-                  <TableRow key={user.id}>
+                  <TableRow key={user._id || user.id}>
                     <TableCell>
-                      <div className="font-medium text-gray-900">{user.name}</div>
-                      <div className="text-sm text-gray-500">{user.email}</div>
+                      <div className="font-medium text-gray-900">{user.name || 'Unknown'}</div>
+                      <div className="text-sm text-gray-500">{user.email || 'Unknown'}</div>
                     </TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleBadgeColor(user.role)}`}>
-                        {getRoleDisplayName(user.role)}
+                        {getRoleDisplayName(user.role || 'Unknown')}
                       </span>
                     </TableCell>
-                    <TableCell>{user.department}</TableCell>
+                    <TableCell>{user.department || 'Unknown'}</TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeColor(user.status)}`}>
-                        {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+                        {user.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : 'Unknown'}
                       </span>
                     </TableCell>
-                    <TableCell className="text-sm text-gray-500">{user.lastLogin}</TableCell>
-                    <TableCell className="text-sm text-gray-500">{user.createdAt}</TableCell>
+                    <TableCell className="text-sm text-gray-500">{user.lastLogin || '-'}</TableCell>
+                    <TableCell className="text-sm text-gray-500">{user.createdAt || '-'}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => handleToggleStatus(user.id)} className="h-8 w-8 p-0">
+                        <Button variant="ghost" size="sm" onClick={() => handleToggleStatus(user._id || user.id)} className="h-8 w-8 p-0">
                           {user.status === 'active' ? <UserX className="h-4 w-4 text-red-600" /> : <UserCheck className="h-4 w-4 text-green-600" />}
                         </Button>
                         <Button variant="ghost" size="sm" onClick={() => handleEditUser(user)} className="h-8 w-8 p-0">
