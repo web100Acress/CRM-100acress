@@ -35,16 +35,16 @@ const Sidebar = ({ userRole, isCollapsed, onToggle }) => {
     'head-admin': [
       { path: '/', icon: Home, label: 'Dashboard' },
       { path: '/leads', icon: Building2, label: 'My Leads' },
-      { path: '/team', icon: Users, label: 'Team Management' },
+      // { path: '/team', icon: Users, label: 'Team Management' },
       { path: '/create-leader', icon: UserPlus, label: 'Create Team Leader' },
-      { path: '/tickets', icon: Ticket, label: 'Team Tickets' }
+      // { path: '/tickets', icon: Ticket, label: 'Team Tickets' }
     ],
     'team-leader': [
       { path: '/', icon: Home, label: 'Dashboard' },
       { path: '/leads', icon: Building2, label: 'Assigned Leads' },
       { path: '/employees', icon: Users, label: 'My Employees' },
       { path: '/create-employee', icon: UserPlus, label: 'Add Employee' },
-      { path: '/tickets', icon: Ticket, label: 'Manage Tickets' }
+      // { path: '/tickets', icon: Ticket, label: 'Manage Tickets' }
     ],
     employee: [
       { path: '/', icon: Home, label: 'Dashboard' },
