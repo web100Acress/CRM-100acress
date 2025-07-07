@@ -14,6 +14,7 @@ import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
 import UserManagement from "./pages/UserManagement";
+import Developer from "./pages/Developer";
 
 const queryClient = new QueryClient();
 
@@ -134,15 +135,21 @@ const App = () => {
                 )
               }
             />
-
-            <Route
+ <Route
               path="/settings"
               element={
                 isLoggedIn && userRole === "super-admin" ? (
-                  <div className="p-6">
-                    <h1 className="text-2xl font-bold">Settings</h1>
-                    <p>Settings interface coming soon...</p>
-                  </div>
+                  <Settings userRole={userRole} />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
+            <Route
+              path="/developer"
+              element={
+                isLoggedIn && userRole === "super-admin" ? (
+                  <Developer userRole={userRole} />
                 ) : (
                   <Navigate to="/" replace />
                 )
