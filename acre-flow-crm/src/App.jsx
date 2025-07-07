@@ -151,28 +151,23 @@ const App = () => {
                 )
               }
             />
-            <Route
+             <Route
               path="/developer"
               element={
-                isLoggedIn && userRole === "super-admin" ? (
+                (isLoggedIn && userRole === "super-admin") || isDeveloperLoggedIn ? (
                   <Developer userRole={userRole} />
                 ) : (
                   <Navigate to="/" replace />
                 )
               }
             />
-                {/* Developer Section Routes */}
                 <Route
-              path="/developer-login"
-              element={!isDeveloperLoggedIn ? <DeveloperLogin /> : <Navigate to="/developer-dashboard" replace />}
-            />
-            <Route
               path="/developer-dashboard"
               element={
                 isDeveloperLoggedIn ? (
                   <DeveloperDashboard />
                 ) : (
-                  <Navigate to="/developer-login" replace />
+                  <Navigate to="/login" replace />
                 )
               }
             />

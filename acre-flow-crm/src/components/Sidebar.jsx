@@ -31,7 +31,7 @@ const Sidebar = ({ userRole, isCollapsed, onToggle }) => {
       { path: '/users', icon: Users, label: 'Manage Users' },
       { path: '/create-admin', icon: UserPlus, label: 'Create Admin' },
       // { path: '/settings', icon: Settings, label: 'Settings' },
-      { path: '/developer', icon: Code, label: 'Developer' }
+      // { path: '/developer', icon: Code, label: 'Developer' }
       // { path: '/tickets', icon: Ticket, label: 'All Tickets' },
       // { path: '/settings', icon: Settings, label: 'Settings' }
     ],
