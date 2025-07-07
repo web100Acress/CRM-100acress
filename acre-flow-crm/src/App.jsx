@@ -24,14 +24,17 @@ const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState("employee");
   const [isLoading, setIsLoading] = useState(true);
+   const [isDeveloperLoggedIn, setIsDeveloperLoggedIn] = useState(false);
 
   useEffect(() => {
     const checkAuthStatus = () => {
       const loggedIn = localStorage.getItem("isLoggedIn") === "true";
       const role = localStorage.getItem("userRole") || "employee";
+      const developerLoggedIn = localStorage.getItem("isDeveloperLoggedIn") === "true"; 
 
       setIsLoggedIn(loggedIn);
       setUserRole(role);
+       setIsDeveloperLoggedIn(developerLoggedIn);
       setIsLoading(false);
     };
 

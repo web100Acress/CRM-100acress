@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Eye, EyeOff, AtSign, Hash } from "lucide-react";
+import { Eye, EyeOff, AtSign, Hash, Code } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import logo from '/image/logo.png';
 
@@ -44,6 +44,9 @@ const Login = () => {
     setIsLoading(false);
   };
 
+  const handleDeveloperLogin = () => {
+    navigate('/developer-login');
+  }
   return (
     <>
       <div className="container">
@@ -113,6 +116,17 @@ const Login = () => {
               {isLoading ? "Signing In..." : "LOG IN"}
             </button>
           </form>
+
+         <div className="developer-login-container">
+  <button
+    onClick={handleDeveloperLogin}
+    className="developer-login-button"
+  >
+    <Code className="icon" />
+    Developer Access
+  </button>
+</div>
+
         </div>
       </div>
 
@@ -462,7 +476,41 @@ const Login = () => {
                 width: 50px;
                 height: 50px;
             }
+                
         }
+             .developer-login-container {
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb; /* light gray */
+}
+
+.developer-login-button {
+  width: 100%;
+  height: 48px;
+  border: 2px solid #334155; /* slate-700 */
+  color: #334155;
+  background-color: transparent;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.developer-login-button:hover {
+  background-color: #334155;
+  color: white;
+  transform: scale(1.02);
+}
+
+.icon {
+  height: 1rem;
+  width: 1rem;
+  margin-right: 0.5rem;
+}
+
+           
       `}</style>
     </>
   );
