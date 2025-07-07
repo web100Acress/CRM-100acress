@@ -366,11 +366,7 @@ const UserManagementContent = () => {
       </div>
 
       <div className="user-table-container">
-        <div className="table-header-info">
-           {/* <h2>All Users <span className="user-count">({filteredUsers.length})</span></h2> */}
-          {/* <span className="active-count">{users.filter(u => u.status === 'active').length} Active Users</span> */}
-        </div>
-
+        <div className="table-header-info"></div>
         {paginatedUsers.length === 0 ? (
           <div className="no-users-message">
             <p>No users found matching your criteria.</p>
@@ -386,30 +382,29 @@ const UserManagementContent = () => {
               <div>Created At</div>
               <div>Actions</div>
             </div>
-
             {paginatedUsers.map(user => (
               <div key={user._id} className="user-grid-row">
                 <div data-label="User Info">
-                  <strong>{user.name}</strong>
-                  <br /><small>{user.email}</small>
-                  {user.phone && <><br /><small>{user.phone}</small></>}
+                  <strong>{user.name || '-'}</strong>
+                  <br /><small>{user.email || '-'}</small>
+                  {user.phone ? <><br /><small>{user.phone}</small></> : null}
                 </div>
                 <div data-label="Role">
-                  <span className={getRoleBadgeColor(user.role)}>{getRoleDisplayName(user.role)}</span>
+                  <span className={getRoleBadgeColor(user.role)}>{getRoleDisplayName(user.role) || '-'}</span>
                 </div>
                 <div data-label="Department">
-                  {user.department || <span className="text-gray-400">N/A</span>}
+                  {user.department || '-'}
                 </div>
                 <div data-label="Status">
-                  <span className={getStatusBadgeColor(user.status)}>{user.status}</span>
+                  <span className={getStatusBadgeColor(user.status)}>{user.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : 'Unknown'}</span>
                 </div>
                 <div data-label="Last Login">
-                  {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : <span className="text-gray-400">-</span>}
+                  {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : '-'}
                 </div>
                 <div data-label="Created At">
-                  {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : <span className="text-gray-400">-</span>}
+                  {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'}
                 </div>
-                <div data-label="Actions" className="user-actions">
+                <div data-label="Actions" className="user-actions" style={{textAlign: 'right'}}>
                   <button onClick={handleToggleStatus(user)} className="action-btn toggle-status-btn" title={user.status === 'active' ? 'Deactivate User' : 'Activate User'}>
                     {user.status === 'active' ? <UserX size={18} /> : <UserCheck size={18} />}
                   </button>
@@ -971,10 +966,10 @@ const UserManagementContent = () => {
   );
 };
 
-const UserManagement = () => {
+const UserManagement = ({ userRole = 'super-admin' }) => {
   return (
-    <DashboardLayout>
-      <UserManagementContent />
+    <DashboardLayout userRole={userRole}>
+      <UserManagementContent userRole={userRole} />
     </DashboardLayout>
   );
 };
