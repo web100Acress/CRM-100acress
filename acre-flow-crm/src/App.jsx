@@ -15,6 +15,8 @@ import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
 import UserManagement from "./pages/UserManagement";
 import Developer from "./pages/Developer";
+import DeveloperLogin from "./pages/DeveloperLogin";
+import DeveloperDashboard from "./pages/DeveloperDashboard";
 
 const queryClient = new QueryClient();
 
@@ -153,6 +155,21 @@ const App = () => {
                   <Developer userRole={userRole} />
                 ) : (
                   <Navigate to="/" replace />
+                )
+              }
+            />
+                {/* Developer Section Routes */}
+                <Route
+              path="/developer-login"
+              element={!isDeveloperLoggedIn ? <DeveloperLogin /> : <Navigate to="/developer-dashboard" replace />}
+            />
+            <Route
+              path="/developer-dashboard"
+              element={
+                isDeveloperLoggedIn ? (
+                  <DeveloperDashboard />
+                ) : (
+                  <Navigate to="/developer-login" replace />
                 )
               }
             />
