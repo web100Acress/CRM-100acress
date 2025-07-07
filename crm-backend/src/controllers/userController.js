@@ -74,4 +74,34 @@ exports.deleteUser = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+};
+
+exports.requestPasswordReset = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const { user, token } = await userService.setResetToken(email);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    // Send reset email
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5000'}/reset-password/${token}`;
+    await transporter.sendMail({
+      from: process.env.SMTP_USER || 'your-email@gmail.com',
+      to: email,
+      subject: 'Password Reset Request',
+      text: `You requested a password reset. Click the link to reset your password: ${resetUrl}`,
+    });
+    res.json({ message: 'Password reset email sent' });
+  } catch (err) {
+    res.status(500).json({ message: 'Error sending reset email' });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  const { token, newPassword } = req.body;
+  try {
+    const user = await userService.resetPassword(token, newPassword);
+    if (!user) return res.status(400).json({ message: 'Invalid or expired token' });
+    res.json({ message: 'Password reset successful' });
+  } catch (err) {
+    res.status(500).json({ message: 'Error resetting password' });
+  }
 }; 

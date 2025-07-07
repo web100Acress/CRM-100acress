@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   User,
@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 
 const Sidebar = ({ userRole, isCollapsed, onToggle }) => {
+  const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -75,7 +76,10 @@ const Sidebar = ({ userRole, isCollapsed, onToggle }) => {
 
   return (
     <>
-      <div className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+      
+
+      {/* Desktop only: Sidebar */}
+      <div className={`sidebar ${isCollapsed ? 'collapsed' : ''} hidden md:flex flex-col`} style={{ minHeight: '100vh' }}>
         <div className="sidebar-header">
           <div className="sidebar-logo">
             <Building2 className="icon" />
@@ -87,31 +91,27 @@ const Sidebar = ({ userRole, isCollapsed, onToggle }) => {
             </div>
           )}
         </div>
-
         <nav className="sidebar-nav">
           <ul>
             {navItems.map((item) => {
               const Icon = item.icon;
               return (
                 <li key={item.path}>
-               <NavLink
-  to={item.path}
-  end={item.path === '/'} // exact match for "/"
-  className={({ isActive }) =>
-    `sidebar-link ${isActive ? 'active' : ''}`
-  }
->
-
-  <Icon className="icon" />
-  {!isCollapsed && <span>{item.label}</span>}
-</NavLink>
-
+                  <NavLink
+                    to={item.path}
+                    end={item.path === '/'}
+                    className={({ isActive }) =>
+                      `sidebar-link ${isActive ? 'active' : ''}`
+                    }
+                  >
+                    <Icon className="icon" />
+                    {!isCollapsed && <span>{item.label}</span>}
+                  </NavLink>
                 </li>
               );
             })}
           </ul>
         </nav>
-
         <div className="sidebar-footer">
           <div className="sidebar-user">
             <div className="user-icon">
@@ -144,7 +144,12 @@ const Sidebar = ({ userRole, isCollapsed, onToggle }) => {
           flex-direction: column;
           font-family: 'Segoe UI', sans-serif;
         }
-
+        @media (max-width: 768px) {
+          .sidebar {
+            width: 80vw;
+            max-width: 18rem;
+          }
+        }
         .sidebar.collapsed {
           width: 4rem;
         }
