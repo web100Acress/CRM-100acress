@@ -8,7 +8,8 @@ import {
   Building2,
   Home,
   LogOut,
-  Settings
+  Settings,
+  Code
 } from 'lucide-react';
 
 const Sidebar = ({ userRole, isCollapsed, onToggle }) => {
@@ -29,6 +30,8 @@ const Sidebar = ({ userRole, isCollapsed, onToggle }) => {
       { path: '/leads', icon: Building2, label: 'All Leads' },
       { path: '/users', icon: Users, label: 'Manage Users' },
       { path: '/create-admin', icon: UserPlus, label: 'Create Admin' },
+      // { path: '/settings', icon: Settings, label: 'Settings' },
+      { path: '/developer', icon: Code, label: 'Developer' }
       // { path: '/tickets', icon: Ticket, label: 'All Tickets' },
       // { path: '/settings', icon: Settings, label: 'Settings' }
     ],

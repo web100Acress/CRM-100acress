@@ -1,74 +1,70 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, AtSign, Hash, Code } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import logo from '/image/logo.png';
 
-const Login = () => {
+const DeveloperLogin = () => {
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
+  // Static developer credentials
+  const DEVELOPER_CREDENTIALS = {
+    email: "amandev@gmail.com",
+    password: "dev123"
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
-    try {
-      const response = await fetch("http://localhost:5001/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(credentials),
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.token) {
-        console.log('LOGIN USER:', data.user);
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("userRole", data.user.role);
-        localStorage.setItem("userEmail", data.user.email);
-        localStorage.setItem("userName", data.user.name);
-        localStorage.setItem("isLoggedIn", "true");
-        localStorage.setItem("userId", data.user._id);
-        navigate("/");
+    // Simulate API delay
+    setTimeout(() => {
+      if (credentials.email === DEVELOPER_CREDENTIALS.email && 
+          credentials.password === DEVELOPER_CREDENTIALS.password) {
+        
+        // Set developer session
+        localStorage.setItem("isDeveloperLoggedIn", "true");
+        localStorage.setItem("developerEmail", credentials.email);
+        localStorage.setItem("developerName", "Aman Developer");
+        localStorage.setItem("developerRole", "developer");
+        
+        navigate("/developer-dashboard");
         window.location.reload();
       } else {
-        setError(data.message || "Invalid email or password");
+        setError("Invalid developer credentials");
       }
-    } catch (err) {
-      setError("Login failed. Please try again.");
-    }
-
-    setIsLoading(false);
+      setIsLoading(false);
+    }, 1000);
   };
 
-  const handleDeveloperLogin = () => {
-    navigate('/developer-login');
-  }
   return (
     <>
       <div className="container">
-        {/* Left Side (Red) */}
-        <div className="left">
-          <h1 className="crm-title">100acres.com</h1>
-          <p className="crm-subtitle">Rishto Ki Shuruwat</p>
+        {/* Left Side (Developer Theme) */}
+        <div className="left developer-theme">
+          <Code className="developer-icon" />
+          <h1 className="crm-title">Developer Console</h1>
+          <p className="crm-subtitle">Advanced System Management</p>
           <p className="crm-desc">
-            Indias Best Property Property Site
+            Access technical tools, database management, API configurations, and system monitoring
           </p>
-          <p className="crm-quote">
-            Post and Search Your Property .
-          </p>
+          <div className="credentials-hint">
+            <p className="hint-title">Developer Credentials:</p>
+            <p className="hint-text">Email: amandev@gmail.com</p>
+            <p className="hint-text">Password: dev123</p>
+          </div>
         </div>
 
         {/* Right Side (Login Form) */}
         <div className="right">
           <form className="login-box" onSubmit={handleSubmit}>
-            <div className="logo-container">
-              <img src={logo} alt="CRM Logo" className="crm-logo" />
+            <div className="logo-container developer-logo">
+              <Code size={40} />
             </div>
-            <h2 className="login-heading">Sign In</h2>
+            <h2 className="login-heading">Developer Access</h2>
 
             {error && <div className="error-msg">{error}</div>}
 
@@ -76,7 +72,7 @@ const Login = () => {
               <AtSign className="input-icon" />
               <input
                 type="email"
-                placeholder="Email Address"
+                placeholder="Developer Email"
                 value={credentials.email}
                 onChange={(e) =>
                   setCredentials({ ...credentials, email: e.target.value })
@@ -89,7 +85,7 @@ const Login = () => {
               <Hash className="input-icon" />
               <input
                 type={showPassword ? "text" : "password"}
-                placeholder="Password"
+                placeholder="Developer Password"
                 value={credentials.password}
                 onChange={(e) =>
                   setCredentials({ ...credentials, password: e.target.value })
@@ -109,24 +105,13 @@ const Login = () => {
               <label className="remember-me">
                 <input type="checkbox" className="checkbox" /> Remember Me
               </label>
-              <a href="#" className="forgot-password">Forgot Password?</a>
+              <a href="/login" className="back-to-main">Back to Main Login</a>
             </div>
 
-            <button className="login-btn" disabled={isLoading}>
-              {isLoading ? "Signing In..." : "LOG IN"}
+            <button className="login-btn developer-btn" disabled={isLoading}>
+              {isLoading ? "Authenticating..." : "ACCESS DEVELOPER CONSOLE"}
             </button>
           </form>
-
-         <div className="developer-login-container">
-  <button
-    onClick={handleDeveloperLogin}
-    className="developer-login-button"
-  >
-    <Code className="icon" />
-    Developer Access
-  </button>
-</div>
-
         </div>
       </div>
 
@@ -143,12 +128,11 @@ const Login = () => {
         .container {
           display: flex;
           min-height: 100vh;
-          overflow: hidden; /* Prevent scroll issues with clip-path */
+          overflow: hidden;
         }
 
         .left {
           width: 50%;
-          background-color: #dc2626; /* Original red */
           display: flex;
           flex-direction: column;
           justify-content: center;
@@ -156,41 +140,66 @@ const Login = () => {
           color: white;
           text-align: center;
           padding: 3rem;
-          /* More pronounced, smoother curve */
           clip-path: polygon(0 0, 100% 0, 85% 100%, 0% 100%);
-          position: relative; /* For decorative elements if desired */
+          position: relative;
+        }
+
+        .developer-theme {
+          background: linear-gradient(135deg, #1e293b, #0f172a);
+          border: 2px solid #334155;
+        }
+
+        .developer-icon {
+          width: 80px;
+          height: 80px;
+          margin-bottom: 1.5rem;
+          color: #06b6d4;
         }
 
         .crm-title {
-          font-size: 3.5rem; /* Larger font size */
-          font-weight: 700; /* Bolder */
+          font-size: 3.5rem;
+          font-weight: 700;
           margin-bottom: 0.8rem;
           letter-spacing: 2px;
           text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         .crm-subtitle {
-          font-size: 1.6rem; /* Larger */
+          font-size: 1.6rem;
           font-weight: 500;
           margin-bottom: 1.5rem;
           opacity: 0.9;
+          color: #06b6d4;
         }
 
         .crm-desc {
-          font-size: 1.1rem; /* Slightly larger */
+          font-size: 1.1rem;
           line-height: 1.7;
-          max-width: 400px; /* Wider text block */
+          max-width: 400px;
           margin-bottom: 2rem;
           font-weight: 300;
         }
 
-        .crm-quote {
-            font-size: 1.2rem;
-            font-style: italic;
-            margin-top: 2rem;
-            opacity: 0.8;
-            border-left: 3px solid rgba(255, 255, 255, 0.6);
-            padding-left: 1rem;
+        .credentials-hint {
+          background: rgba(6, 182, 212, 0.1);
+          border: 1px solid rgba(6, 182, 212, 0.3);
+          padding: 1.5rem;
+          border-radius: 0.75rem;
+          margin-top: 2rem;
+        }
+
+        .hint-title {
+          font-size: 1rem;
+          font-weight: 600;
+          color: #06b6d4;
+          margin-bottom: 0.5rem;
+        }
+
+        .hint-text {
+          font-size: 0.9rem;
+          margin-bottom: 0.25rem;
+          font-family: 'Courier New', monospace;
+          color: #e2e8f0;
         }
 
         .right {
@@ -199,8 +208,7 @@ const Login = () => {
           align-items: center;
           justify-content: center;
           padding: 2rem;
-          
-          position: relative;
+          background: linear-gradient(135deg, #f8fafc, #e2e8f0);
         }
 
         .login-box {
@@ -214,6 +222,7 @@ const Login = () => {
           flex-direction: column;
           align-items: center;
           animation: fadeIn 1s ease-out;
+          border: 2px solid #e2e8f0;
         }
 
         @keyframes fadeIn {
@@ -223,50 +232,47 @@ const Login = () => {
 
         .logo-container {
             margin-bottom: 2rem;
-            background-color: #dc2626; /* Red background for logo */
             border-radius: 50%;
             padding: 1rem;
             display: flex;
             justify-content: center;
             align-items: center;
-            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
         }
 
-        .crm-logo {
-            width: 80px;
-            height: 80px;
-            object-fit: contain;
-            filter: invert(100%);
+        .developer-logo {
+          background: linear-gradient(135deg, #1e293b, #0f172a);
+          color: #06b6d4;
         }
 
         .login-heading {
-          font-size: 2rem; /* Larger heading */
+          font-size: 2rem;
           text-align: center;
-          color: #059669; /* Original green */
-          margin-bottom: 2rem; /* More space below heading */
+          color: #1e293b;
+          margin-bottom: 2rem;
           font-weight: 600;
         }
 
         .input-group {
           display: flex;
           align-items: center;
-          border: 1px solid #d1d5db; /* Lighter border */
-          border-radius: 0.75rem; /* More rounded input fields */
-          margin-bottom: 1.2rem; /* More space between inputs */
-          padding: 0.75rem 1rem; /* More padding inside inputs */
-          background: #ffffff; /* White background for inputs */
-          box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05); /* Subtle inner shadow */
+          border: 1px solid #d1d5db;
+          border-radius: 0.75rem;
+          margin-bottom: 1.2rem;
+          padding: 0.75rem 1rem;
+          background: #ffffff;
+          box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
           transition: all 0.2s ease-in-out;
           width: 100%;
         }
 
         .input-group:focus-within {
-            border-color: #10b981; /* Green border on focus */
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2); /* Green glow on focus */
+            border-color: #06b6d4;
+            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2);
         }
 
         .input-icon {
-          color: #9ca3af; /* Softer icon color */
+          color: #9ca3af;
           margin-right: 0.75rem;
         }
 
@@ -276,11 +282,11 @@ const Login = () => {
           flex: 1;
           background: transparent;
           font-size: 1rem;
-          color: #374151; /* Darker text color */
+          color: #374151;
         }
 
         .input-group input::placeholder {
-            color: #9ca3af; /* Placeholder color */
+            color: #9ca3af;
         }
 
         .eye-btn {
@@ -296,9 +302,9 @@ const Login = () => {
         .options {
           display: flex;
           justify-content: space-between;
-          align-items: center; /* Align items vertically */
+          align-items: center;
           font-size: 0.9rem;
-          margin-bottom: 1.8rem; /* More space */
+          margin-bottom: 1.8rem;
           width: 100%;
         }
 
@@ -310,42 +316,45 @@ const Login = () => {
 
         .remember-me .checkbox {
             margin-right: 0.5rem;
-            accent-color: #10b981; /* Green checkbox */
+            accent-color: #06b6d4;
         }
 
-        .forgot-password {
-            color: #10b981; /* Green link */
+        .back-to-main {
+            color: #06b6d4;
             text-decoration: none;
             transition: color 0.2s ease;
         }
 
-        .forgot-password:hover {
-            color: #059669; /* Darker green on hover */
+        .back-to-main:hover {
+            color: #0891b2;
             text-decoration: underline;
         }
 
         .login-btn {
           width: 100%;
-          background-color: #10b981; /* Original green */
           color: white;
-          padding: 1rem 0; /* More padding */
-          font-weight: 600; /* Bolder text */
-          border-radius: 999px; /* Fully rounded button */
+          padding: 1rem 0;
+          font-weight: 600;
+          border-radius: 999px;
           transition: background-color 0.3s ease, transform 0.1s ease;
           border: none;
           cursor: pointer;
-          font-size: 1.1rem; /* Slightly larger text */
+          font-size: 1.1rem;
           letter-spacing: 0.5px;
-          box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); /* Green shadow */
         }
 
-        .login-btn:hover {
-          background-color: #059669; /* Darker green on hover */
-          transform: translateY(-2px); /* Slight lift effect */
+        .developer-btn {
+          background: linear-gradient(135deg, #1e293b, #0f172a);
+          box-shadow: 0 4px 15px rgba(30, 41, 59, 0.4);
+        }
+
+        .developer-btn:hover {
+          background: linear-gradient(135deg, #0f172a, #020617);
+          transform: translateY(-2px);
         }
 
         .login-btn:disabled {
-          background-color: #9ca3af; /* Grey when disabled */
+          background-color: #9ca3af;
           cursor: not-allowed;
           box-shadow: none;
           transform: none;
@@ -354,11 +363,11 @@ const Login = () => {
         .error-msg {
           background-color: #fee2e2;
           border: 1px solid #fecaca;
-          padding: 0.75rem; /* More padding */
+          padding: 0.75rem;
           color: #b91c1c;
           font-size: 0.9rem;
           margin-bottom: 1.5rem;
-          border-radius: 0.75rem; /* More rounded */
+          border-radius: 0.75rem;
           text-align: center;
           width: 100%;
         }
@@ -374,21 +383,17 @@ const Login = () => {
             .crm-desc {
                 font-size: 1rem;
             }
-            .crm-quote {
-                font-size: 1.1rem;
-            }
             .login-heading {
                 font-size: 1.8rem;
             }
             .login-box {
                 padding: 2.5rem 2rem;
             }
-            .crm-logo {
-                width: 70px;
-                height: 70px;
+            .developer-icon {
+                width: 60px;
+                height: 60px;
             }
         }
-
 
         @media screen and (max-width: 768px) {
           .container {
@@ -397,9 +402,9 @@ const Login = () => {
 
           .left {
             width: 100%;
-            clip-path: none; /* Remove clip-path on smaller screens */
+            clip-path: none;
             padding: 3rem 1.5rem;
-            min-height: 250px; /* Ensure some height */
+            min-height: 250px;
           }
 
           .right {
@@ -408,8 +413,8 @@ const Login = () => {
           }
 
           .login-box {
-            max-width: 400px; /* Adjust max-width for mobile */
-            margin: 0 auto; /* Center the form */
+            max-width: 400px;
+            margin: 0 auto;
             padding: 2rem 1.5rem;
           }
 
@@ -425,16 +430,14 @@ const Login = () => {
             font-size: 0.95rem;
             max-width: 90%;
           }
-          .crm-quote {
-            font-size: 1rem;
-            padding-left: 0.8rem;
-          }
+          
           .login-heading {
             font-size: 1.6rem;
           }
-          .crm-logo {
-            width: 60px;
-            height: 60px;
+          
+          .developer-icon {
+            width: 50px;
+            height: 50px;
           }
         }
 
@@ -452,11 +455,11 @@ const Login = () => {
                 font-size: 0.9rem;
             }
             .options {
-                flex-direction: column; /* Stack options vertically */
+                flex-direction: column;
                 align-items: flex-start;
                 margin-bottom: 1rem;
             }
-            .forgot-password {
+            .back-to-main {
                 margin-top: 0.5rem;
             }
             .login-btn {
@@ -472,48 +475,14 @@ const Login = () => {
             .crm-desc {
                 font-size: 0.85rem;
             }
-            .crm-logo {
-                width: 50px;
-                height: 50px;
+            .developer-icon {
+                width: 40px;
+                height: 40px;
             }
-                
         }
-             .developer-login-container {
-  padding-top: 1rem;
-  border-top: 1px solid #e5e7eb; /* light gray */
-}
-
-.developer-login-button {
-  width: 100%;
-  height: 48px;
-  border: 2px solid #334155; /* slate-700 */
-  color: #334155;
-  background-color: transparent;
-  font-weight: 600;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.developer-login-button:hover {
-  background-color: #334155;
-  color: white;
-  transform: scale(1.02);
-}
-
-.icon {
-  height: 1rem;
-  width: 1rem;
-  margin-right: 0.5rem;
-}
-
-           
       `}</style>
     </>
   );
 };
 
-export default Login;
+export default DeveloperLogin;

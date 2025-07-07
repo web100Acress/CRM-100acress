@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import DashboardLayout from "./components/DashboardLayout";
 import { useState, useEffect } from "react";
 
 import Dashboard from "./pages/Dashboard";
@@ -13,6 +14,9 @@ import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
 import UserManagement from "./pages/UserManagement";
+import Developer from "./pages/Developer";
+import DeveloperLogin from "./pages/DeveloperLogin";
+import DeveloperDashboard from "./pages/DeveloperDashboard";
 
 const queryClient = new QueryClient();
 
@@ -20,14 +24,17 @@ const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState("employee");
   const [isLoading, setIsLoading] = useState(true);
+   const [isDeveloperLoggedIn, setIsDeveloperLoggedIn] = useState(false);
 
   useEffect(() => {
     const checkAuthStatus = () => {
       const loggedIn = localStorage.getItem("isLoggedIn") === "true";
       const role = localStorage.getItem("userRole") || "employee";
+      const developerLoggedIn = localStorage.getItem("isDeveloperLoggedIn") === "true"; 
 
       setIsLoggedIn(loggedIn);
       setUserRole(role);
+       setIsDeveloperLoggedIn(developerLoggedIn);
       setIsLoading(false);
     };
 
@@ -122,8 +129,9 @@ const App = () => {
                   <Navigate to="/" replace />
                 )
               }
+              // lsahbs
             />
-            <Route
+               <Route
               path="/users"
               element={
                 isLoggedIn && userRole === "super-admin" ? (
@@ -133,17 +141,38 @@ const App = () => {
                 )
               }
             />
-
-            <Route
+ <Route
               path="/settings"
               element={
                 isLoggedIn && userRole === "super-admin" ? (
-                  <div className="p-6">
-                    <h1 className="text-2xl font-bold">Settings</h1>
-                    <p>Settings interface coming soon...</p>
-                  </div>
+                  <Settings userRole={userRole} />
                 ) : (
                   <Navigate to="/" replace />
+                )
+              }
+            />
+            <Route
+              path="/developer"
+              element={
+                isLoggedIn && userRole === "super-admin" ? (
+                  <Developer userRole={userRole} />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
+                {/* Developer Section Routes */}
+                <Route
+              path="/developer-login"
+              element={!isDeveloperLoggedIn ? <DeveloperLogin /> : <Navigate to="/developer-dashboard" replace />}
+            />
+            <Route
+              path="/developer-dashboard"
+              element={
+                isDeveloperLoggedIn ? (
+                  <DeveloperDashboard />
+                ) : (
+                  <Navigate to="/developer-login" replace />
                 )
               }
             />
