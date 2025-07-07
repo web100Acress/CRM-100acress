@@ -17,6 +17,7 @@ import UserManagement from "./pages/UserManagement";
 import Developer from "./pages/Developer";
 import DeveloperLogin from "./pages/DeveloperLogin";
 import DeveloperDashboard from "./pages/DeveloperDashboard";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
@@ -24,14 +25,17 @@ const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState("employee");
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeveloperLoggedIn, setIsDeveloperLoggedIn] = useState(false);
 
   useEffect(() => {
     const checkAuthStatus = () => {
       const loggedIn = localStorage.getItem("isLoggedIn") === "true";
       const role = localStorage.getItem("userRole") || "employee";
+      const developerLoggedIn = localStorage.getItem("isDeveloperLoggedIn") === "true";
 
       setIsLoggedIn(loggedIn);
       setUserRole(role);
+      setIsDeveloperLoggedIn(developerLoggedIn);
       setIsLoading(false);
     };
 
@@ -199,6 +203,7 @@ const App = () => {
                 )
               }
             />
+            <Route path="/reset-password/:token" element={<ResetPassword />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

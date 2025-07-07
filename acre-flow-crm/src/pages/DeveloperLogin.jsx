@@ -8,6 +8,10 @@ const DeveloperLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotStatus, setForgotStatus] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
   const navigate = useNavigate();
 
   // Static developer credentials
@@ -106,6 +110,7 @@ const DeveloperLogin = () => {
               <label className="remember-me">
                 <input type="checkbox" className="checkbox" /> Remember Me
               </label>
+              <button type="button" className="forgot-password" onClick={() => setShowForgotModal(true)}>Forgot Password?</button>
               <a href="/login" className="back-to-main">Back to Main Login</a>
             </div>
 
@@ -115,6 +120,47 @@ const DeveloperLogin = () => {
           </form>
         </div>
       </div>
+
+      {showForgotModal && (
+        <div className="modal-backdrop">
+          <div className="modal">
+            <h3>Forgot Password</h3>
+            <p>Enter your developer email to receive a password reset link.</p>
+            <input
+              type="email"
+              placeholder="Enter your email"
+              className="modal-input"
+              value={forgotEmail}
+              onChange={e => setForgotEmail(e.target.value)}
+            />
+            <button
+              className="modal-btn"
+              onClick={async () => {
+                setForgotLoading(true);
+                setForgotStatus("");
+                try {
+                  const res = await fetch("http://localhost:5001/api/auth/request-password-reset", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: forgotEmail }),
+                  });
+                  const data = await res.json();
+                  if (res.ok) setForgotStatus("Reset link sent! Check your email.");
+                  else setForgotStatus(data.message || "Error sending reset link.");
+                } catch (err) {
+                  setForgotStatus("Error sending reset link.");
+                }
+                setForgotLoading(false);
+              }}
+              disabled={forgotLoading || !forgotEmail}
+            >
+              {forgotLoading ? "Sending..." : "Send Reset Link"}
+            </button>
+            {forgotStatus && <div style={{ marginTop: 8, color: forgotStatus.includes('sent') ? 'green' : 'red' }}>{forgotStatus}</div>}
+            <button className="modal-btn" style={{ background: '#888', marginTop: 12 }} onClick={() => setShowForgotModal(false)}>Close</button>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
@@ -480,6 +526,46 @@ const DeveloperLogin = () => {
                 width: 40px;
                 height: 40px;
             }
+        }
+
+        .modal-backdrop {
+          position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0,0,0,0.4);
+          z-index: 1000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .modal {
+          background: #fff;
+          padding: 2rem 2.5rem;
+          border-radius: 10px;
+          box-shadow: 0 4px 32px rgba(0,0,0,0.18);
+          min-width: 320px;
+          max-width: 90vw;
+          text-align: center;
+        }
+        .modal-input {
+          width: 100%;
+          padding: 0.5rem 1rem;
+          margin: 1rem 0;
+          border: 1px solid #ddd;
+          border-radius: 5px;
+          font-size: 1rem;
+        }
+        .modal-btn {
+          background: #0f172a;
+          color: #fff;
+          border: none;
+          padding: 0.5rem 1.5rem;
+          border-radius: 5px;
+          font-size: 1rem;
+          cursor: pointer;
+          margin-top: 0.5rem;
+        }
+        .modal-btn:hover {
+          background: #334155;
         }
       `}</style>
     </>

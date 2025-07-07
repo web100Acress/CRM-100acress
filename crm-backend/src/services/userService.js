@@ -1,5 +1,6 @@
 const User = require('../models/userModel');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 const createUser = async (userData) => {
   if (userData.password) {
@@ -25,10 +26,36 @@ const deleteUser = async (id) => {
   return await User.findByIdAndDelete(id);
 };
 
+const setResetToken = async (email) => {
+  const token = crypto.randomBytes(32).toString('hex');
+  const expires = Date.now() + 3600000; // 1 hour
+  const user = await User.findOneAndUpdate(
+    { email },
+    { resetPasswordToken: token, resetPasswordExpires: expires },
+    { new: true }
+  );
+  return { user, token };
+};
+
+const resetPassword = async (token, newPassword) => {
+  const user = await User.findOne({
+    resetPasswordToken: token,
+    resetPasswordExpires: { $gt: Date.now() },
+  });
+  if (!user) return null;
+  user.password = await bcrypt.hash(newPassword, 10);
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpires = undefined;
+  await user.save();
+  return user;
+};
+
 module.exports = {
   createUser,
   getUsers,
   getUserById,
   updateUser,
   deleteUser,
+  setResetToken,
+  resetPassword,
 }; 
