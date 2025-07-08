@@ -12,11 +12,14 @@ import {
   ArrowRight,
   UserCheck,
   Link as LinkIcon,
+  Download,
 } from "lucide-react";
 import FollowUpModal from "./FollowUpModal";
 import CreateLeadForm from "./CreateLeadForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { useToast } from "../hooks/use-toast";
+import { Button } from "@/components/ui/button";
+
 
 const LeadTable = ({ userRole }) => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -32,6 +35,7 @@ const LeadTable = ({ userRole }) => {
   const [followUpError, setFollowUpError] = useState("");
   const [assignableUsers, setAssignableUsers] = useState([]);
   const [forwardingLead, setForwardingLead] = useState(null);
+  const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
   const prevAssignedLeadIds = useRef(new Set());
   const currentUserId = localStorage.getItem('userId');
@@ -282,6 +286,60 @@ const LeadTable = ({ userRole }) => {
     return currentUserLevel < assigneeLevel;
   };
 
+
+
+  const exportToCSV = () => {
+    setIsExporting(true);
+    
+    try {
+      const headers = ['ID', 'Name', 'Email', 'Phone', 'Location', 'Budget', 'Property', 'Status', 'Assigned To', 'Assigned By', 'Last Contact', 'Follow Ups'];
+      
+      const csvData = filteredLeads.map(lead => [
+        lead.id,
+        lead.name,
+        lead.email,
+        lead.phone,
+        lead.location,
+        lead.budget,
+        lead.property,
+        lead.status,
+        lead.assignedTo,
+        lead.assignedBy,
+        lead.lastContact,
+        lead.followUps
+      ]);
+
+      const csvContent = [headers, ...csvData]
+        .map(row => row.map(field => `"${field}"`).join(','))
+        .join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `leads_export_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast({
+        title: "Export Successful",
+        description: `${filteredLeads.length} leads exported to CSV successfully.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "There was an error exporting the leads. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="lead-table-wrapper">
       {/* --- Header Section --- */}
@@ -297,20 +355,35 @@ const LeadTable = ({ userRole }) => {
           />
         </div>
         <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-        >
-          <option value="all">All Statuses</option>
-          <option value="hot">Hot</option>
-          <option value="warm">Warm</option>
-          <option value="cold">Cold</option>
-        </select>
+  value={statusFilter}
+  onChange={(e) => setStatusFilter(e.target.value)}
+  className="custom-select"
+>
+  <option value="all">All Statuses</option>
+  <option value="hot">Hot</option>
+  <option value="warm">Warm</option>
+  <option value="cold">Cold</option>
+</select>
+
+        <Button 
+  onClick={exportToCSV}
+  disabled={isExporting || filteredLeads.length === 0}
+  variant="outline"
+  className="custom-export-btn"
+>
+  <Download className="download-icon" />
+  {isExporting ? 'Exporting...' : 'Export to CSV'}
+</Button>
+
+
         <button className="create-lead-btn group" onClick={handleCreateLead}>
           <Plus size={18} className="group-hover:rotate-90 transition-transform duration-200" /> Create Lead
         </button>
       </div>
 
+   
+            {/* </div> */}
+            
 
       <table className="lead-table">
         <thead>
@@ -1068,6 +1141,56 @@ const LeadTable = ({ userRole }) => {
         .pagination-controls span .font-semibold {
             color: #2d3748;
         }
+
+        .custom-export-btn {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  background-color: white;
+  border: 1px solid #ccc;
+  color: #333;
+  font-size: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.custom-export-btn:hover {
+  background-color: #f0f0f0;
+}
+
+.custom-export-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.download-icon {
+  height: 16px;
+  width: 16px;
+  margin-right: 8px;
+}
+
+.custom-select {
+  appearance: none;         /* Standard */
+  -webkit-appearance: none; /* Safari & Chrome */
+  -moz-appearance: none;    /* Firefox */
+  padding: 8px 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  font-size: 14px;
+  background-color: white;
+  background-image: none; /* Remove background arrow */
+  outline: none;
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.custom-select:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.3);
+}
+
+
       `}</style>
     </div>
   );
