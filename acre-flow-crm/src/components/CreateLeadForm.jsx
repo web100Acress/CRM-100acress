@@ -291,28 +291,35 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
         </form>
 
         <DialogFooter className="form-actions">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={loading}
-            className="btn-cancel"
-          >
-            <X className="mr-2 h-4 w-4" />
-            Cancel
-          </Button>
-          <Button
-            type="submit" // Set type to submit for the form
-            onClick={handleSubmit} // Call handleSubmit when this button is clicked
-            disabled={loading}
-            className="btn-primary"
-          >
-            {loading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="mr-2 h-4 w-4" />
-            )}
-            {loading ? 'Creating...' : 'Create Lead'}
-          </Button>
+        <Button
+  variant="outline"
+  onClick={onClose}
+  disabled={loading}
+  className="btn-cancel"
+>
+  <X />
+  Cancel
+</Button>
+
+<Button
+  type="submit"
+  onClick={handleSubmit}
+  disabled={loading}
+  className="btn-primary"
+>
+  {loading ? (
+    <>
+      <Loader2 className="icon-spin" />
+      Creating...
+    </>
+  ) : (
+    <>
+      <Save />
+      Create Lead
+    </>
+  )}
+</Button>
+
         </DialogFooter>
       </DialogContent>
       <style>{`
@@ -422,7 +429,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
         /* Actions Footer */
         .form-actions {
           display: flex;
-          justify-content: flex-end;
+          justify-content: center;
           gap: 0.75rem; /* Space between buttons */
           padding-top: 1.5rem;
           border-top: 1px solid #edf2f7; /* Subtle top border */

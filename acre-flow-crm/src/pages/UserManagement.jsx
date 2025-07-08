@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, Plus, Edit, Trash2, UserCheck, UserX, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, UserCheck, UserX, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import AddEditUserModal from '../components/AddEditUserModal'; // Assuming this path
 import DeleteUserModal from '../components/DeleteUserModal'; // Assuming this path
 import { useToast } from '@/hooks/use-toast';
@@ -18,6 +18,7 @@ const UserManagementContent = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+   const [isExporting, setIsExporting] = useState(false);
   // Removed the duplicate USERS_PER_PAGE = 10; here
 
   const { toast } = useToast();
@@ -99,6 +100,64 @@ const UserManagementContent = () => {
     const endIndex = startIndex + USERS_PER_PAGE_CONSTANT;
     return filteredUsers.slice(startIndex, endIndex);
   }, [filteredUsers, currentPage]);
+
+
+   const exportToCSV = () => {
+    setIsExporting(true);
+    try {
+      const headers = [
+        "ID",
+        "Name",
+        "Email",
+        "Phone",
+        "Department",
+        "Role",
+        "Status"
+      ];
+
+      const csvData = filteredUsers.map((user) => [
+        user.id,
+        user.name,
+        user.email,
+        user.phone,
+        user.department,
+        user.role,
+        user.status
+      ]);
+
+      const csvContent = [headers, ...csvData]
+        .map((row) => row.map((field) => `"${field}"`).join(","))
+        .join("\n");
+
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+
+      link.setAttribute("href", url);
+      link.setAttribute(
+        "download",
+        `users_export_${new Date().toISOString().split("T")[0]}.csv`
+      );
+      link.style.visibility = "hidden";
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast({
+        title: "Export Successful",
+        description: `${filteredUsers.length} users exported to CSV successfully.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "There was an error exporting the users.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
 
   const handleToggleStatus = (userToToggle) => async () => {
@@ -276,6 +335,7 @@ const UserManagementContent = () => {
       return null;
     }
 
+
     return (
       <div className="pagination-controls">
         <button
@@ -359,6 +419,16 @@ const UserManagementContent = () => {
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
+
+ <button
+            onClick={exportToCSV}
+            disabled={isExporting || filteredUsers.length === 0}
+            className="export-btn"
+          >
+            <Download className="export-icon" />
+            {isExporting ? 'Exporting...' : 'Export to CSV'}
+          </button>
+          
           {/* <button className="add-user-btn" onClick={() => { setSelectedUser(null); setShowAddModal(true); }}>
             <Plus size={18} /> Add User
           </button> */}
@@ -960,7 +1030,42 @@ const UserManagementContent = () => {
              .modal-content h2 {
                 font-size: 1.5rem;
             }
+
+            
+                
         }
+            /* Export Button Styles */
+.export-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background-color: #1e40af; /* Blue */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.export-btn:hover {
+  background-color: #1c3aa9; /* Slightly darker */
+}
+
+.export-btn:disabled {
+  background-color: #cbd5e1;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+/* Export Icon Styles */
+.export-icon {
+  width: 18px;
+  height: 18px;
+}
+
       `}</style>
     </div>
   );
