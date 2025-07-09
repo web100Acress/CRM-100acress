@@ -23,25 +23,28 @@ const DeveloperLogin = () => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
-
-    // Simulate API delay
-    setTimeout(() => {
-      if (credentials.email === DEVELOPER_CREDENTIALS.email && 
-          credentials.password === DEVELOPER_CREDENTIALS.password) {
-        
-        // Set developer session
+    try {
+      const response = await fetch("http://localhost:5001/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(credentials),
+      });
+      const data = await response.json();
+      if (response.ok && data.token) {
+        localStorage.setItem("token", data.token); // Store the JWT token
         localStorage.setItem("isDeveloperLoggedIn", "true");
         localStorage.setItem("developerEmail", credentials.email);
         localStorage.setItem("developerName", "Aman Developer");
         localStorage.setItem("developerRole", "developer");
-        
         navigate("/developer-dashboard");
         window.location.reload();
       } else {
-        setError("Invalid developer credentials");
+        setError(data.message || "Invalid credentials");
       }
-      setIsLoading(false);
-    }, 1000);
+    } catch (err) {
+      setError("Network error");
+    }
+    setIsLoading(false);
   };
 
   return (

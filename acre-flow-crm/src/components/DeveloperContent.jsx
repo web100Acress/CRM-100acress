@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Code, 
@@ -116,16 +115,39 @@ const DeveloperContent = ({ userRole }) => {
     }));
   };
 
-  const handleCreateEmployee = (e) => {
+  const handleCreateEmployee = async (e) => {
     e.preventDefault();
-    // Here you would typically send this data to your backend API
-    console.log('Creating employee:', newEmployee);
-    toast({
-      title: "Employee Creation",
-      description: `Employee ${newEmployee.name} created successfully!`,
-    });
-    // Clear form after submission
-    setNewEmployee({ name: '', email: '', role: '', password: '' });
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5001/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(newEmployee),
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        toast({
+          title: 'Employee Created',
+          description: `Employee ${newEmployee.name} created successfully!`,
+        });
+        setNewEmployee({ name: '', email: '', role: '', department: '', password: '' });
+      } else {
+        toast({
+          title: 'Creation Failed',
+          description: data.message || 'Failed to create employee.',
+          variant: 'destructive',
+        });
+      }
+    } catch (err) {
+      toast({
+        title: 'Network Error',
+        description: 'Could not connect to the server to create employee.',
+        variant: 'destructive',
+      });
+    }
   };
 
   
