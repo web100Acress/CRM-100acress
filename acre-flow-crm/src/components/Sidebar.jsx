@@ -64,7 +64,7 @@ const Sidebar = ({ userRole, isCollapsed, onToggle }) => {
       case 'super-admin':
         return '  BOSS';
       case 'head-admin':
-        return 'Head Admin';
+        return 'Head';
       case 'team-leader':
         return 'Team Leader';
       case 'employee':
