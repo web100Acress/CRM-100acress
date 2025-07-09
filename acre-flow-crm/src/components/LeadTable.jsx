@@ -376,9 +376,9 @@ const LeadTable = ({ userRole }) => {
 </Button>
 
 
-        <button className="create-lead-btn group" onClick={handleCreateLead}>
+        {/* <button className="create-lead-btn group" onClick={handleCreateLead}>
           <Plus size={18} className="group-hover:rotate-90 transition-transform duration-200" /> Create Lead
-        </button>
+        </button> */}
       </div>
 
    
