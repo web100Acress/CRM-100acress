@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
+
   Users, Building2, Ticket, TrendingUp, DollarSign, Calendar,
   ClipboardList, Briefcase, Users2, Gauge,
   Mail, Phone, Shield, UserPlus, Info, MoreHorizontal, CheckCircle, XCircle, Clock, PieChart, ListChecks
@@ -13,177 +14,465 @@ import { useRef } from 'react';
 const getRandomDate = (daysAgo) => {
   const date = new Date();
   date.setDate(date.getDate() - Math.floor(Math.random() * daysAgo));
-  return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' });
+  return date.toLocaleDateString("en-IN", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 };
 
 // Main Dashboard Component
 const DynamicDashboard = ({ userRole }) => {
   // Placeholder for user data (you'd likely fetch this)
   const superAdminData = {
-    name: 'Super Administrator',
-    email: 'superadmin@100acres.com',
-    phone: '+91 9876543210',
-    role: 'Super Admin',
-    company: '100acres.com',
-    joinDate: '2024-01-01',
+    name: "Super Administrator",
+    email: "superadmin@100acres.com",
+    phone: "+91 9876543210",
+    role: "Super Admin",
+    company: "100acres.com",
+    joinDate: "2024-01-01",
     permissions: [
-      'Full System Access', 'Create Head Admins', 'Manage All Users',
-      'View All Reports', 'System Configuration', 'Access All Data'
-    ]
+      "Full System Access",
+      "Create Head Admins",
+      "Manage All Users",
+      "View All Reports",
+      "System Configuration",
+      "Access All Data",
+    ],
   };
 
   // --- Dynamic Data for Dashboard Sections based on Role ---
   const getDashboardDataForRole = (role) => {
     switch (role) {
-      case 'super-admin':
+      case "super-admin":
         return {
           stats: [
-            { label: 'Total Leads', value: '12,500', change: '+8%', icon: Building2, color: 'blue' },
-            { label: 'Active Users', value: '1,800', change: '+5%', icon: Users2, color: 'green' },
-            { label: 'Open Tickets', value: '75', change: '-12%', icon: Ticket, color: 'orange' },
-            { label: 'Monthly Revenue', value: '₹12.5 Cr', change: '+10%', icon: DollarSign, color: 'purple' },
+            {
+              label: "Total Leads",
+              value: "12,500",
+              change: "+8%",
+              icon: Building2,
+              color: "blue",
+            },
+            {
+              label: "Active Users",
+              value: "1,800",
+              change: "+5%",
+              icon: Users2,
+              color: "green",
+            },
+            {
+              label: "Open Tickets",
+              value: "75",
+              change: "-12%",
+              icon: Ticket,
+              color: "orange",
+            },
+            {
+              label: "Monthly Revenue",
+              value: "₹12.5 Cr",
+              change: "+10%",
+              icon: DollarSign,
+              color: "purple",
+            },
           ],
           recentItems: {
-            title: 'Recent Leads',
-            headers: ['Lead ID', 'Name', 'Status', 'Assigned To', 'Date'],
+            title: "Recent Leads",
+            headers: ["Lead ID", "Name", "Status", "Assigned To", "Date"],
             data: [
-              { id: '#L9876', name: 'Ritesh Kumar', status: 'New', assigned: 'Team Alpha', date: getRandomDate(5) },
-              { id: '#L9875', name: 'Priya Sharma', status: 'Contacted', assigned: 'Amit Singh', date: getRandomDate(7) },
-              { id: '#L9874', name: 'Rahul Jain', status: 'Qualified', assigned: 'Poonam Devi', date: getRandomDate(10) },
-              { id: '#L9873', name: 'Sneha Gupta', status: 'Closed', assigned: 'Team Beta', date: getRandomDate(12) },
-              { id: '#L9872', name: 'Vivek Singh', status: 'New', assigned: 'Team Alpha', date: getRandomDate(15) },
+              {
+                id: "#L9876",
+                name: "Ritesh Kumar",
+                status: "New",
+                assigned: "Team Alpha",
+                date: getRandomDate(5),
+              },
+              {
+                id: "#L9875",
+                name: "Priya Sharma",
+                status: "Contacted",
+                assigned: "Amit Singh",
+                date: getRandomDate(7),
+              },
+              {
+                id: "#L9874",
+                name: "Rahul Jain",
+                status: "Qualified",
+                assigned: "Poonam Devi",
+                date: getRandomDate(10),
+              },
+              {
+                id: "#L9873",
+                name: "Sneha Gupta",
+                status: "Closed",
+                assigned: "Team Beta",
+                date: getRandomDate(12),
+              },
+              {
+                id: "#L9872",
+                name: "Vivek Singh",
+                status: "New",
+                assigned: "Team Alpha",
+                date: getRandomDate(15),
+              },
             ],
           },
           leadsBySource: [
-            { source: 'Website Forms', count: 500, percentage: 40 },
-            { source: 'Referrals', count: 200, percentage: 16 },
-            { source: 'Campaigns', count: 170, percentage: 14 },
-            { source: 'Direct Calls', count: 150, percentage: 12 },
-            { source: 'Social Media', count: 130, percentage: 10 },
-            { source: 'Others', count: 100, percentage: 8 },
+            { source: "Website Forms", count: 500, percentage: 40 },
+            { source: "Referrals", count: 200, percentage: 16 },
+            { source: "Campaigns", count: 170, percentage: 14 },
+            { source: "Direct Calls", count: 150, percentage: 12 },
+            { source: "Social Media", count: 130, percentage: 10 },
+            { source: "Others", count: 100, percentage: 8 },
           ],
           recentActivities: [
-            { id: 1, action: 'New Head Admin "Rahul Sharma" created.', time: '2 hours ago', status: 'success' },
-            { id: 2, action: 'System maintenance scheduled.', time: 'Yesterday', status: 'info' },
-            { id: 3, action: 'User "Priya Singh" deactivated.', time: '2 days ago', status: 'warning' },
-            { id: 4, action: 'Monthly revenue report generated.', time: '3 days ago', status: 'success' },
+            {
+              id: 1,
+              action: 'New Head Admin "Rahul Sharma" created.',
+              time: "2 hours ago",
+              status: "success",
+            },
+            {
+              id: 2,
+              action: "System maintenance scheduled.",
+              time: "Yesterday",
+              status: "info",
+            },
+            {
+              id: 3,
+              action: 'User "Priya Singh" deactivated.',
+              time: "2 days ago",
+              status: "warning",
+            },
+            {
+              id: 4,
+              action: "Monthly revenue report generated.",
+              time: "3 days ago",
+              status: "success",
+            },
           ],
           upcomingItems: {
-            title: 'Upcoming System Events',
+            title: "Upcoming System Events",
             items: [
-              { id: 1, text: 'Q3 System Audit', date: 'Jul 20, 2025' },
-              { id: 2, text: 'Database Optimization', date: 'Aug 01, 2025' },
-              { id: 3, text: 'New Feature Rollout', date: 'Aug 15, 2025' },
+              { id: 1, text: "Q3 System Audit", date: "Jul 20, 2025" },
+              { id: 2, text: "Database Optimization", date: "Aug 01, 2025" },
+              { id: 3, text: "New Feature Rollout", date: "Aug 15, 2025" },
             ],
           },
         };
-      case 'head-admin':
+      case "head-admin":
         return {
           stats: [
-            { label: 'Managed Leads', value: '3,200', change: '+7%', icon: Building2, color: 'blue' },
-            { label: 'Total Teams', value: '8', change: '0%', icon: Users, color: 'green' },
-            { label: 'Pending Approvals', value: '15', change: '+25%', icon: Ticket, color: 'orange' },
-            { label: 'Overall Conversion', value: '8.5%', change: '+0.5%', icon: TrendingUp, color: 'purple' },
+            {
+              label: "Managed Leads",
+              value: "3,200",
+              change: "+7%",
+              icon: Building2,
+              color: "blue",
+            },
+            {
+              label: "Total Teams",
+              value: "8",
+              change: "0%",
+              icon: Users,
+              color: "green",
+            },
+            {
+              label: "Pending Approvals",
+              value: "15",
+              change: "+25%",
+              icon: Ticket,
+              color: "orange",
+            },
+            {
+              label: "Overall Conversion",
+              value: "8.5%",
+              change: "+0.5%",
+              icon: TrendingUp,
+              color: "purple",
+            },
           ],
           recentItems: {
-            title: 'Recent Team Activities',
-            headers: ['Member', 'Action', 'Lead ID', 'Date'],
+            title: "Recent Team Activities",
+            headers: ["Member", "Action", "Lead ID", "Date"],
             data: [
-              { id: '#A101', name: 'Amit Singh', status: 'Contacted Lead', assigned: '#L9875', date: getRandomDate(1) },
-              { id: '#A102', name: 'Poonam Devi', status: 'Qualified Lead', assigned: '#L9874', date: getRandomDate(2) },
-              { id: '#A103', name: 'Rajat Gupta', status: 'New Lead Assigned', assigned: '#L9872', date: getRandomDate(3) },
-              { id: '#A104', name: 'Sneha Kumar', status: 'Closed Lead', assigned: '#L9873', date: getRandomDate(4) },
+              {
+                id: "#A101",
+                name: "Amit Singh",
+                status: "Contacted Lead",
+                assigned: "#L9875",
+                date: getRandomDate(1),
+              },
+              {
+                id: "#A102",
+                name: "Poonam Devi",
+                status: "Qualified Lead",
+                assigned: "#L9874",
+                date: getRandomDate(2),
+              },
+              {
+                id: "#A103",
+                name: "Rajat Gupta",
+                status: "New Lead Assigned",
+                assigned: "#L9872",
+                date: getRandomDate(3),
+              },
+              {
+                id: "#A104",
+                name: "Sneha Kumar",
+                status: "Closed Lead",
+                assigned: "#L9873",
+                date: getRandomDate(4),
+              },
             ],
           },
           leadsBySource: [
-            { source: 'Team A Leads', count: 1200, percentage: 40 },
-            { source: 'Team B Leads', count: 1000, percentage: 33 },
-            { source: 'Team C Leads', count: 800, percentage: 27 },
+            { source: "Team A Leads", count: 1200, percentage: 40 },
+            { source: "Team B Leads", count: 1000, percentage: 33 },
+            { source: "Team C Leads", count: 800, percentage: 27 },
           ],
           recentActivities: [
-            { id: 1, action: 'Approved leave for Amit Singh.', time: '1 hour ago', status: 'success' },
-            { id: 2, action: 'Team meeting scheduled.', time: '4 hours ago', status: 'info' },
-            { id: 3, action: 'Performance review for Poonam Devi.', time: 'Yesterday', status: 'info' },
-            { id: 4, action: 'Escalated ticket #456.', time: '2 days ago', status: 'warning' },
+            {
+              id: 1,
+              action: "Approved leave for Amit Singh.",
+              time: "1 hour ago",
+              status: "success",
+            },
+            {
+              id: 2,
+              action: "Team meeting scheduled.",
+              time: "4 hours ago",
+              status: "info",
+            },
+            {
+              id: 3,
+              action: "Performance review for Poonam Devi.",
+              time: "Yesterday",
+              status: "info",
+            },
+            {
+              id: 4,
+              action: "Escalated ticket #456.",
+              time: "2 days ago",
+              status: "warning",
+            },
           ],
           upcomingItems: {
-            title: 'Upcoming Team Meetings',
+            title: "Upcoming Team Meetings",
             items: [
-              { id: 1, text: 'Weekly Sync-up', date: 'Jul 10, 2025' },
-              { id: 2, text: 'Q3 Strategy Discussion', date: 'Jul 25, 2025' },
+              { id: 1, text: "Weekly Sync-up", date: "Jul 10, 2025" },
+              { id: 2, text: "Q3 Strategy Discussion", date: "Jul 25, 2025" },
             ],
           },
         };
-      case 'team-leader':
+      case "team-leader":
         return {
           stats: [
-            { label: 'My Team Leads', value: '450', change: '+3%', icon: Building2, color: 'blue' },
-            { label: 'Team Size', value: '12', change: '0%', icon: Briefcase, color: 'green' },
-            { label: 'My Pending Tasks', value: '7', change: '-10%', icon: ClipboardList, color: 'orange' },
-            { label: 'Team Target Achieved', value: '₹80L', change: '+5%', icon: DollarSign, color: 'purple' },
+            {
+              label: "My Team Leads",
+              value: "450",
+              change: "+3%",
+              icon: Building2,
+              color: "blue",
+            },
+            {
+              label: "Team Size",
+              value: "12",
+              change: "0%",
+              icon: Briefcase,
+              color: "green",
+            },
+            {
+              label: "My Pending Tasks",
+              value: "7",
+              change: "-10%",
+              icon: ClipboardList,
+              color: "orange",
+            },
+            {
+              label: "Team Target Achieved",
+              value: "₹80L",
+              change: "+5%",
+              icon: DollarSign,
+              color: "purple",
+            },
           ],
           recentItems: {
-            title: 'My Team\'s Recent Activities',
-            headers: ['Member', 'Action', 'Lead ID', 'Time'],
+            title: "My Team's Recent Activities",
+            headers: ["Member", "Action", "Lead ID", "Time"],
             data: [
-              { id: '#TL1', name: 'Anjali D.', status: 'Called Lead', assigned: '#L9901', date: '30 min ago' },
-              { id: '#TL2', name: 'Suresh K.', status: 'Updated Status', assigned: '#L9899', date: '1 hour ago' },
-              { id: '#TL3', name: 'Bhavna R.', status: 'Sent Proposal', assigned: '#L9895', date: '2 hours ago' },
-              { id: '#TL4', name: 'Rajesh S.', status: 'New Lead Assign.', assigned: '#L9902', date: '4 hours ago' },
+              {
+                id: "#TL1",
+                name: "Anjali D.",
+                status: "Called Lead",
+                assigned: "#L9901",
+                date: "30 min ago",
+              },
+              {
+                id: "#TL2",
+                name: "Suresh K.",
+                status: "Updated Status",
+                assigned: "#L9899",
+                date: "1 hour ago",
+              },
+              {
+                id: "#TL3",
+                name: "Bhavna R.",
+                status: "Sent Proposal",
+                assigned: "#L9895",
+                date: "2 hours ago",
+              },
+              {
+                id: "#TL4",
+                name: "Rajesh S.",
+                status: "New Lead Assign.",
+                assigned: "#L9902",
+                date: "4 hours ago",
+              },
             ],
           },
           leadsBySource: [
-            { source: 'My Team\'s Website Forms', count: 200, percentage: 45 },
-            { source: 'My Team\'s Referrals', count: 100, percentage: 22 },
-            { source: 'My Team\'s Campaigns', count: 150, percentage: 33 },
+            { source: "Website Forms", count: 200, percentage: 45 },
+            { source: "Referrals 1", count: 100, percentage: 22 },
+            { source: "Campaigns 1", count: 150, percentage: 33 },
+            { source: "Website Forms", count: 200, percentage: 45 },
+            { source: "Referrals 2", count: 100, percentage: 22 },
+            { source: "Campaigns 2", count: 150, percentage: 33 },
+            { source: "Website Forms", count: 200, percentage: 45 },
           ],
           recentActivities: [
-            { id: 1, action: 'Reviewed team member performance (Anjali D).', time: '1 hour ago', status: 'info' },
-            { id: 2, action: 'Assigned new lead batch.', time: '3 hours ago', status: 'success' },
-            { id: 3, action: 'Closed Team Ticket #501.', time: 'Yesterday', status: 'success' },
+            {
+              id: 1,
+              action: "Reviewed team member performance (Anjali D).",
+              time: "1 hour ago",
+              status: "info",
+            },
+            {
+              id: 2,
+              action: "Assigned new lead batch.",
+              time: "3 hours ago",
+              status: "success",
+            },
+            {
+              id: 3,
+              action: "Closed Team Ticket #501.",
+              time: "Yesterday",
+              status: "success",
+            },
           ],
           upcomingItems: {
-            title: 'My Team\'s Upcoming Follow-ups',
+            title: "My Team's Upcoming Follow-ups",
             items: [
-              { id: 1, text: 'Lead #L9899 - Call Reminder', date: 'Jul 10, 2025' },
-              { id: 2, text: 'Team Training Session', date: 'Jul 15, 2025' },
+              {
+                id: 1,
+                text: "Lead #L9899 - Call Reminder",
+                date: "Jul 10, 2025",
+              },
+              { id: 2, text: "Team Training Session", date: "Jul 15, 2025" },
             ],
           },
         };
-      case 'employee':
+      case "employee":
       default: // Default to employee if role is unknown
         return {
           stats: [
-            { label: 'Assigned Leads', value: '65', change: '+15%', icon: Building2, color: 'blue' },
-            { label: 'Today\'s Follow-ups', value: '12', change: '+2', icon: Calendar, color: 'green' },
-            { label: 'My Open Tickets', value: '3', change: '0', icon: Ticket, color: 'orange' },
-            { label: 'Monthly Target Progress', value: '75%', change: '+5%', icon: Gauge, color: 'purple' },
+            {
+              label: "Assigned Leads",
+              value: "65",
+              change: "+15%",
+              icon: Building2,
+              color: "blue",
+            },
+            {
+              label: "Today's Follow-ups",
+              value: "12",
+              change: "+2",
+              icon: Calendar,
+              color: "green",
+            },
+            {
+              label: "My Open Tickets",
+              value: "3",
+              change: "0",
+              icon: Ticket,
+              color: "orange",
+            },
+            {
+              label: "Monthly Target Progress",
+              value: "75%",
+              change: "+5%",
+              icon: Gauge,
+              color: "purple",
+            },
           ],
           recentItems: {
-            title: 'My Recent Lead Interactions',
-            headers: ['Lead ID', 'Action', 'Status', 'Date'],
+            title: "My Recent Lead Interactions",
+            headers: ["Lead ID", "Action", "Status", "Date"],
             data: [
-              { id: '#L9905', name: 'Called', status: 'Contacted', assigned: 'You', date: '1 hour ago' },
-              { id: '#L9904', name: 'Emailed', status: 'Follow-up', assigned: 'You', date: '3 hours ago' },
-              { id: '#L9903', name: 'Updated Notes', status: 'New', assigned: 'You', date: 'Yesterday' },
-              { id: '#L9902', name: 'Scheduled Call', status: 'Pending', assigned: 'You', date: '2 days ago' },
+              {
+                id: "#L9905",
+                name: "Called",
+                status: "Contacted",
+                assigned: "You",
+                date: "1 hour ago",
+              },
+              {
+                id: "#L9904",
+                name: "Emailed",
+                status: "Follow-up",
+                assigned: "You",
+                date: "3 hours ago",
+              },
+              {
+                id: "#L9903",
+                name: "Updated Notes",
+                status: "New",
+                assigned: "You",
+                date: "Yesterday",
+              },
+              {
+                id: "#L9902",
+                name: "Scheduled Call",
+                status: "Pending",
+                assigned: "You",
+                date: "2 days ago",
+              },
             ],
           },
           leadsBySource: [
-            { source: 'Direct Assigned', count: 40, percentage: 60 },
-            { source: 'Campaign Leads', count: 25, percentage: 40 },
+            { source: "Direct Assigned", count: 40, percentage: 60 },
+            { source: "Campaign Leads", count: 25, percentage: 40 },
           ],
           recentActivities: [
-            { id: 1, action: 'Updated notes for Lead #L9905.', time: '30 mins ago', status: 'success' },
-            { id: 2, action: 'Completed "Customer Outreach" task.', time: '1 hour ago', status: 'success' },
-            { id: 3, action: 'New lead assigned: #L9906.', time: 'Yesterday', status: 'info' },
+            {
+              id: 1,
+              action: "Updated notes for Lead #L9905.",
+              time: "30 mins ago",
+              status: "success",
+            },
+            {
+              id: 2,
+              action: 'Completed "Customer Outreach" task.',
+              time: "1 hour ago",
+              status: "success",
+            },
+            {
+              id: 3,
+              action: "New lead assigned: #L9906.",
+              time: "Yesterday",
+              status: "info",
+            },
           ],
           upcomingItems: {
-            title: 'My Upcoming Follow-ups',
+            title: "My Upcoming Follow-ups",
             items: [
-              { id: 1, text: 'Call Lead #L9901', date: 'July 9, 2025' },
-              { id: 2, text: 'Email Lead #L9898', date: 'July 10, 2025' },
-              { id: 3, text: 'Prepare for meeting with Team Leader', date: 'July 11, 2025' },
+              { id: 1, text: "Call Lead #L9901", date: "July 9, 2025" },
+              { id: 2, text: "Email Lead #L9898", date: "July 10, 2025" },
+              {
+                id: 3,
+                text: "Prepare for meeting with Team Leader",
+                date: "July 11, 2025",
+              },
             ],
           },
         };
@@ -212,13 +501,20 @@ const DynamicDashboard = ({ userRole }) => {
   // Helper for status badges in tables
   const getStatusBadgeClass = (status) => {
     switch (status) {
-      case 'New': return 'badge-new';
-      case 'Contacted': return 'badge-contacted';
-      case 'Qualified': return 'badge-qualified';
-      case 'Closed': return 'badge-closed';
-      case 'Follow-up': return 'badge-followup';
-      case 'Pending': return 'badge-pending';
-      default: return 'badge-neutral';
+      case "New":
+        return "badge-new";
+      case "Contacted":
+        return "badge-contacted";
+      case "Qualified":
+        return "badge-qualified";
+      case "Closed":
+        return "badge-closed";
+      case "Follow-up":
+        return "badge-followup";
+      case "Pending":
+        return "badge-pending";
+      default:
+        return "badge-neutral";
     }
   };
 
@@ -239,40 +535,62 @@ const DynamicDashboard = ({ userRole }) => {
 
   return (
     <>
-      <div className="dashboard-page-wrapper"> {/* This wrapper gets the white background */}
-        <div className="dashboard-main-container"> {/* This is your max-width centered content area */}
-
+      <div className="dashboard-page-wrapper">
+        {" "}
+        {/* This wrapper gets the white background */}
+        <div className="dashboard-main-container">
+          {" "}
+          {/* This is your max-width centered content area */}
           {/* Super Admin Header - Only for Super Admin role (or adapt for others) */}
-          {userRole === 'super-admin' && (
+          {userRole === "super-admin" && (
             <div className="superadmin-header">
               <div className="superadmin-header-left">
-                <div className="header-icon"><Building2 className="icon-white" /></div>
+                <div className="header-icon">
+                  <Building2 className="icon-white" />
+                </div>
                 <p className="panel-title">Super Admin Control Panel</p>
               </div>
               <div className="superadmin-header-right">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <button className="icon-button green"><UserPlus className="icon-white" /></button>
+                    <button className="icon-button green">
+                      <UserPlus className="icon-white" />
+                    </button>
                   </PopoverTrigger>
                   <PopoverContent className="popover-card">
                     <div className="profile-info">
-                      <div className="profile-avatar"><Shield className="icon-white" /></div>
+                      <div className="profile-avatar">
+                        <Shield className="icon-white" />
+                      </div>
                       <div>
                         <h3 className="profile-name">{superAdminData.name}</h3>
-                        <Badge className="role-badge">{superAdminData.role}</Badge>
+                        <Badge className="role-badge">
+                          {superAdminData.role}
+                        </Badge>
                       </div>
                     </div>
                     <div className="profile-details">
-                      <div className="profile-item"><Building2 className="small-icon" />{superAdminData.company}</div>
-                      <div className="profile-item"><Mail className="small-icon" />{superAdminData.email}</div>
-                      <div className="profile-item"><Phone className="small-icon" />{superAdminData.phone}</div>
+                      <div className="profile-item">
+                        <Building2 className="small-icon" />
+                        {superAdminData.company}
+                      </div>
+                      <div className="profile-item">
+                        <Mail className="small-icon" />
+                        {superAdminData.email}
+                      </div>
+                      <div className="profile-item">
+                        <Phone className="small-icon" />
+                        {superAdminData.phone}
+                      </div>
                     </div>
                   </PopoverContent>
                 </Popover>
 
                 <Popover>
                   <PopoverTrigger asChild>
-                    <button className="icon-button blue"><Shield className="icon-white" /></button>
+                    <button className="icon-button blue">
+                      <Shield className="icon-white" />
+                    </button>
                   </PopoverTrigger>
                   <PopoverContent className="popover-card-small">
                     <h4 className="permissions-title">System Permissions</h4>
@@ -289,7 +607,6 @@ const DynamicDashboard = ({ userRole }) => {
               </div>
             </div>
           )}
-
           {/* Role-specific Main Heading */}
           {/* {userRole !== 'super-admin' && (
             <h2 className="role-dashboard-heading">
@@ -298,22 +615,20 @@ const DynamicDashboard = ({ userRole }) => {
               {userRole === 'employee' && 'Employee Dashboard'}
             </h2>
           )} */}
-
-
           {/* --- Dashboard Stats Grid --- */}
           <div className="dashboard-stats-grid">
             {stats.map((stat, index) => {
               const Icon = stat.icon;
-              const changeClass = stat.change.includes('+')
-                ? 'change-up'
-                : stat.change.includes('-')
-                ? 'change-down'
-                : 'change-neutral';
+              const changeClass = stat.change.includes("+")
+                ? "change-up"
+                : stat.change.includes("-")
+                ? "change-down"
+                : "change-neutral";
 
               const changeText =
-                userRole === 'employee' && stat.label === 'Today\'s Follow-ups'
-                  ? 'new today'
-                  : 'from last month';
+                userRole === "employee" && stat.label === "Today's Follow-ups"
+                  ? "new today"
+                  : "from last month";
 
               return (
                 <div key={index} className="stat-card">
@@ -333,15 +648,17 @@ const DynamicDashboard = ({ userRole }) => {
               );
             })}
           </div>
-
           {/* --- Main Dashboard Sections Grid (for tables, graphs, activities) --- */}
           <div className="main-dashboard-sections-grid">
-
             {/* Recent Items Table (Leads, Users, Team Activities, My Interactions) */}
             <div className="dashboard-card recent-items-card">
               <div className="card-header">
-                <h3 className="card-title"><ListChecks className="card-icon" /> {recentItems.title}</h3>
-                <button className="view-all-button">View All <MoreHorizontal size={16} /></button>
+                <h3 className="card-title">
+                  <ListChecks className="card-icon" /> {recentItems.title}
+                </h3>
+                <button className="view-all-button">
+                  View All <MoreHorizontal size={16} />
+                </button>
               </div>
               <div className="table-responsive">
                 <table className="data-table">
@@ -357,7 +674,11 @@ const DynamicDashboard = ({ userRole }) => {
                       <tr key={i}>
                         <td>{item.id}</td>
                         <td>{item.name}</td>
-                        <td><Badge className={getStatusBadgeClass(item.status)}>{item.status}</Badge></td>
+                        <td>
+                          <Badge className={getStatusBadgeClass(item.status)}>
+                            {item.status}
+                          </Badge>
+                        </td>
                         <td>{item.assigned}</td>
                         <td>{item.date}</td>
                       </tr>
@@ -370,17 +691,30 @@ const DynamicDashboard = ({ userRole }) => {
             {/* Leads/Source Breakdown (Simulated Graph) */}
             <div className="dashboard-card leads-source-card">
               <div className="card-header">
-                <h3 className="card-title"><PieChart className="card-icon" /> {userRole === 'employee' ? 'My Lead Sources' : 'Leads by Source'}</h3>
+                <h3 className="card-title">
+                  <PieChart className="card-icon" />{" "}
+                  {userRole === "employee"
+                    ? "My Lead Sources"
+                    : "Leads by Source"}
+                </h3>
               </div>
               <div className="leads-source-chart">
                 {leadsBySource.map((source, i) => (
                   <div key={i} className="chart-item">
                     <div className="chart-bar-container">
-                      <div className="chart-bar" style={{ width: `${source.percentage}%`, backgroundColor: `hsl(${i * 60 + 10}, 70%, 50%)` }}></div>
+                      <div
+                        className="chart-bar"
+                        style={{
+                          width: `${source.percentage}%`,
+                          backgroundColor: `hsl(${i * 60 + 10}, 70%, 50%)`,
+                        }}
+                      ></div>
                     </div>
                     <div className="chart-info">
                       <span className="source-name">{source.source}</span>
-                      <span className="source-count">{source.count} ({source.percentage}%)</span>
+                      <span className="source-count">
+                        {source.count} ({source.percentage}%)
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -390,16 +724,30 @@ const DynamicDashboard = ({ userRole }) => {
             {/* Recent Activity Log */}
             <div className="dashboard-card activity-log-card">
               <div className="card-header">
-                <h3 className="card-title"><Clock className="card-icon" /> Recent Activity Log</h3>
-                <button className="view-all-button">View All <MoreHorizontal size={16} /></button>
+                <h3 className="card-title">
+                  <Clock className="card-icon" /> Recent Activity Log
+                </h3>
+                <button className="view-all-button">
+                  View All <MoreHorizontal size={16} />
+                </button>
               </div>
               <div className="activity-list">
-                {recentActivities.map(activity => (
+                {recentActivities.map((activity) => (
                   <div key={activity.id} className="activity-item">
-                    <span className={`activity-status-icon ${activity.status === 'success' ? 'text-green' : activity.status === 'warning' ? 'text-orange' : 'text-blue'}`}>
-                      {activity.status === 'success' && <CheckCircle size={18} />}
-                      {activity.status === 'warning' && <XCircle size={18} />}
-                      {activity.status === 'info' && <Info size={18} />}
+                    <span
+                      className={`activity-status-icon ${
+                        activity.status === "success"
+                          ? "text-green"
+                          : activity.status === "warning"
+                          ? "text-orange"
+                          : "text-blue"
+                      }`}
+                    >
+                      {activity.status === "success" && (
+                        <CheckCircle size={18} />
+                      )}
+                      {activity.status === "warning" && <XCircle size={18} />}
+                      {activity.status === "info" && <Info size={18} />}
                     </span>
                     <p className="activity-action">{activity.action}</p>
                     <span className="activity-time">{activity.time}</span>
@@ -456,12 +804,12 @@ const DynamicDashboard = ({ userRole }) => {
                 </div>
               )}
             </div>
-
-          </div> {/* End main-dashboard-sections-grid */}
-
-        </div> {/* End dashboard-main-container */}
-      </div> {/* End dashboard-page-wrapper */}
-
+          </div>{" "}
+          {/* End main-dashboard-sections-grid */}
+        </div>{" "}
+        {/* End dashboard-main-container */}
+      </div>{" "}
+      {/* End dashboard-page-wrapper */}
       {/* --- INLINE CSS --- */}
       <style>{`
         /* Global Styles & Variables - Placed here for "isi page me" requirement */
@@ -900,7 +1248,7 @@ const DynamicDashboard = ({ userRole }) => {
             flex-direction: column;
             gap: 1rem;
             flex-grow: 1;
-            justify-content: center; /* Center the chart vertically if content is short */
+            justify-content: center;
             padding-top: 0.5rem;
         }
         .chart-item {
