@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
- import { User } from 'lucide-react';
+import { User } from "lucide-react";
 import {
   Search,
   Eye,
@@ -20,7 +20,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { useToast } from "../hooks/use-toast";
 import { Button } from "@/components/ui/button";
 
-
 const LeadTable = ({ userRole }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -38,7 +37,7 @@ const LeadTable = ({ userRole }) => {
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
   const prevAssignedLeadIds = useRef(new Set());
-  const currentUserId = localStorage.getItem('userId');
+  const currentUserId = localStorage.getItem("userId");
 
   const [chainModalLead, setChainModalLead] = useState(null);
 
@@ -48,28 +47,28 @@ const LeadTable = ({ userRole }) => {
   useEffect(() => {
     const fetchLeads = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem("token");
         const response = await fetch("http://localhost:5001/api/leads", {
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         });
         const json = await response.json();
         setLeadsList(json.data || []);
 
         // --- Notification logic ---
         const newAssignedLeads = (json.data || []).filter(
-          lead => lead.assignedTo === currentUserId
+          (lead) => lead.assignedTo === currentUserId
         );
-        const newAssignedIds = new Set(newAssignedLeads.map(l => l._id));
+        const newAssignedIds = new Set(newAssignedLeads.map((l) => l._id));
         // Show toast for any new assignments
-        newAssignedLeads.forEach(lead => {
+        newAssignedLeads.forEach((lead) => {
           if (!prevAssignedLeadIds.current.has(lead._id)) {
             toast({
               title: "New Lead Assigned",
               description: `You have been assigned a new lead: ${lead.name}`,
-              status: "info"
+              status: "info",
             });
           }
         });
@@ -84,13 +83,16 @@ const LeadTable = ({ userRole }) => {
 
     const fetchAssignableUsers = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const response = await fetch("http://localhost:5001/api/leads/assignable-users", {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+        const token = localStorage.getItem("token");
+        const response = await fetch(
+          "http://localhost:5001/api/leads/assignable-users",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
           }
-        });
+        );
         const json = await response.json();
         setAssignableUsers(json.data || []);
       } catch (error) {
@@ -114,10 +116,14 @@ const LeadTable = ({ userRole }) => {
 
   const getStatusClass = (status) => {
     switch (status?.toLowerCase()) {
-      case "hot": return "status-hot";
-      case "warm": return "status-warm";
-      case "cold": return "status-cold";
-      default: return "status-default";
+      case "hot":
+        return "status-hot";
+      case "warm":
+        return "status-warm";
+      case "cold":
+        return "status-cold";
+      default:
+        return "status-default";
     }
   };
 
@@ -131,20 +137,20 @@ const LeadTable = ({ userRole }) => {
   const handleDeleteLead = async (leadId) => {
     if (!window.confirm("Are you sure you want to delete this lead?")) return;
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const res = await fetch(`http://localhost:5001/api/leads/${leadId}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       });
       const data = await res.json();
       if (res.ok) {
         setLeadsList((prev) => prev.filter((l) => l._id !== leadId));
-        alert('Lead deleted');
+        alert("Lead deleted");
       } else {
-        alert(data.message || 'Failed');
+        alert(data.message || "Failed");
       }
     } catch (err) {
       alert("Error: " + err.message);
@@ -157,13 +163,16 @@ const LeadTable = ({ userRole }) => {
     setFollowUpLoading(true);
     setFollowUpError("");
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5001/api/leads/${lead._id}/followups`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `http://localhost:5001/api/leads/${lead._id}/followups`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         }
-      });
+      );
       const data = await res.json();
       setFollowUpList(data.data || []);
     } catch (err) {
@@ -175,14 +184,14 @@ const LeadTable = ({ userRole }) => {
 
   const handleAssignLead = async (leadId, userId) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const res = await fetch(`http://localhost:5001/api/leads/${leadId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ assignedTo: userId })
+        body: JSON.stringify({ assignedTo: userId }),
       });
       if (!res.ok) {
         let errMsg = "Failed to assign lead";
@@ -193,7 +202,9 @@ const LeadTable = ({ userRole }) => {
         throw new Error(errMsg);
       }
       setLeadsList((prev) =>
-        prev.map((lead) => (lead._id === leadId ? { ...lead, assignedTo: userId } : lead))
+        prev.map((lead) =>
+          lead._id === leadId ? { ...lead, assignedTo: userId } : lead
+        )
       );
     } catch (err) {
       alert("Error: " + err.message);
@@ -203,30 +214,33 @@ const LeadTable = ({ userRole }) => {
   const handleForwardLead = async (leadId) => {
     try {
       setForwardingLead(leadId);
-      const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5001/api/leads/${leadId}/forward`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ action: 'forward' })
-      });
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `http://localhost:5001/api/leads/${leadId}/forward`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ action: "forward" }),
+        }
+      );
 
       const data = await res.json();
       if (res.ok) {
         // Refresh the leads list
         const leadsResponse = await fetch("http://localhost:5001/api/leads", {
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         });
         const leadsJson = await leadsResponse.json();
         setLeadsList(leadsJson.data || []);
-        alert(data.message || 'Lead forwarded successfully');
+        alert(data.message || "Lead forwarded successfully");
       } else {
-        alert(data.message || 'Failed to forward lead');
+        alert(data.message || "Failed to forward lead");
       }
     } catch (err) {
       alert("Error: " + err.message);
@@ -236,32 +250,34 @@ const LeadTable = ({ userRole }) => {
   };
 
   const canForwardLead = (lead) => {
-    const currentUserId = localStorage.getItem('userId');
-    const currentUserRole = localStorage.getItem('userRole');
+    const currentUserId = localStorage.getItem("userId");
+    const currentUserRole = localStorage.getItem("userRole");
 
     // Only the current assignee can forward the lead
     if (lead.assignedTo !== currentUserId) return false;
 
     // Check if there are users in the next level
     const nextRole = {
-      'super-admin': 'head-admin',
-      'head-admin': 'team-leader',
-      'team-leader': 'employee'
+      "super-admin": "head-admin",
+      "head-admin": "team-leader",
+      "team-leader": "employee",
     }[currentUserRole];
 
-    return nextRole && assignableUsers.some(user => user.role === nextRole);
+    return nextRole && assignableUsers.some((user) => user.role === nextRole);
   };
 
   const canAssignToSelf = (lead) => {
-    const currentUserId = localStorage.getItem('userId');
-    const currentUserRole = localStorage.getItem('userRole');
+    const currentUserId = localStorage.getItem("userId");
+    const currentUserRole = localStorage.getItem("userRole");
     // Only team-leader and employee can assign to themselves, and only if the lead is unassigned
-    return ['team-leader', 'employee'].includes(currentUserRole) && !lead.assignedTo;
+    return (
+      ["team-leader", "employee"].includes(currentUserRole) && !lead.assignedTo
+    );
   };
 
   const canReassignLead = (lead) => {
-    const currentUserId = localStorage.getItem('userId');
-    const currentUserRole = localStorage.getItem('userRole');
+    const currentUserId = localStorage.getItem("userId");
+    const currentUserRole = localStorage.getItem("userRole");
 
     // Users can reassign leads they are assigned to
     // Or if they have higher role than the current assignee
@@ -269,15 +285,19 @@ const LeadTable = ({ userRole }) => {
 
     // If lead is unassigned, higher roles can assign it
     if (!lead.assignedTo) {
-      return ['super-admin', 'head-admin', 'team-leader'].includes(currentUserRole);
+      return ["super-admin", "head-admin", "team-leader"].includes(
+        currentUserRole
+      );
     }
 
     // Check if current user has higher role than assignee
-    const roleLevels = ['super-admin', 'head-admin', 'team-leader', 'employee'];
+    const roleLevels = ["super-admin", "head-admin", "team-leader", "employee"];
     const currentUserLevel = roleLevels.indexOf(currentUserRole);
 
     // Find the assignee's role
-    const assigneeInChain = lead.assignmentChain?.find(entry => entry.userId === lead.assignedTo);
+    const assigneeInChain = lead.assignmentChain?.find(
+      (entry) => entry.userId === lead.assignedTo
+    );
     if (!assigneeInChain) return false;
 
     const assigneeLevel = roleLevels.indexOf(assigneeInChain.role);
@@ -286,15 +306,26 @@ const LeadTable = ({ userRole }) => {
     return currentUserLevel < assigneeLevel;
   };
 
-
-
   const exportToCSV = () => {
     setIsExporting(true);
-    
+
     try {
-      const headers = ['ID', 'Name', 'Email', 'Phone', 'Location', 'Budget', 'Property', 'Status', 'Assigned To', 'Assigned By', 'Last Contact', 'Follow Ups'];
-      
-      const csvData = filteredLeads.map(lead => [
+      const headers = [
+        "ID",
+        "Name",
+        "Email",
+        "Phone",
+        "Location",
+        "Budget",
+        "Property",
+        "Status",
+        "Assigned To",
+        "Assigned By",
+        "Last Contact",
+        "Follow Ups",
+      ];
+
+      const csvData = filteredLeads.map((lead) => [
         lead.id,
         lead.name,
         lead.email,
@@ -306,21 +337,24 @@ const LeadTable = ({ userRole }) => {
         lead.assignedTo,
         lead.assignedBy,
         lead.lastContact,
-        lead.followUps
+        lead.followUps,
       ]);
 
       const csvContent = [headers, ...csvData]
-        .map(row => row.map(field => `"${field}"`).join(','))
-        .join('\n');
+        .map((row) => row.map((field) => `"${field}"`).join(","))
+        .join("\n");
 
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
       const url = URL.createObjectURL(blob);
-      
-      link.setAttribute('href', url);
-      link.setAttribute('download', `leads_export_${new Date().toISOString().split('T')[0]}.csv`);
-      link.style.visibility = 'hidden';
-      
+
+      link.setAttribute("href", url);
+      link.setAttribute(
+        "download",
+        `leads_export_${new Date().toISOString().split("T")[0]}.csv`
+      );
+      link.style.visibility = "hidden";
+
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -332,13 +366,16 @@ const LeadTable = ({ userRole }) => {
     } catch (error) {
       toast({
         title: "Export Failed",
-        description: "There was an error exporting the leads. Please try again.",
+        description:
+          "There was an error exporting the leads. Please try again.",
         variant: "destructive",
       });
     } finally {
       setIsExporting(false);
     }
   };
+
+    const allowedRolesToCreateLead = ["super-admin", "head-admin"];
 
   return (
     <div className="lead-table-wrapper">
@@ -355,35 +392,36 @@ const LeadTable = ({ userRole }) => {
           />
         </div>
         <select
-  value={statusFilter}
-  onChange={(e) => setStatusFilter(e.target.value)}
-  className="custom-select"
->
-  <option value="all">All Statuses</option>
-  <option value="hot">Hot</option>
-  <option value="warm">Warm</option>
-  <option value="cold">Cold</option>
-</select>
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="custom-select"
+        >
+          <option value="all">All Statuses</option>
+          <option value="hot">Hot</option>
+          <option value="warm">Warm</option>
+          <option value="cold">Cold</option>
+        </select>
 
-        <Button 
-  onClick={exportToCSV}
-  disabled={isExporting || filteredLeads.length === 0}
-  variant="outline"
-  className="custom-export-btn"
->
-  <Download className="download-icon" />
-  {isExporting ? 'Exporting...' : 'Export to CSV'}
-</Button>
+        <Button
+          onClick={exportToCSV}
+          disabled={isExporting || filteredLeads.length === 0}
+          variant="outline"
+          className="custom-export-btn"
+        >
+          <Download className="download-icon" />
+          {isExporting ? "Exporting..." : "Export to CSV"}
+        </Button>
 
-
-        {/* <button className="create-lead-btn group" onClick={handleCreateLead}>
-          <Plus size={18} className="group-hover:rotate-90 transition-transform duration-200" /> Create Lead
-        </button> */}
+        <button className="create-lead-btn group" onClick={handleCreateLead}>
+          <Plus
+            size={18}
+            className="group-hover:rotate-90 transition-transform duration-200"
+          />{" "}
+          Create Lead
+        </button>
       </div>
 
-   
-            {/* </div> */}
-            
+      {/* </div> */}
 
       <table className="lead-table">
         <thead>
@@ -405,9 +443,15 @@ const LeadTable = ({ userRole }) => {
                 <div>ID: #{lead.id}</div>
               </td>
               <td>
-                <div><Phone size={14} /> {lead.phone}</div>
-                <div><Mail size={14} /> {lead.email}</div>
-                <div><MapPin size={14} /> {lead.location}</div>
+                <div>
+                  <Phone size={14} /> {lead.phone}
+                </div>
+                <div>
+                  <Mail size={14} /> {lead.email}
+                </div>
+                <div>
+                  <MapPin size={14} /> {lead.location}
+                </div>
               </td>
               <td>
                 <div>{lead.property}</div>
@@ -423,26 +467,36 @@ const LeadTable = ({ userRole }) => {
                 {String(lead.assignedTo) === String(currentUserId) ? (
                   <select
                     value={lead.workProgress || "pending"}
-                    onChange={async e => {
+                    onChange={async (e) => {
                       const value = e.target.value;
                       try {
-                        const token = localStorage.getItem('token');
-                        await fetch(`http://localhost:5001/api/leads/${lead._id}`, {
-                          method: 'PUT',
-                          headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                          },
-                          body: JSON.stringify({ workProgress: value })
-                        });
-                        setLeadsList(prev => prev.map(l => l._id === lead._id ? { ...l, workProgress: value } : l));
+                        const token = localStorage.getItem("token");
+                        await fetch(
+                          `http://localhost:5001/api/leads/${lead._id}`,
+                          {
+                            method: "PUT",
+                            headers: {
+                              "Content-Type": "application/json",
+                              Authorization: `Bearer ${token}`,
+                            },
+                            body: JSON.stringify({ workProgress: value }),
+                          }
+                        );
+                        setLeadsList((prev) =>
+                          prev.map((l) =>
+                            l._id === lead._id
+                              ? { ...l, workProgress: value }
+                              : l
+                          )
+                        );
                       } catch (err) {
-                        alert('Failed to update work progress');
+                        alert("Failed to update work progress");
                       }
                     }}
                     className="px-2 py-1 border rounded"
                   >
-                    {(!lead.workProgress || lead.workProgress === "pending") && (
+                    {(!lead.workProgress ||
+                      lead.workProgress === "pending") && (
                       <option value="pending">Pending</option>
                     )}
                     {lead.workProgress !== "done" && (
@@ -465,21 +519,31 @@ const LeadTable = ({ userRole }) => {
                   {/* Show only the current assignee in Assign column */}
                   {lead.assignmentChain && lead.assignmentChain.length > 0 ? (
                     <span>
-                      Assigned to: {(() => {
-                        const last = lead.assignmentChain[lead.assignmentChain.length - 1];
-                        return last ? `${last.name} (${last.role})` : 'Unassigned';
+                      Assigned to:{" "}
+                      {(() => {
+                        const last =
+                          lead.assignmentChain[lead.assignmentChain.length - 1];
+                        return last
+                          ? `${last.name} (${last.role})`
+                          : "Unassigned";
                       })()}
                     </span>
                   ) : (
                     <span>Unassigned</span>
                   )}
                   {/* Assignment dropdown/buttons logic remains unchanged below */}
-                  {((!lead.assignedTo && canReassignLead(lead)) || String(lead.assignedTo) === String(currentUserId)) && (
+                  {((!lead.assignedTo && canReassignLead(lead)) ||
+                    String(lead.assignedTo) === String(currentUserId)) && (
                     <>
                       <select
                         value={lead.assignedTo || ""}
-                        onChange={(e) => handleAssignLead(lead._id, e.target.value)}
-                        disabled={String(lead.assignedTo) !== String(currentUserId) && !canReassignLead(lead)}
+                        onChange={(e) =>
+                          handleAssignLead(lead._id, e.target.value)
+                        }
+                        disabled={
+                          String(lead.assignedTo) !== String(currentUserId) &&
+                          !canReassignLead(lead)
+                        }
                       >
                         <option value="">Unassigned</option>
                         {assignableUsers.map((u) => (
@@ -497,7 +561,9 @@ const LeadTable = ({ userRole }) => {
                           title="Forward to next level"
                         >
                           <ArrowRight size={14} />
-                          {forwardingLead === lead._id ? "Forwarding..." : "Forward"}
+                          {forwardingLead === lead._id
+                            ? "Forwarding..."
+                            : "Forward"}
                         </button>
                       )}
                     </>
@@ -515,8 +581,10 @@ const LeadTable = ({ userRole }) => {
                   )}
 
                   {!lead.assignmentChain?.length &&
-                    !((!lead.assignedTo && canReassignLead(lead)) ||
-                      String(lead.assignedTo) === String(currentUserId)) && (
+                    !(
+                      (!lead.assignedTo && canReassignLead(lead)) ||
+                      String(lead.assignedTo) === String(currentUserId)
+                    ) && (
                       <span className="text-sm text-gray-500">Unassigned</span>
                     )}
                 </div>
@@ -530,8 +598,18 @@ const LeadTable = ({ userRole }) => {
                 >
                   <LinkIcon size={18} />
                 </button>
-                <button onClick={() => handleViewFollowUps(lead)} title="View Follow-ups"><Eye size={16} /></button>
-                <button onClick={() => handleFollowUp(lead)} title="Add Follow-up"><MessageSquare size={16} /></button>
+                <button
+                  onClick={() => handleViewFollowUps(lead)}
+                  title="View Follow-ups"
+                >
+                  <Eye size={16} />
+                </button>
+                <button
+                  onClick={() => handleFollowUp(lead)}
+                  title="Add Follow-up"
+                >
+                  <MessageSquare size={16} />
+                </button>
                 {userRole === "super-admin" && (
                   <button onClick={() => handleDeleteLead(lead._id)}>
                     <Trash2 size={16} />
@@ -553,15 +631,22 @@ const LeadTable = ({ userRole }) => {
           Previous
         </button>
         <span className="text-sm text-gray-700">
-          Page <span className="font-semibold">{currentPage}</span> of <span className="font-semibold">{Math.ceil(filteredLeads.length / leadsPerPage)}</span>
+          Page <span className="font-semibold">{currentPage}</span> of{" "}
+          <span className="font-semibold">
+            {Math.ceil(filteredLeads.length / leadsPerPage)}
+          </span>
         </span>
         <button
           onClick={() =>
             setCurrentPage((prev) =>
-              prev < Math.ceil(filteredLeads.length / leadsPerPage) ? prev + 1 : prev
+              prev < Math.ceil(filteredLeads.length / leadsPerPage)
+                ? prev + 1
+                : prev
             )
           }
-          disabled={currentPage === Math.ceil(filteredLeads.length / leadsPerPage)}
+          disabled={
+            currentPage === Math.ceil(filteredLeads.length / leadsPerPage)
+          }
           className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200"
         >
           Next
@@ -580,35 +665,53 @@ const LeadTable = ({ userRole }) => {
       <CreateLeadForm
         isOpen={showCreateLead}
         onClose={() => setShowCreateLead(false)}
-        onSave={() => { /* Consider re-fetching leads here after a new lead is created */ }}
+        onSave={() => {
+          /* Consider re-fetching leads here after a new lead is created */
+        }}
       />
 
       <Dialog open={showFollowUpList} onOpenChange={setShowFollowUpList}>
         <DialogContent className="sm:max-w-[425px] bg-white p-6 rounded-lg shadow-xl">
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-gray-800 border-b pb-3 mb-4">Follow-ups for {selectedLead?.name}</DialogTitle>
+            <DialogTitle className="text-xl font-semibold text-gray-800 border-b pb-3 mb-4">
+              Follow-ups for {selectedLead?.name}
+            </DialogTitle>
           </DialogHeader>
           {followUpLoading ? (
-            <p className="text-center text-gray-500 py-4">Loading follow-ups...</p>
+            <p className="text-center text-gray-500 py-4">
+              Loading follow-ups...
+            </p>
           ) : followUpError ? (
-            <p className="text-center text-red-500 py-4">Error: {followUpError}</p>
+            <p className="text-center text-red-500 py-4">
+              Error: {followUpError}
+            </p>
           ) : followUpList.length === 0 ? (
-            <p className="text-center text-gray-500 py-4">No follow-ups found for this lead.</p>
+            <p className="text-center text-gray-500 py-4">
+              No follow-ups found for this lead.
+            </p>
           ) : (
             <ul className="space-y-4 max-h-80 overflow-y-auto pr-2">
               {followUpList.map((f, i) => (
-                <li key={i} className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                <li
+                  key={i}
+                  className="bg-gray-50 p-4 rounded-md border border-gray-200"
+                >
                   <div className="flex justify-between items-center mb-1">
                     <strong className="text-gray-800">{f.author}</strong>
-                    <span className="text-xs font-medium text-gray-600 px-2 py-1 rounded-full bg-gray-200">{f.role}</span>
+                    <span className="text-xs font-medium text-gray-600 px-2 py-1 rounded-full bg-gray-200">
+                      {f.role}
+                    </span>
                   </div>
                   <p className="text-gray-700 text-sm mb-1">{f.comment}</p>
                   {f.place && (
                     <div className="flex items-center text-xs text-gray-600">
-                      <MapPin size={12} className="mr-1" /> Meeting at: {f.place}
+                      <MapPin size={12} className="mr-1" /> Meeting at:{" "}
+                      {f.place}
                     </div>
                   )}
-                  <small className="block text-right text-gray-500 text-xs mt-2">{new Date(f.timestamp).toLocaleString()}</small>
+                  <small className="block text-right text-gray-500 text-xs mt-2">
+                    {new Date(f.timestamp).toLocaleString()}
+                  </small>
                 </li>
               ))}
             </ul>
@@ -616,73 +719,76 @@ const LeadTable = ({ userRole }) => {
         </DialogContent>
       </Dialog>
 
-      
       {/* Assignment Chain Modal */}
-  
 
-<Dialog open={!!chainModalLead} onOpenChange={() => setChainModalLead(null)}>
-  <DialogContent className="min-w-[500px] max-h-[70vh] overflow-y-auto">
-    <DialogHeader>
-      <DialogTitle className="text-xl font-bold text-gray-800">
-        Assignment Chain
-      </DialogTitle>
-    </DialogHeader>
+      <Dialog
+        open={!!chainModalLead}
+        onOpenChange={() => setChainModalLead(null)}
+      >
+        <DialogContent className="min-w-[500px] max-h-[70vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-800">
+              Assignment Chain
+            </DialogTitle>
+          </DialogHeader>
 
-    {chainModalLead?.assignmentChain?.length > 0 ? (
-      <div className="mt-4 overflow-hidden rounded-xl border border-gray-200 shadow-sm">
-        <table className="w-full text-sm text-left">
-          <thead className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
-            <tr>
-              <th className="px-4 py-3">Name</th>
-              <th className="px-4 py-3">Role</th>
-              <th className="px-4 py-3">Assigned To</th>
-              <th className="px-4 py-3">Assigned At</th>
-            </tr>
-          </thead>
-          <tbody>
-            {chainModalLead.assignmentChain.map((entry, idx, arr) => {
-              const next = arr[idx + 1];
-              const isLast = !next;
+          {chainModalLead?.assignmentChain?.length > 0 ? (
+            <div className="mt-4 overflow-hidden rounded-xl border border-gray-200 shadow-sm">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
+                  <tr>
+                    <th className="px-4 py-3">Name</th>
+                    <th className="px-4 py-3">Role</th>
+                    <th className="px-4 py-3">Assigned To</th>
+                    <th className="px-4 py-3">Assigned At</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {chainModalLead.assignmentChain.map((entry, idx, arr) => {
+                    const next = arr[idx + 1];
+                    const isLast = !next;
 
-              return (
-                <tr
-                  key={idx}
-                  className={`${
-                    isLast
-                      ? 'bg-green-50 text-green-800 font-semibold'
-                      : idx % 2 === 0
-                      ? 'bg-white'
-                      : 'bg-gray-50'
-                  }`}
-                >
-                  <td className="px-4 py-3">{entry.name}</td>
-                  <td className="px-4 py-3 capitalize">{entry.role}</td>
-                  <td className="px-4 py-3">
-                    {next ? next.name + ` (${next.role})` : '— Currently Assigned —'}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 text-xs">
-                    {next?.assignedAt || entry?.assignedAt
-                      ? new Date((next?.assignedAt || entry.assignedAt)).toLocaleString()
-                      : '—'}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    ) : (
-      <p className="text-gray-500 mt-4 text-sm">No assignment chain available.</p>
-    )}
-  </DialogContent>
-</Dialog>
-
-      
-
-
+                    return (
+                      <tr
+                        key={idx}
+                        className={`${
+                          isLast
+                            ? "bg-green-50 text-green-800 font-semibold"
+                            : idx % 2 === 0
+                            ? "bg-white"
+                            : "bg-gray-50"
+                        }`}
+                      >
+                        <td className="px-4 py-3">{entry.name}</td>
+                        <td className="px-4 py-3 capitalize">{entry.role}</td>
+                        <td className="px-4 py-3">
+                          {next
+                            ? next.name + ` (${next.role})`
+                            : "— Currently Assigned —"}
+                        </td>
+                        <td className="px-4 py-3 text-gray-600 text-xs">
+                          {next?.assignedAt || entry?.assignedAt
+                            ? new Date(
+                                next?.assignedAt || entry.assignedAt
+                              ).toLocaleString()
+                            : "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-gray-500 mt-4 text-sm">
+              No assignment chain available.
+            </p>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* === Styles === */}
-        <style>{`
+      <style>{`
           /* Base styles */
           * {
             font-family: 'Poppins', sans-serif;
