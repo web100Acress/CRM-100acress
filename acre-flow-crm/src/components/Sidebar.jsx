@@ -46,7 +46,7 @@ const Sidebar = ({ userRole, isCollapsed, onToggle }) => {
     'team-leader': [
       { path: '/', icon: Home, label: 'Dashboard' },
       { path: '/leads', icon: Building2, label: 'Assigned Leads' },
-      { path: '/employees', icon: Users, label: 'My Employees' },
+      // { path: '/employees', icon: Users, label: 'My Employees' },
       // { path: '/create-employee', icon: UserPlus, label: 'Add Employee' },
       // { path: '/tickets', icon: Ticket, label: 'Manage Tickets' }
     ],
