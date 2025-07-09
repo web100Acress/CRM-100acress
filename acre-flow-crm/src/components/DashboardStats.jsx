@@ -1,34 +1,14 @@
 import React, { useState, useEffect } from "react";
 import {
-  Users,
-  Building2,
-  Ticket,
-  TrendingUp,
-  DollarSign,
-  Calendar,
-  ClipboardList,
-  Briefcase,
-  Users2,
-  Gauge,
-  Mail,
-  Phone,
-  Shield,
-  UserPlus,
-  Info,
-  MoreHorizontal,
-  CheckCircle,
-  XCircle,
-  Clock,
-  PieChart,
-  ListChecks,
-} from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card"; // Assuming these are still used if you have them
+
+  Users, Building2, Ticket, TrendingUp, DollarSign, Calendar,
+  ClipboardList, Briefcase, Users2, Gauge,
+  Mail, Phone, Shield, UserPlus, Info, MoreHorizontal, CheckCircle, XCircle, Clock, PieChart, ListChecks
+} from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card'; // Assuming these are still used if you have them
+import { useRef } from 'react';
 
 // Function to generate a random date for activities/tasks
 const getRandomDate = (daysAgo) => {
@@ -506,6 +486,16 @@ const DynamicDashboard = ({ userRole }) => {
   const recentActivities = currentDashboardData.recentActivities;
   const upcomingItems = currentDashboardData.upcomingItems;
 
+  const [showMeetingModal, setShowMeetingModal] = useState(false);
+  const [meetingForm, setMeetingForm] = useState({ title: '', date: '', description: '' });
+  const [upcomingMeetings, setUpcomingMeetings] = useState(
+    userRole === 'super-admin' ? [
+      { id: 1, text: 'Q3 System Audit', date: 'Jul 20, 2025' },
+      { id: 2, text: 'Database Optimization', date: 'Aug 01, 2025' },
+      { id: 3, text: 'New Feature Rollout', date: 'Aug 15, 2025' },
+    ] : currentDashboardData.upcomingItems.items
+  );
+
   const getColorClass = (color) => `icon-box ${color}`;
 
   // Helper for status badges in tables
@@ -526,6 +516,21 @@ const DynamicDashboard = ({ userRole }) => {
       default:
         return "badge-neutral";
     }
+  };
+
+  const handleScheduleMeeting = (e) => {
+    e.preventDefault();
+    if (!meetingForm.title || !meetingForm.date) return;
+    setUpcomingMeetings([
+      ...upcomingMeetings,
+      {
+        id: Date.now(),
+        text: meetingForm.title + (meetingForm.description ? `: ${meetingForm.description}` : ''),
+        date: meetingForm.date,
+      },
+    ]);
+    setMeetingForm({ title: '', date: '', description: '' });
+    setShowMeetingModal(false);
   };
 
   return (
@@ -754,15 +759,15 @@ const DynamicDashboard = ({ userRole }) => {
             {/* Upcoming Tasks/Reminders */}
             <div className="dashboard-card upcoming-tasks-card">
               <div className="card-header">
-                <h3 className="card-title">
-                  <Calendar className="card-icon" /> {upcomingItems.title}
-                </h3>
-                <button className="view-all-button">
-                  View All <MoreHorizontal size={16} />
-                </button>
+                <h3 className="card-title"><Calendar className="card-icon" /> {upcomingItems.title}</h3>
+                {userRole === 'super-admin' && (
+                  <button className="view-all-button" onClick={() => setShowMeetingModal(true)}>
+                    Schedule Meeting
+                  </button>
+                )}
               </div>
               <div className="upcoming-list">
-                {upcomingItems.items.map((task, i) => (
+                {(userRole === 'super-admin' ? upcomingMeetings : upcomingItems.items).map((task, i) => (
                   <div key={i} className="upcoming-item">
                     <CheckCircle size={20} className="upcoming-item-icon" />
                     <div>
@@ -772,6 +777,32 @@ const DynamicDashboard = ({ userRole }) => {
                   </div>
                 ))}
               </div>
+              {/* Modal for scheduling meeting */}
+              {showMeetingModal && (
+                <div className="modal-backdrop" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.3)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div className="modal" style={{ background: '#fff', borderRadius: 12, padding: 24, minWidth: 320, boxShadow: '0 8px 32px rgba(0,0,0,0.15)' }}>
+                    <h3 style={{ marginBottom: 16 }}>Schedule Meeting</h3>
+                    <form onSubmit={handleScheduleMeeting}>
+                      <div style={{ marginBottom: 12 }}>
+                        <label>Meeting Title</label>
+                        <input type="text" value={meetingForm.title} onChange={e => setMeetingForm({ ...meetingForm, title: e.target.value })} style={{ width: '100%', padding: 8, marginTop: 4 }} required />
+                      </div>
+                      <div style={{ marginBottom: 12 }}>
+                        <label>Date</label>
+                        <input type="date" value={meetingForm.date} onChange={e => setMeetingForm({ ...meetingForm, date: e.target.value })} style={{ width: '100%', padding: 8, marginTop: 4 }} required />
+                      </div>
+                      <div style={{ marginBottom: 12 }}>
+                        <label>Description</label>
+                        <textarea value={meetingForm.description} onChange={e => setMeetingForm({ ...meetingForm, description: e.target.value })} style={{ width: '100%', padding: 8, marginTop: 4 }} />
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                        <button type="button" onClick={() => setShowMeetingModal(false)} style={{ padding: '8px 16px', background: '#eee', border: 'none', borderRadius: 6 }}>Cancel</button>
+                        <button type="submit" style={{ padding: '8px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6 }}>Add Meeting</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
             </div>
           </div>{" "}
           {/* End main-dashboard-sections-grid */}

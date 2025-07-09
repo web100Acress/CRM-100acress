@@ -7,6 +7,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import io from 'socket.io-client';
 
 const SuperAdminProfile = () => {
   const navigate = useNavigate();
@@ -41,14 +42,34 @@ const SuperAdminProfile = () => {
     ]
   });
 
-  // You can use useEffect to fetch real data here
-  // useEffect(() => {
-  //   // Example: Fetch data from an API
-  //   // fetch('/api/superadmin-dashboard-stats')
-  //   //   .then(response => response.json())
-  //   //   .then(data => setDashboardStats(data))
-  //   //   .catch(error => console.error('Error fetching dashboard data:', error));
-  // }, []);
+  const [showMeetingModal, setShowMeetingModal] = useState(false);
+  const [meetingForm, setMeetingForm] = useState({ title: '', date: '', description: '' });
+  const [socket, setSocket] = useState(null);
+
+  useEffect(() => {
+    // Connect to Socket.IO server
+    const s = io('http://localhost:5001');
+    setSocket(s);
+    // Fetch meetings from backend
+    fetch('http://localhost:5001/api/meetings')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setDashboardStats(prev => ({ ...prev, upcomingTasks: data.data.map(m => ({ id: m._id, task: m.title + (m.description ? `: ${m.description}` : ''), date: new Date(m.date).toLocaleDateString() })) }));
+        }
+      });
+    // Listen for real-time meeting events
+    s.on('meetingScheduled', (meeting) => {
+      setDashboardStats(prev => ({
+        ...prev,
+        upcomingTasks: [
+          ...prev.upcomingTasks,
+          { id: meeting._id, task: meeting.title + (meeting.description ? `: ${meeting.description}` : ''), date: new Date(meeting.date).toLocaleDateString() },
+        ],
+      }));
+    });
+    return () => { s.disconnect(); };
+  }, []);
 
 
   const superAdminData = {
@@ -74,6 +95,18 @@ const SuperAdminProfile = () => {
     { title: 'Open Tickets', value: dashboardStats.openTickets, icon: Ticket, color: 'text-orange-600', cardBg: 'bg-orange-100' },
     { title: 'System Health', value: `${dashboardStats.systemHealth}%`, icon: Shield, color: 'text-emerald-600', cardBg: 'bg-emerald-100' }
   ];
+
+  const handleScheduleMeeting = async (e) => {
+    e.preventDefault();
+    if (!meetingForm.title || !meetingForm.date) return;
+    await fetch('http://localhost:5001/api/meetings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: meetingForm.title, date: meetingForm.date, description: meetingForm.description }),
+    });
+    setMeetingForm({ title: '', date: '', description: '' });
+    setShowMeetingModal(false);
+  };
 
   return (
     <>
@@ -197,6 +230,9 @@ const SuperAdminProfile = () => {
           <Card className="section-card">
             <CardContent className="section-card-content">
               <h4 className="section-title"><CalendarCheck className="section-icon" /> Upcoming Tasks</h4>
+              <button style={{marginBottom: 12, background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 16px', cursor: 'pointer'}} onClick={() => setShowMeetingModal(true)}>
+                Schedule Meeting
+              </button>
               <ul className="upcoming-tasks-list">
                 {dashboardStats.upcomingTasks.map((task, index) => (
                   <li key={index} className="task-item">
@@ -208,6 +244,65 @@ const SuperAdminProfile = () => {
                   </li>
                 ))}
               </ul>
+              {/* Modal for scheduling meeting */}
+              {showMeetingModal && (
+                <div className="modal-backdrop" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.3)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div className="modal" style={{ background: '#fff', borderRadius: 12, padding: 24, minWidth: 320, boxShadow: '0 8px 32px rgba(0,0,0,0.15)' }}>
+                    <h3 style={{ marginBottom: 16 }}>Schedule Meeting</h3>
+                    <form onSubmit={handleScheduleMeeting}>
+                      <div style={{ marginBottom: 12 }}>
+                        <label>Meeting Title</label>
+                        <input type="text" value={meetingForm.title} onChange={e => setMeetingForm({ ...meetingForm, title: e.target.value })} style={{ width: '100%', padding: 8, marginTop: 4 }} required />
+                      </div>
+                      <div style={{ marginBottom: 12 }}>
+                        <label>Date</label>
+                        <input type="date" value={meetingForm.date} onChange={e => setMeetingForm({ ...meetingForm, date: e.target.value })} style={{ width: '100%', padding: 8, marginTop: 4 }} required />
+                      </div>
+                      <div style={{ marginBottom: 12 }}>
+                        <label>Description</label>
+                        <textarea value={meetingForm.description} onChange={e => setMeetingForm({ ...meetingForm, description: e.target.value })} style={{ width: '100%', padding: 8, marginTop: 4 }} />
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                        <button type="button" onClick={() => setShowMeetingModal(false)} style={{ padding: '8px 16px', background: '#eee', border: 'none', borderRadius: 6 }}>Cancel</button>
+                        <button type="submit" style={{ padding: '8px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6 }}>Add Meeting</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* WhatsApp Chat Section */}
+          <Card className="section-card">
+            <CardContent className="section-card-content">
+              <h4 className="section-title" style={{ color: '#25D366' }}>
+                <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ verticalAlign: 'middle', marginRight: 8 }}>
+                  <circle cx="16" cy="16" r="16" fill="#25D366"/>
+                  <path d="M23.472 19.339c-.355-.177-2.104-1.037-2.43-1.155-.326-.119-.563-.177-.8.177-.237.355-.914 1.155-1.122 1.392-.208.237-.414.266-.769.089-.355-.178-1.5-.553-2.86-1.763-1.057-.944-1.77-2.108-1.98-2.463-.208-.355-.022-.546.156-.723.16-.159.355-.414.533-.622.178-.208.237-.355.355-.592.119-.237.06-.444-.03-.622-.089-.178-.8-1.924-1.096-2.637-.289-.693-.583-.599-.8-.61-.208-.009-.444-.011-.68-.011-.237 0-.622.089-.948.444-.326.355-1.24 1.211-1.24 2.955 0 1.744 1.268 3.429 1.445 3.669.178.237 2.5 3.82 6.055 5.207.847.292 1.507.466 2.023.596.85.203 1.624.174 2.236.106.682-.075 2.104-.861 2.402-1.693.297-.832.297-1.545.208-1.693-.089-.148-.326-.237-.68-.414z" fill="#fff"/>
+                </svg>
+                WhatsApp
+              </h4>
+              <p>Need help or want to chat with our team? Click below to start a WhatsApp conversation!</p>
+              <a
+                href="https://wa.me/9142793190?text=Hello%20from%20the%20CRM!"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-block',
+                  background: '#25D366',
+                  color: '#fff',
+                  padding: '12px 24px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  textDecoration: 'none',
+                  margin: '16px 0',
+                  fontSize: '1.1rem',
+                  boxShadow: '0 2px 8px rgba(37,211,102,0.15)'
+                }}
+              >
+                Chat with us on WhatsApp
+              </a>
             </CardContent>
           </Card>
         </div>
