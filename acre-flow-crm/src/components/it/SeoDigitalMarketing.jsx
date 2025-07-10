@@ -123,7 +123,7 @@ const SeoDigitalMarketing = () => {
     }
   ]);
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status) => {
     switch(status) {
       case 'Active': return 'bg-green-100 text-green-800';
       case 'Paused': return 'bg-yellow-100 text-yellow-800';
@@ -132,13 +132,13 @@ const SeoDigitalMarketing = () => {
     }
   };
 
-  const getDifficultyColor = (difficulty: number) => {
+  const getDifficultyColor = (difficulty) => {
     if (difficulty < 30) return 'bg-green-100 text-green-800';
     if (difficulty < 60) return 'bg-yellow-100 text-yellow-800';
     return 'bg-red-100 text-red-800';
   };
 
-  const getTrendIcon = (trend: string) => {
+  const getTrendIcon = (trend) => {
     return trend === 'up' ?
       <ArrowUp size={14} className="text-green-500" /> :
       <ArrowDown size={14} className="text-red-500" />;

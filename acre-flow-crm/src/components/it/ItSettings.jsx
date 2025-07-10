@@ -127,10 +127,10 @@ const ItSettings = () => {
       justifyContent: 'center',
     },
     badgeGreen: { backgroundColor: '#d1fae5', color: '#065f46' }, // bg-green-100 text-green-800
-    badgeRed: { backgroundColor: '#fee2e2', color: '#991b1b' },   // bg-red-100 text-red-800
+    badgeRed: { backgroundColor: '#fee2e2', color: '#991b1b' },    // bg-red-100 text-red-800
     badgeYellow: { backgroundColor: '#fef3c7', color: '#b45309' }, // bg-yellow-100 text-yellow-800
-    badgeGray: { backgroundColor: '#e5e7eb', color: '#374151' },  // bg-gray-100 text-gray-800
-    badgeBlue: { backgroundColor: '#dbeafe', color: '#1e40af' },  // bg-blue-100 text-blue-800
+    badgeGray: { backgroundColor: '#e5e7eb', color: '#374151' },   // bg-gray-100 text-gray-800
+    badgeBlue: { backgroundColor: '#dbeafe', color: '#1e40af' },   // bg-blue-100 text-blue-800
 
     // Tabs
     tabsContent: {
@@ -249,6 +249,7 @@ const ItSettings = () => {
   };
 
   // Helper functions to return style objects based on status
+  // Added type annotation for 'status' and return type for clarity
   const getStatusColor = (status) => {
     switch(status) {
       case 'Online':
@@ -268,21 +269,21 @@ const ItSettings = () => {
         return styles.badgeGray;
     }
   };
+// Removed type annotations for 'key' and 'value'
+const handleSettingChange = (key, value) => {
+  setSystemSettings(prev => ({
+    ...prev,
+    [key]: value
+  }));
+};
 
-  const handleSettingChange = (key, value) => {
-    setSystemSettings(prev => ({
-      ...prev,
-      [key]: value
-    }));
-  };
-
-  const handleSecurityChange = (key, value) => {
-    setSecuritySettings(prev => ({
-      ...prev,
-      [key]: value
-    }));
-  };
-
+// Removed type annotations for 'key' and 'value'
+const handleSecurityChange = (key, value) => {
+  setSecuritySettings(prev => ({
+    ...prev,
+    [key]: value
+  }));
+};
   return (
     <div style={styles.mainContainer}>
       {/* Inject media queries for responsive grids */}
