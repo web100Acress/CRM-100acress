@@ -106,7 +106,7 @@ const VideoEditing = () => {
     { type: 'image', name: 'logo_animation.mov', size: '450 MB', duration: '0:15' }
   ]);
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status) => {
     switch(status) {
       case 'Completed': return 'bg-green-100 text-green-800';
       case 'In Progress': return 'bg-blue-100 text-blue-800';
@@ -116,7 +116,7 @@ const VideoEditing = () => {
     }
   };
 
-  const getAssetIcon = (type: string) => {
+  const getAssetIcon = (type) => {
     switch(type) {
       case 'video': return <FileVideo size={20} className="text-blue-500" />;
       case 'audio': return <Volume2 size={20} className="text-green-500" />;

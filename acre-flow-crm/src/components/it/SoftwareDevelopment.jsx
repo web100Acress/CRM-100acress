@@ -102,7 +102,7 @@ const SoftwareDevelopment = () => {
   const [showAddProject, setShowAddProject] = useState(false);
   const [showAddTask, setShowAddTask] = useState(false);
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status) => {
     switch(status) {
       case 'Completed': return 'bg-green-100 text-green-800';
       case 'In Progress': return 'bg-blue-100 text-blue-800';
@@ -113,7 +113,7 @@ const SoftwareDevelopment = () => {
     }
   };
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityColor = (priority) => {
     switch(priority) {
       case 'High': return 'bg-red-100 text-red-800';
       case 'Medium': return 'bg-yellow-100 text-yellow-800';
@@ -122,7 +122,7 @@ const SoftwareDevelopment = () => {
     }
   };
 
-  const getTypeIcon = (type: string) => {
+  const getTypeIcon = (type) => {
     switch(type) {
       case 'Web Development': return <Globe size={16} />;
       case 'Mobile Development': return <Smartphone size={16} />;
@@ -132,7 +132,7 @@ const SoftwareDevelopment = () => {
     }
   };
 
-  const getTaskTypeIcon = (type: string) => {
+  const getTaskTypeIcon = (type) => {
     switch(type) {
       case 'Bug': return <Bug size={16} className="text-red-500" />;
       case 'Feature': return <Zap size={16} className="text-blue-500" />;

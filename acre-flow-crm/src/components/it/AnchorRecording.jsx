@@ -114,7 +114,7 @@ const AnchorRecording = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState('00:00');
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status) => {
     switch(status) {
       case 'Completed': return 'bg-green-100 text-green-800';
       case 'In Progress': return 'bg-blue-100 text-blue-800';
@@ -124,7 +124,7 @@ const AnchorRecording = () => {
     }
   };
 
-  const getEquipmentStatusColor = (status: string) => {
+  const getEquipmentStatusColor = (status) => {
     switch(status) {
       case 'Available': return 'bg-green-100 text-green-800';
       case 'In Use': return 'bg-blue-100 text-blue-800';
@@ -133,7 +133,7 @@ const AnchorRecording = () => {
     }
   };
 
-  const getTypeIcon = (type: string) => {
+  const getTypeIcon = (type) => {
     switch(type) {
       case 'Podcast': return <Radio size={16} className="text-purple-500" />;
       case 'Video Recording': return <Camera size={16} className="text-blue-500" />;
