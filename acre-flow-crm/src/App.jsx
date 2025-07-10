@@ -19,6 +19,7 @@ import DeveloperLogin from "./pages/DeveloperLogin";
 import DeveloperDashboard from "./pages/DeveloperDashboard";
 import ResetPassword from "./pages/ResetPassword";
 import HrFinance from "./pages/HrFinance";
+import ItInfrastructure from "./pages/ItInfrastructure";
 
 
 const queryClient = new QueryClient();
@@ -186,6 +187,7 @@ const App = () => {
 
        
           <Route path="/hr-finance" element={<HrFinance />} />
+          <Route path="/it-infrastructure" element={<ItInfrastructure />} />
 
             <Route
               path="/team"
