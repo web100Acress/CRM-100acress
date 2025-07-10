@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AtSign, Eye, EyeOff, Hash, Code, Briefcase } from 'lucide-react';
+import { AtSign, Eye, EyeOff, Hash, Code, Briefcase, Monitor } from 'lucide-react';
 
 const Login = () => {
   const [credentials, setCredentials] = useState({
@@ -37,6 +37,13 @@ const Login = () => {
     email: "amanhr@gmail.com",
     password: "hr123"
   };
+
+    // NEW: IT INFRASTRUCTURE CREDENTIALS
+    const IT_INFRASTRUCTURE_CREDENTIALS = {
+      email: "amanit@gmail.com",
+      password: "it123"
+    };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -75,6 +82,25 @@ window.location.reload();
 setIsLoading(false);
 return;
 }
+
+
+  // NEW: Check if it's IT Infrastructure login
+  if (credentials.email === IT_INFRASTRUCTURE_CREDENTIALS.email &&
+    credentials.password === IT_INFRASTRUCTURE_CREDENTIALS.password) {
+
+    // Set IT Infrastructure session
+    localStorage.setItem("isItLoggedIn", "true");
+    localStorage.setItem("itEmail", credentials.email);
+    localStorage.setItem("itName", "IT Team Lead");
+    localStorage.setItem("itRole", "it_infrastructure");
+    localStorage.removeItem("isDeveloperLoggedIn");
+    localStorage.removeItem("isHrFinanceLoggedIn");
+
+    navigate("/it-infrastructure");
+    window.location.reload();
+    setIsLoading(false);
+    return;
+  }
 
     // Regular user login
     try {
@@ -133,7 +159,17 @@ return;
             <p className="hint-text">Email: {HR_FINANCE_CREDENTIALS.email}</p>
             <p className="hint-text">Password: {HR_FINANCE_CREDENTIALS.password}</p>
           </div>
+
+          {/* IT Infrastructure Credentials Hint - moved inside left */}
+          <div className="credentials-hint it-hint">
+            <h3 className="hint-title flex items-center justify-center">
+              <Monitor size={20} className="mr-2" />IT Infrastructure Access:
+            </h3>
+            <p className="hint-text">Email: {IT_INFRASTRUCTURE_CREDENTIALS.email}</p>
+            <p className="hint-text">Password: {IT_INFRASTRUCTURE_CREDENTIALS.password}</p>
+          </div>
         </div>
+
 
         {/* Right Side - Login Form */}
         <div className="right">
@@ -203,6 +239,7 @@ return;
           </form>
         </div>
       </div>
+      
 
       {showForgotModal && (
         <div className="modal-backdrop">

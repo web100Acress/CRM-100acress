@@ -382,7 +382,7 @@ const Reports = () => {
         )}
       </div>
 
-      <style jsx>{`
+      <style>{`
         .reports-container {
           padding: 2rem;
           max-width: 1400px;
