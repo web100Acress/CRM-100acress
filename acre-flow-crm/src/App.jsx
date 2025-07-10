@@ -18,6 +18,8 @@ import Developer from "./pages/Developer";
 import DeveloperLogin from "./pages/DeveloperLogin";
 import DeveloperDashboard from "./pages/DeveloperDashboard";
 import ResetPassword from "./pages/ResetPassword";
+import HrFinance from "./pages/HrFinance";
+
 
 const queryClient = new QueryClient();
 
@@ -26,19 +28,19 @@ const App = () => {
   const [userRole, setUserRole] = useState("employee");
   const [isLoading, setIsLoading] = useState(true);
 
-   const [isDeveloperLoggedIn, setIsDeveloperLoggedIn] = useState(false);
-
+  const [isDeveloperLoggedIn, setIsDeveloperLoggedIn] = useState(false);
 
   useEffect(() => {
     const checkAuthStatus = () => {
       const loggedIn = localStorage.getItem("isLoggedIn") === "true";
       const role = localStorage.getItem("userRole") || "employee";
 
-      const developerLoggedIn = localStorage.getItem("isDeveloperLoggedIn") === "true"; 
+      const developerLoggedIn =
+        localStorage.getItem("isDeveloperLoggedIn") === "true";
 
       setIsLoggedIn(loggedIn);
       setUserRole(role);
-       setIsDeveloperLoggedIn(developerLoggedIn);
+      setIsDeveloperLoggedIn(developerLoggedIn);
 
       setIsLoading(false);
     };
@@ -50,6 +52,8 @@ const App = () => {
       window.removeEventListener("storage", checkAuthStatus);
     };
   }, []);
+
+
 
   if (isLoading) {
     return (
@@ -136,7 +140,7 @@ const App = () => {
               }
               // lsahbs
             />
-               <Route
+            <Route
               path="/users"
               element={
                 isLoggedIn && userRole === "super-admin" ? (
@@ -146,7 +150,7 @@ const App = () => {
                 )
               }
             />
- <Route
+            <Route
               path="/settings"
               element={
                 isLoggedIn && userRole === "super-admin" ? (
@@ -156,17 +160,18 @@ const App = () => {
                 )
               }
             />
-             <Route
+            <Route
               path="/developer"
               element={
-                (isLoggedIn && userRole === "super-admin") || isDeveloperLoggedIn ? (
+                (isLoggedIn && userRole === "super-admin") ||
+                isDeveloperLoggedIn ? (
                   <Developer userRole={userRole} />
                 ) : (
                   <Navigate to="/" replace />
                 )
               }
             />
-                <Route
+            <Route
               path="/developer-dashboard"
               element={
                 isDeveloperLoggedIn ? (
@@ -176,6 +181,12 @@ const App = () => {
                 )
               }
             />
+
+      
+
+       
+          <Route path="/hr-finance" element={<HrFinance />} />
+
             <Route
               path="/team"
               element={
