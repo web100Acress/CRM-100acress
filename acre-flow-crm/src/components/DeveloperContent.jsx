@@ -1294,6 +1294,9 @@ const renderLogs = () => (
                 <option value="team-leader">Team Leader</option>
                 <option value="head-admin">Admin</option>
                 <option value="super-admin">BOSS</option>
+                <option value="super-admin">Developer</option>
+
+
               </select>
             </div>  
 
@@ -1311,12 +1314,12 @@ const renderLogs = () => (
                 required
               >
                 <option value="">-- Select Department --</option>
-                <option value="hr">Human Resources</option>
+                <option value="hr">HR</option>
                 <option value="engineering">Engineering</option>
                 <option value="sales">Sales</option>
                 <option value="marketing">Marketing</option>
                 <option value="finance">Finance</option>
-                <option value="operations">Operations</option>
+                <option value="it">IT</option>
               </select>
             </div>
             

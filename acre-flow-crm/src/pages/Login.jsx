@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AtSign, Eye, EyeOff, Hash, Code } from 'lucide-react';
+import { AtSign, Eye, EyeOff, Hash, Code, Briefcase } from 'lucide-react';
 
 const Login = () => {
   const [credentials, setCredentials] = useState({
@@ -32,6 +32,11 @@ const Login = () => {
     password: "dev123"
   };
 
+  // NEW STATIC HR & FINANCE CREDENTIALS
+  const HR_FINANCE_CREDENTIALS = {
+    email: "amanhr@gmail.com",
+    password: "hr123"
+  };
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -46,12 +51,30 @@ const Login = () => {
       localStorage.setItem("developerEmail", credentials.email);
       localStorage.setItem("developerName", "Aman Developer");
       localStorage.setItem("developerRole", "developer");
+      localStorage.removeItem("isHrFinanceLoggedIn");
       
       navigate("/developer-dashboard");
       window.location.reload();
       setIsLoading(false);
       return;
     }
+
+// NEW: Check if it's HR & Finance login
+if (credentials.email === HR_FINANCE_CREDENTIALS.email &&
+  credentials.password === HR_FINANCE_CREDENTIALS.password) {
+
+// Set HR & Finance session
+localStorage.setItem("isHrFinanceLoggedIn", "true");
+localStorage.setItem("hrFinanceEmail", credentials.email);
+localStorage.setItem("hrFinanceName", "HR/Finance User"); // You can make this dynamic
+localStorage.setItem("hrFinanceRole", "hr_finance"); // A specific role for this department
+localStorage.removeItem("isDeveloperLoggedIn"); // Clear other specific roles
+
+navigate("/hr-finance"); // Redirect to the HR & Finance section
+window.location.reload();
+setIsLoading(false);
+return;
+}
 
     // Regular user login
     try {
@@ -70,6 +93,8 @@ const Login = () => {
         localStorage.setItem('userName', data.user.name);
         localStorage.setItem('isLoggedIn', 'true');
         localStorage.setItem('userId', data.user._id);
+        localStorage.removeItem("isDeveloperLoggedIn"); // Clear specific roles
+        localStorage.removeItem("isHrFinanceLoggedIn"); // Clear specific role
         navigate('/');
         window.location.reload();
       } else {
@@ -92,10 +117,21 @@ const Login = () => {
           <p className="crm-desc">
             India's Best Property Site. Post and Search Your Property.
           </p>
-          <div className="credentials-hint">
-            <p className="hint-title">Developer Access:</p>
-            <p className="hint-text">Email: amandev@gmail.com</p>
-            <p className="hint-text">Password: dev123</p>
+          <div className="credentials-hint developer-hint">
+            <h3 className="hint-title flex items-center justify-center">
+              <Code size={20} className="mr-2" />Developer Access:
+            </h3>
+            <p className="hint-text">Email: {DEVELOPER_CREDENTIALS.email}</p>
+            <p className="hint-text">Password: {DEVELOPER_CREDENTIALS.password}</p>
+          </div>
+
+          {/* NEW: HR & Finance Credentials Hint */}
+          <div className="credentials-hint hr-finance-hint">
+            <h3 className="hint-title flex items-center justify-center">
+              <Briefcase size={20} className="mr-2" />HR & Finance Access:
+            </h3>
+            <p className="hint-text">Email: {HR_FINANCE_CREDENTIALS.email}</p>
+            <p className="hint-text">Password: {HR_FINANCE_CREDENTIALS.password}</p>
           </div>
         </div>
 
@@ -154,9 +190,9 @@ const Login = () => {
 
               <button type="button" className="forgot-password" onClick={() => setShowForgotModal(true)}>Forgot Password?</button>
 
-              <a href="#" className="forgot-password">
+              {/* <a href="#" className="forgot-password">
                 Forgot password?
-              </a>
+              </a> */}
 
             </div>
 

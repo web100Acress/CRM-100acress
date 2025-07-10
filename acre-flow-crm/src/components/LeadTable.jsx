@@ -375,7 +375,7 @@ const LeadTable = ({ userRole }) => {
     }
   };
 
-    const allowedRolesToCreateLead = ["super-admin", "head-admin"];
+  
 
   return (
     <div className="lead-table-wrapper">
@@ -412,13 +412,15 @@ const LeadTable = ({ userRole }) => {
           {isExporting ? "Exporting..." : "Export to CSV"}
         </Button>
 
-        <button className="create-lead-btn group" onClick={handleCreateLead}>
-          <Plus
-            size={18}
-            className="group-hover:rotate-90 transition-transform duration-200"
-          />{" "}
-          Create Lead
-        </button>
+        {(userRole === "super-admin" || userRole === "head-admin") && (
+          <button className="create-lead-btn group" onClick={handleCreateLead}>
+            <Plus
+              size={18}
+              className="group-hover:rotate-90 transition-transform duration-200"
+            />{" "}
+            Create Lead
+          </button>
+        )}
       </div>
 
       {/* </div> */}
