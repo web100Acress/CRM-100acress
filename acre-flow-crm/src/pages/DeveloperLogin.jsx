@@ -126,7 +126,7 @@ const DeveloperLogin = () => {
       {showForgotModal && (
         <div className="modal-backdrop">
           <div className="modal">
-            <h3>Forgot Password</h3>
+            {/* <h3>Forgot Password</h3> */}
             <p>Enter your developer email to receive a password reset link.</p>
             <input
               type="email"

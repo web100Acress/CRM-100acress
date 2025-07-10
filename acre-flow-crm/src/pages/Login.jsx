@@ -154,9 +154,9 @@ const Login = () => {
 
               <button type="button" className="forgot-password" onClick={() => setShowForgotModal(true)}>Forgot Password?</button>
 
-              <a href="#" className="forgot-password">
+              {/* <a href="#" className="forgot-password">
                 Forgot password?
-              </a>
+              </a> */}
 
             </div>
 
