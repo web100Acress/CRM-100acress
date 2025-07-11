@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Search, Plus, Edit, Trash2, UserCheck, UserX, ChevronLeft, ChevronRight, Download } from 'lucide-react';
-import AddEditUserModal from '../components/AddEditUserModal'; // Assuming this path
-import DeleteUserModal from '../components/DeleteUserModal'; // Assuming this path
+import AddEditUserModal from '../components/sales/AddEditUserModal'; // Assuming this path
+import DeleteUserModal from '../components/sales/DeleteUserModal'; // Assuming this path
 import { useToast } from '@/hooks/use-toast';
-import DashboardLayout from '../components/DashboardLayout';
+import DashboardLayout from '../components/sales/DashboardLayout';
 
 const USERS_PER_PAGE_CONSTANT = 4; // Changed variable name to avoid conflict, keeping your desired 4
 

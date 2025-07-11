@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { AlertTriangle, Trash2, X } from 'lucide-react';
-import { Button } from './ui/button';
+import { Button } from '../ui/button';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -9,7 +9,7 @@ import {
   AlertDialogTitle,
   AlertDialogDescription,
   AlertDialogFooter,
-} from './ui/alert-dialog';
+} from '../ui/alert-dialog';
 
 const DeleteUserModal = ({ isOpen, onClose, user, onConfirm }) => {
   if (!isOpen || !user) return null;

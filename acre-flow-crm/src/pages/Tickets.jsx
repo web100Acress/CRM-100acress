@@ -1,7 +1,7 @@
 
 import React from 'react';
-import DashboardLayout from '../components/DashboardLayout';
-import TicketBoard from '../components/TicketBoard';
+import DashboardLayout from '../components/sales/DashboardLayout';
+import TicketBoard from '../components/sales/TicketBoard';
 
 const Tickets = ({ userRole = 'employee' }) => {
   return (

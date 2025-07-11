@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, User, Mail, Phone, Building } from 'lucide-react';
-import { Button } from './ui/button'; // Assuming this Button component is also custom styled or generic
+import { Button } from '../ui/button'; // Assuming this Button component is also custom styled or generic
 import {
   AlertDialog,
   AlertDialogContent,
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogFooter,
-} from './ui/alert-dialog'; // Assuming these are from a UI library that renders standard HTML elements
+} from '../ui/alert-dialog'; // Assuming these are from a UI library that renders standard HTML elements
 
 const AddEditUserModal = ({ isOpen, onClose, user = null, onSave }) => {
   const [formData, setFormData] = useState({
