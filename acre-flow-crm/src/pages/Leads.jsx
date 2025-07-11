@@ -1,6 +1,6 @@
   import React from 'react';
-  import DashboardLayout from '../components/DashboardLayout';
-  import LeadTable from '../components/LeadTable';
+  import DashboardLayout from '../components/sales/DashboardLayout';
+  import LeadTable from '../components/sales/LeadTable';
 
   const Leads = ({ userRole = 'employee' }) => {
     return (

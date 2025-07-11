@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import DashboardLayout from '../components/DashboardLayout';
-import RoleCreationForms from '../components/RoleCreationForms';
+import DashboardLayout from '../components/sales/DashboardLayout';
+import RoleCreationForms from '../components/sales/RoleCreationForms';
 
 const CreateUser = ({ userRole = 'super-admin', userType }) => {
   const { type } = useParams();
