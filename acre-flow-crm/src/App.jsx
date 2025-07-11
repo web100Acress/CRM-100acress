@@ -11,7 +11,7 @@ import Leads from "./pages/Leads";
 import Tickets from "./pages/Tickets";
 import CreateUser from "./pages/CreateUser";
 import Login from "./pages/Login";
-import NotFound from "./pages/NotFound";
+import NotFound from "./pages/NotFound.jsx";
 import Settings from "./pages/Settings";
 import UserManagement from "./pages/UserManagement";
 import Developer from "./pages/Developer";

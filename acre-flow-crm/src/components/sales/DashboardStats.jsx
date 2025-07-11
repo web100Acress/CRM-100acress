@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card'; // Assuming these are still used if you have them
 import { useRef } from 'react';
+import '../../style/DashboardStats.css'
 
 // Function to generate a random date for activities/tasks
 const getRandomDate = (daysAgo) => {
@@ -805,12 +806,11 @@ const DynamicDashboard = ({ userRole }) => {
               )}
             </div>
           </div>{" "}
-          {/* End main-dashboard-sections-grid */}
+         
         </div>{" "}
-        {/* End dashboard-main-container */}
+ 
       </div>{" "}
-      {/* End dashboard-page-wrapper */}
-      {/* --- INLINE CSS --- */}
+
       <style>{`
         /* Global Styles & Variables - Placed here for "isi page me" requirement */
         :root {

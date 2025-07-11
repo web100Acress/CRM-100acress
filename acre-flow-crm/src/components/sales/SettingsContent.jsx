@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Send } from 'lucide-react';
+import '../../style/SettingsContent.css'
 
 const FollowUpModal = ({ lead, onClose, userRole }) => {
   const [formData, setFormData] = useState({

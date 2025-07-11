@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { X, Send } from "lucide-react";
 import ReactDOM from "react-dom";
+import '../../style/FollowUpModal.css'
 
 const FollowUpModal = ({ lead, onClose, userRole }) => {
   const userName = localStorage.getItem('userName') || '';
@@ -194,128 +195,7 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
       </div>
 
       {/* CSS Styles */}
-      <style>{`
-        .modal-backdrop {
-          position: fixed;
-          inset: 0;
-          background-color: rgba(0, 0, 0, 0.4);
-          z-index: 40;
-        }
-        .modal-container {
-          position: fixed;
-          inset: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 50;
-        }
-        .modal-box {
-          background: #fff;
-          border-radius: 10px;
-          box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-          padding: 24px;
-          width: 100%;
-          max-width: 500px;
-          max-height: 90vh;
-          overflow-y: auto;
-          position: relative;
-        }
-        .modal-close {
-          position: absolute;
-          top: 12px;
-          right: 12px;
-          background-color: #fee2e2;
-          border: none;
-          padding: 4px;
-          border-radius: 4px;
-          cursor: pointer;
-        }
-        .modal-title {
-          font-size: 22px;
-          font-weight: bold;
-          color: #1d4ed8;
-          text-align: center;
-          margin-bottom: 20px;
-        }
-        .form {
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-        }
-        .form-group {
-          display: flex;
-          flex-direction: column;
-        }
-        .form-group label {
-          font-size: 14px;
-          font-weight: 500;
-          margin-bottom: 6px;
-          color: #374151;
-        }
-        .form-input,
-        .form-textarea {
-          padding: 10px;
-          font-size: 14px;
-          border: 1px solid #ccc;
-          border-radius: 6px;
-        }
-        .form-input.disabled {
-          background-color: #f3f4f6;
-          cursor: not-allowed;
-        }
-        .form-textarea {
-          resize: vertical;
-          min-height: 80px;
-        }
-        .form-error {
-          color: red;
-          font-size: 14px;
-        }
-        .form-row {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-        }
-        @media (min-width: 600px) {
-          .form-row {
-            flex-direction: row;
-          }
-        }
-        .submit-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 10px;
-          background-color: #2563eb;
-          color: white;
-          padding: 12px;
-          font-size: 16px;
-          font-weight: 600;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-          transition: background 0.3s ease;
-        }
-        .submit-btn:hover {
-          background-color: #1e40af;
-        }
-        .submit-btn:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-        .icon {
-          width: 18px;
-          height: 18px;
-        }
-        .spinner {
-          display: inline-block;
-          animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-          0% { transform: rotate(0); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
+      
     </>,
     document.body
   );
