@@ -1,22 +1,37 @@
-import React, { useState } from 'react';
-import { Menu, Bell, Search } from 'lucide-react';
-import Sidebar from './Sidebar';
+import React, { useState, useEffect } from "react";
+import { Menu, Bell, Search } from "lucide-react";
+import Sidebar from "./Sidebar";
 
-const DashboardLayout = ({ children, userRole = 'employee' }) => {
+const DashboardLayout = ({ children, userRole = "employee" }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  const userName = typeof window !== 'undefined' ? localStorage.getItem('') : '';
-  //  const userName = typeof window !== 'undefined' ? localStorage.getItem('userName') : '';
+  const userName =
+    typeof window !== "undefined" ? localStorage.getItem("userName") : "";
 
   const getRoleTitle = (role) => {
     switch (role) {
-      case 'super-admin': return 'BOSS';
-      case 'head-admin': return 'Head';
-      case 'team-leader': return 'Team Leader';
-      case 'employee': return 'Employee';
-      default: return 'User';
+      case "super-admin":
+        return "BOSS";
+      case "head-admin":
+        return "Head";
+      case "team-leader":
+        return "Team Leader";
+      case "employee":
+        return "Employee";
+      default:
+        return "User";
     }
   };
+
+  // Auto-collapse sidebar on mobile
+  useEffect(() => {
+    const handleResize = () => {
+      setSidebarCollapsed(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   return (
     <>
@@ -28,7 +43,6 @@ const DashboardLayout = ({ children, userRole = 'employee' }) => {
         />
 
         <div className="main-content-wrapper">
-          {/* Header */}
           <header className="dashboard-header">
             <div className="header-left">
               <button
@@ -38,7 +52,10 @@ const DashboardLayout = ({ children, userRole = 'employee' }) => {
                 <Menu className="menu-icon" />
               </button>
               <h1 className="user-greeting">
-                Hello {userName ? `${userName} (${getRoleTitle(userRole)})` : getRoleTitle(userRole)}
+                Hello{" "}
+                {userName
+                  ? `${userName} (${getRoleTitle(userRole)})`
+                  : getRoleTitle(userRole)}
               </h1>
             </div>
 
@@ -58,10 +75,7 @@ const DashboardLayout = ({ children, userRole = 'employee' }) => {
             </div>
           </header>
 
-          {/* Main */}
-          <main className="main-content">
-            {children}
-          </main>
+          <main className="main-content">{children}</main>
         </div>
       </div>
 
@@ -80,12 +94,14 @@ const DashboardLayout = ({ children, userRole = 'employee' }) => {
         }
 
         .dashboard-header {
-           background: linear-gradient(145deg, #1e293b, #111827);
+          background: linear-gradient(145deg, #1e293b, #111827);
           border-bottom: 1px solid #f3f4f6;
           padding: 1rem 1.5rem;
           display: flex;
           justify-content: space-between;
           align-items: center;
+          flex-wrap: wrap;
+          gap: 1rem;
         }
 
         .header-left {
@@ -94,24 +110,23 @@ const DashboardLayout = ({ children, userRole = 'employee' }) => {
           gap: 1rem;
         }
 
-     .menu-button {
-  padding: 0.5rem;
-  border-radius: 0.5rem;
-  background-color: #ffffff; /* solid white base */
-  border: 1px solid #e5e7eb; /* light gray border for structure */
-  cursor: pointer;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
-}
+        .menu-button {
+          padding: 0.5rem;
+          border-radius: 0.5rem;
+          background-color: #ffffff;
+          border: 1px solid #e5e7eb;
+          cursor: pointer;
+          transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+        }
 
-.menu-button:hover {
-  background-color: #f9fafb; /* elegant hover */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* soft hover shadow */
-}
+        .menu-button:hover {
+          background-color: #f9fafb;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
 
-.menu-button:active {
-  transform: scale(0.98); /* slight click effect */
-}
-
+        .menu-button:active {
+          transform: scale(0.98);
+        }
 
         .menu-icon {
           width: 20px;
@@ -129,10 +144,13 @@ const DashboardLayout = ({ children, userRole = 'employee' }) => {
           display: flex;
           align-items: center;
           gap: 1rem;
+          flex-wrap: wrap;
         }
 
         .search-wrapper {
           position: relative;
+          width: 100%;
+          max-width: 200px;
         }
 
         .search-icon {
@@ -146,6 +164,7 @@ const DashboardLayout = ({ children, userRole = 'employee' }) => {
         }
 
         .search-input {
+          width: 100%;
           padding: 0.5rem 1rem 0.5rem 2rem;
           border: 1px solid #e5e7eb;
           border-radius: 0.5rem;
@@ -160,7 +179,7 @@ const DashboardLayout = ({ children, userRole = 'employee' }) => {
         }
 
         .notification-button {
-         color: #9ca3af;
+          color: #9ca3af;
           position: relative;
           background: none;
           border: none;
@@ -171,10 +190,9 @@ const DashboardLayout = ({ children, userRole = 'employee' }) => {
         }
 
         .notification-button:hover {
-  background-color: #334155; /* Tailwind's slate-800 */
-  color: #ffffff;
-}
-
+          background-color: #334155;
+          color: #ffffff;
+        }
 
         .bell-icon {
           width: 20px;
@@ -197,6 +215,42 @@ const DashboardLayout = ({ children, userRole = 'employee' }) => {
           overflow-y: auto;
           padding: 1.5rem;
           background-color: #f9fafb;
+        }
+
+        @media (max-width: 768px) {
+          .user-greeting {
+            font-size: 1rem;
+          }
+
+          .dashboard-header {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+
+          .search-wrapper {
+            max-width: 100%;
+          }
+
+          .header-right {
+            width: 100%;
+            justify-content: space-between;
+          }
+
+          .search-input {
+            width: 100%;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .menu-button {
+            padding: 0.25rem;
+          }
+
+          .menu-icon,
+          .bell-icon {
+            width: 18px;
+            height: 18px;
+          }
         }
       `}</style>
     </>
