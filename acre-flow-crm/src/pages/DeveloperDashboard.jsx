@@ -1,5 +1,5 @@
   import React from 'react';
-  import DeveloperContent from '../components/developer/DeveloperContent';
+  import DeveloperContent from '../components/dev/DeveloperContent';
   import { LogOut, Code } from 'lucide-react';
   import { useNavigate } from 'react-router-dom';
 

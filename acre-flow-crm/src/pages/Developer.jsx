@@ -1,7 +1,7 @@
 
 import React from 'react';
 import DashboardLayout from '../components/sales/DashboardLayout';
-import DeveloperContent from '../components/developer/DeveloperContent';
+import DeveloperContent from '../components/dev/DeveloperContent';
 
 const Developer = ({ userRole = 'super-admin' }) => {
   return (
