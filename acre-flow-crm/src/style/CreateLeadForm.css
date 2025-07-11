@@ -1,0 +1,154 @@
+
+    /* Base styles from your previous CSS, refined */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    .lead-form-dialog {
+      font-family: 'Inter', sans-serif;
+      background-color: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15); /* More pronounced shadow */
+      padding: 2.5rem; /* Increased padding */
+      max-width: 650px; /* Wider form for better layout */
+      width: 95%; /* Responsive width */
+      position: relative; /* Needed for absolute positioning of close button */
+    }
+
+    .lead-form-title {
+      font-size: 1.8rem; /* Larger, more impactful title */
+      font-weight: 700;
+      color: #1a202c; /* Darker text for prominence */
+      text-align: center; /* Center align title */
+      margin-bottom: 1.5rem; /* More space below title */
+    }
+
+    .dialog-close-button {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #718096; /* Muted color */
+      transition: color 0.2s ease, background-color 0.2s ease;
+      border-radius: 50%; /* Make it circular */
+      padding: 0.5rem; /* Sufficient hit area */
+    }
+
+    .dialog-close-button:hover {
+      color: #e53e3e; /* Red on hover */
+      background-color: #f7fafc; /* Light background on hover */
+    }
+
+    /* Form Grid Layout */
+    .lead-form-grid {
+      display: grid;
+      grid-template-columns: 1fr; /* Default to single column */
+      gap: 1.5rem; /* Consistent spacing */
+    }
+
+    @media (min-width: 640px) { /* md breakpoint */
+      .lead-form-grid {
+        grid-template-columns: repeat(2, 1fr); /* Two columns on larger screens */
+      }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group label {
+      font-size: 0.9rem; /* Slightly smaller, clean label */
+      font-weight: 600;
+      color: #4a5568; /* Subtler label color */
+      margin-bottom: 0.5rem; /* Space between label and input */
+    }
+
+    .form-group .required {
+      color: #e53e3e; /* Red asterisk for required fields */
+      margin-left: 0.25rem;
+    }
+
+    .form-input,
+    .form-select {
+      padding: 0.75rem 1rem; /* Generous padding */
+      border: 1px solid #e2e8f0; /* Light border */
+      border-radius: 0.5rem; /* More rounded corners */
+      font-size: 1rem;
+      color: #2d3748; /* Darker text */
+      background-color: #f7fafc; /* Light background for input fields */
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+      width: 100%; /* Full width */
+    }
+
+    .form-input::placeholder {
+        color: #a0aec0; /* Muted placeholder text */
+    }
+
+    .form-input:focus,
+    .form-select:focus {
+      outline: none;
+      border-color: #4299e1; /* Blue focus border */
+      box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.3); /* Soft blue glow */
+      background-color: #ffffff; /* White background on focus */
+    }
+
+    .form-select {
+        appearance: none; /* Remove default select arrow */
+        background-image: url('data:image/svg+xml;utf8,<svg fill="%23A0AEC0" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" fill-rule="evenodd"></path></svg>');
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 1.2em;
+        cursor: pointer;
+    }
+
+    /* Actions Footer */
+    .form-actions {
+      display: flex;
+      justify-content: center;
+      gap: 0.75rem; /* Space between buttons */
+      padding-top: 1.5rem;
+      border-top: 1px solid #edf2f7; /* Subtle top border */
+      margin-top: 1rem;
+    }
+
+    .btn-cancel {
+      background-color: #e2e8f0; /* Light gray */
+      color: #2d3748;
+      border: 1px solid #cbd5e1;
+      transition: all 0.2s ease;
+    }
+
+    .btn-cancel:hover {
+      background-color: #cbd5e1;
+      color: #1a202c;
+      transform: translateY(-1px); /* Slight lift on hover */
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .btn-primary {
+      background-color: #28a745; /* Vibrant green */
+      color: white;
+      box-shadow: 0 4px 10px rgba(40, 167, 69, 0.2); /* Soft shadow for primary */
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary:hover {
+      background-color: #218838; /* Darker green on hover */
+      transform: translateY(-1px);
+      box-shadow: 0 6px 12px rgba(40, 167, 69, 0.3);
+    }
+
+    .btn-primary:disabled {
+      background-color: #a7d9b5; /* Lighter green when disabled */
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+
+    /* Icon styling within buttons */
+    .btn-cancel svg,
+    .btn-primary svg {
+      margin-right: 0.5rem;
+    }
+  

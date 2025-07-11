@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import '../style/HrFinance.css'
 import { 
   Users, 
   DollarSign, 
@@ -365,134 +366,7 @@ const DashboardOverview = () => {
         </div>
       </div>
 
-      <style>{`
-        .dashboard-overview {
-          display: flex;
-          flex-direction: column;
-          gap: 2rem;
-        }
-
-        .stats-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-          gap: 1.5rem;
-        }
-
-        .stat-card {
-          background: white;
-          padding: 1.5rem;
-          border-radius: 1rem;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          transition: transform 0.2s ease;
-        }
-
-        .stat-card:hover {
-          transform: translateY(-2px);
-        }
-
-        .stat-icon {
-          width: 50px;
-          height: 50px;
-          border-radius: 0.75rem;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .stat-content h3 {
-          font-size: 1.8rem;
-          font-weight: 700;
-          margin: 0 0 0.25rem 0;
-          color: #1e293b;
-        }
-
-        .stat-content p {
-          margin: 0 0 0.25rem 0;
-          color: #64748b;
-          font-size: 0.9rem;
-        }
-
-        .stat-trend {
-          font-size: 0.8rem;
-          font-weight: 600;
-        }
-
-        .dashboard-section {
-          background: white;
-          padding: 1.5rem;
-          border-radius: 1rem;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-
-        .dashboard-section h2 {
-          margin: 0 0 1.5rem 0;
-          color: #1e293b;
-          font-size: 1.3rem;
-          font-weight: 600;
-        }
-
-        .activities-list {
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-        }
-
-        .activity-item {
-          padding: 1rem;
-          background: #f8fafc;
-          border-radius: 0.5rem;
-          border-left: 4px solid #ef4444;
-        }
-
-        .activity-content p {
-          margin: 0 0 0.5rem 0;
-          color: #374151;
-        }
-
-        .activity-time {
-          font-size: 0.8rem;
-          color: #6b7280;
-        }
-
-        .quick-actions {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 1rem;
-        }
-
-        .action-btn {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          padding: 1rem;
-          background: #f8fafc;
-          border: 1px solid #e2e8f0;
-          border-radius: 0.75rem;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          font-size: 0.9rem;
-          color: #374151;
-        }
-
-        .action-btn:hover {
-          background: #ef4444;
-          color: white;
-          border-color: #ef4444;
-        }
-
-        @media (max-width: 768px) {
-          .stats-grid {
-            grid-template-columns: 1fr;
-          }
-          
-          .quick-actions {
-            grid-template-columns: 1fr;
-          }
-        }
-      `}</style>
+    
     </div>
   );
 };
