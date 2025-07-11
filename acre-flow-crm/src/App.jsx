@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import DashboardLayout from "./components/DashboardLayout";
+import DashboardLayout from "./components/sales/DashboardLayout";
 import { useState, useEffect } from "react";
 
 import Dashboard from "./pages/Dashboard";
@@ -19,6 +19,8 @@ import DeveloperLogin from "./pages/DeveloperLogin";
 import DeveloperDashboard from "./pages/DeveloperDashboard";
 import ResetPassword from "./pages/ResetPassword";
 import HrFinance from "./pages/HrFinance";
+import ItInfrastructure from "./pages/ItInfrastructure";
+  
 
 
 const queryClient = new QueryClient();
@@ -186,6 +188,7 @@ const App = () => {
 
        
           <Route path="/hr-finance" element={<HrFinance />} />
+          <Route path="/it-infrastructure" element={<ItInfrastructure />} />
 
             <Route
               path="/team"

@@ -1,11 +1,11 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import DashboardLayout from '../components/DashboardLayout';
-import DashboardStats from '../components/DashboardStats';
+import DashboardLayout from '../components/sales/DashboardLayout';
+import DashboardStats from '../components/sales/DashboardStats';
 // import LeadTable from '../components/LeadTable';
 // import TicketBoard from '../components/TicketBoard';
-import SuperAdminProfile from '../components/SuperAdminProfile';
+import SuperAdminProfile from '../components/sales/SuperAdminProfile';
 
 const Dashboard = ({ userRole = 'employee' }) => {
   const navigate = useNavigate();

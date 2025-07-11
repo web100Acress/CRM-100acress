@@ -14,10 +14,10 @@ import {
   Link as LinkIcon,
   Download,
 } from "lucide-react";
-import FollowUpModal from "./FollowUpModal";
+import FollowUpModal from "../sales/FollowUpModal";
 import CreateLeadForm from "./CreateLeadForm";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
-import { useToast } from "../hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
+import { useToast } from "../../hooks/use-toast";
 import { Button } from "@/components/ui/button";
 
 const LeadTable = ({ userRole }) => {
