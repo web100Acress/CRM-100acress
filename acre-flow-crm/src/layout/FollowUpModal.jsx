@@ -38,7 +38,7 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
         place: formData.place,
         relatedTo: formData.relatedTo,
       };
-      const res = await fetch(`http://13.233.167.95:5001/api/leads/${lead._id}/followups`, {
+      const res = await fetch(`https://13.233.167.95:5001/api/leads/${lead._id}/followups`, {
         method: "POST",
 
 
