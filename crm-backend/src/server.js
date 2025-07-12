@@ -58,6 +58,7 @@ meetingController.setSocketIO(io);
 // ✅ Step 7: API routes
 app.use('/api/leads', require('./routes/leadRoutes'));
 app.use('/api/meetings', require('./routes/meetingRoutes'));
+app.use('/api/auth', require('./routes/auth'));
 
 // ✅ Step 8: Start server
 server.listen(port, '0.0.0.0', () => {
