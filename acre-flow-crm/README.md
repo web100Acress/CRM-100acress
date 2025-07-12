@@ -1,108 +1,388 @@
-# 100acres.com CRM Frontend
+# CRM Dashboard - Scalable Architecture
 
-A modern CRM dashboard built with React, Vite, TypeScript, shadcn-ui, and Tailwind CSS.
+A modern, luxury-level React CRM dashboard built with a scalable, feature-based architecture.
 
-## Features
+## 🏗️ Architecture Overview
 
-- **Role-based Sidebar Navigation**: Sidebar menu adapts to user role (Super Admin, Head Admin, Team Leader, Employee) and highlights the active page with a clear, high-contrast style.
-- **Dynamic Greeting**: The dashboard header greets the logged-in user by name and role (e.g., "Hello Rajesh (Super Admin)").
-- **User Management**: Manage users with real backend data, including search, filter, and status toggling.
-- **Leads & Tickets**: Hierarchical lead assignment and ticket management workflows.
-- **Responsive UI**: Clean, modern, and mobile-friendly design.
-- **Accessibility**: Improved sidebar link visibility and keyboard navigation.
+This project follows a **modular feature-based architecture** with centralized API management and Redux Toolkit for state management.
 
-## Getting Started
+### 📁 Folder Structure
+
+```
+src/
+├── api/                          # Centralized API System
+│   ├── endpoints.js              # All API endpoint URLs
+│   ├── http.js                   # Axios setup with interceptors
+│   ├── auth.api.js               # Auth API functions
+│   ├── users.api.js              # Users API functions
+│   ├── leads.api.js              # Leads API functions
+│   ├── tickets.api.js            # Tickets API functions
+│   ├── meetings.api.js           # Meetings API functions
+│   └── dashboard.api.js          # Dashboard API functions
+│
+├── features/                     # Feature-Based Modules
+│   ├── auth/                     # Authentication Feature
+│   │   ├── components/           # Auth-specific components
+│   │   ├── pages/                # Auth pages (Login, Register, etc.)
+│   │   ├── api/                  # Local re-export from central API
+│   │   ├── slices/               # Redux Toolkit slices
+│   │   ├── services/             # Business logic helpers
+│   │   ├── constants.js          # Feature constants
+│   │   └── index.js              # Barrel exports
+│   │
+│   ├── users/                    # User Management Feature
+│   ├── leads/                    # Lead Management Feature
+│   ├── tickets/                  # Ticket Management Feature
+│   ├── meetings/                 # Meeting Management Feature
+│   ├── dashboard/                # Dashboard Feature
+│   ├── hr/                       # HR Management Feature
+│   ├── it/                       # IT Infrastructure Feature
+│   └── developer/                # Developer Tools Feature
+│
+├── store/                        # Redux Store Configuration
+│   └── index.js                  # Main store setup with all slices
+│
+├── layout/                       # Global Layout Components
+│   ├── DashboardLayout.jsx       # Main dashboard layout
+│   ├── Sidebar.jsx               # Navigation sidebar
+│   ├── App.jsx                   # Main app component
+│   └── ui/                       # Reusable UI components
+│
+├── hooks/                        # Custom React Hooks
+├── routes/                       # Routing Configuration
+├── utils/                        # Utility Functions
+├── assets/                       # Static Assets
+└── styles/                       # Global Styles
+```
+
+## 🔧 Key Architectural Principles
+
+### 1. **Centralized API System**
+- All API interaction functions are written **only once** in `src/api/`
+- Feature folders only **import and re-export** from the central API
+- Consistent error handling and interceptors across all API calls
+
+### 2. **Feature-Based Organization**
+Each feature is self-contained with:
+- **components/**: Reusable UI elements specific to the feature
+- **pages/**: Full-screen views for the feature
+- **api/**: Local adapter that imports from central API
+- **slices/**: Redux Toolkit state management
+- **services/**: Optional business logic helpers
+- **constants.js**: Feature-specific constants
+- **index.js**: Barrel exports for clean imports
+
+### 3. **Redux Toolkit Integration**
+- Each feature has its own slice for state management
+- Async thunks for API calls
+- Centralized store configuration
+- Optimistic updates and error handling
+
+## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js & npm (recommended: use [nvm](https://github.com/nvm-sh/nvm#installing-and-updating))
+- Node.js (v16 or higher)
+- npm or yarn
 
 ### Installation
-```sh
-# Clone the repository
-git clone <YOUR_GIT_URL>
-cd <YOUR_PROJECT_NAME>
-
+```bash
 # Install dependencies
 npm install
 
-# Start the development server
+# Start development server
 npm run dev
 ```
 
-### Project Structure
-- `src/components/Sidebar.jsx`: Sidebar navigation, role-based links, and user info.
-- `src/components/DashboardLayout.jsx`: Main layout, header greeting, and sidebar integration.
-- `src/pages/`: Main app pages (Dashboard, Leads, Users, etc).
+### Environment Setup
+Create a `.env` file in the root directory:
+```env
+VITE_API_BASE_URL=http://localhost:5001/api
+VITE_APP_NAME=CRM Dashboard
+```
 
-## Technologies Used
-- React + Vite
-- TypeScript
-- shadcn-ui
-- Tailwind CSS
-- lucide-react (icons)
+## 📚 API Architecture
 
-## Recent UI/UX Improvements
-- Sidebar active link is now highly visible with a light background, bold left border, and dark text.
-- Greeting in the header is personalized with the user's name and role.
-- Sidebar navigation is fully role-based and responsive.
+### Centralized API Structure
 
-## Deployment
-You can deploy using your preferred method or via [Lovable](https://lovable.dev/projects/32bbaf20-d098-4de6-aa40-52f5bedd91ed) (see original instructions below).
+```javascript
+// src/api/endpoints.js - All endpoints in one place
+export const ENDPOINTS = {
+  AUTH: {
+    LOGIN: `${BASE_URL}/auth/login`,
+    REGISTER: `${BASE_URL}/auth/register`,
+    // ...
+  },
+  USERS: {
+    LIST: `${BASE_URL}/users`,
+    CREATE: `${BASE_URL}/users`,
+    // ...
+  },
+  // ...
+};
+
+// src/api/http.js - Centralized HTTP client
+const httpClient = axios.create({
+  baseURL: 'http://localhost:5001/api',
+  timeout: 10000,
+  // Interceptors for auth, error handling, etc.
+});
+
+// src/api/users.api.js - Centralized API functions
+export const fetchUsers = async () => {
+  try {
+    const response = await http.get(ENDPOINTS.USERS.LIST);
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
+```
+
+### Feature API Usage
+
+```javascript
+// src/features/users/api/usersApi.js - Local re-export
+import { fetchUsers, createUser } from '@/api/users.api';
+
+export { fetchUsers, createUser };
+
+// Usage in components
+import { fetchUsers } from '@/features/users/api/usersApi';
+```
+
+## 🔄 State Management
+
+### Redux Toolkit Slices
+
+Each feature has its own slice:
+
+```javascript
+// src/features/users/slices/usersSlice.js
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { usersApi } from '@/features/users/api/usersApi';
+
+export const fetchUsers = createAsyncThunk(
+  'users/fetchUsers',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await usersApi.fetchAll();
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+const usersSlice = createSlice({
+  name: 'users',
+  initialState: {
+    users: [],
+    isLoading: false,
+    error: null,
+  },
+  reducers: {
+    clearError: (state) => {
+      state.error = null;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchUsers.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchUsers.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.users = action.payload;
+      })
+      .addCase(fetchUsers.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      });
+  },
+});
+```
+
+## 🎨 Component Architecture
+
+### Feature Components
+Components are organized by feature and responsibility:
+
+```javascript
+// src/features/users/components/UserCard.jsx
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchUsers } from '@/features/users/slices/usersSlice';
+
+const UserCard = ({ user }) => {
+  const dispatch = useDispatch();
+  
+  return (
+    <div className="user-card">
+      <h3>{user.name}</h3>
+      <p>{user.email}</p>
+    </div>
+  );
+};
+```
+
+### Layout Components
+Global layout components in `src/layout/`:
+
+```javascript
+// src/layout/DashboardLayout.jsx
+import Sidebar from './Sidebar';
+import { Toaster } from './toaster';
+
+const DashboardLayout = ({ children }) => {
+  return (
+    <div className="dashboard-layout">
+      <Sidebar />
+      <main className="main-content">
+        {children}
+      </main>
+      <Toaster />
+    </div>
+  );
+};
+```
+
+## 🔐 Authentication & Authorization
+
+### Auth Flow
+- JWT token-based authentication
+- Automatic token refresh
+- Role-based access control
+- Protected routes
+
+### User Roles
+- **super-admin**: Full system access
+- **head-admin**: Team management
+- **team-leader**: Employee management
+- **employee**: Basic access
+
+## 📊 Features
+
+### Core Features
+- **Dashboard**: Analytics and overview
+- **User Management**: CRUD operations for users
+- **Lead Management**: Lead tracking and assignment
+- **Ticket Management**: Support ticket system
+- **Meeting Management**: Meeting scheduling
+- **HR Management**: Employee and finance tools
+- **IT Infrastructure**: Technical tools and services
+- **Developer Tools**: Advanced development features
+
+### Advanced Features
+- Real-time notifications
+- File upload and management
+- Advanced filtering and search
+- Export functionality
+- Audit logging
+
+## 🛠️ Development Guidelines
+
+### Adding New Features
+1. Create feature folder in `src/features/`
+2. Add API functions to central API
+3. Create feature-specific API re-export
+4. Implement Redux slice
+5. Create components and pages
+6. Add routing configuration
+
+### Code Style
+- Use TypeScript for type safety
+- Follow ESLint and Prettier configuration
+- Write comprehensive tests
+- Document complex functions
+- Use meaningful component and variable names
+
+### Performance Optimization
+- Lazy loading for routes
+- Memoization for expensive calculations
+- Optimistic updates for better UX
+- Efficient Redux selectors
+
+## 🧪 Testing
+
+### Test Structure
+```
+src/
+├── __tests__/
+│   ├── features/
+│   │   ├── auth/
+│   │   ├── users/
+│   │   └── ...
+│   ├── components/
+│   └── utils/
+```
+
+### Running Tests
+```bash
+# Run all tests
+npm test
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run specific test file
+npm test -- --testPathPattern=users
+```
+
+## 🚀 Deployment
+
+### Build for Production
+```bash
+npm run build
+```
+
+### Environment Variables
+```env
+# Production
+VITE_API_BASE_URL=https://api.yourdomain.com
+VITE_APP_NAME=CRM Dashboard
+NODE_ENV=production
+```
+
+## 📈 Monitoring & Analytics
+
+### Error Tracking
+- Sentry integration for error monitoring
+- Performance monitoring
+- User analytics
+
+### Logging
+- Structured logging
+- Audit trails
+- Debug information
+
+## 🤝 Contributing
+
+### Development Workflow
+1. Create feature branch
+2. Implement changes following architecture
+3. Write tests
+4. Update documentation
+5. Submit pull request
+
+### Code Review Checklist
+- [ ] Follows architectural patterns
+- [ ] Includes tests
+- [ ] Updates documentation
+- [ ] No console errors
+- [ ] Responsive design
+- [ ] Accessibility compliance
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🆘 Support
+
+For support and questions:
+- Create an issue on GitHub
+- Check the documentation
+- Review the architecture guide
 
 ---
 
-# Original Lovable Instructions
-
-(You may still use Lovable for cloud editing and deployment. See below for details.)
-
-## How can I edit this code?
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/32bbaf20-d098-4de6-aa40-52f5bedd91ed) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+**Built with ❤️ using modern React patterns and scalable architecture principles.**
