@@ -16,10 +16,14 @@ connectDB();
 const server = http.createServer(app);
 
 // Step 3: Setup CORS (Allow only specific frontend domain)
-const allowedOrigin = process.env.FRONTEND_ORIGIN || 'http://13.233.167.95'; // <- change if needed
+const allowedOrigins = [
+  process.env.FRONTEND_ORIGIN || 'http://13.233.167.95',
+  'http://13.233.167.95:5001',
+  'http://localhost:3000'
+];
 const io = socketio(server, {
   cors: {
-    origin: allowedOrigin,
+    origin: allowedOrigins,
     methods: ['GET', 'POST'],
     credentials: true
   }
