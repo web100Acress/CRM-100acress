@@ -22,7 +22,7 @@ const ResetPassword = () => {
     setLoading(true);
     setStatus("");
     try {
-      const res = await fetch("http://13.233.167.95:5001/api/auth/reset-password", {
+      const res = await fetch("https://13.233.167.95:5001/api/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, newPassword: password }),

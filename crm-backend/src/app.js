@@ -6,7 +6,7 @@ const errorHandler = require('./middlewares/errorHandler');
 const app = express();
 
 app.use(cors({
-  origin: 'http://13.233.167.95:5001',
+  origin: 'https://13.233.167.95:5001',
   credentials: true
 }));
 app.use(express.json());

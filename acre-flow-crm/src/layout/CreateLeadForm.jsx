@@ -40,7 +40,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
   const fetchAssignableUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch("http://13.233.167.95:5001/api/leads/assignable-users", {
+      const response = await fetch("https://13.233.167.95:5001/api/leads/assignable-users", {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -90,7 +90,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://13.233.167.95:5001/api/leads', {
+      const response = await fetch('https://13.233.167.95:5001/api/leads', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
