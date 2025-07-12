@@ -19,10 +19,14 @@ pipeline {
         stage('📦 Install Frontend Dependencies') {
             steps {
                 dir("${FRONTEND_DIR}") {
-                    sh 'npm install'
+                    sh '''
+                    rm -rf node_modules package-lock.json
+                    npm install
+                    '''
                 }
             }
         }
+
 
         stage('🏗️ Build Frontend') {
             steps {
