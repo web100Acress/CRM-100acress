@@ -119,7 +119,7 @@ const DeveloperContent = ({ userRole }) => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://13.233.167.95:5001/api/users', {
+      const response = await fetch('http://13.233.167.95:5001/api/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1464,7 +1464,7 @@ const renderLogs = () => (
       </div>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        @import url('http://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
         .developer-console {
           font-family: 'Poppins', sans-serif;
