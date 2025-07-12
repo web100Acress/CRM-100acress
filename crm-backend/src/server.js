@@ -15,7 +15,7 @@ connectDB();
 // ✅ Step 2: Set up allowed origins for CORS
 const allowedOrigins = [
   process.env.FRONTEND_ORIGIN || 'http://13.233.167.95',
-  'https://13.233.167.95:5001',
+  'https://api.100acress.com',
   'http://localhost:3000',
   'https://crm.100acress.com'
 ];
