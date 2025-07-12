@@ -105,7 +105,7 @@ return;
 
     // Regular user login
     try {
-      const response = await fetch('https://api.100acress.com/api/auth/login', {
+      const response = await fetch('https://crm.100acress.com/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(credentials),
@@ -260,7 +260,7 @@ return;
                 setForgotLoading(true);
                 setForgotStatus("");
                 try {
-                  const res = await fetch("https://api.100acress.com/api/auth/request-password-reset", {
+                  const res = await fetch("https://crm.100acress.com/api/auth/request-password-reset", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ email: forgotEmail }),

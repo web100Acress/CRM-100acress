@@ -1,7 +1,7 @@
 // Centralized API endpoints configuration
 // All API endpoint URLs are defined here for easy maintenance
 
-const BASE_URL = 'https://api.100acress.com/api';
+const BASE_URL = 'https://crm.100acress.com/api';
 
 export const ENDPOINTS = {
   // Auth endpoints

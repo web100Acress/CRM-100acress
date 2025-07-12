@@ -6,7 +6,7 @@ const errorHandler = require('./middlewares/errorHandler');
 const app = express();
 
 app.use(cors({
-  origin: 'https://api.100acress.com',
+  origin: 'https://crm.100acress.com',
   credentials: true
 }));
 app.use(express.json());
