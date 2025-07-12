@@ -19,15 +19,22 @@ pipeline {
         stage('📦 Install Frontend Dependencies') {
             steps {
                 dir("${FRONTEND_DIR}") {
-                    sh 'npm install'
+                    sh '''
+                    rm -rf node_modules package-lock.json
+                    npm install
+                    '''
                 }
             }
         }
 
+
         stage('🏗️ Build Frontend') {
             steps {
                 dir("${FRONTEND_DIR}") {
-                    sh 'npm run build'
+                    sh '''
+                        npm rebuild
+                        npm run build
+                        '''
                 }
             }
         }
@@ -51,13 +58,13 @@ pipeline {
                 }
             }
         }
-
+// aw
         stage('🚀 Run Backend via PM2') {
             steps {
                 dir("${BACKEND_DIR}") {
                     sh '''
                         pm2 delete crm-backend || true
-                        pm2 start index.js --name crm-backend
+                        pm2 start src/server.js --name crm-backend
                         pm2 save
                     '''
                 }
