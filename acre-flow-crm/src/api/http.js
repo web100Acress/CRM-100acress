@@ -5,7 +5,7 @@ import axios from 'axios';
 
 // Create axios instance with base configuration
 const httpClient = axios.create({
-  baseURL: 'http://localhost:5001/api',
+  baseURL: 'http://13.233.167.95:5001/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
