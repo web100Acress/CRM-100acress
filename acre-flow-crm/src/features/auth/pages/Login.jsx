@@ -260,7 +260,7 @@ return;
                 setForgotLoading(true);
                 setForgotStatus("");
                 try {
-                  const res = await fetch("http://localhost:5001/api/auth/request-password-reset", {
+                  const res = await fetch("http://13.233.167.95:5001/api/auth/request-password-reset", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ email: forgotEmail }),
