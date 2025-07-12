@@ -9,18 +9,34 @@ const connectDB = require('./config/db');
 const { port } = require('./config/config');
 const meetingController = require('./controllers/meetingController');
 
-// Step 1: Connect to MongoDB
+// ✅ Step 1: Connect to MongoDB
 connectDB();
 
-// Step 2: Set up HTTP server
-const server = http.createServer(app);
-
-// Step 3: Setup CORS (Allow only specific frontend domain)
+// ✅ Step 2: Set up allowed origins for CORS
 const allowedOrigins = [
   process.env.FRONTEND_ORIGIN || 'http://13.233.167.95',
   'http://13.233.167.95:5001',
-  'http://localhost:3000'
+  'http://localhost:3000',
+  'https://crm.100acress.com'
 ];
+
+// ✅ Step 3: Apply CORS middleware to Express
+app.use(cors({
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps or curl)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS policy does not allow access from this origin.'));
+    }
+  },
+  credentials: true
+}));
+
+// ✅ Step 4: Set up HTTP server
+const server = http.createServer(app);
+
+// ✅ Step 5: Setup Socket.IO with CORS
 const io = socketio(server, {
   cors: {
     origin: allowedOrigins,
@@ -29,14 +45,14 @@ const io = socketio(server, {
   }
 });
 
-// Step 4: Setup socket controller
+// ✅ Step 6: Initialize socket controller
 meetingController.setSocketIO(io);
 
-// Step 5: Use routes
+// ✅ Step 7: API routes
 app.use('/api/leads', require('./routes/leadRoutes'));
 app.use('/api/meetings', require('./routes/meetingRoutes'));
 
-// Step 6: Start server
+// ✅ Step 8: Start server
 server.listen(port, '0.0.0.0', () => {
   console.log(`✅ Server running on port ${port}`);
 });
