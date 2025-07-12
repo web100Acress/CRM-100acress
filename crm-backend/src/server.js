@@ -20,6 +20,6 @@ meetingController.setSocketIO(io);
 app.use('/api/leads', require('./routes/leadRoutes'));
 app.use('/api/meetings', require('./routes/meetingRoutes'));
 
-server.listen(port, () => {
+server.listen(port,'0.0.0.0', () => {
   console.log(`Server running on port ${port}`);
 }); 
