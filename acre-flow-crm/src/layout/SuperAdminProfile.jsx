@@ -286,7 +286,7 @@ const SuperAdminProfile = () => {
               </h4>
               <p>Need help or want to chat with our team? Click below to start a WhatsApp conversation!</p>
               <a
-                href="http://wa.me/9142793190?text=Hello%20from%20the%20CRM!"
+                href="https://wa.me/9142793190?text=Hello%20from%20the%20CRM!"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
