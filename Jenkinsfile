@@ -57,7 +57,7 @@ pipeline {
                 dir("${BACKEND_DIR}") {
                     sh '''
                         pm2 delete crm-backend || true
-                        pm2 start index.js --name crm-backend
+                        pm2 start server.js --name crm-backend
                         pm2 save
                     '''
                 }
