@@ -119,7 +119,7 @@ const DeveloperContent = ({ userRole }) => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://13.233.167.95:5001/api/users', {
+      const response = await fetch('https://api.100acress.com/api/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
