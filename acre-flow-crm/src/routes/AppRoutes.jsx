@@ -24,10 +24,34 @@ const AppRoutes = ({ isLoggedIn, userRole, isDeveloperLoggedIn }) => {
       
       {/* Developer Routes */}
       {/* <Route path="/developer" element={(isLoggedIn && userRole === "super-admin") || isDeveloperLoggedIn ? <Developer userRole={userRole} /> : <Navigate to="/" replace />} /> */}
-      {/* <Route path="/developer-dashboard" element={isDeveloperLoggedIn ? <DeveloperDashboard /> : <Navigate to="/login" replace />} /> */}
-      
-      {/* Catch all route */}
-      {/* <Route path="*" element={<NotFound />} /> */}
+      {/* Main route: role-aware redirect */}
+      <Route
+        path="/"
+        element={
+          isLoggedIn
+            ? userRole === "developer"
+              ? <Navigate to="/developer-dashboard" replace />
+              : <Dashboard userRole={userRole} />
+            : <Navigate to="/login" replace />
+        }
+      />
+      {/* Developer Dashboard route */}
+      <Route path="/developer-dashboard" element={
+        (isLoggedIn && userRole === "developer") || isDeveloperLoggedIn
+          ? <DeveloperDashboard />
+          : <Navigate to="/login" replace />
+      } />
+      {/* Catch-all route: ensure developers always see their dashboard */}
+      <Route
+        path="*"
+        element={
+          isLoggedIn
+            ? userRole === "developer"
+              ? <Navigate to="/developer-dashboard" replace />
+              : <Navigate to="/" replace />
+            : <Navigate to="/login" replace />
+        }
+      />
     </Routes>
   );
 };

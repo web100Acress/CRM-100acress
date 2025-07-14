@@ -17,7 +17,6 @@ import NotFound from "@/features/users/pages/NotFound";
 import Settings from "@/features/users/pages/Settings";
 import UserManagement from "@/features/users/pages/UserManagement";
 import Developer from "@/features/developer/pages/Developer";
-import DeveloperLogin from "@/features/developer/pages/DeveloperLogin";
 import DeveloperDashboard from "@/features/developer/pages/DeveloperDashboard";
 import ResetPassword from "@/features/auth/pages/ResetPassword";
 import HrFinance from "@/features/hr/pages/HrFinance";

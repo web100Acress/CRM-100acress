@@ -7,8 +7,10 @@ const app = express();
 
 // ✅ Step 1: Secure & flexible CORS config
 const allowedOrigins = [
-  'https://crm.100acress.com',
+  'http://localhost:5001',
   'http://localhost:3000', // optional: for local dev
+  'http://localhost:5173', // Vite dev server (local dev)
+  'http://localhost:5000', // Added for local dev on port 5000
   'https://api.100acress.com' // optional: if frontend uses subdomain
 ];
 
@@ -17,7 +19,7 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('CORS policy does not allow access from this origin.'));
+      callback(null, false); // Changed from throwing error to returning false
     }
   },
   credentials: true
