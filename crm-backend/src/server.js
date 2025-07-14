@@ -18,7 +18,7 @@ const server = http.createServer(app);
 // ✅ Step 5: Setup Socket.IO with CORS
 // Use the same allowedOrigins as in app.js
 const allowedOrigins = [
-  'http://localhost:5001',
+  'https://crm.100acress.com',
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:5000',

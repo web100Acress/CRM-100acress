@@ -7,7 +7,7 @@ const app = express();
 
 // ✅ Step 1: Secure & flexible CORS config
 const allowedOrigins = [
-  'http://localhost:5001',
+  'https://crm.100acress.com',
   'http://localhost:3000', // optional: for local dev
   'http://localhost:5173', // Vite dev server (local dev)
   'http://localhost:5000', // Added for local dev on port 5000
