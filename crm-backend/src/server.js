@@ -12,30 +12,18 @@ const meetingController = require('./controllers/meetingController');
 // ✅ Step 1: Connect to MongoDB
 connectDB();
 
-// ✅ Step 2: Setup allowed origins for CORS
-const allowedOrigins = [
-  process.env.FRONTEND_ORIGIN || 'http://13.233.167.95',
-  'https://crm.100acress.com',
-  'http://localhost:3000',
-  'https://api.100acress.com'
-];
-
-// ✅ Step 3: Apply CORS middleware
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('CORS policy does not allow access from this origin.'));
-    }
-  },
-  credentials: true
-}));
-
 // ✅ Step 4: Set up HTTP server
 const server = http.createServer(app);
 
 // ✅ Step 5: Setup Socket.IO with CORS
+// Use the same allowedOrigins as in app.js
+const allowedOrigins = [
+  'http://localhost:5001',
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:5000',
+  'https://api.100acress.com'
+];
 const io = socketio(server, {
   cors: {
     origin: function (origin, callback) {

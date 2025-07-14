@@ -7,11 +7,18 @@
     const navigate = useNavigate();
 
     const handleLogout = () => {
+      // Remove both static and dynamic session keys
       localStorage.removeItem('isDeveloperLoggedIn');
       localStorage.removeItem('developerEmail');
       localStorage.removeItem('developerName');
       localStorage.removeItem('developerRole');
-      navigate('/developer-login');
+      localStorage.removeItem('token');
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('userEmail');
+      localStorage.removeItem('userName');
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('userId');
+      navigate('/login'); // Redirect to main login page
       window.location.reload(); // Reload to clear any remaining state
     };
 

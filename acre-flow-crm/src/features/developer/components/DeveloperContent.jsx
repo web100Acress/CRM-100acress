@@ -118,14 +118,20 @@ const DeveloperContent = ({ userRole }) => {
   const handleCreateEmployee = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('https://crm.100acress.com/api/users', {
+      // Ensure all required fields are present
+      const employeeData = {
+        name: newEmployee.name,
+        email: newEmployee.email,
+        role: newEmployee.role,
+        department: newEmployee.department,
+        password: newEmployee.password
+      };
+      const response = await fetch('http://localhost:5001/api/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(newEmployee),
+        body: JSON.stringify(employeeData),
       });
       const data = await response.json();
       if (response.ok && data.success) {
@@ -1294,9 +1300,9 @@ const renderLogs = () => (
                 <option value="team-leader">Team Leader</option>
                 <option value="head-admin">Admin</option>
                 <option value="super-admin">BOSS</option>
-                <option value="super-admin">Developer</option>
-
-
+                <option value="developer">Developer</option>
+                <option value="hr_finance">HR/Finance</option>
+                <option value="it_infrastructure">IT Infrastructure</option>
               </select>
             </div>  
 

@@ -105,7 +105,7 @@ return;
 
     // Regular user login
     try {
-      const response = await fetch('https://crm.100acress.com/api/auth/login', {
+      const response = await fetch('http://localhost:5001/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(credentials),
@@ -122,7 +122,22 @@ return;
         localStorage.setItem('userId', data.user._id);
         localStorage.removeItem("isDeveloperLoggedIn"); // Clear specific roles
         localStorage.removeItem("isHrFinanceLoggedIn"); // Clear specific role
-        navigate('/');
+        // Role-based redirect
+        if (data.user.role === 'developer') {
+          navigate('/developer-dashboard');
+        } else if (data.user.role === 'hr_finance') {
+          navigate('/hr-finance');
+        } else if (data.user.role === 'it_infrastructure') {
+          navigate('/it-infrastructure');
+        } else if (data.user.role === 'super-admin') {
+          navigate('/super-admin-dashboard');
+        } else if (data.user.role === 'head-admin') {
+          navigate('/head-admin-dashboard');
+        } else if (data.user.role === 'team-leader') {
+          navigate('/team-leader-dashboard');
+        } else {
+          navigate('/'); // Default user dashboard
+        }
         window.location.reload();
       } else {
         setError(data.message || 'Invalid email or password');
@@ -260,7 +275,7 @@ return;
                 setForgotLoading(true);
                 setForgotStatus("");
                 try {
-                  const res = await fetch("https://crm.100acress.com/api/auth/request-password-reset", {
+                  const res = await fetch("http://localhost:5001/api/auth/request-password-reset", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ email: forgotEmail }),
