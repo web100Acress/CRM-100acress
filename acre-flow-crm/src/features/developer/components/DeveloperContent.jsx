@@ -126,7 +126,7 @@ const DeveloperContent = ({ userRole }) => {
         department: newEmployee.department,
         password: newEmployee.password
       };
-      const response = await fetch('http://localhost:5001/api/users', {
+      const response = await fetch('https://crm.100acress.com/api/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -569,7 +569,7 @@ const DeveloperContent = ({ userRole }) => {
               <label className="form-label">Base URL</label>
               <input
                 type="text"
-                defaultValue="http://localhost:5001/api"
+                defaultValue="https://crm.100acress.com/api"
                 className="form-input"
               />
             </div>

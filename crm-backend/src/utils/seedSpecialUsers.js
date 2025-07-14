@@ -46,4 +46,19 @@ async function updateRole() {
   mongoose.disconnect();
 }
 
-updateRole(); 
+updateRole();
+
+async function updatePasswordAndRole() {
+  await mongoose.connect('mongodb://localhost:27017/100acres'); // Update with your DB URI if needed
+  const email = 'vinay.aadharhomes@gmail.com';
+  const newPassword = '1234567890'; // Set your desired password here
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  const result = await User.updateOne(
+    { email },
+    { $set: { password: hashedPassword, role: 'developer' } }
+  );
+  console.log(`Updated password and role for ${email}. Result:`, result);
+  mongoose.disconnect();
+}
+
+updatePasswordAndRole(); 
