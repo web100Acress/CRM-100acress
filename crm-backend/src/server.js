@@ -26,11 +26,18 @@ const allowedOrigins = [
 ];
 const io = socketio(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Socket.IO CORS origin not allowed: ' + origin));
+      }
+    },
     methods: ['GET', 'POST'],
     credentials: true
   }
 });
+
 
 // ✅ Step 6: Initialize socket controller
 meetingController.setSocketIO(io);
