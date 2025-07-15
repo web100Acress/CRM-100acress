@@ -21,9 +21,9 @@ const allowedOrigins = [
   'http://localhost:5000',           // Local dev
   'http://localhost:5173',           // Vite dev
   'http://localhost:3000',           // React dev
-  'https://crm.100acress.com',       // Production frontend
+  'http://localhost:5001',       // Production frontend
   'https://api.100acress.com',
-  'https://crm.100acress.com'         // (if used)
+  'http://localhost:5001'         // (if used)
 ];
 const io = socketio(server, {
   cors: {
