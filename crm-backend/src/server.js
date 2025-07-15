@@ -23,7 +23,7 @@ const allowedOrigins = [
   'http://localhost:3000',           // React dev
   'https://crm.100acress.com',       // Production frontend
   'https://api.100acress.com',
-  'http://localhost:5001'         // (if used)
+  'https://crm.100acress.com'         // (if used)
 ];
 const io = socketio(server, {
   cors: {
