@@ -49,10 +49,10 @@ const SuperAdminProfile = () => {
 
   useEffect(() => {
     // Connect to Socket.IO server
-    const s = io('https://crm.100acress.com');
+    const s = io('http://localhost:5001');
     setSocket(s);
     // Fetch meetings from backend
-    fetch('https://crm.100acress.com/api/meetings')
+    fetch('http://localhost:5001/api/meetings')
       .then(res => res.json())
       .then(data => {
         if (data.success) {
@@ -100,7 +100,7 @@ const SuperAdminProfile = () => {
   const handleScheduleMeeting = async (e) => {
     e.preventDefault();
     if (!meetingForm.title || !meetingForm.date) return;
-    await fetch('https://crm.100acress.com/api/meetings', {
+    await fetch('http://localhost:5001/api/meetings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title: meetingForm.title, date: meetingForm.date, description: meetingForm.description }),

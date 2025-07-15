@@ -61,7 +61,7 @@ const Login = () => {
 
     // Backend login
     try {
-      const response = await fetch('https://crm.100acress.com/api/auth/login', {
+      const response = await fetch('http://localhost:5001/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(credentials),
@@ -119,11 +119,11 @@ const Login = () => {
           <p className="crm-subtitle">Rishto Ki Shuruwat</p>
           <p className="crm-desc">India's Best Property Site. Post and Search Your Property.</p>
 
-          <div className="credentials-hint developer-hint">
+          {/* <div className="credentials-hint developer-hint">
             <h3 className="hint-title"><Code size={20} /> Developer Access</h3>
             <p>Email: {DEVELOPER.email}</p>
             <p>Password: {DEVELOPER.password}</p>
-          </div>
+          </div> */}
           <div className="credentials-hint hr-finance-hint">
             <h3 className="hint-title"><Briefcase size={20} /> HR/Finance Access</h3>
             <p>Email: {HR_FINANCE.email}</p>
@@ -180,7 +180,7 @@ const Login = () => {
                 setForgotLoading(true);
                 setForgotStatus("");
                 try {
-                  const res = await fetch("https://crm.100acress.com/api/auth/request-password-reset", {
+                  const res = await fetch("http://localhost:5001api/auth/request-password-reset", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ email: forgotEmail }),
