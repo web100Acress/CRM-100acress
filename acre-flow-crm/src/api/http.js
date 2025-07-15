@@ -5,7 +5,7 @@ import axios from 'axios';
 
 // Create axios instance with base configuration
 const httpClient = axios.create({
-  baseURL: 'http://localhost:5001/api',
+  baseURL: 'https://crm.100acress.com/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
