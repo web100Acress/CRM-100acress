@@ -35,7 +35,9 @@
     Download,
     Upload,
     UserPlus,
-    Info
+    Info,
+    Menu,
+    X
   } from 'lucide-react';
   import { Card, CardContent, CardHeader, CardTitle } from '@/layout/card';
   import { Button } from '@/layout/button';
@@ -45,6 +47,7 @@
 
   const DeveloperContent = ({ userRole }) => {
     const [activeTab, setActiveTab] = useState('overview');
+    const [sidebarOpen, setSidebarOpen] = useState(false); // <-- Hamburger state
     const [systemStats, setSystemStats] = useState({
       serverStatus: 'Online',
       dbConnections: '45/100',
@@ -1439,42 +1442,64 @@
       <>
         <div className="developer-console">
           <div className="console-header">
-          
+            {/* Hamburger for mobile */}
+            <button
+              className="hamburger-btn"
+              onClick={() => setSidebarOpen(true)}
+              style={{ display: 'none' }}
+              aria-label="Open navigation menu"
+            >
+              <Menu size={28} />
+            </button>
           </div>
 
           <div className="console-layout">
-            {/* Developer Navigation */}
-          <Card className="nav-panel">
-    <CardContent className="nav-content">
-      <nav className="nav-menu">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`nav-item ${activeTab === tab.id ? 'active' : ''}`}
-          >
-            <tab.icon className="nav-icon" />
-            <span className="nav-text">{tab.label}</span>
-          </button>
-        ))}
-      </nav>
-
-      {/* Logout button at the bottom */}
-      <div className="logout-section">
-        <div className="user-info">
-          {/* <span className="user-name">Welcome, {developerName}</span> */}
-          {/* <span className="user-role">System Developer</span> */}
-        </div>
-        <button className="logout-btn" onClick={handleLogout}>
-          <LogOut size={18} />
-          <span>Logout</span>
-        </button>
-      </div>
-    </CardContent>
-  </Card>
-
-
-            {/* Developer Content */}
+            {/* Sidebar/Nav Panel */}
+            <div
+              className={`nav-panel${sidebarOpen ? ' open' : ''}`}
+              style={{
+                display: sidebarOpen ? 'block' : '',
+              }}
+            >
+              {/* Close button for mobile */}
+              <button
+                className="close-sidebar-btn"
+                onClick={() => setSidebarOpen(false)}
+                style={{ display: 'none' }}
+                aria-label="Close navigation menu"
+              >
+                <X size={28} />
+              </button>
+              <CardContent className="nav-content">
+                <nav className="nav-menu">
+                  {tabs.map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => {
+                        setActiveTab(tab.id);
+                        setSidebarOpen(false); // close sidebar on mobile after nav
+                      }}
+                      className={`nav-item ${activeTab === tab.id ? 'active' : ''}`}
+                    >
+                      <tab.icon className="nav-icon" />
+                      <span className="nav-text">{tab.label}</span>
+                    </button>
+                  ))}
+                </nav>
+                <div className="logout-section">
+                  <div className="user-info"></div>
+                  <button className="logout-btn" onClick={handleLogout}>
+                    <LogOut size={18} />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              </CardContent>
+            </div>
+            {/* Overlay for mobile sidebar */}
+            {sidebarOpen && (
+              <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)}></div>
+            )}
+            {/* Main Content */}
             <div className="content-panel">
               <Card className="content-card">
                 <CardHeader>

@@ -4,7 +4,21 @@
   font-family: 'Poppins', sans-serif;
   background: linear-gradient(135deg, #f8fafc, #e2e8f0);
   min-height: 100vh;
-  padding: 1.5rem;
+  /* padding: 1.5rem; */
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+@media (max-width: 1024px) {
+  .developer-console {
+    /* padding: 1rem; */
+    max-width: 100vw;
+  }
+}
+@media (max-width: 576px) {
+  .developer-console {
+    /* padding: 0.5rem; */
+  }
 }
 
 .console-header {
@@ -2275,6 +2289,137 @@ width: 100%;
 }
 .wa-chat-send:hover {
   background: #128c7e;
+}
+
+/* --- Hamburger Sidebar for Mobile --- */
+@media (max-width: 1024px) {
+  .hamburger-btn {
+    display: block !important;
+    background: none;
+    border: none;
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    z-index: 1201;
+    color: #2d3748;
+    cursor: pointer;
+  }
+  .nav-panel {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 80vw;
+    max-width: 320px;
+    background: #fff;
+    box-shadow: 2px 0 16px rgba(0,0,0,0.15);
+    z-index: 1202;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+    border-radius: 0 1rem 1rem 0;
+    border-right: 2px solid #e2e8f0;
+  }
+  .nav-panel.open {
+    display: block;
+    transform: translateX(0);
+  }
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.25);
+    z-index: 1200;
+    transition: background 0.2s;
+  }
+  .close-sidebar-btn {
+    display: block !important;
+    background: none;
+    border: none;
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1203;
+    color: #2d3748;
+    cursor: pointer;
+  }
+  .console-layout {
+    grid-template-columns: 1fr !important;
+  }
+  .nav-content {
+    padding-top: 3.5rem;
+  }
+}
+@media (min-width: 1025px) {
+  .hamburger-btn, .close-sidebar-btn, .sidebar-overlay {
+    display: none !important;
+  }
+  .nav-panel {
+    display: block !important;
+    position: static;
+    height: auto;
+    width: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    transform: none;
+    border-radius: 0.75rem;
+    border-right: 2px solid #e2e8f0;
+  }
+}
+
+/* Ensure full width and no overflow on mobile */
+@media (max-width: 768px) {
+  .developer-console {
+    max-width: 100vw !important;
+    width: 100vw !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box;
+  }
+  .content-panel,
+  .content-card,
+  .card,
+  .main-content,
+  .content-section,
+  .stats-grid,
+  .cards-grid,
+  .overview-cards,
+  .db-cards,
+  .api-cards,
+  .security-cards,
+  .performance-grid,
+  .deployment-grid,
+  .tools-grid {
+    max-width: 100vw !important;
+    width: 100vw !important;
+    box-sizing: border-box;
+  }
+  body {
+    overflow-x: hidden !important;
+  }
+}
+
+.developer-main {
+  padding: 1.5rem 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .developer-main {
+    padding: 1rem;
+    max-width: 100vw;
+  }
+}
+
+@media (max-width: 576px) {
+  .developer-main {
+    padding: 0.5rem;
+    max-width: 100vw;
+  }
 }
 
 
