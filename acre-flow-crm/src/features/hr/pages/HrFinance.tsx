@@ -37,6 +37,12 @@ const HrFinance = () => {
     localStorage.removeItem("hrFinanceEmail");
     localStorage.removeItem("hrFinanceName");
     localStorage.removeItem("hrFinanceRole");
+    localStorage.removeItem('token');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userId');
     navigate("/login");
     window.location.reload();
   };
