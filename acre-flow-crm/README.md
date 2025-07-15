@@ -386,3 +386,20 @@ For support and questions:
 ---
 
 **Built with ❤️ using modern React patterns and scalable architecture principles.**
+
+## Developer Chat WebSocket Server
+
+To enable persistent and real-time chat in the Developer section:
+
+1. Install dependencies (in this directory):
+   ```bash
+   npm install ws
+   ```
+2. Start the chat server:
+   ```bash
+   node chat-server.js
+   ```
+
+- The server runs on ws://localhost:4000 by default.
+- Chat history is saved in `chat-history.json` in this directory.
+- You can change the port or storage file in `chat-server.js` if needed.

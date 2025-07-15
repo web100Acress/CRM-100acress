@@ -41,6 +41,7 @@
   import { Button } from '@/layout/button';
   import { useToast } from '@/hooks/use-toast';
   import { useNavigate } from 'react-router-dom';
+  import DeveloperChat from './DeveloperChat'; // Import the chat component (to be created)
 
   const DeveloperContent = ({ userRole }) => {
     const [activeTab, setActiveTab] = useState('overview');
@@ -90,7 +91,8 @@
       { id: 'create-employee', label: 'Create Employee', icon: UserPlus },
       { id: 'performance', label: 'Performance', icon: Activity },
       { id: 'deployment', label: 'Deployment', icon: GitBranch },
-      { id: 'tools', label: 'Dev Tools', icon: Wrench }
+      { id: 'tools', label: 'Dev Tools', icon: Wrench },
+      { id: 'chat', label: 'Chat', icon: Info }, // New Chat tab
     ];
 
     const handleAction = (action) => {
@@ -356,6 +358,18 @@
 
     const renderOverview = () => (
       <div className="content-section">
+        {/* Modern Header with Developer Name and Avatar */}
+        <div className="developer-header">
+          <div className="avatar-container">
+            <div className="avatar-circle">
+              {developerName.charAt(0).toUpperCase()}
+            </div>
+          </div>
+          <div className="welcome-text">
+            <div className="welcome-title">Welcome, <span className="dev-name">{developerName}</span>!</div>
+            <div className="welcome-subtitle">Here is your system overview and quick actions.</div>
+          </div>
+        </div>
         <div className="stats-grid">
           <div className="stat-card">
             <div className="stat-header">
@@ -1409,6 +1423,8 @@
           return renderDeployment();
         case 'tools':
           return renderTools();
+        case 'chat':
+          return <DeveloperChat developerName={developerName} />;
         default:
           return (
             <div className="coming-soon">
