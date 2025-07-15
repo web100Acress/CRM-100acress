@@ -137,7 +137,7 @@
         };
         const token = localStorage.getItem('token');
         console.log('Token used for create employee:', token); // Debug log
-        const response = await fetch('https://crm.100acress.com/api/users', {
+        const response = await fetch('http://localhost:5001/api/users', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -593,7 +593,7 @@
                 <label className="form-label">Base URL</label>
                 <input
                   type="text"
-                  defaultValue="https://crm.100acress.com/api"
+                  defaultValue="http://localhost:5001/api"
                   className="form-input"
                 />
               </div>
