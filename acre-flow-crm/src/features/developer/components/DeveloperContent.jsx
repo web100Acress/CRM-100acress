@@ -360,148 +360,103 @@
     );
 
     const renderOverview = () => (
-      <div className="content-section">
-        {/* Modern Header with Developer Name and Avatar */}
-        <div className="developer-header">
-          <div className="avatar-container">
-            <div className="avatar-circle">
+      <div className="overview-container">
+        {/* Header with avatar and name */}
+        <div className="overview-header">
+          <div className="overview-avatar">
+            <div className="avatar-initial">
               {developerName.charAt(0).toUpperCase()}
             </div>
           </div>
-          <div className="welcome-text">
-            <div className="welcome-title">Welcome, <span className="dev-name">{developerName}</span>!</div>
-            <div className="welcome-subtitle">Here is your system overview and quick actions.</div>
+          <div className="overview-welcome">
+            <h2 className="overview-greeting">
+              Welcome, <span className="developer-name">{developerName}</span>!
+            </h2>
+            <p className="overview-subtext">Here is your system overview and quick actions.</p>
           </div>
         </div>
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-header">
-              <div className="stat-title">
-                <Server className="stat-icon" />
-                Server Status
-              </div>
-            </div>
-            <div className="stat-content">
-              <div className="stat-value green">{systemStats.serverStatus}</div>
-              <p className="stat-description">Last checked: 2 mins ago</p>
-            </div>
+    
+        {/* Stats Grid */}
+        <div className="overview-stats">
+          <div className="stat-box">
+            <div className="stat-title"><Server className="icon" /> Server Status</div>
+            <div className="stat-value green">{systemStats.serverStatus}</div>
+            <p className="stat-description">Last checked: 2 mins ago</p>
           </div>
-
-          <div className="stat-card">
-            <div className="stat-header">
-              <div className="stat-title">
-                <Database className="stat-icon" />
-                DB Connections
-              </div>
-            </div>
-            <div className="stat-content">
-              <div className="stat-value">{systemStats.dbConnections}</div>
-              <p className="stat-description">Active connections</p>
-            </div>
+    
+          <div className="stat-box">
+            <div className="stat-title"><Database className="icon" /> DB Connections</div>
+            <div className="stat-value">{systemStats.dbConnections}</div>
+            <p className="stat-description">Active connections</p>
           </div>
-
-          <div className="stat-card">
-            <div className="stat-header">
-              <div className="stat-title">
-                <Activity className="stat-icon" />
-                Memory Usage
-              </div>
-            </div>
-            <div className="stat-content">
-              <div className="stat-value">{systemStats.memoryUsage}</div>
-              <p className="stat-description">System memory</p>
-            </div>
+    
+          <div className="stat-box">
+            <div className="stat-title"><Activity className="icon" /> Memory Usage</div>
+            <div className="stat-value">{systemStats.memoryUsage}</div>
+            <p className="stat-description">System memory</p>
           </div>
-
-          <div className="stat-card">
-            <div className="stat-header">
-              <div className="stat-title">
-                <Zap className="stat-icon" />
-                CPU Usage
-              </div>
-            </div>
-            <div className="stat-content">
-              <div className="stat-value">{systemStats.cpuUsage}</div>
-              <p className="stat-description">Current load</p>
-            </div>
+    
+          <div className="stat-box">
+            <div className="stat-title"><Zap className="icon" /> CPU Usage</div>
+            <div className="stat-value">{systemStats.cpuUsage}</div>
+            <p className="stat-description">Current load</p>
           </div>
-
-          <div className="stat-card">
-            <div className="stat-header">
-              <div className="stat-title">
-                <Globe className="stat-icon" />
-                API Calls
-              </div>
-            </div>
-            <div className="stat-content">
-              <div className="stat-value">{systemStats.apiCalls}</div>
-              <p className="stat-description">Request count</p>
-            </div>
+    
+          <div className="stat-box">
+            <div className="stat-title"><Globe className="icon" /> API Calls</div>
+            <div className="stat-value">{systemStats.apiCalls}</div>
+            <p className="stat-description">Request count</p>
           </div>
-
-          <div className="stat-card">
-            <div className="stat-header">
-              <div className="stat-title">
-                <Bug className="stat-icon" />
-                Error Rate
-              </div>
-            </div>
-            <div className="stat-content">
-              <div className="stat-value green">{systemStats.errorRate}</div>
-              <p className="stat-description">24h average</p>
-            </div>
+    
+          <div className="stat-box">
+            <div className="stat-title"><Bug className="icon" /> Error Rate</div>
+            <div className="stat-value green">{systemStats.errorRate}</div>
+            <p className="stat-description">24h average</p>
           </div>
         </div>
-
-        <div className="overview-cards">
+    
+        {/* Quick Actions and Activities */}
+        <div className="overview-actions">
           <div className="action-card">
-            <div className="card-header">
-              <h3 className="card-title">Quick Actions</h3>
-            </div>
-            <div className="card-content">
-              <button onClick={() => handleAction('Cache Clear')} className="action-button primary">
-                <Zap className="button-icon" />
-                Clear System Cache
+            <h3 className="card-title">Quick Actions</h3>
+            <div className="action-buttons">
+              <button onClick={() => handleAction('Cache Clear')} className="btn primary">
+                <Zap className="btn-icon" /> Clear System Cache
               </button>
-              <button onClick={() => handleAction('DB Optimize')} className="action-button">
-                <Database className="button-icon" />
-                Optimize Database
+              <button onClick={() => handleAction('DB Optimize')} className="btn">
+                <Database className="btn-icon" /> Optimize Database
               </button>
-              <button onClick={() => handleAction('Backup Create')} className="action-button">
-                <Package className="button-icon" />
-                Create System Backup
+              <button onClick={() => handleAction('Backup Create')} className="btn">
+                <Package className="btn-icon" /> Create System Backup
               </button>
             </div>
           </div>
-
+    
           <div className="activity-card">
-            <div className="card-header">
-              <h3 className="card-title">Recent Activities</h3>
-            </div>
-            <div className="card-content">
-              <div className="activity-list">
-                <div className="activity-item">
-                  <span>Database backup completed</span>
-                  <span className="activity-time">2 hours ago</span>
-                </div>
-                <div className="activity-item">
-                  <span>Security scan passed</span>
-                  <span className="activity-time">4 hours ago</span>
-                </div>
-                <div className="activity-item">
-                  <span>System update deployed</span>
-                  <span className="activity-time">1 day ago</span>
-                </div>
-                <div className="activity-item">
-                  <span>Performance optimization</span>
-                  <span className="activity-time">2 days ago</span>
-                </div>
+            <h3 className="card-title">Recent Activities</h3>
+            <div className="activity-list">
+              <div className="activity-item">
+                <span>Database backup completed</span>
+                <span className="time">2 hours ago</span>
+              </div>
+              <div className="activity-item">
+                <span>Security scan passed</span>
+                <span className="time">4 hours ago</span>
+              </div>
+              <div className="activity-item">
+                <span>System update deployed</span>
+                <span className="time">1 day ago</span>
+              </div>
+              <div className="activity-item">
+                <span>Performance optimization</span>
+                <span className="time">2 days ago</span>
               </div>
             </div>
           </div>
         </div>
       </div>
     );
+    
 
     const renderDatabase = () => (
       <div className="content-section">
