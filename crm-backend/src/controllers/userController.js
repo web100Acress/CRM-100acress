@@ -22,6 +22,7 @@ async function sendWelcomeEmail({ email, password, name }) {
 
 exports.createUser = async (req, res, next) => {
   try {
+    // Allow anyone to create any user role (removed special role restriction)
     const plainPassword = req.body.password; // Save the plain password BEFORE hashing
     const user = await userService.createUser(req.body);
     if (user && req.body.email) {
@@ -33,6 +34,10 @@ exports.createUser = async (req, res, next) => {
     }
     res.status(201).json({ success: true, data: user });
   } catch (err) {
+    // Handle duplicate email error
+    if (err.code === 11000 && err.keyPattern && err.keyPattern.email) {
+      return res.status(409).json({ success: false, message: 'Email already exists. Please use a different email.' });
+    }
     next(err);
   }
 };

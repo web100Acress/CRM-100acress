@@ -7,11 +7,12 @@ const app = express();
 
 // ✅ Step 1: Secure & flexible CORS config
 const allowedOrigins = [
+  'http://localhost:5000',           // Local dev
+  'http://localhost:5173',           // Vite dev
+  'http://localhost:3000',           // React dev
   'https://crm.100acress.com',
-  'http://localhost:3000', // optional: for local dev
-  'http://localhost:5173', // Vite dev server (local dev)
-  'http://localhost:5000', // Added for local dev on port 5000
-  'https://api.100acress.com' // optional: if frontend uses subdomain
+  'http://localhost:5001',       // Production frontend
+  'https://api.100acress.com'        // (if used)
 ];
 
 app.use(cors({
@@ -19,10 +20,28 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(null, false); // Changed from throwing error to returning false
+      console.warn('CORS denied for origin:', origin);
+      callback(null, false); // Never throw!
     }
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Explicitly handle OPTIONS preflight requests for all routes
+app.options('*', cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn('CORS denied for origin:', origin);
+      callback(null, false);
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // ✅ Step 2: Parse incoming JSON and form data

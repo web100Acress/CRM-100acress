@@ -178,7 +178,7 @@ const App = () => {
             <Route
               path="/developer-dashboard"
               element={
-                isDeveloperLoggedIn ? (
+                (isLoggedIn && userRole === "developer") || isDeveloperLoggedIn ? (
                   <DeveloperDashboard />
                 ) : (
                   <Navigate to="/login" replace />
