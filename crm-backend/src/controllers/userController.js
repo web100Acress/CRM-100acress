@@ -3,10 +3,12 @@ const nodemailer = require('nodemailer');
 
 // Configure nodemailer (use your real SMTP credentials in production)
 const transporter = nodemailer.createTransport({
-  service: 'gmail', // or your SMTP provider
+  host: process.env.SMTP_HOST || 'smtpout.secureserver.net',
+  port: parseInt(process.env.SMTP_PORT) || 465,
+  secure: process.env.SMTP_SECURE === 'true', // Use SSL
   auth: {
-    user: process.env.SMTP_USER || 'your-email@gmail.com',
-    pass: process.env.SMTP_PASS || 'your-app-password',
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
   },
 });
 
