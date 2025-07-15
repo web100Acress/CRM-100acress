@@ -40,6 +40,12 @@ const ItInfrastructure = () => {
     localStorage.removeItem("itEmail");
     localStorage.removeItem("itName");
     localStorage.removeItem("itRole");
+    localStorage.removeItem('token');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userId');
     navigate("/login");
     window.location.reload();
   };

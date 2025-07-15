@@ -11,7 +11,7 @@ const allowedOrigins = [
   'http://localhost:5173',           // Vite dev
   'http://localhost:3000',           // React dev
   'https://crm.100acress.com',
-  'http://localhost:5001',       // Production frontend
+  'https://crm.100acress.com',       // Production frontend
   'https://api.100acress.com'        // (if used)
 ];
 

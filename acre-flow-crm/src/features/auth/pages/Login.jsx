@@ -61,7 +61,7 @@ const Login = () => {
 
     // Backend login
     try {
-      const response = await fetch('http://localhost:5001/api/auth/login', {
+      const response = await fetch('https://crm.100acress.com/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(credentials),
@@ -124,16 +124,16 @@ const Login = () => {
             <p>Email: {DEVELOPER.email}</p>
             <p>Password: {DEVELOPER.password}</p>
           </div> */}
-          <div className="credentials-hint hr-finance-hint">
+          {/* <div className="credentials-hint hr-finance-hint">
             <h3 className="hint-title"><Briefcase size={20} /> HR/Finance Access</h3>
             <p>Email: {HR_FINANCE.email}</p>
             <p>Password: {HR_FINANCE.password}</p>
-          </div>
-          <div className="credentials-hint it-hint">
+          </div> */}
+          {/* <div className="credentials-hint it-hint">
             <h3 className="hint-title"><Monitor size={20} /> IT Access</h3>
             <p>Email: {IT_INFRA.email}</p>
             <p>Password: {IT_INFRA.password}</p>
-          </div>
+          </div> */}
         </div>
 
         <div className="right">
@@ -180,7 +180,7 @@ const Login = () => {
                 setForgotLoading(true);
                 setForgotStatus("");
                 try {
-                  const res = await fetch("http://localhost:5001api/auth/request-password-reset", {
+                  const res = await fetch("https://crm.100acress.comapi/auth/request-password-reset", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ email: forgotEmail }),
