@@ -403,3 +403,4 @@ To enable persistent and real-time chat in the Developer section:
 - The server runs on ws://localhost:4000 by default.
 - Chat history is saved in `chat-history.json` in this directory.
 - You can change the port or storage file in `chat-server.js` if needed.
+test mest phast
