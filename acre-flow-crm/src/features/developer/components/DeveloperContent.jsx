@@ -408,11 +408,8 @@
             <p className="stat-description">Request count</p>
           </div>
     
-          <div className="stat-box">
-            <div className="stat-title"><Bug className="icon" /> Error Rate</div>
-            <div className="stat-value green">{systemStats.errorRate}</div>
-            <p className="stat-description">24h average</p>
-          </div>
+          
+        
         </div>
     
         {/* Quick Actions and Activities */}

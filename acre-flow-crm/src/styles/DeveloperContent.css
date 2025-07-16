@@ -45,7 +45,7 @@
 
 @media (min-width: 1024px) {
   .console-layout {
-    grid-template-columns: 1fr 4fr;
+    grid-template-columns: 1fr 7fr;
   }
 }
 
@@ -874,7 +874,7 @@ gap: 24px; /* gap-6 */
 
 @media (min-width: 1024px) { /* lg breakpoint */
 .main-content-grid {
-    grid-template-columns: 1fr 4fr; /* 1/5 and 4/5 split */
+    grid-template-columns: 1fr 4fr; 
 }
 }
 
@@ -948,14 +948,16 @@ font-size: 0.875rem; /* text-sm */
 }
 
 .logout-section {
-margin-top: auto; /* Pushes this section to the bottom of the flex container */
-padding: 1rem 1.5rem; /* Padding around the entire section */
-border-top: 1px solid var(--border-color); /* Separator line above it */
-display: flex;
-flex-direction: column; /* Stack user info and button vertically */
-gap: 0.75rem; /* Space between user info and button */
-background-color: var(--card-background); /* Ensure background matches card */
+  margin-top: auto;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border-color, #e5e7eb);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background-color: var(--card-background, #ffffff);
+  width: 100%;
 }
+
 
 .user-info {
 display: flex;
@@ -976,29 +978,54 @@ color: var(--text-color-light);
 }
 
 .logout-btn {
-  width: 100%; /* Full width on small screens, override later if needed */
-  max-width: 240px; /* Prevent it from stretching too far */
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  background-color: #ef4444; /* Tailwind Red-500 */
+  background-color: #ef4444;
   color: white;
   border: none;
   border-radius: 0.5rem;
   cursor: pointer;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 500;
-  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-  text-align: center;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+  white-space: nowrap; /* Prevents text from wrapping */
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Hover/Active Effect */
 .logout-btn:hover {
-  background-color: #dc2626; /* Tailwind Red-600 */
+  background-color: #dc2626;
   transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.2);
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+}
+.logout-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+  white-space: nowrap; /* Prevents text from wrapping */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.logout-btn:hover {
+  background-color: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
 }
 
 /* Responsive Tuning */
@@ -1013,7 +1040,7 @@ color: var(--text-color-light);
 
 @media (min-width: 1024px) {
   .logout-btn {
-    width: 50%;
+    width: 100%;
   }
 }
 
@@ -2373,6 +2400,7 @@ background: #128c7e;
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.2s ease, visibility 0.2s ease;
+    
   }
 
   .sidebar-overlay.active {
