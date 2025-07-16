@@ -51,10 +51,13 @@
 
 /* Navigation Panel */
 .nav-panel {
-  background: white;
+  background: #fff !important;
   border-radius: 0.75rem;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   border: 2px solid #e2e8f0;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  opacity: 1 !important;
 }
 
 .nav-content {
@@ -75,8 +78,10 @@
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;
-  color: #4a5568;
+  color: #2d3748 !important;
   border-radius: 0.5rem;
+  opacity: 1 !important;
+  filter: none !important;
 }
 
 .nav-item:hover {
@@ -99,6 +104,9 @@
 .nav-text {
   font-size: 0.875rem;
   font-weight: 500;
+  color: #2d3748 !important;
+  opacity: 1 !important;
+  filter: none !important;
 }
 
 /* Content Panel */
