@@ -29,15 +29,20 @@ pipeline {
 
 
         stage('🏗️ Build Frontend') {
-            steps {
-                dir("${FRONTEND_DIR}") {
-                    sh '''
-                        npm rebuild
-                        npm run build
-                        '''
+          steps {
+            dir('acre-flow-crm') {
+                sh '''
+                # Fix permissions before build
+                sudo chown -R jenkins:jenkins dist || true
+                sudo chmod -R 755 dist || true
+
+                npm rebuild
+                npm run build
+                '''
                 }
-            }
+          }
         }
+
 
         stage('🚀 Deploy Frontend to Nginx') {
             steps {
