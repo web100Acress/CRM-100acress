@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import '@/styles/LeadTable.css'
+import '@/styles/LeadTable.css'; // Correct path to your CSS file
 import { User } from "lucide-react";
 import {
   Search,
@@ -376,26 +376,29 @@ const LeadTable = ({ userRole }) => {
     }
   };
 
-  
+  // Pagination logic
+  const indexOfLastLead = currentPage * leadsPerPage;
+  const indexOfFirstLead = indexOfLastLead - leadsPerPage;
+  const currentLeads = filteredLeads.slice(indexOfFirstLead, indexOfLastLead);
+  const totalPages = Math.ceil(filteredLeads.length / leadsPerPage);
 
   return (
-    <div className="lead-table-wrapper">
+    <div className="lead-table-container-wrapper">
       {/* --- Header Section --- */}
-      <div className="lead-table-header">
-        <div className="search-bar">
-          <Search size={18} className="text-gray-500" />
+      <div className="lead-table-controls-header">
+        <div className="lead-search-input-group">
+          <Search size={18} />
           <input
             type="text"
             placeholder="Search by name, email, or phone..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-grow outline-none text-sm placeholder-gray-400"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="custom-select"
+          className="lead-status-filter-select"
         >
           <option value="all">All Statuses</option>
           <option value="hot">Hot</option>
@@ -407,254 +410,269 @@ const LeadTable = ({ userRole }) => {
           onClick={exportToCSV}
           disabled={isExporting || filteredLeads.length === 0}
           variant="outline"
-          className="custom-export-btn"
+          className="lead-export-button"
         >
-          <Download className="download-icon" />
+          <Download className="lead-export-icon" />
           {isExporting ? "Exporting..." : "Export to CSV"}
         </Button>
 
         {(userRole === "super-admin" || userRole === "head-admin") && (
-          <button className="create-lead-btn group" onClick={handleCreateLead}>
+          <button className="lead-create-button" onClick={handleCreateLead}>
             <Plus
               size={18}
-              className="group-hover:rotate-90 transition-transform duration-200"
+              className="lead-create-icon"
             />{" "}
             Create Lead
           </button>
         )}
       </div>
 
-      {/* </div> */}
-
-      <table className="lead-table">
-        <thead>
-          <tr>
-            <th>Lead Info</th>
-            <th>Contact</th>
-            <th>Property</th>
-            <th>Status</th>
-            <th>Work Progress</th>
-            <th>Assign</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredLeads.map((lead) => (
-            <tr key={lead._id}>
-              <td>
-                <div>{lead.name}</div>
-                <div>ID: #{lead.id}</div>
-              </td>
-              <td>
-                <div>
-                  <Phone size={14} /> {lead.phone}
-                </div>
-                <div>
-                  <Mail size={14} /> {lead.email}
-                </div>
-                <div>
-                  <MapPin size={14} /> {lead.location}
-                </div>
-              </td>
-              <td>
-                <div>{lead.property}</div>
-                <div>{lead.budget}</div>
-              </td>
-              <td>
-                <span className={`status-badge ${getStatusClass(lead.status)}`}>
-                  {lead.status}
-                </span>
-              </td>
-              <td>
-                {/* Work Progress: Only editable by current assignee */}
-                {String(lead.assignedTo) === String(currentUserId) ? (
-                  <select
-                    value={lead.workProgress || "pending"}
-                    onChange={async (e) => {
-                      const value = e.target.value;
-                      try {
-                        const token = localStorage.getItem("token");
-                        await fetch(
-                          `https://crm.100acress.com/api/leads/${lead._id}`,
-                          {
-                            method: "PUT",
-                            headers: {
-                              "Content-Type": "application/json",
-                              Authorization: `Bearer ${token}`,
-                            },
-                            body: JSON.stringify({ workProgress: value }),
-                          }
-                        );
-                        setLeadsList((prev) =>
-                          prev.map((l) =>
-                            l._id === lead._id
-                              ? { ...l, workProgress: value }
-                              : l
-                          )
-                        );
-                      } catch (err) {
-                        alert("Failed to update work progress");
-                      }
-                    }}
-                    className="px-2 py-1 border rounded"
-                  >
-                    {(!lead.workProgress ||
-                      lead.workProgress === "pending") && (
-                      <option value="pending">Pending</option>
-                    )}
-                    {lead.workProgress !== "done" && (
-                      <option value="inprogress">In Progress</option>
-                    )}
-                    <option value="done">Done</option>
-                  </select>
-                ) : (
-                  <span className="font-semibold">
-                    {lead.workProgress === "inprogress"
-                      ? "In Progress"
-                      : lead.workProgress === "done"
-                      ? "Done"
-                      : "Pending"}
-                  </span>
-                )}
-              </td>
-              <td>
-                <div className="assignment-controls">
-                  {/* Show only the current assignee in Assign column */}
-                  {lead.assignmentChain && lead.assignmentChain.length > 0 ? (
-                    <span>
-                      Assigned to:{" "}
-                      {(() => {
-                        const last =
-                          lead.assignmentChain[lead.assignmentChain.length - 1];
-                        return last
-                          ? `${last.name} (${last.role})`
-                          : "Unassigned";
-                      })()}
+      <div className="lead-table-responsive-wrapper">
+        <table className="lead-data-table">
+          <thead>
+            <tr>
+              <th>Lead Info</th>
+              <th>Contact</th>
+              <th>Property</th>
+              <th>Status</th>
+              <th>Work Progress</th>
+              <th>Assign</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {currentLeads.length > 0 ? (
+              currentLeads.map((lead) => (
+                <tr key={lead._id}>
+                  <td data-label="Lead Info">
+                    <div className="lead-info-display">{lead.name}</div>
+                    <div className="lead-info-display">ID: #{lead.id}</div>
+                  </td>
+                  <td data-label="Contact">
+                    <div className="lead-info-display">
+                      <Phone size={14} /> {lead.phone}
+                    </div>
+                    <div className="lead-info-display">
+                      <Mail size={14} /> {lead.email}
+                    </div>
+                    <div className="lead-info-display">
+                      <MapPin size={14} /> {lead.location}
+                    </div>
+                  </td>
+                  <td data-label="Property">
+                    <div className="lead-info-display">{lead.property}</div>
+                    <div className="lead-info-display">{lead.budget}</div>
+                  </td>
+                  <td data-label="Status">
+                    <span className={`lead-status-badge ${getStatusClass(lead.status)}`}>
+                      {lead.status}
                     </span>
-                  ) : (
-                    <span>Unassigned</span>
-                  )}
-                  {/* Assignment dropdown/buttons logic remains unchanged below */}
-                  {((!lead.assignedTo && canReassignLead(lead)) ||
-                    String(lead.assignedTo) === String(currentUserId)) && (
-                    <>
+                  </td>
+                  <td data-label="Work Progress">
+                    {/* Work Progress: Only editable by current assignee */}
+                    {String(lead.assignedTo) === String(currentUserId) ? (
                       <select
-                        value={lead.assignedTo || ""}
-                        onChange={(e) =>
-                          handleAssignLead(lead._id, e.target.value)
-                        }
-                        disabled={
-                          String(lead.assignedTo) !== String(currentUserId) &&
-                          !canReassignLead(lead)
-                        }
+                        value={lead.workProgress || "pending"}
+                        onChange={async (e) => {
+                          const value = e.target.value;
+                          try {
+                            const token = localStorage.getItem("token");
+                            await fetch(
+                              `https://crm.100acress.com/api/leads/${lead._id}`,
+                              {
+                                method: "PUT",
+                                headers: {
+                                  "Content-Type": "application/json",
+                                  Authorization: `Bearer ${token}`,
+                                },
+                                body: JSON.stringify({ workProgress: value }),
+                              }
+                            );
+                            setLeadsList((prev) =>
+                              prev.map((l) =>
+                                l._id === lead._id
+                                  ? { ...l, workProgress: value }
+                                  : l
+                              )
+                            );
+                          } catch (err) {
+                            alert("Failed to update work progress");
+                          }
+                        }}
+                        className="lead-work-progress-select"
                       >
-                        <option value="">Unassigned</option>
-                        {assignableUsers.map((u) => (
-                          <option key={u._id} value={u._id}>
-                            {u.name} ({u.role})
-                          </option>
-                        ))}
+                        {(!lead.workProgress ||
+                          lead.workProgress === "pending") && (
+                          <option value="pending">Pending</option>
+                        )}
+                        {lead.workProgress !== "done" && (
+                          <option value="inprogress">In Progress</option>
+                        )}
+                        <option value="done">Done</option>
                       </select>
-                      {/* Forward button */}
-                      {canForwardLead(lead) && (
+                    ) : (
+                      <span className="lead-work-progress-text">
+                        {lead.workProgress === "inprogress"
+                          ? "In Progress"
+                          : lead.workProgress === "done"
+                          ? "Done"
+                          : "Pending"}
+                      </span>
+                    )}
+                  </td>
+                  <td data-label="Assign">
+                    <div className="lead-assignment-controls">
+                      {/* Show only the current assignee in Assign column */}
+                      {lead.assignmentChain && lead.assignmentChain.length > 0 ? (
+                        <span>
+                          Assigned to:{" "}
+                          {(() => {
+                            const last =
+                              lead.assignmentChain[lead.assignmentChain.length - 1];
+                            return last
+                              ? `${last.name} (${last.role})`
+                              : "Unassigned";
+                          })()}
+                        </span>
+                      ) : (
+                        <span>Unassigned</span>
+                      )}
+                      {/* Assignment dropdown/buttons logic remains unchanged below */}
+                      {((!lead.assignedTo && canReassignLead(lead)) ||
+                        String(lead.assignedTo) === String(currentUserId)) && (
+                        <>
+                          <select
+                            value={lead.assignedTo || ""}
+                            onChange={(e) =>
+                              handleAssignLead(lead._id, e.target.value)
+                            }
+                            disabled={
+                              String(lead.assignedTo) !== String(currentUserId) &&
+                              !canReassignLead(lead)
+                            }
+                            className="lead-assignment-select"
+                          >
+                            <option value="">Unassigned</option>
+                            {assignableUsers.map((u) => (
+                              <option key={u._id} value={u._id}>
+                                {u.name} ({u.role})
+                              </option>
+                            ))}
+                          </select>
+                          {/* Forward button */}
+                          {canForwardLead(lead) && (
+                            <button
+                              className="lead-forward-button"
+                              onClick={() => handleForwardLead(lead._id)}
+                              disabled={forwardingLead === lead._id}
+                              title="Forward to next level"
+                            >
+                              <ArrowRight size={14} />
+                              {forwardingLead === lead._id
+                                ? "Forwarding..."
+                                : "Forward"}
+                            </button>
+                          )}
+                        </>
+                      )}
+
+                      {canAssignToSelf(lead) && (
                         <button
-                          className="forward-btn"
-                          onClick={() => handleForwardLead(lead._id)}
-                          disabled={forwardingLead === lead._id}
-                          title="Forward to next level"
+                          className="lead-self-assign-button"
+                          onClick={() => handleAssignLead(lead._id, currentUserId)}
+                          title="Assign to myself"
                         >
-                          <ArrowRight size={14} />
-                          {forwardingLead === lead._id
-                            ? "Forwarding..."
-                            : "Forward"}
+                          <UserCheck size={14} />
+                          Self Assign
                         </button>
                       )}
-                    </>
-                  )}
 
-                  {canAssignToSelf(lead) && (
-                    <button
-                      className="self-assign-btn mt-2"
-                      onClick={() => handleAssignLead(lead._id, currentUserId)}
-                      title="Assign to myself"
-                    >
-                      <UserCheck size={14} />
-                      Self Assign
-                    </button>
-                  )}
-
-                  {!lead.assignmentChain?.length &&
-                    !(
-                      (!lead.assignedTo && canReassignLead(lead)) ||
-                      String(lead.assignedTo) === String(currentUserId)
-                    ) && (
-                      <span className="text-sm text-gray-500">Unassigned</span>
-                    )}
-                </div>
-              </td>
-              <td>
-                {/* Actions column: Add button to show assignment chain modal */}
-                <button
-                  className="chain-view-btn"
-                  title="View Assignment Chain"
-                  onClick={() => setChainModalLead(lead)}
-                >
-                  <LinkIcon size={18} />
-                </button>
-                <button
-                  onClick={() => handleViewFollowUps(lead)}
-                  title="View Follow-ups"
-                >
-                  <Eye size={16} />
-                </button>
-                <button
-                  onClick={() => handleFollowUp(lead)}
-                  title="Add Follow-up"
-                >
-                  <MessageSquare size={16} />
-                </button>
-                {userRole === "super-admin" && (
-                  <button onClick={() => handleDeleteLead(lead._id)}>
-                    <Trash2 size={16} />
-                  </button>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                      {!lead.assignmentChain?.length &&
+                        !(
+                          (!lead.assignedTo && canReassignLead(lead)) ||
+                          String(lead.assignedTo) === String(currentUserId)
+                        ) && (
+                          <span className="lead-unassigned-text">Unassigned</span>
+                        )}
+                    </div>
+                  </td>
+                  <td data-label="Actions">
+                    <div className="lead-action-buttons-group">
+                      {/* Actions column: Add button to show assignment chain modal */}
+                      <button
+                        className="lead-action-button chain-view-btn"
+                        title="View Assignment Chain"
+                        onClick={() => setChainModalLead(lead)}
+                      >
+                        <LinkIcon size={18} />
+                      </button>
+                      <button
+                        onClick={() => handleViewFollowUps(lead)}
+                        title="View Follow-ups"
+                        className="lead-action-button view-followups-btn"
+                      >
+                        <Eye size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleFollowUp(lead)}
+                        title="Add Follow-up"
+                        className="lead-action-button add-followup-btn"
+                      >
+                        <MessageSquare size={16} />
+                      </button>
+                      {userRole === "super-admin" && (
+                        <button onClick={() => handleDeleteLead(lead._id)} className="lead-action-button delete-lead-btn">
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="7" className="lead-no-leads-message">
+                  No leads found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {/* --- Pagination Controls --- */}
-      <div className="pagination-controls mt-6 flex justify-center items-center space-x-4">
-        <button
-          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-          disabled={currentPage === 1}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200"
-        >
-          Previous
-        </button>
-        <span className="text-sm text-gray-700">
-          Page <span className="font-semibold">{currentPage}</span> of{" "}
-          <span className="font-semibold">
-            {Math.ceil(filteredLeads.length / leadsPerPage)}
+      {filteredLeads.length > 0 && (
+        <div className="lead-pagination-controls">
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="lead-pagination-button"
+          >
+            Previous
+          </button>
+          <span className="lead-pagination-text">
+            Page <span className="lead-pagination-current-page">{currentPage}</span> of{" "}
+            <span className="lead-pagination-total-pages">
+              {totalPages}
+            </span>
           </span>
-        </span>
-        <button
-          onClick={() =>
-            setCurrentPage((prev) =>
-              prev < Math.ceil(filteredLeads.length / leadsPerPage)
-                ? prev + 1
-                : prev
-            )
-          }
-          disabled={
-            currentPage === Math.ceil(filteredLeads.length / leadsPerPage)
-          }
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200"
-        >
-          Next
-        </button>
-      </div>
+          <button
+            onClick={() =>
+              setCurrentPage((prev) =>
+                prev < totalPages
+                  ? prev + 1
+                  : prev
+              )
+            }
+            disabled={
+              currentPage === totalPages
+            }
+            className="lead-pagination-button"
+          >
+            Next
+          </button>
+        </div>
+      )}
 
       {/* --- Modals --- */}
       {showFollowUp && selectedLead && (
@@ -674,45 +692,45 @@ const LeadTable = ({ userRole }) => {
       />
 
       <Dialog open={showFollowUpList} onOpenChange={setShowFollowUpList}>
-        <DialogContent className="sm:max-w-[425px] bg-white p-6 rounded-lg shadow-xl">
+        <DialogContent className="lead-dialog-content">
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-gray-800 border-b pb-3 mb-4">
+            <DialogTitle className="lead-dialog-title">
               Follow-ups for {selectedLead?.name}
             </DialogTitle>
           </DialogHeader>
           {followUpLoading ? (
-            <p className="text-center text-gray-500 py-4">
+            <p className="lead-dialog-message">
               Loading follow-ups...
             </p>
           ) : followUpError ? (
-            <p className="text-center text-red-500 py-4">
+            <p className="lead-dialog-message lead-dialog-error-message">
               Error: {followUpError}
             </p>
           ) : followUpList.length === 0 ? (
-            <p className="text-center text-gray-500 py-4">
+            <p className="lead-dialog-message">
               No follow-ups found for this lead.
             </p>
           ) : (
-            <ul className="space-y-4 max-h-80 overflow-y-auto pr-2">
+            <ul className="lead-follow-up-list">
               {followUpList.map((f, i) => (
                 <li
                   key={i}
-                  className="bg-gray-50 p-4 rounded-md border border-gray-200"
+                  className="lead-follow-up-item"
                 >
-                  <div className="flex justify-between items-center mb-1">
-                    <strong className="text-gray-800">{f.author}</strong>
-                    <span className="text-xs font-medium text-gray-600 px-2 py-1 rounded-full bg-gray-200">
+                  <div className="lead-follow-up-item-header">
+                    <strong className="lead-follow-up-author">{f.author}</strong>
+                    <span className="lead-follow-up-role">
                       {f.role}
                     </span>
                   </div>
-                  <p className="text-gray-700 text-sm mb-1">{f.comment}</p>
+                  <p className="lead-follow-up-comment">{f.comment}</p>
                   {f.place && (
-                    <div className="flex items-center text-xs text-gray-600">
-                      <MapPin size={12} className="mr-1" /> Meeting at:{" "}
+                    <div className="lead-follow-up-place">
+                      <MapPin size={12} className="lead-follow-up-place-icon" /> Meeting at:{" "}
                       {f.place}
                     </div>
                   )}
-                  <small className="block text-right text-gray-500 text-xs mt-2">
+                  <small className="lead-follow-up-timestamp">
                     {new Date(f.timestamp).toLocaleString()}
                   </small>
                 </li>
@@ -728,22 +746,22 @@ const LeadTable = ({ userRole }) => {
         open={!!chainModalLead}
         onOpenChange={() => setChainModalLead(null)}
       >
-        <DialogContent className="min-w-[500px] max-h-[70vh] overflow-y-auto">
+        <DialogContent className="lead-chain-dialog-content">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-gray-800">
-              Assignment Chain
+            <DialogTitle className="lead-chain-dialog-title">
+              Assignment Chain for {chainModalLead?.name}
             </DialogTitle>
           </DialogHeader>
 
           {chainModalLead?.assignmentChain?.length > 0 ? (
-            <div className="mt-4 overflow-hidden rounded-xl border border-gray-200 shadow-sm">
-              <table className="w-full text-sm text-left">
-                <thead className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
+            <div className="lead-chain-table-wrapper">
+              <table className="lead-chain-table">
+                <thead className="lead-chain-table-header">
                   <tr>
-                    <th className="px-4 py-3">Name</th>
-                    <th className="px-4 py-3">Role</th>
-                    <th className="px-4 py-3">Assigned To</th>
-                    <th className="px-4 py-3">Assigned At</th>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Assigned To</th>
+                    <th>Assigned At</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -754,22 +772,16 @@ const LeadTable = ({ userRole }) => {
                     return (
                       <tr
                         key={idx}
-                        className={`${
-                          isLast
-                            ? "bg-green-50 text-green-800 font-semibold"
-                            : idx % 2 === 0
-                            ? "bg-white"
-                            : "bg-gray-50"
-                        }`}
+                        className={isLast ? "lead-chain-table-row-last" : (idx % 2 === 0 ? "" : "bg-gray-50")}
                       >
-                        <td className="px-4 py-3">{entry.name}</td>
-                        <td className="px-4 py-3 capitalize">{entry.role}</td>
-                        <td className="px-4 py-3">
+                        <td>{entry.name}</td>
+                        <td className="capitalize">{entry.role}</td>
+                        <td>
                           {next
                             ? next.name + ` (${next.role})`
                             : "— Currently Assigned —"}
                         </td>
-                        <td className="px-4 py-3 text-gray-600 text-xs">
+                        <td className="lead-chain-table-date">
                           {next?.assignedAt || entry?.assignedAt
                             ? new Date(
                                 next?.assignedAt || entry.assignedAt
@@ -783,19 +795,14 @@ const LeadTable = ({ userRole }) => {
               </table>
             </div>
           ) : (
-            <p className="text-gray-500 mt-4 text-sm">
-              No assignment chain available.
+            <p className="lead-no-chain-message">
+              No assignment chain available for this lead.
             </p>
           )}
         </DialogContent>
       </Dialog>
-
-      {/* === Styles === */}
-     
     </div>
   );
 };
-
-// wHB
 
 export default LeadTable;

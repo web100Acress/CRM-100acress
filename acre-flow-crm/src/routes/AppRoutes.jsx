@@ -2,6 +2,8 @@
 // This file will contain all the route configurations for the application
 
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // Import pages from features
 // import Dashboard from '@/features/users/pages/Dashboard';
@@ -9,6 +11,36 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 // import Leads from '@/features/leads/pages/Leads';
 // import Tickets from '@/features/tickets/pages/Tickets';
 // import UserManagement from '@/features/users/pages/UserManagement';
+
+// Role-based redirect component
+const RoleBasedRedirect = ({ userRole }) => {
+  const navigate = useNavigate();
+  useEffect(() => {
+    switch (userRole) {
+      case 'developer':
+        navigate('/developer-dashboard', { replace: true });
+        break;
+      case 'hr_finance':
+        navigate('/hr-finance', { replace: true });
+        break;
+      case 'it_infrastructure':
+        navigate('/it-infrastructure', { replace: true });
+        break;
+      case 'super-admin':
+        navigate('/super-admin-dashboard', { replace: true });
+        break;
+      case 'head-admin':
+        navigate('/head-admin-dashboard', { replace: true });
+        break;
+      case 'team-leader':
+        navigate('/team-leader-dashboard', { replace: true });
+        break;
+      default:
+        navigate('/dashboard', { replace: true });
+    }
+  }, [userRole, navigate]);
+  return null;
+};
 
 const AppRoutes = ({ isLoggedIn, userRole, isDeveloperLoggedIn }) => {
   return (
@@ -29,9 +61,7 @@ const AppRoutes = ({ isLoggedIn, userRole, isDeveloperLoggedIn }) => {
         path="/"
         element={
           isLoggedIn
-            ? userRole === "developer"
-              ? <Navigate to="/developer-dashboard" replace />
-              : <Dashboard userRole={userRole} />
+            ? <RoleBasedRedirect userRole={userRole} />
             : <Navigate to="/login" replace />
         }
       />
@@ -48,7 +78,7 @@ const AppRoutes = ({ isLoggedIn, userRole, isDeveloperLoggedIn }) => {
           isLoggedIn
             ? userRole === "developer"
               ? <Navigate to="/developer-dashboard" replace />
-              : <Navigate to="/" replace />
+              : <RoleBasedRedirect userRole={userRole} />
             : <Navigate to="/login" replace />
         }
       />

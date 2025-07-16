@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '@/layout/DashboardLayout';
 import '@/styles/UserManagement.css'
 
-const USERS_PER_PAGE_CONSTANT = 4; // Changed variable name to avoid conflict, keeping your desired 4
+const USERS_PER_PAGE_CONSTANT = 4;
 
 const UserManagementContent = () => {
   const [users, setUsers] = useState([]);
@@ -19,8 +19,7 @@ const UserManagementContent = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-   const [isExporting, setIsExporting] = useState(false);
-  // Removed the duplicate USERS_PER_PAGE = 10; here
+  const [isExporting, setIsExporting] = useState(false);
 
   const { toast } = useToast();
 
@@ -61,17 +60,16 @@ const UserManagementContent = () => {
 
   const getRoleBadgeColor = (role) => {
     return {
-      'super-admin': 'badge badge-purple',
-      'head-admin': 'badge badge-blue',
-      'team-leader': 'badge badge-green',
-      'employee': 'badge badge-gray',
-    }[role] || 'badge badge-gray';
+      'super-admin': 'user-management-badge-purple',
+      'head-admin': 'user-management-badge-blue',
+      'team-leader': 'user-management-badge-green',
+      'employee': 'user-management-badge-gray',
+    }[role] || 'user-management-badge-gray';
   };
 
   const getStatusBadgeColor = (status) =>
-    status === 'active' ? 'badge badge-success' : 'badge badge-danger';
+    status === 'active' ? 'user-management-badge-success' : 'user-management-badge-danger';
 
-  // Moved these useMemo hooks out of the Pagination component
   const filteredUsers = useMemo(() => {
     return users.filter(user => {
       const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -86,15 +84,13 @@ const UserManagementContent = () => {
     return Math.ceil(filteredUsers.length / USERS_PER_PAGE_CONSTANT);
   }, [filteredUsers]);
 
-  // Adjust currentPage if the number of filtered items changes or current page becomes invalid
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
-      setCurrentPage(totalPages); // Go to last valid page
+      setCurrentPage(totalPages);
     } else if (totalPages === 0 && currentPage !== 1) {
-      setCurrentPage(1); // Reset to first page if no results
+      setCurrentPage(1);
     }
   }, [totalPages, currentPage]);
-
 
   const paginatedUsers = useMemo(() => {
     const startIndex = (currentPage - 1) * USERS_PER_PAGE_CONSTANT;
@@ -102,8 +98,7 @@ const UserManagementContent = () => {
     return filteredUsers.slice(startIndex, endIndex);
   }, [filteredUsers, currentPage]);
 
-
-   const exportToCSV = () => {
+  const exportToCSV = () => {
     setIsExporting(true);
     try {
       const headers = [
@@ -159,7 +154,6 @@ const UserManagementContent = () => {
       setIsExporting(false);
     }
   };
-
 
   const handleToggleStatus = (userToToggle) => async () => {
     const newStatus = userToToggle.status === 'active' ? 'inactive' : 'active';
@@ -313,71 +307,63 @@ const UserManagementContent = () => {
     setShowDeleteModal(true);
   };
 
-  // Moved Pagination component outside and at the top level
   const Pagination = () => {
     const pageNumbers = [];
-    const maxPagesToShow = 5; // How many page number buttons to show directly
+    const maxPagesToShow = 5;
 
-    // Determine start and end page numbers for display
     let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
     let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
 
-    // Adjust startPage if endPage is limited by totalPages
     if (endPage - startPage + 1 < maxPagesToShow) {
       startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+
+    if (totalPages <= 1) {
+      return null;
     }
 
     for (let i = startPage; i <= endPage; i++) {
       pageNumbers.push(i);
     }
 
-    // Only render pagination if there's more than one page
-    if (totalPages <= 1) {
-      return null;
-    }
-
-
     return (
-      <div className="pagination-controls">
+      <div className="user-management-pagination-controls">
         <button
           onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
           disabled={currentPage === 1}
-          className="pagination-btn"
+          className="user-management-pagination-button"
         >
           <ChevronLeft size={16} /> Previous
         </button>
 
-        {/* Render "1" and "..." if necessary */}
         {startPage > 1 && (
           <>
-            <button onClick={() => setCurrentPage(1)} className="pagination-btn">1</button>
-            {startPage > 2 && <span className="pagination-dots">...</span>}
+            <button onClick={() => setCurrentPage(1)} className="user-management-pagination-button">1</button>
+            {startPage > 2 && <span className="user-management-pagination-dots">...</span>}
           </>
         )}
 
-        {/* Render the core page numbers */}
         {pageNumbers.map(number => (
           <button
             key={number}
             onClick={() => setCurrentPage(number)}
-            className={`pagination-btn ${currentPage === number ? 'active' : ''}`}
+            className={`user-management-pagination-button ${currentPage === number ? 'active' : ''}`}
           >
             {number}
           </button>
         ))}
 
-        {/* Render "..." and last page if necessary */}
         {endPage < totalPages && (
           <>
-            {endPage < totalPages - 1 && <span className="pagination-dots">...</span>}
-            <button onClick={() => setCurrentPage(totalPages)} className="pagination-btn">{totalPages}</button>
+            {endPage < totalPages - 1 && <span className="user-management-pagination-dots">...</span>}
+            <button onClick={() => setCurrentPage(totalPages)} className="user-management-pagination-button">{totalPages}</button>
           </>
         )}
 
         <button
           onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
           disabled={currentPage === totalPages}
-          className="pagination-btn"
+          className="user-management-pagination-button"
         >
           Next <ChevronRight size={16} />
         </button>
@@ -385,22 +371,21 @@ const UserManagementContent = () => {
     );
   };
 
-
   if (loading) {
     return (
-      <div className="user-mgmt-wrapper">
-        <div className="loading-spinner"></div>
-        <p className="loading-text">Loading users...</p>
+      <div className="user-management-main-wrapper">
+        <div className="user-management-loading-spinner"></div>
+        <p className="user-management-loading-text">Loading users...</p>
       </div>
     );
   }
 
   return (
-    <div className="user-mgmt-wrapper">
-      <div className="filter-bar-sticky-container">
-        <div className="filter-bar">
-          <div className="search-box">
-            <Search className="icon" />
+    <div className="user-management-main-wrapper">
+      <div className="user-management-filter-sticky">
+        <div className="user-management-filter-bar">
+          <div className="user-management-search-box">
+            <Search className="user-management-search-icon" />
             <input
               type="text"
               placeholder="Search by name or email..."
@@ -408,43 +393,44 @@ const UserManagementContent = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className="filter-select">
+          <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className="user-management-filter-select">
             <option value="all">All Roles</option>
             <option value="super-admin">Super Admin</option>
             <option value="head-admin">Head Admin</option>
             <option value="team-leader">Team Leader</option>
             <option value="employee">Employee</option>
           </select>
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="filter-select">
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="user-management-filter-select">
             <option value="all">All Status</option>
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
 
- <button
+          <button
             onClick={exportToCSV}
             disabled={isExporting || filteredUsers.length === 0}
-            className="export-btn"
+            className="user-management-export-button"
           >
-            <Download className="export-icon" />
+            <Download className="user-management-export-icon" />
             {isExporting ? 'Exporting...' : 'Export to CSV'}
           </button>
           
-          {/* <button className="add-user-btn" onClick={() => { setSelectedUser(null); setShowAddModal(true); }}>
+          {/* Add User Button - Uncomment if needed */}
+          {/* <button className="user-management-add-button" onClick={() => { setSelectedUser(null); setShowAddModal(true); }}>
             <Plus size={18} /> Add User
           </button> */}
         </div>
       </div>
 
-      <div className="user-table-container">
-        <div className="table-header-info"></div>
+      <div className="user-management-table-container">
+        <div className="user-management-table-info"></div>
         {paginatedUsers.length === 0 ? (
-          <div className="no-users-message">
+          <div className="user-management-no-users-message">
             <p>No users found matching your criteria.</p>
           </div>
         ) : (
-          <div className="user-grid">
-            <div className="user-grid-header">
+          <div className="user-management-grid">
+            <div className="user-management-grid-header">
               <div>User Info</div>
               <div>Role</div>
               <div>Department</div>
@@ -454,20 +440,20 @@ const UserManagementContent = () => {
               <div>Actions</div>
             </div>
             {paginatedUsers.map(user => (
-              <div key={user._id} className="user-grid-row">
+              <div key={user._id} className="user-management-grid-row">
                 <div data-label="User Info">
                   <strong>{user.name || '-'}</strong>
                   <br /><small>{user.email || '-'}</small>
                   {user.phone ? <><br /><small>{user.phone}</small></> : null}
                 </div>
                 <div data-label="Role">
-                  <span className={getRoleBadgeColor(user.role)}>{getRoleDisplayName(user.role) || '-'}</span>
+                  <span className={`user-management-badge ${getRoleBadgeColor(user.role)}`}>{getRoleDisplayName(user.role) || '-'}</span>
                 </div>
                 <div data-label="Department">
                   {user.department || '-'}
                 </div>
                 <div data-label="Status">
-                  <span className={getStatusBadgeColor(user.status)}>{user.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : 'Unknown'}</span>
+                  <span className={`user-management-badge ${getStatusBadgeColor(user.status)}`}>{user.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : 'Unknown'}</span>
                 </div>
                 <div data-label="Last Login">
                   {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : '-'}
@@ -475,14 +461,14 @@ const UserManagementContent = () => {
                 <div data-label="Created At">
                   {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'}
                 </div>
-                <div data-label="Actions" className="user-actions" style={{textAlign: 'right'}}>
-                  <button onClick={handleToggleStatus(user)} className="action-btn toggle-status-btn" title={user.status === 'active' ? 'Deactivate User' : 'Activate User'}>
+                <div data-label="Actions" className="user-management-actions">
+                  <button onClick={handleToggleStatus(user)} className={`user-management-action-button user-management-toggle-status-button ${user.status === 'active' ? 'deactivate' : ''}`} title={user.status === 'active' ? 'Deactivate User' : 'Activate User'}>
                     {user.status === 'active' ? <UserX size={18} /> : <UserCheck size={18} />}
                   </button>
-                  <button onClick={() => handleEditUser(user)} className="action-btn edit-btn" title="Edit User">
+                  <button onClick={() => handleEditUser(user)} className="user-management-action-button user-management-edit-button" title="Edit User">
                     <Edit size={18} />
                   </button>
-                  <button onClick={() => handleDeleteClick(user)} className="action-btn delete-btn" title="Delete User">
+                  <button onClick={() => handleDeleteClick(user)} className="user-management-action-button user-management-delete-button" title="Delete User">
                     <Trash2 size={18} />
                   </button>
                 </div>
@@ -492,7 +478,6 @@ const UserManagementContent = () => {
         )}
       </div>
 
-      {/* Render Pagination component here */}
       <Pagination />
 
       <AddEditUserModal
@@ -507,9 +492,6 @@ const UserManagementContent = () => {
         user={selectedUser}
         onConfirm={handleDeleteUser}
       />
-
-
- 
     </div>
   );
 };

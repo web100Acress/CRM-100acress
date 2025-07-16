@@ -193,6 +193,36 @@ const App = () => {
           <Route path="/it-infrastructure" element={<ItInfrastructure />} />
 
             <Route
+              path="/super-admin-dashboard"
+              element={
+                isLoggedIn && userRole === "super-admin" ? (
+                  <Dashboard userRole={userRole} />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+            <Route
+              path="/head-admin-dashboard"
+              element={
+                isLoggedIn && userRole === "head-admin" ? (
+                  <Dashboard userRole={userRole} />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+            <Route
+              path="/team-leader-dashboard"
+              element={
+                isLoggedIn && userRole === "team-leader" ? (
+                  <Dashboard userRole={userRole} />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+            <Route
               path="/team"
               element={
                 isLoggedIn && userRole === "head-admin" ? (
