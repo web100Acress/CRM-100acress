@@ -18,6 +18,7 @@ const server = http.createServer(app);
 // ✅ Step 5: Setup Socket.IO with CORS
 // Use the same allowedOrigins as in app.js
 const allowedOrigins = [
+  'http://localhost:5001',
   'http://localhost:5000',           // Local dev
   'http://localhost:5173',           // Vite dev
   'http://localhost:3000',           // React dev

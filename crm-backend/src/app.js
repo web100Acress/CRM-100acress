@@ -7,9 +7,10 @@ const app = express();
 
 // ✅ Step 1: Secure & flexible CORS config
 const allowedOrigins = [
-  'http://localhost:5000',           // Local dev
+  'http://localhost:5001',           // Local dev
   'http://localhost:5173',           // Vite dev
   'http://localhost:3000',           // React dev
+  'http://localhost:5000',           // Add this for your frontend
   'https://crm.100acress.com',
   'https://crm.100acress.com',       // Production frontend
   'https://api.100acress.com'        // (if used)
@@ -53,5 +54,9 @@ app.use('/api', routes);
 
 // ✅ Step 4: Error handler middleware (must be after routes)
 app.use(errorHandler);
+
+app.get('/test-cors', (req, res) => {
+  res.json({ message: 'CORS is working!' });
+});
 
 module.exports = app;
