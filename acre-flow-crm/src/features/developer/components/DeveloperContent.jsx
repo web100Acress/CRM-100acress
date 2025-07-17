@@ -50,10 +50,10 @@
     const [sidebarOpen, setSidebarOpen] = useState(false); // <-- Hamburger state
     const [systemStats, setSystemStats] = useState({
       serverStatus: 'Online',
-      dbConnections: '45/100',
-      memoryUsage: '2.4GB / 8GB',
-      cpuUsage: '23%',
-      apiCalls: '1,247 today',
+      dbConnections: '0/0',
+      memoryUsage: '0GB / 0GB',
+      cpuUsage: '0%',
+      apiCalls: '0, today',
       errorRate: '0.02%'
     });
 
@@ -87,14 +87,14 @@
     const tabs = [
       { id: 'overview', label: 'System Overview', icon: Monitor },
       { id: 'access-control', label: 'Access Control', icon: Users },
-      { id: 'database', label: 'Database', icon: Database },
-      { id: 'api', label: 'API Management', icon: Server },
-      { id: 'security', label: 'Security', icon: Shield },
-      { id: 'logs', label: 'System Logs', icon: FileText },
+      // { id: 'database', label: 'Database', icon: Database },
+      // { id: 'api', label: 'API Management', icon: Server },
+      // { id: 'security', label: 'Security', icon: Shield },
+      // { id: 'logs', label: 'System Logs', icon: FileText },
       { id: 'create-employee', label: 'Create Employee', icon: UserPlus },
-      { id: 'performance', label: 'Performance', icon: Activity },
-      { id: 'deployment', label: 'Deployment', icon: GitBranch },
-      { id: 'tools', label: 'Dev Tools', icon: Wrench },
+      // { id: 'performance', label: 'Performance', icon: Activity },
+      // { id: 'deployment', label: 'Deployment', icon: GitBranch },
+      // { id: 'tools', label: 'Dev Tools', icon: Wrench },
       { id: 'chat', label: 'Chat', icon: Info }, // New Chat tab
     ];
 
@@ -381,7 +381,7 @@
           <div className="stat-box">
             <div className="stat-title"><Server className="icon" /> Server Status</div>
             <div className="stat-value green">{systemStats.serverStatus}</div>
-            <p className="stat-description">Last checked: 2 mins ago</p>
+            <p className="stat-description">Last checked: 0 mins ago</p>
           </div>
     
           <div className="stat-box">
@@ -414,7 +414,7 @@
     
         {/* Quick Actions and Activities */}
         <div className="overview-actions">
-          <div className="action-card">
+          {/* <div className="action-card">
             <h3 className="card-title">Quick Actions</h3>
             <div className="action-buttons">
               <button onClick={() => handleAction('Cache Clear')} className="btn primary">
@@ -427,26 +427,26 @@
                 <Package className="btn-icon" /> Create System Backup
               </button>
             </div>
-          </div>
+          </div> */}
     
           <div className="activity-card">
             <h3 className="card-title">Recent Activities</h3>
             <div className="activity-list">
               <div className="activity-item">
                 <span>Database backup completed</span>
-                <span className="time">2 hours ago</span>
+                <span className="time">0 hours ago</span>
               </div>
               <div className="activity-item">
                 <span>Security scan passed</span>
-                <span className="time">4 hours ago</span>
+                <span className="time">0 hours ago</span>
               </div>
               <div className="activity-item">
                 <span>System update deployed</span>
-                <span className="time">1 day ago</span>
+                <span className="time">0 day ago</span>
               </div>
               <div className="activity-item">
                 <span>Performance optimization</span>
-                <span className="time">2 days ago</span>
+                <span className="time">0 days ago</span>
               </div>
             </div>
           </div>
@@ -455,774 +455,774 @@
     );
     
 
-    const renderDatabase = () => (
-      <div className="content-section">
-        <div className="db-cards">
-          <div className="db-card">
-            <div className="card-header">
-              <h3 className="card-title">Database Management</h3>
-            </div>
-            <div className="card-content">
-              <div className="form-group">
-                <label className="form-label">Database URL</label>
-                <input
-                  type="password"
-                  defaultValue="mongodb://localhost:27017/100acres"
-                  className="form-input"
-                  readOnly
-                />
-              </div>
-              <div className="button-group">
-                <button onClick={() => handleAction('DB Test Connection')} className="db-button primary">
-                  <Database className="button-icon" />
-                  Test Connection
-                </button>
-                <button onClick={() => handleAction('DB Migrate')} className="db-button">
-                  <GitBranch className="button-icon" />
-                  Run Migrations
-                </button>
-              </div>
-            </div>
-          </div>
+      // const renderDatabase = () => (
+      //   <div className="content-section">
+      //     <div className="db-cards">
+      //       <div className="db-card">
+      //         <div className="card-header">
+      //           <h3 className="card-title">Database Management</h3>
+      //         </div>
+      //         <div className="card-content">
+      //           <div className="form-group">
+      //             <label className="form-label">Database URL</label>
+      //             <input
+      //               type="password"
+      //               defaultValue="mongodb://localhost:27017/100acres"
+      //               className="form-input"
+      //               readOnly
+      //             />
+      //           </div>
+      //           <div className="button-group">
+      //             <button onClick={() => handleAction('DB Test Connection')} className="db-button primary">
+      //               <Database className="button-icon" />
+      //               Test Connection
+      //             </button>
+      //             <button onClick={() => handleAction('DB Migrate')} className="db-button">
+      //               <GitBranch className="button-icon" />
+      //               Run Migrations
+      //             </button>
+      //           </div>
+      //         </div>
+      //       </div>
 
-          <div className="db-card">
-            <div className="card-header">
-              <h3 className="card-title">Database Statistics</h3>
-            </div>
-            <div className="card-content">
-              <div className="db-stats">
-                <div className="db-stat">
-                  <span>Total Collections:</span>
-                  <span className="stat-number">12</span>
-                </div>
-                <div className="db-stat">
-                  <span>Total Documents:</span>
-                  <span className="stat-number">15,847</span>
-                </div>
-                <div className="db-stat">
-                  <span>Database Size:</span>
-                  <span className="stat-number">245 MB</span>
-                </div>
-                <div className="db-stat">
-                  <span>Index Size:</span>
-                  <span className="stat-number">12 MB</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      //       <div className="db-card">
+      //         <div className="card-header">
+      //           <h3 className="card-title">Database Statistics</h3>
+      //         </div>
+      //         <div className="card-content">
+      //           <div className="db-stats">
+      //             <div className="db-stat">
+      //               <span>Total Collections:</span>
+      //               <span className="stat-number">12</span>
+      //             </div>
+      //             <div className="db-stat">
+      //               <span>Total Documents:</span>
+      //               <span className="stat-number">15,847</span>
+      //             </div>
+      //             <div className="db-stat">
+      //               <span>Database Size:</span>
+      //               <span className="stat-number">245 MB</span>
+      //             </div>
+      //             <div className="db-stat">
+      //               <span>Index Size:</span>
+      //               <span className="stat-number">12 MB</span>
+      //             </div>
+      //           </div>
+      //         </div>
+      //       </div>
+      //     </div>
 
-        <div className="query-card">
-          <div className="card-header">
-            <h3 className="card-title">Database Query Console</h3>
-          </div>
-          <div className="card-content">
-            <textarea
-              placeholder="Enter your MongoDB query here..."
-              className="query-textarea"
-              defaultValue="db.users.find({status: 'active'}).limit(10)"
-            />
-            <div className="query-buttons">
-              <button onClick={() => handleAction('Query Execute')} className="query-button primary">
-                <Terminal className="button-icon" />
-                Execute Query
-              </button>
-              <button onClick={() => handleAction('Query Explain')} className="query-button">
-                Explain Query
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+      //     <div className="query-card">
+      //       <div className="card-header">
+      //         <h3 className="card-title">Database Query Console</h3>
+      //       </div>
+      //       <div className="card-content">
+      //         <textarea
+      //           placeholder="Enter your MongoDB query here..."
+      //           className="query-textarea"
+      //           defaultValue="db.users.find({status: 'active'}).limit(10)"
+      //         />
+      //         <div className="query-buttons">
+      //           <button onClick={() => handleAction('Query Execute')} className="query-button primary">
+      //             <Terminal className="button-icon" />
+      //             Execute Query
+      //           </button>
+      //           <button onClick={() => handleAction('Query Explain')} className="query-button">
+      //             Explain Query
+      //           </button>
+      //         </div>
+      //       </div>
+      //     </div>
+      //   </div>
+      // );
 
-    const renderAPI = () => (
-      <div className="content-section">
-        <div className="api-cards">
-          <div className="api-card">
-            <div className="card-header">
-              <h3 className="card-title">API Configuration</h3>
-            </div>
-            <div className="card-content">
-              <div className="form-group">
-                <label className="form-label">Base URL</label>
-                <input
-                  type="text"
-                  defaultValue="https://crm.100acress.com/api"
-                  className="form-input"
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Rate Limit</label>
-                <select className="form-select">
-                  <option>100 requests/minute</option>
-                  <option>500 requests/minute</option>
-                  <option>1000 requests/minute</option>
-                </select>
-              </div>
-              <button onClick={() => handleAction('API Config Save')} className="api-button primary">
-                Save Configuration
-              </button>
-            </div>
-          </div>
+    // const renderAPI = () => (
+    //   <div className="content-section">
+    //     <div className="api-cards">
+    //       <div className="api-card">
+    //         <div className="card-header">
+    //           <h3 className="card-title">API Configuration</h3>
+    //         </div>
+    //         <div className="card-content">
+    //           <div className="form-group">
+    //             <label className="form-label">Base URL</label>
+    //             <input
+    //               type="text"
+    //               defaultValue="https://crm.100acress.com/api"
+    //               className="form-input"
+    //             />
+    //           </div>
+    //           <div className="form-group">
+    //             <label className="form-label">Rate Limit</label>
+    //             <select className="form-select">
+    //               <option>100 requests/minute</option>
+    //               <option>500 requests/minute</option>
+    //               <option>1000 requests/minute</option>
+    //             </select>
+    //           </div>
+    //           <button onClick={() => handleAction('API Config Save')} className="api-button primary">
+    //             Save Configuration
+    //           </button>
+    //         </div>
+    //       </div>
 
-          <div className="api-card">
-            <div className="card-header">
-              <h3 className="card-title">API Endpoints</h3>
-            </div>
-            <div className="card-content">
-              <div className="endpoint-list">
-                <div className="endpoint-item">
-                  <span className="endpoint-path">GET /api/users</span>
-                  <span className="status-badge active">Active</span>
-                </div>
-                <div className="endpoint-item">
-                  <span className="endpoint-path">POST /api/leads</span>
-                  <span className="status-badge active">Active</span>
-                </div>
-                <div className="endpoint-item">
-                  <span className="endpoint-path">PUT /api/tickets</span>
-                  <span className="status-badge active">Active</span>
-                </div>
-                <div className="endpoint-item">
-                  <span className="endpoint-path">DELETE /api/users/:id</span>
-                  <span className="status-badge limited">Limited</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+    //       <div className="api-card">
+    //         <div className="card-header">
+    //           <h3 className="card-title">API Endpoints</h3>
+    //         </div>
+    //         <div className="card-content">
+    //           <div className="endpoint-list">
+    //             <div className="endpoint-item">
+    //               <span className="endpoint-path">GET /api/users</span>
+    //               <span className="status-badge active">Active</span>
+    //             </div>
+    //             <div className="endpoint-item">
+    //               <span className="endpoint-path">POST /api/leads</span>
+    //               <span className="status-badge active">Active</span>
+    //             </div>
+    //             <div className="endpoint-item">
+    //               <span className="endpoint-path">PUT /api/tickets</span>
+    //               <span className="status-badge active">Active</span>
+    //             </div>
+    //             <div className="endpoint-item">
+    //               <span className="endpoint-path">DELETE /api/users/:id</span>
+    //               <span className="status-badge limited">Limited</span>
+    //             </div>
+    //           </div>
+    //         </div>
+    //       </div>
+    //     </div>
 
-        <div className="api-test-card">
-          <div className="card-header">
-            <h3 className="card-title">API Testing Console</h3>
-          </div>
-          <div className="card-content">
-            <div className="test-form">
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">Method</label>
-                  <select className="form-select">
-                    <option>GET</option>
-                    <option>POST</option>
-                    <option>PUT</option>
-                    <option>DELETE</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Endpoint</label>
-                  <input
-                    type="text"
-                    placeholder="/api/users"
-                    className="form-input"
-                  />
-                </div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Request Body (JSON)</label>
-                <textarea
-                  placeholder='{"name": "Test User", "email": "test@example.com"}'
-                  className="form-textarea"
-                />
-              </div>
-              <button onClick={() => handleAction('API Test')} className="test-button primary">
-                <Globe className="button-icon" />
-                Send Request
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    //     <div className="api-test-card">
+    //       <div className="card-header">
+    //         <h3 className="card-title">API Testing Console</h3>
+    //       </div>
+    //       <div className="card-content">
+    //         <div className="test-form">
+    //           <div className="form-row">
+    //             <div className="form-group">
+    //               <label className="form-label">Method</label>
+    //               <select className="form-select">
+    //                 <option>GET</option>
+    //                 <option>POST</option>
+    //                 <option>PUT</option>
+    //                 <option>DELETE</option>
+    //               </select>
+    //             </div>
+    //             <div className="form-group">
+    //               <label className="form-label">Endpoint</label>
+    //               <input
+    //                 type="text"
+    //                 placeholder="/api/users"
+    //                 className="form-input"
+    //               />
+    //             </div>
+    //           </div>
+    //           <div className="form-group">
+    //             <label className="form-label">Request Body (JSON)</label>
+    //             <textarea
+    //               placeholder='{"name": "Test User", "email": "test@example.com"}'
+    //               className="form-textarea"
+    //             />
+    //           </div>
+    //           <button onClick={() => handleAction('API Test')} className="test-button primary">
+    //             <Globe className="button-icon" />
+    //             Send Request
+    //           </button>
+    //         </div>
+    //       </div>
+    //     </div>
+    //   </div>
+    // );
 
-    const renderSecurity = () => (
-      <div className="content-section">
-        <div className="security-cards">
-          <div className="security-card">
-            <div className="card-header">
-              <h3 className="card-title">Security Settings</h3>
-            </div>
-            <div className="card-content">
-              <div className="security-setting">
-                <div className="setting-info">
-                  <h4 className="setting-name">JWT Token Expiry</h4>
-                  <p className="setting-desc">Current: 24 hours</p>
-                </div>
-                <select className="setting-select">
-                  <option>1 hour</option>
-                  <option>12 hours</option>
-                  <option>24 hours</option>
-                  <option>7 days</option>
-                </select>
-              </div>
-              <div className="security-setting">
-                <div className="setting-info">
-                  <h4 className="setting-name">Password Policy</h4>
-                  <p className="setting-desc">Minimum requirements</p>
-                </div>
-                <select className="setting-select">
-                  <option>Basic (6 chars)</option>
-                  <option>Medium (8 chars + numbers)</option>
-                  <option>Strong (12 chars + special)</option>
-                </select>
-              </div>
-              <button onClick={() => handleAction('Security Update')} className="security-button primary">
-                Update Security Settings
-              </button>
-            </div>
-          </div>
+    // const renderSecurity = () => (
+    //   <div className="content-section">
+    //     <div className="security-cards">
+    //       <div className="security-card">
+    //         <div className="card-header">
+    //           <h3 className="card-title">Security Settings</h3>
+    //         </div>
+    //         <div className="card-content">
+    //           <div className="security-setting">
+    //             <div className="setting-info">
+    //               <h4 className="setting-name">JWT Token Expiry</h4>
+    //               <p className="setting-desc">Current: 24 hours</p>
+    //             </div>
+    //             <select className="setting-select">
+    //               <option>1 hour</option>
+    //               <option>12 hours</option>
+    //               <option>24 hours</option>
+    //               <option>7 days</option>
+    //             </select>
+    //           </div>
+    //           <div className="security-setting">
+    //             <div className="setting-info">
+    //               <h4 className="setting-name">Password Policy</h4>
+    //               <p className="setting-desc">Minimum requirements</p>
+    //             </div>
+    //             <select className="setting-select">
+    //               <option>Basic (6 chars)</option>
+    //               <option>Medium (8 chars + numbers)</option>
+    //               <option>Strong (12 chars + special)</option>
+    //             </select>
+    //           </div>
+    //           <button onClick={() => handleAction('Security Update')} className="security-button primary">
+    //             Update Security Settings
+    //           </button>
+    //         </div>
+    //       </div>
 
-          <div className="security-card">
-            <div className="card-header">
-              <h3 className="card-title">API Keys</h3>
-            </div>
-            <div className="card-content">
-              <div className="key-group">
-                <label className="form-label">Master API Key</label>
-                <div className="key-input">
-                  <input
-                    type="password"
-                    defaultValue="sk_live_abc123def456ghi789"
-                    className="key-field"
-                    readOnly
-                  />
-                  <button onClick={() => handleAction('API Key Regenerate')} className="key-button">
-                    <Key className="key-icon" />
-                  </button>
-                </div>
-              </div>
-              <div className="key-group">
-                <label className="form-label">Webhook Secret</label>
-                <div className="key-input">
-                  <input
-                    type="password"
-                    defaultValue="whsec_xyz789abc123def456"
-                    className="key-field"
-                    readOnly
-                  />
-                  <button onClick={() => handleAction('Webhook Secret Regenerate')} className="key-button">
-                    <Key className="key-icon" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+    //       <div className="security-card">
+    //         <div className="card-header">
+    //           <h3 className="card-title">API Keys</h3>
+    //         </div>
+    //         <div className="card-content">
+    //           <div className="key-group">
+    //             <label className="form-label">Master API Key</label>
+    //             <div className="key-input">
+    //               <input
+    //                 type="password"
+    //                 defaultValue="sk_live_abc123def456ghi789"
+    //                 className="key-field"
+    //                 readOnly
+    //               />
+    //               <button onClick={() => handleAction('API Key Regenerate')} className="key-button">
+    //                 <Key className="key-icon" />
+    //               </button>
+    //             </div>
+    //           </div>
+    //           <div className="key-group">
+    //             <label className="form-label">Webhook Secret</label>
+    //             <div className="key-input">
+    //               <input
+    //                 type="password"
+    //                 defaultValue="whsec_xyz789abc123def456"
+    //                 className="key-field"
+    //                 readOnly
+    //               />
+    //               <button onClick={() => handleAction('Webhook Secret Regenerate')} className="key-button">
+    //                 <Key className="key-icon" />
+    //               </button>
+    //             </div>
+    //           </div>
+    //         </div>
+    //       </div>
+    //     </div>
 
-        <div className="audit-card">
-          <div className="card-header">
-            <h3 className="card-title">Security Audit</h3>
-          </div>
-          <div className="card-content">
-            <div className="audit-buttons">
-              <button onClick={() => handleAction('Vulnerability Scan')} className="audit-button primary">
-                <Shield className="button-icon" />
-                Run Vulnerability Scan
-              </button>
-              <button onClick={() => handleAction('Penetration Test')} className="audit-button">
-                <Bug className="button-icon" />
-                Penetration Test
-              </button>
-              <button onClick={() => handleAction('Security Report')} className="audit-button">
-                <FileText className="button-icon" />
-                Generate Report
-              </button>
-            </div>
-            <div className="audit-info">
-              <h4 className="audit-title">Last Security Scan</h4>
-              <p className="audit-desc">Completed 2 hours ago - No vulnerabilities found</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  const renderLogs = () => (
-      <div className="content-section">
-        <div className="logs-header">
-          <div className="logs-controls">
-            <select className="log-filter">
-              <option>All Logs</option>
-              <option>Error Logs</option>
-              <option>Warning Logs</option>
-              <option>Info Logs</option>
-              <option>Debug Logs</option>
-            </select>
-            <button onClick={() => handleAction('Logs Refresh')} className="log-button">
-              <RefreshCw className="button-icon" />
-              Refresh
-            </button>
-            <button onClick={() => handleAction('Logs Clear')} className="log-button">
-              <XCircle className="button-icon" />
-              Clear
-            </button>
-            <button onClick={() => handleAction('Logs Export')} className="log-button">
-              <Download className="button-icon" />
-              Export
-            </button>
-          </div>
-        </div>
+    //     <div className="audit-card">
+    //       <div className="card-header">
+    //         <h3 className="card-title">Security Audit</h3>
+    //       </div>
+    //       <div className="card-content">
+    //         <div className="audit-buttons">
+    //           <button onClick={() => handleAction('Vulnerability Scan')} className="audit-button primary">
+    //             <Shield className="button-icon" />
+    //             Run Vulnerability Scan
+    //           </button>
+    //           <button onClick={() => handleAction('Penetration Test')} className="audit-button">
+    //             <Bug className="button-icon" />
+    //             Penetration Test
+    //           </button>
+    //           <button onClick={() => handleAction('Security Report')} className="audit-button">
+    //             <FileText className="button-icon" />
+    //             Generate Report
+    //           </button>
+    //         </div>
+    //         <div className="audit-info">
+    //           <h4 className="audit-title">Last Security Scan</h4>
+    //           <p className="audit-desc">Completed 2 hours ago - No vulnerabilities found</p>
+    //         </div>
+    //       </div>
+    //     </div>
+    //   </div>
+    // );
+  // const renderLogs = () => (
+  //     <div className="content-section">
+  //       <div className="logs-header">
+  //         <div className="logs-controls">
+  //           <select className="log-filter">
+  //             <option>All Logs</option>
+  //             <option>Error Logs</option>
+  //             <option>Warning Logs</option>
+  //             <option>Info Logs</option>
+  //             <option>Debug Logs</option>
+  //           </select>
+  //           <button onClick={() => handleAction('Logs Refresh')} className="log-button">
+  //             <RefreshCw className="button-icon" />
+  //             Refresh
+  //           </button>
+  //           <button onClick={() => handleAction('Logs Clear')} className="log-button">
+  //             <XCircle className="button-icon" />
+  //             Clear
+  //           </button>
+  //           <button onClick={() => handleAction('Logs Export')} className="log-button">
+  //             <Download className="button-icon" />
+  //             Export
+  //           </button>
+  //         </div>
+  //       </div>
 
-        <div className="logs-container">
-          <div className="log-entry error">
-            <span className="log-time">2025-01-07 11:42:07</span>
-            <span className="log-level error">ERROR</span>
-            <span className="log-message">Database connection timeout after 30 seconds</span>
-            <span className="log-source">db.connection.js:45</span>
-          </div>
-          <div className="log-entry warning">
-            <span className="log-time">2025-01-07 11:41:52</span>
-            <span className="log-level warning">WARN</span>
-            <span className="log-message">High memory usage detected: 85% of available RAM</span>
-            <span className="log-source">monitor.js:123</span>
-          </div>
-          <div className="log-entry info">
-            <span className="log-time">2025-01-07 11:41:30</span>
-            <span className="log-level info">INFO</span>
-            <span className="log-message">User authentication successful for admin@100acres.com</span>
-            <span className="log-source">auth.controller.js:67</span>
-          </div>
-          <div className="log-entry info">
-            <span className="log-time">2025-01-07 11:41:15</span>
-            <span className="log-level info">INFO</span>
-            <span className="log-message">API request processed: GET /api/leads - 200ms response</span>
-            <span className="log-source">api.router.js:234</span>
-          </div>
-          <div className="log-entry debug">
-            <span className="log-time">2025-01-07 11:40:58</span>
-            <span className="log-level debug">DEBUG</span>
-            <span className="log-message">Cache hit for user session: session_abc123def456</span>
-            <span className="log-source">cache.service.js:89</span>
-          </div>
-        </div>
+  //       <div className="logs-container">
+  //         <div className="log-entry error">
+  //           <span className="log-time">2025-01-07 11:42:07</span>
+  //           <span className="log-level error">ERROR</span>
+  //           <span className="log-message">Database connection timeout after 30 seconds</span>
+  //           <span className="log-source">db.connection.js:45</span>
+  //         </div>
+  //         <div className="log-entry warning">
+  //           <span className="log-time">2025-01-07 11:41:52</span>
+  //           <span className="log-level warning">WARN</span>
+  //           <span className="log-message">High memory usage detected: 85% of available RAM</span>
+  //           <span className="log-source">monitor.js:123</span>
+  //         </div>
+  //         <div className="log-entry info">
+  //           <span className="log-time">2025-01-07 11:41:30</span>
+  //           <span className="log-level info">INFO</span>
+  //           <span className="log-message">User authentication successful for admin@100acres.com</span>
+  //           <span className="log-source">auth.controller.js:67</span>
+  //         </div>
+  //         <div className="log-entry info">
+  //           <span className="log-time">2025-01-07 11:41:15</span>
+  //           <span className="log-level info">INFO</span>
+  //           <span className="log-message">API request processed: GET /api/leads - 200ms response</span>
+  //           <span className="log-source">api.router.js:234</span>
+  //         </div>
+  //         <div className="log-entry debug">
+  //           <span className="log-time">2025-01-07 11:40:58</span>
+  //           <span className="log-level debug">DEBUG</span>
+  //           <span className="log-message">Cache hit for user session: session_abc123def456</span>
+  //           <span className="log-source">cache.service.js:89</span>
+  //         </div>
+  //       </div>
 
-        <div className="logs-stats">
-          <div className="stat-item">
-            <XCircle className="stat-icon error" />
-            <div className="stat-info">
-              <span className="stat-value">12</span>
-              <span className="stat-label">Errors (24h)</span>
-            </div>
-          </div>
-          <div className="stat-item">
-            <AlertTriangle className="stat-icon warning" />
-            <div className="stat-info">
-              <span className="stat-value">28</span>
-              <span className="stat-label">Warnings (24h)</span>
-            </div>
-          </div>
-          <div className="stat-item">
-            <CheckCircle className="stat-icon success" />
-            <div className="stat-info">
-              <span className="stat-value">1,247</span>
-              <span className="stat-label">Info Messages (24h)</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+  //       <div className="logs-stats">
+  //         <div className="stat-item">
+  //           <XCircle className="stat-icon error" />
+  //           <div className="stat-info">
+  //             <span className="stat-value">12</span>
+  //             <span className="stat-label">Errors (24h)</span>
+  //           </div>
+  //         </div>
+  //         <div className="stat-item">
+  //           <AlertTriangle className="stat-icon warning" />
+  //           <div className="stat-info">
+  //             <span className="stat-value">28</span>
+  //             <span className="stat-label">Warnings (24h)</span>
+  //           </div>
+  //         </div>
+  //         <div className="stat-item">
+  //           <CheckCircle className="stat-icon success" />
+  //           <div className="stat-info">
+  //             <span className="stat-value">1,247</span>
+  //             <span className="stat-label">Info Messages (24h)</span>
+  //           </div>
+  //         </div>
+  //       </div>
+  //     </div>
+  //   );
 
-    const renderPerformance = () => (
-      <div className="content-section">
-        <div className="performance-grid">
-          <div className="perf-card">
-            <div className="card-header">
-              <h3 className="card-title">
-                <Cpu className="card-icon" />
-                CPU Performance
-              </h3>
-            </div>
-            <div className="card-content">
-              <div className="perf-metric">
-                <span className="metric-label">Current Load</span>
-                <div className="metric-bar">
-                  <div className="metric-fill" style={{width: '23%'}}></div>
-                </div>
-                <span className="metric-value">23%</span>
-              </div>
-              <div className="perf-metric">
-                <span className="metric-label">Peak Load (24h)</span>
-                <div className="metric-bar">
-                  <div className="metric-fill" style={{width: '67%'}}></div>
-                </div>
-                <span className="metric-value">67%</span>
-              </div>
-              <div className="perf-stats">
-                <div className="perf-stat">
-                  <span>Cores:</span>
-                  <span>8</span>
-                </div>
-                <div className="perf-stat">
-                  <span>Threads:</span>
-                  <span>16</span>
-                </div>
-              </div>
-            </div>
-          </div>
+    // const renderPerformance = () => (
+    //   <div className="content-section">
+    //     <div className="performance-grid">
+    //       <div className="perf-card">
+    //         <div className="card-header">
+    //           <h3 className="card-title">
+    //             <Cpu className="card-icon" />
+    //             CPU Performance
+    //           </h3>
+    //         </div>
+    //         <div className="card-content">
+    //           <div className="perf-metric">
+    //             <span className="metric-label">Current Load</span>
+    //             <div className="metric-bar">
+    //               <div className="metric-fill" style={{width: '23%'}}></div>
+    //             </div>
+    //             <span className="metric-value">23%</span>
+    //           </div>
+    //           <div className="perf-metric">
+    //             <span className="metric-label">Peak Load (24h)</span>
+    //             <div className="metric-bar">
+    //               <div className="metric-fill" style={{width: '67%'}}></div>
+    //             </div>
+    //             <span className="metric-value">67%</span>
+    //           </div>
+    //           <div className="perf-stats">
+    //             <div className="perf-stat">
+    //               <span>Cores:</span>
+    //               <span>8</span>
+    //             </div>
+    //             <div className="perf-stat">
+    //               <span>Threads:</span>
+    //               <span>16</span>
+    //             </div>
+    //           </div>
+    //         </div>
+    //       </div>
 
-          <div className="perf-card">
-            <div className="card-header">
-              <h3 className="card-title">
-                <HardDrive className="card-icon" />
-                Memory Usage
-              </h3>
-            </div>
-            <div className="card-content">
-              <div className="perf-metric">
-                <span className="metric-label">RAM Usage</span>
-                <div className="metric-bar">
-                  <div className="metric-fill" style={{width: '30%'}}></div>
-                </div>
-                <span className="metric-value">2.4GB / 8GB</span>
-              </div>
-              <div className="perf-metric">
-                <span className="metric-label">Disk Usage</span>
-                <div className="metric-bar">
-                  <div className="metric-fill" style={{width: '45%'}}></div>
-                </div>
-                <span className="metric-value">225GB / 500GB</span>
-              </div>
-            </div>
-          </div>
+    //       <div className="perf-card">
+    //         <div className="card-header">
+    //           <h3 className="card-title">
+    //             <HardDrive className="card-icon" />
+    //             Memory Usage
+    //           </h3>
+    //         </div>
+    //         <div className="card-content">
+    //           <div className="perf-metric">
+    //             <span className="metric-label">RAM Usage</span>
+    //             <div className="metric-bar">
+    //               <div className="metric-fill" style={{width: '30%'}}></div>
+    //             </div>
+    //             <span className="metric-value">2.4GB / 8GB</span>
+    //           </div>
+    //           <div className="perf-metric">
+    //             <span className="metric-label">Disk Usage</span>
+    //             <div className="metric-bar">
+    //               <div className="metric-fill" style={{width: '45%'}}></div>
+    //             </div>
+    //             <span className="metric-value">225GB / 500GB</span>
+    //           </div>
+    //         </div>
+    //       </div>
 
-          <div className="perf-card">
-            <div className="card-header">
-              <h3 className="card-title">
-                <Network className="card-icon" />
-                Network Performance
-              </h3>
-            </div>
-            <div className="card-content">
-              <div className="perf-metric">
-                <span className="metric-label">Bandwidth Usage</span>
-                <div className="metric-bar">
-                  <div className="metric-fill" style={{width: '35%'}}></div>
-                </div>
-                <span className="metric-value">350 Mbps</span>
-              </div>
-              <div className="perf-stats">
-                <div className="perf-stat">
-                  <span>Latency:</span>
-                  <span>45ms</span>
-                </div>
-                <div className="perf-stat">
-                  <span>Packet Loss:</span>
-                  <span>0.1%</span>
-                </div>
-              </div>
-            </div>
-          </div>
+    //       <div className="perf-card">
+    //         <div className="card-header">
+    //           <h3 className="card-title">
+    //             <Network className="card-icon" />
+    //             Network Performance
+    //           </h3>
+    //         </div>
+    //         <div className="card-content">
+    //           <div className="perf-metric">
+    //             <span className="metric-label">Bandwidth Usage</span>
+    //             <div className="metric-bar">
+    //               <div className="metric-fill" style={{width: '35%'}}></div>
+    //             </div>
+    //             <span className="metric-value">350 Mbps</span>
+    //           </div>
+    //           <div className="perf-stats">
+    //             <div className="perf-stat">
+    //               <span>Latency:</span>
+    //               <span>45ms</span>
+    //             </div>
+    //             <div className="perf-stat">
+    //               <span>Packet Loss:</span>
+    //               <span>0.1%</span>
+    //             </div>
+    //           </div>
+    //         </div>
+    //       </div>
 
-          <div className="perf-card">
-            <div className="card-header">
-              <h3 className="card-title">
-                <BarChart3 className="card-icon" />
-                API Performance
-              </h3>
-            </div>
-            <div className="card-content">
-              <div className="perf-stats">
-                <div className="perf-stat">
-                  <span>Avg Response Time:</span>
-                  <span>245ms</span>
-                </div>
-                <div className="perf-stat">
-                  <span>Requests/sec:</span>
-                  <span>127</span>
-                </div>
-                <div className="perf-stat">
-                  <span>Success Rate:</span>
-                  <span>99.8%</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+    //       <div className="perf-card">
+    //         <div className="card-header">
+    //           <h3 className="card-title">
+    //             <BarChart3 className="card-icon" />
+    //             API Performance
+    //           </h3>
+    //         </div>
+    //         <div className="card-content">
+    //           <div className="perf-stats">
+    //             <div className="perf-stat">
+    //               <span>Avg Response Time:</span>
+    //               <span>245ms</span>
+    //             </div>
+    //             <div className="perf-stat">
+    //               <span>Requests/sec:</span>
+    //               <span>127</span>
+    //             </div>
+    //             <div className="perf-stat">
+    //               <span>Success Rate:</span>
+    //               <span>99.8%</span>
+    //             </div>
+    //           </div>
+    //         </div>
+    //       </div>
+    //     </div>
 
-        <div className="performance-actions">
-          <button onClick={() => handleAction('Performance Benchmark')} className="perf-button primary">
-            <Activity className="button-icon" />
-            Run Performance Test
-          </button>
-          <button onClick={() => handleAction('Memory Cleanup')} className="perf-button">
-            <RefreshCw className="button-icon" />
-            Clear Memory Cache
-          </button>
-          <button onClick={() => handleAction('Performance Report')} className="perf-button">
-            <FileText className="button-icon" />
-            Generate Report
-          </button>
-        </div>
-      </div>
-    );
+    //     <div className="performance-actions">
+    //       <button onClick={() => handleAction('Performance Benchmark')} className="perf-button primary">
+    //         <Activity className="button-icon" />
+    //         Run Performance Test
+    //       </button>
+    //       <button onClick={() => handleAction('Memory Cleanup')} className="perf-button">
+    //         <RefreshCw className="button-icon" />
+    //         Clear Memory Cache
+    //       </button>
+    //       <button onClick={() => handleAction('Performance Report')} className="perf-button">
+    //         <FileText className="button-icon" />
+    //         Generate Report
+    //       </button>
+    //     </div>
+    //   </div>
+    // );
 
-    const renderDeployment = () => (
-      <div className="content-section">
-        <div className="deployment-grid">
-          <div className="deploy-card">
-            <div className="card-header">
-              <h3 className="card-title">
-                <GitBranch className="card-icon" />
-                Current Deployment
-              </h3>
-            </div>
-            <div className="card-content">
-              <div className="deploy-info">
-                <div className="deploy-item">
-                  <span className="deploy-label">Version:</span>
-                  <span className="deploy-value">v2.1.4</span>
-                </div>
-                <div className="deploy-item">
-                  <span className="deploy-label">Branch:</span>
-                  <span className="deploy-value">main</span>
-                </div>
-                <div className="deploy-item">
-                  <span className="deploy-label">Commit:</span>
-                  <span className="deploy-value">a1b2c3d</span>
-                </div>
-                <div className="deploy-item">
-                  <span className="deploy-label">Deployed:</span>
-                  <span className="deploy-value">2 hours ago</span>
-                </div>
-              </div>
-              <div className="deploy-status">
-                <CheckCircle className="status-icon success" />
-                <span className="status-text">Deployment Successful</span>
-              </div>
-            </div>
-          </div>
+    // const renderDeployment = () => (
+    //   <div className="content-section">
+    //     <div className="deployment-grid">
+    //       <div className="deploy-card">
+    //         <div className="card-header">
+    //           <h3 className="card-title">
+    //             <GitBranch className="card-icon" />
+    //             Current Deployment
+    //           </h3>
+    //         </div>
+    //         <div className="card-content">
+    //           <div className="deploy-info">
+    //             <div className="deploy-item">
+    //               <span className="deploy-label">Version:</span>
+    //               <span className="deploy-value">v2.1.4</span>
+    //             </div>
+    //             <div className="deploy-item">
+    //               <span className="deploy-label">Branch:</span>
+    //               <span className="deploy-value">main</span>
+    //             </div>
+    //             <div className="deploy-item">
+    //               <span className="deploy-label">Commit:</span>
+    //               <span className="deploy-value">a1b2c3d</span>
+    //             </div>
+    //             <div className="deploy-item">
+    //               <span className="deploy-label">Deployed:</span>
+    //               <span className="deploy-value">2 hours ago</span>
+    //             </div>
+    //           </div>
+    //           <div className="deploy-status">
+    //             <CheckCircle className="status-icon success" />
+    //             <span className="status-text">Deployment Successful</span>
+    //           </div>
+    //         </div>
+    //       </div>
 
-          <div className="deploy-card">
-            <div className="card-header">
-              <h3 className="card-title">
-                <Server className="card-icon" />
-                Environment Status
-              </h3>
-            </div>
-            <div className="card-content">
-              <div className="env-list">
-                <div className="env-item">
-                  <span className="env-name">Production</span>
-                  <span className="env-status active">Active</span>
-                  <span className="env-version">v2.1.4</span>
-                </div>
-                <div className="env-item">
-                  <span className="env-name">Staging</span>
-                  <span className="env-status active">Active</span>
-                  <span className="env-version">v2.1.5-beta</span>
-                </div>
-                <div className="env-item">
-                  <span className="env-name">Development</span>
-                  <span className="env-status active">Active</span>
-                  <span className="env-version">v2.2.0-dev</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+    //       <div className="deploy-card">
+    //         <div className="card-header">
+    //           <h3 className="card-title">
+    //             <Server className="card-icon" />
+    //             Environment Status
+    //           </h3>
+    //         </div>
+    //         <div className="card-content">
+    //           <div className="env-list">
+    //             <div className="env-item">
+    //               <span className="env-name">Production</span>
+    //               <span className="env-status active">Active</span>
+    //               <span className="env-version">v2.1.4</span>
+    //             </div>
+    //             <div className="env-item">
+    //               <span className="env-name">Staging</span>
+    //               <span className="env-status active">Active</span>
+    //               <span className="env-version">v2.1.5-beta</span>
+    //             </div>
+    //             <div className="env-item">
+    //               <span className="env-name">Development</span>
+    //               <span className="env-status active">Active</span>
+    //               <span className="env-version">v2.2.0-dev</span>
+    //             </div>
+    //           </div>
+    //         </div>
+    //       </div>
+    //     </div>
 
-        <div className="deployment-actions">
-          <div className="action-section">
-            <h4 className="action-title">Quick Deploy</h4>
-            <div className="action-buttons">
-              <button onClick={() => handleAction('Deploy to Staging')} className="deploy-button">
-                <Upload className="button-icon" />
-                Deploy to Staging
-              </button>
-              <button onClick={() => handleAction('Deploy to Production')} className="deploy-button primary">
-                <Upload className="button-icon" />
-                Deploy to Production
-              </button>
-            </div>
-          </div>
+    //     <div className="deployment-actions">
+    //       <div className="action-section">
+    //         <h4 className="action-title">Quick Deploy</h4>
+    //         <div className="action-buttons">
+    //           <button onClick={() => handleAction('Deploy to Staging')} className="deploy-button">
+    //             <Upload className="button-icon" />
+    //             Deploy to Staging
+    //           </button>
+    //           <button onClick={() => handleAction('Deploy to Production')} className="deploy-button primary">
+    //             <Upload className="button-icon" />
+    //             Deploy to Production
+    //           </button>
+    //         </div>
+    //       </div>
 
-          <div className="action-section">
-            <h4 className="action-title">Rollback</h4>
-            <div className="action-buttons">
-              <button onClick={() => handleAction('Rollback Previous')} className="deploy-button warning">
-                <RefreshCw className="button-icon" />
-                Rollback to v2.1.3
-              </button>
-            </div>
-          </div>
-        </div>
+    //       <div className="action-section">
+    //         <h4 className="action-title">Rollback</h4>
+    //         <div className="action-buttons">
+    //           <button onClick={() => handleAction('Rollback Previous')} className="deploy-button warning">
+    //             <RefreshCw className="button-icon" />
+    //             Rollback to v2.1.3
+    //           </button>
+    //         </div>
+    //       </div>
+    //     </div>
 
-        <div className="deployment-history">
-          <div className="card-header">
-            <h3 className="card-title">Deployment History</h3>
-          </div>
-          <div className="card-content">
-            <div className="history-list">
-              <div className="history-item">
-                <div className="history-info">
-                  <span className="history-version">v2.1.4</span>
-                  <span className="history-time">2 hours ago</span>
-                  <span className="history-user">admin@100acres.com</span>
-                </div>
-                <span className="history-status success">Success</span>
-              </div>
-              <div className="history-item">
-                <div className="history-info">
-                  <span className="history-version">v2.1.3</span>
-                  <span className="history-time">1 day ago</span>
-                  <span className="history-user">dev@100acres.com</span>
-                </div>
-                <span className="history-status success">Success</span>
-              </div>
-              <div className="history-item">
-                <div className="history-info">
-                  <span className="history-version">v2.1.2</span>
-                  <span className="history-time">3 days ago</span>
-                  <span className="history-user">admin@100acres.com</span>
-                </div>
-                <span className="history-status failed">Failed</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    //     <div className="deployment-history">
+    //       <div className="card-header">
+    //         <h3 className="card-title">Deployment History</h3>
+    //       </div>
+    //       <div className="card-content">
+    //         <div className="history-list">
+    //           <div className="history-item">
+    //             <div className="history-info">
+    //               <span className="history-version">v2.1.4</span>
+    //               <span className="history-time">2 hours ago</span>
+    //               <span className="history-user">admin@100acres.com</span>
+    //             </div>
+    //             <span className="history-status success">Success</span>
+    //           </div>
+    //           <div className="history-item">
+    //             <div className="history-info">
+    //               <span className="history-version">v2.1.3</span>
+    //               <span className="history-time">1 day ago</span>
+    //               <span className="history-user">dev@100acres.com</span>
+    //             </div>
+    //             <span className="history-status success">Success</span>
+    //           </div>
+    //           <div className="history-item">
+    //             <div className="history-info">
+    //               <span className="history-version">v2.1.2</span>
+    //               <span className="history-time">3 days ago</span>
+    //               <span className="history-user">admin@100acres.com</span>
+    //             </div>
+    //             <span className="history-status failed">Failed</span>
+    //           </div>
+    //         </div>
+    //       </div>
+    //     </div>
+    //   </div>
+    // );
 
-    const renderTools = () => (
-      <div className="content-section">
-        <div className="tools-grid">
-          <div className="tool-card">
-            <div className="card-header">
-              <h3 className="card-title">
-                <Terminal className="card-icon" />
-                Command Console
-              </h3>
-            </div>
-            <div className="card-content">
-              <div className="console-output">
-                <div className="console-line">$ npm run build</div>
-                <div className="console-line output">Building application...</div>
-                <div className="console-line output">✓ Build completed successfully</div>
-                <div className="console-line">$ </div>
-              </div>
-              <div className="console-input">
-                <input
-                  type="text"
-                  placeholder="Enter command..."
-                  className="command-input"
-                />
-                <button onClick={() => handleAction('Execute Command')} className="execute-button">
-                  <Play className="button-icon" />
-                </button>
-              </div>
-            </div>
-          </div>
+    // const renderTools = () => (
+    //   <div className="content-section">
+    //     <div className="tools-grid">
+    //       <div className="tool-card">
+    //         <div className="card-header">
+    //           <h3 className="card-title">
+    //             <Terminal className="card-icon" />
+    //             Command Console
+    //           </h3>
+    //         </div>
+    //         <div className="card-content">
+    //           <div className="console-output">
+    //             <div className="console-line">$ npm run build</div>
+    //             <div className="console-line output">Building application...</div>
+    //             <div className="console-line output">✓ Build completed successfully</div>
+    //             <div className="console-line">$ </div>
+    //           </div>
+    //           <div className="console-input">
+    //             <input
+    //               type="text"
+    //               placeholder="Enter command..."
+    //               className="command-input"
+    //             />
+    //             <button onClick={() => handleAction('Execute Command')} className="execute-button">
+    //               <Play className="button-icon" />
+    //             </button>
+    //           </div>
+    //         </div>
+    //       </div>
 
-          <div className="tool-card">
-            <div className="card-header">
-              <h3 className="card-title">
-                <Package className="card-icon" />
-                Package Manager
-              </h3>
-            </div>
-            <div className="card-content">
-              <div className="package-actions">
-                <button onClick={() => handleAction('Check Updates')} className="package-button">
-                  <RefreshCw className="button-icon" />
-                  Check Updates
-                </button>
-                <button onClick={() => handleAction('Install Dependencies')} className="package-button">
-                  <Download className="button-icon" />
-                  Install Dependencies
-                </button>
-                <button onClick={() => handleAction('Audit Security')} className="package-button">
-                  <Shield className="button-icon" />
-                  Security Audit
-                </button>
-              </div>
-              <div className="package-info">
-                <div className="package-stat">
-                  <span>Total Packages:</span>
-                  <span>247</span>
-                </div>
-                <div className="package-stat">
-                  <span>Outdated:</span>
-                  <span>12</span>
-                </div>
-                <div className="package-stat">
-                  <span>Vulnerabilities:</span>
-                  <span>0</span>
-                </div>
-              </div>
-            </div>
-          </div>
+    //       <div className="tool-card">
+    //         <div className="card-header">
+    //           <h3 className="card-title">
+    //             <Package className="card-icon" />
+    //             Package Manager
+    //           </h3>
+    //         </div>
+    //         <div className="card-content">
+    //           <div className="package-actions">
+    //             <button onClick={() => handleAction('Check Updates')} className="package-button">
+    //               <RefreshCw className="button-icon" />
+    //               Check Updates
+    //             </button>
+    //             <button onClick={() => handleAction('Install Dependencies')} className="package-button">
+    //               <Download className="button-icon" />
+    //               Install Dependencies
+    //             </button>
+    //             <button onClick={() => handleAction('Audit Security')} className="package-button">
+    //               <Shield className="button-icon" />
+    //               Security Audit
+    //             </button>
+    //           </div>
+    //           <div className="package-info">
+    //             <div className="package-stat">
+    //               <span>Total Packages:</span>
+    //               <span>247</span>
+    //             </div>
+    //             <div className="package-stat">
+    //               <span>Outdated:</span>
+    //               <span>12</span>
+    //             </div>
+    //             <div className="package-stat">
+    //               <span>Vulnerabilities:</span>
+    //               <span>0</span>
+    //             </div>
+    //           </div>
+    //         </div>
+    //       </div>
 
-          <div className="tool-card">
-            <div className="card-header">
-              <h3 className="card-title">
-                <Code className="card-icon" />
-                Code Analysis
-              </h3>
-            </div>
-            <div className="card-content">
-              <div className="analysis-actions">
-                <button onClick={() => handleAction('Lint Code')} className="analysis-button">
-                  <Bug className="button-icon" />
-                  Run Linter
-                </button>
-                <button onClick={() => handleAction('Format Code')} className="analysis-button">
-                  <Wrench className="button-icon" />
-                  Format Code
-                </button>
-                <button onClick={() => handleAction('Test Coverage')} className="analysis-button">
-                  <BarChart3 className="button-icon" />
-                  Test Coverage
-                </button>
-              </div>
-              <div className="analysis-results">
-                <div className="result-item">
-                  <span>Code Quality:</span>
-                  <span className="result-score good">A+</span>
-                </div>
-                <div className="result-item">
-                  <span>Test Coverage:</span>
-                  <span className="result-score good">89%</span>
-                </div>
-                <div className="result-item">
-                  <span>Maintainability:</span>
-                  <span className="result-score good">A</span>
-                </div>
-              </div>
-            </div>
-          </div>
+    //       <div className="tool-card">
+    //         <div className="card-header">
+    //           <h3 className="card-title">
+    //             <Code className="card-icon" />
+    //             Code Analysis
+    //           </h3>
+    //         </div>
+    //         <div className="card-content">
+    //           <div className="analysis-actions">
+    //             <button onClick={() => handleAction('Lint Code')} className="analysis-button">
+    //               <Bug className="button-icon" />
+    //               Run Linter
+    //             </button>
+    //             <button onClick={() => handleAction('Format Code')} className="analysis-button">
+    //               <Wrench className="button-icon" />
+    //               Format Code
+    //             </button>
+    //             <button onClick={() => handleAction('Test Coverage')} className="analysis-button">
+    //               <BarChart3 className="button-icon" />
+    //               Test Coverage
+    //             </button>
+    //           </div>
+    //           <div className="analysis-results">
+    //             <div className="result-item">
+    //               <span>Code Quality:</span>
+    //               <span className="result-score good">A+</span>
+    //             </div>
+    //             <div className="result-item">
+    //               <span>Test Coverage:</span>
+    //               <span className="result-score good">89%</span>
+    //             </div>
+    //             <div className="result-item">
+    //               <span>Maintainability:</span>
+    //               <span className="result-score good">A</span>
+    //             </div>
+    //           </div>
+    //         </div>
+    //       </div>
 
-          <div className="tool-card">
-            <div className="card-header">
-              <h3 className="card-title">
-                <Monitor className="card-icon" />
-                System Monitor
-              </h3>
-            </div>
-            <div className="card-content">
-              <div className="monitor-controls">
-                <button onClick={() => handleAction('Start Monitoring')} className="monitor-button primary">
-                  <Play className="button-icon" />
-                  Start Monitor
-                </button>
-                <button onClick={() => handleAction('Stop Monitoring')} className="monitor-button">
-                  <Pause className="button-icon" />
-                  Stop Monitor
-                </button>
-              </div>
-              <div className="monitor-status">
-                <div className="status-item">
-                  <Clock className="status-icon" />
-                  <span>Uptime: 5d 12h 34m</span>
-                </div>
-                <div className="status-item">
-                  <Activity className="status-icon" />
-                  <span>Last Check: 30s ago</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    //       <div className="tool-card">
+    //         <div className="card-header">
+    //           <h3 className="card-title">
+    //             <Monitor className="card-icon" />
+    //             System Monitor
+    //           </h3>
+    //         </div>
+    //         <div className="card-content">
+    //           <div className="monitor-controls">
+    //             <button onClick={() => handleAction('Start Monitoring')} className="monitor-button primary">
+    //               <Play className="button-icon" />
+    //               Start Monitor
+    //             </button>
+    //             <button onClick={() => handleAction('Stop Monitoring')} className="monitor-button">
+    //               <Pause className="button-icon" />
+    //               Stop Monitor
+    //             </button>
+    //           </div>
+    //           <div className="monitor-status">
+    //             <div className="status-item">
+    //               <Clock className="status-icon" />
+    //               <span>Uptime: 5d 12h 34m</span>
+    //             </div>
+    //             <div className="status-item">
+    //               <Activity className="status-icon" />
+    //               <span>Last Check: 30s ago</span>
+    //             </div>
+    //           </div>
+    //         </div>
+    //       </div>
+    //     </div>
+    //   </div>
+    // );
 
     const renderCreateEmployee = () => (
       <div className="create-employee-section">
@@ -1244,7 +1244,7 @@
                   name="name"
                   value={newEmployee.name}
                   onChange={handleEmployeeInputChange}
-                  placeholder="John Doe"
+                  placeholder="write your name"
                   className="form-input"
                   required
                 />
@@ -1257,7 +1257,7 @@
                   name="email"
                   value={newEmployee.email}
                   onChange={handleEmployeeInputChange}
-                  placeholder="john.doe@example.com"
+                  placeholder="email@gmail.com"
                   className="form-input"
                   required
                 />
