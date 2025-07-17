@@ -1,10 +1,25 @@
 const userService = require('../services/userService');
-const { sendMail } = require('../services/emailService');
+const nodemailer = require('nodemailer');
+
+// Configure nodemailer (use your real SMTP credentials in production)
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || 'smtpout.secureserver.net',
+  port: parseInt(process.env.SMTP_PORT) || 465,
+  secure: process.env.SMTP_SECURE === 'true', // Use SSL
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
 
 async function sendWelcomeEmail({ email, password, name }) {
-  const subject = 'Welcome to 100acres CRM!';
-  const text = `Hello ${name || ''},\n\nWelcome to 100acres CRM!\n\nYour login details:\nEmail: ${email}\nPassword: ${password}\n\nPlease log in and change your password after your first login.\n\nRegards,\nThe 100acres CRM Team`;
-  await sendMail(email, subject, text);
+  const mailOptions = {
+    from: process.env.SMTP_USER || 'your-email@gmail.com',
+    to: email,
+    subject: 'Welcome to 100acres CRM!',
+    text: `Hello ${name || ''},\n\nWelcome to 100acres CRM!\n\nYour login details:\nEmail: ${email}\nPassword: ${password}\n\nPlease log in and change your password after your first login.\n\nRegards,\nThe 100acres CRM Team`,
+  };
+  await transporter.sendMail(mailOptions);
 }
 
 exports.createUser = async (req, res, next) => {
@@ -75,9 +90,12 @@ exports.requestPasswordReset = async (req, res) => {
     if (!user) return res.status(404).json({ message: 'User not found' });
     // Send reset email
     const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5000'}/reset-password/${token}`;
-    const subject = 'Password Reset Request';
-    const text = `You requested a password reset. Click the link to reset your password: ${resetUrl}`;
-    await sendMail(email, subject, text);
+    await transporter.sendMail({
+      from: process.env.SMTP_USER || 'your-email@gmail.com',
+      to: email,
+      subject: 'Password Reset Request',
+      text: `You requested a password reset. Click the link to reset your password: ${resetUrl}`,
+    });
     res.json({ message: 'Password reset email sent' });
   } catch (err) {
     res.status(500).json({ message: 'Error sending reset email' });

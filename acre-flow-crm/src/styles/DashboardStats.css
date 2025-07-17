@@ -47,10 +47,11 @@
       display: flex;
       flex-direction: column;
       gap: 1.75rem; /* Space between major sections */
-      max-width: 1600px; /* Increased max width for more content */
-     
-      padding: 0 2rem; /* Horizontal padding inside the centered container */
-      flex-grow: 1; /* Allow container to grow within app-page-wrapper */
+      max-width: 100vw; /* Remove max-width for full width */
+      width: 100vw;
+      margin: 0;
+      padding: 0; /* Remove horizontal padding */
+      flex-grow: 1;
     }
 
     /* --- Role-specific Main Heading --- */
@@ -580,7 +581,7 @@
 
     @media (max-width: 1024px) {
         .dashboard-main-container {
-            padding: 0 1rem;
+            padding: 0;
             gap: 1.25rem;
         }
         .superadmin-header {

@@ -55,6 +55,13 @@ app.use('/api', routes);
 // ✅ Step 4: Error handler middleware (must be after routes)
 app.use(errorHandler);
 
+// Debug: List all registered routes
+app._router.stack.forEach(function(r){
+  if (r.route && r.route.path){
+    console.log('Registered route:', r.route.path)
+  }
+})
+
 app.get('/test-cors', (req, res) => {
   res.json({ message: 'CORS is working!' });
 });

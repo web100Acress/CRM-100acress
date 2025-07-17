@@ -1,38 +1,14 @@
 
-    /* General Styles & Variables - Assuming these are globally available or in a root file */
-   :root {
---primary-color: #2563eb;
---secondary-color: #6c757d;
---success-color: #16a34a;
---warning-color: #fbbf24;
---info-color: #3b82f6;
---danger-color: #dc2626;
---bg-light: #f9fafb;
---text-dark: #1f2937;
---text-medium: #4b5563;
---border-light: #e5e7eb;
---card-bg: #ffffff;
---shadow-sm: rgba(0,0,0,0.05);
---shadow-md: rgba(0,0,0,0.1);
-}
-
-
-   body {
-font-family: 'Inter', sans-serif;
-background-color: var(--bg-light);
-color: var(--text-dark);
-margin: 0;
-line-height: 1.5;
-}
 
    
    .superadmin-container {
 display: flex;
 flex-direction: column;
-gap: 1.5rem;
-max-width: 1600px;
-margin: 0 auto;
-padding: 2rem;
+/* gap: 1.5rem; */
+max-width: 12000px;
+margin: 0;
+padding: 0;
+box-sizing: border-box;
 }
 
 /* === HEADER === */
@@ -267,6 +243,7 @@ color: var(--text-dark);
 display: grid;
 grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 gap: 1.5rem;
+padding: 30px;
 }
 .section-card {
 background-color: var(--card-bg);
