@@ -8,6 +8,8 @@ const app = require('./app'); // app.js should export: const express = require('
 const connectDB = require('./config/db'); // MongoDB connection function
 const { port } = require('./config/config'); // contains: exports.port = process.env.PORT || 5001;
 const meetingController = require('./controllers/meetingController');
+const User = require('./models/userModel');
+const Lead = require('./models/leadModel');
 
 // ✅ Step 1: Connect to MongoDB
 connectDB();
@@ -18,7 +20,7 @@ const server = http.createServer(app);
 // ✅ Step 5: Setup Socket.IO with CORS
 // Use the same allowedOrigins as in app.js
 const allowedOrigins = [
-  'http://localhost:5001',
+  'https://crm.100acress.com',
   'http://localhost:5000',           // Local dev
   'http://localhost:5173',           // Vite dev
   'http://localhost:3000',           // React dev
@@ -44,6 +46,28 @@ const io = socketio(server, {
 
 // ✅ Step 6: Initialize socket controller
 meetingController.setSocketIO(io);
+
+io.on('connection', (socket) => {
+  socket.on('requestDashboardStats', async () => {
+    // Emit all users
+    const users = await User.find();
+    socket.emit('userUpdate', users);
+
+    // Emit all leads
+    const leads = await Lead.find();
+    socket.emit('leadUpdate', leads);
+
+    // Emit dashboard stats
+    const totalUsers = await User.countDocuments();
+    const activeLeads = await Lead.countDocuments({ status: { $ne: 'Closed' } });
+    const allLeads = await Lead.find();
+    const leadsByStatus = allLeads.reduce((acc, lead) => {
+      acc[lead.status] = (acc[lead.status] || 0) + 1;
+      return acc;
+    }, {});
+    socket.emit('dashboardUpdate', { totalUsers, activeLeads, leadsByStatus });
+  });
+});
 
 // ✅ Step 7: API routes
 app.use('/api/leads', require('./routes/leadRoutes'));

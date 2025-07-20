@@ -22,6 +22,9 @@ async function sendWelcomeEmail({ email, password, name }) {
   await transporter.sendMail(mailOptions);
 }
 
+let io = null;
+exports.setSocketIO = (ioInstance) => { io = ioInstance; };
+
 exports.createUser = async (req, res, next) => {
   try {
     // Allow anyone to create any user role (removed special role restriction)
@@ -35,6 +38,22 @@ exports.createUser = async (req, res, next) => {
       });
     }
     res.status(201).json({ success: true, data: user });
+    // Real-time emit for users and dashboard
+    if (io) {
+      const User = require('../models/userModel');
+      const Lead = require('../models/leadModel');
+      const allUsers = await User.find();
+      io.emit('userUpdate', allUsers);
+      // Dashboard stats emit
+      const totalUsers = await User.countDocuments();
+      const activeLeads = await Lead.countDocuments({ status: { $ne: 'Closed' } });
+      const leads = await Lead.find();
+      const leadsByStatus = leads.reduce((acc, lead) => {
+        acc[lead.status] = (acc[lead.status] || 0) + 1;
+        return acc;
+      }, {});
+      io.emit('dashboardUpdate', { totalUsers, activeLeads, leadsByStatus });
+    }
   } catch (err) {
     // Handle duplicate email error
     if (err.code === 11000 && err.keyPattern && err.keyPattern.email) {
@@ -68,6 +87,22 @@ exports.updateUser = async (req, res, next) => {
     const user = await userService.updateUser(req.params.id, req.body);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
     res.json({ success: true, data: user });
+    // Real-time emit for users and dashboard
+    if (io) {
+      const User = require('../models/userModel');
+      const Lead = require('../models/leadModel');
+      const allUsers = await User.find();
+      io.emit('userUpdate', allUsers);
+      // Dashboard stats emit
+      const totalUsers = await User.countDocuments();
+      const activeLeads = await Lead.countDocuments({ status: { $ne: 'Closed' } });
+      const leads = await Lead.find();
+      const leadsByStatus = leads.reduce((acc, lead) => {
+        acc[lead.status] = (acc[lead.status] || 0) + 1;
+        return acc;
+      }, {});
+      io.emit('dashboardUpdate', { totalUsers, activeLeads, leadsByStatus });
+    }
   } catch (err) {
     next(err);
   }
@@ -78,6 +113,22 @@ exports.deleteUser = async (req, res, next) => {
     const user = await userService.deleteUser(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
     res.json({ success: true, message: 'User deleted' });
+    // Real-time emit for users and dashboard
+    if (io) {
+      const User = require('../models/userModel');
+      const Lead = require('../models/leadModel');
+      const allUsers = await User.find();
+      io.emit('userUpdate', allUsers);
+      // Dashboard stats emit
+      const totalUsers = await User.countDocuments();
+      const activeLeads = await Lead.countDocuments({ status: { $ne: 'Closed' } });
+      const leads = await Lead.find();
+      const leadsByStatus = leads.reduce((acc, lead) => {
+        acc[lead.status] = (acc[lead.status] || 0) + 1;
+        return acc;
+      }, {});
+      io.emit('dashboardUpdate', { totalUsers, activeLeads, leadsByStatus });
+    }
   } catch (err) {
     next(err);
   }

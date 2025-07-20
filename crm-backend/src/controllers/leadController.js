@@ -25,6 +25,9 @@ async function isValidAssignment(requesterRole, assigneeId, requesterId) {
   return assigneeLevel > requesterLevel;
 }
 
+let io = null;
+exports.setSocketIO = (ioInstance) => { io = ioInstance; };
+
 exports.createLead = async (req, res, next) => {
   try {
     const { assignedTo } = req.body; // assignedTo should be userId
@@ -34,6 +37,22 @@ exports.createLead = async (req, res, next) => {
     }
     const lead = await leadService.createLead(req.body, req.user);
     res.status(201).json({ success: true, data: lead });
+    // Real-time emit for leads and dashboard
+    if (io) {
+      const Lead = require('../models/leadModel');
+      const User = require('../models/userModel');
+      const allLeads = await Lead.find();
+      io.emit('leadUpdate', allLeads);
+      // Dashboard stats emit
+      const totalUsers = await User.countDocuments();
+      const activeLeads = await Lead.countDocuments({ status: { $ne: 'Closed' } });
+      const leads = await Lead.find();
+      const leadsByStatus = leads.reduce((acc, lead) => {
+        acc[lead.status] = (acc[lead.status] || 0) + 1;
+        return acc;
+      }, {});
+      io.emit('dashboardUpdate', { totalUsers, activeLeads, leadsByStatus });
+    }
   } catch (err) {
     next(err);
   }
@@ -76,6 +95,22 @@ exports.updateLead = async (req, res, next) => {
     const updatedLead = await leadService.updateLead(req.params.id, req.body);
     if (!updatedLead) return res.status(404).json({ success: false, message: 'Lead not found' });
     res.json({ success: true, data: updatedLead });
+    // Real-time emit for leads and dashboard
+    if (io) {
+      const Lead = require('../models/leadModel');
+      const User = require('../models/userModel');
+      const allLeads = await Lead.find();
+      io.emit('leadUpdate', allLeads);
+      // Dashboard stats emit
+      const totalUsers = await User.countDocuments();
+      const activeLeads = await Lead.countDocuments({ status: { $ne: 'Closed' } });
+      const leads = await Lead.find();
+      const leadsByStatus = leads.reduce((acc, lead) => {
+        acc[lead.status] = (acc[lead.status] || 0) + 1;
+        return acc;
+      }, {});
+      io.emit('dashboardUpdate', { totalUsers, activeLeads, leadsByStatus });
+    }
   } catch (err) {
     next(err);
   }
@@ -86,6 +121,22 @@ exports.deleteLead = async (req, res, next) => {
     const lead = await leadService.deleteLead(req.params.id);
     if (!lead) return res.status(404).json({ success: false, message: 'Lead not found' });
     res.json({ success: true, message: 'Lead deleted' });
+    // Real-time emit for leads and dashboard
+    if (io) {
+      const Lead = require('../models/leadModel');
+      const User = require('../models/userModel');
+      const allLeads = await Lead.find();
+      io.emit('leadUpdate', allLeads);
+      // Dashboard stats emit
+      const totalUsers = await User.countDocuments();
+      const activeLeads = await Lead.countDocuments({ status: { $ne: 'Closed' } });
+      const leads = await Lead.find();
+      const leadsByStatus = leads.reduce((acc, lead) => {
+        acc[lead.status] = (acc[lead.status] || 0) + 1;
+        return acc;
+      }, {});
+      io.emit('dashboardUpdate', { totalUsers, activeLeads, leadsByStatus });
+    }
   } catch (err) {
     next(err);
   }

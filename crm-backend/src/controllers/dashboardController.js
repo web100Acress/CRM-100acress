@@ -30,16 +30,4 @@ exports.getStats = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: 'Error fetching dashboard stats' });
   }
-};
-
-exports.getRecentActivity = async (req, res) => {
-  // Mock data for now
-  const activities = [
-    { id: 1, action: 'Created new Head Admin: Jane Doe', time: '2 hours ago', status: 'success' },
-    { id: 2, action: 'System Backup Initiated', time: 'Yesterday', status: 'info' },
-    { id: 3, action: 'Resolved Ticket #1234', time: '2 days ago', status: 'success' },
-    { id: 4, action: 'User account deactivated: John Smith', time: '3 days ago', status: 'warning' },
-    { id: 5, action: 'Monthly Report Generated', time: 'Last week', status: 'success' },
-  ];
-  res.json({ activities });
 }; 
