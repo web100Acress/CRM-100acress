@@ -1,6 +1,3 @@
-// Centralized Meetings API functions
-// All meeting management-related API calls are defined here
-
 import { http } from './http.js';
 import { ENDPOINTS } from './endpoints.js';
 

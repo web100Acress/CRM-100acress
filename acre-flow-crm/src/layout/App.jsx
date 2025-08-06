@@ -21,6 +21,13 @@ import DeveloperDashboard from "@/features/developer/pages/DeveloperDashboard";
 import ResetPassword from "@/features/auth/pages/ResetPassword";
 import HrFinance from "@/features/hr/pages/HrFinance";
 import ItInfrastructure from "@/features/it/pages/ItInfrastructure";
+
+// Import Blog Components
+import BlogDashboard from "@/features/Blog_Components/BlogDashboard";
+import BlogManagement from "@/features/Blog_Components/BlogManagement";
+import DraftManagement from "@/features/Blog_Components/DraftManagement";
+import BlogSection from "@/features/Blog_Components/BlogSection";
+import SingleBlog from "@/features/Blog_Components/SingleBlog";
   
 
 
@@ -191,6 +198,90 @@ const App = () => {
        
           <Route path="/hr-finance" element={<HrFinance />} />
           <Route path="/it-infrastructure" element={<ItInfrastructure />} />
+
+            {/* Blog Routes */}
+            <Route
+              path="/blog-dashboard"
+              element={
+                isLoggedIn ? (
+                  <BlogDashboard />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+            <Route
+              path="/blog-management"
+              element={
+                isLoggedIn ? (
+                  <BlogManagement />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+            <Route
+              path="/draft-management"
+              element={
+                isLoggedIn ? (
+                  <DraftManagement />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+            <Route
+              path="/blog-section"
+              element={
+                isLoggedIn ? (
+                  <BlogSection />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+            <Route
+              path="/blog/:title/:id"
+              element={
+                isLoggedIn ? (
+                  <SingleBlog />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+
+            {/* SEO Blog Routes */}
+            <Route
+              path="/seo/blogs/write"
+              element={
+                isLoggedIn ? (
+                  <BlogManagement />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+            <Route
+              path="/seo/blogs/manage"
+              element={
+                isLoggedIn ? (
+                  <BlogManagement />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+            <Route
+              path="/seo/blogs/edit/:id"
+              element={
+                isLoggedIn ? (
+                  <BlogManagement />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
 
             <Route
               path="/super-admin-dashboard"
