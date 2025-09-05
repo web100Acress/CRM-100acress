@@ -22,12 +22,12 @@ import ResetPassword from "@/features/auth/pages/ResetPassword";
 import HrFinance from "@/features/hr/pages/HrFinance";
 import ItInfrastructure from "@/features/it/pages/ItInfrastructure";
 
-// Import Blog Components
-import BlogDashboard from "@/features/Blog_Components/BlogDashboard";
-import BlogManagement from "@/features/Blog_Components/BlogManagement";
-import DraftManagement from "@/features/Blog_Components/DraftManagement";
-import BlogSection from "@/features/Blog_Components/BlogSection";
-import SingleBlog from "@/features/Blog_Components/SingleBlog";
+// Import Blog Components (temporarily disabled)
+// import BlogDashboard from "@/features/Blog_Components/BlogDashboard";
+// import BlogManagement from "@/features/Blog_Components/BlogManagement";
+// import DraftManagement from "@/features/Blog_Components/DraftManagement";
+// import BlogSection from "@/features/Blog_Components/BlogSection";
+// import SingleBlog from "@/features/Blog_Components/SingleBlog";
   
 
 
@@ -199,7 +199,7 @@ const App = () => {
           <Route path="/hr-finance" element={<HrFinance />} />
           <Route path="/it-infrastructure" element={<ItInfrastructure />} />
 
-            {/* Blog Routes */}
+            {/* Blog Routes - Temporarily Disabled
             <Route
               path="/blog-dashboard"
               element={
@@ -251,7 +251,7 @@ const App = () => {
               }
             />
 
-            {/* SEO Blog Routes */}
+            SEO Blog Routes - Temporarily Disabled
             <Route
               path="/seo/blogs/write"
               element={
@@ -282,6 +282,7 @@ const App = () => {
                 )
               }
             />
+            */}
 
             <Route
               path="/super-admin-dashboard"
