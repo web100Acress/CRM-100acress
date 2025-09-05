@@ -3,12 +3,17 @@
 
 import axios from 'axios';
 
+// Get base URL from environment variables or use default
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
+
 // Create axios instance with base configuration
 const httpClient = axios.create({
-  baseURL: 'http://localhost:5001/api',
+  baseURL: API_BASE_URL,
   timeout: 10000,
+  withCredentials: true, // Important for cookies/sessions
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
   },
 });
 

@@ -1,25 +1,22 @@
 const userService = require('../services/userService');
-const nodemailer = require('nodemailer');
-
-// Configure nodemailer (use your real SMTP credentials in production)
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtpout.secureserver.net',
-  port: parseInt(process.env.SMTP_PORT) || 465,
-  secure: process.env.SMTP_SECURE === 'true', // Use SSL
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+const { sendMail } = require('../services/emailService');
 
 async function sendWelcomeEmail({ email, password, name }) {
-  const mailOptions = {
-    from: process.env.SMTP_USER || 'your-email@gmail.com',
-    to: email,
-    subject: 'Welcome to 100acres CRM!',
-    text: `Hello ${name || ''},\n\nWelcome to 100acres CRM!\n\nYour login details:\nEmail: ${email}\nPassword: ${password}\n\nPlease log in and change your password after your first login.\n\nRegards,\nThe 100acres CRM Team`,
-  };
-  await transporter.sendMail(mailOptions);
+  const subject = 'Welcome to 100acres CRM!';
+  const text = `Hello ${name || ''},
+
+Welcome to 100acres CRM!
+
+Your login details:
+Email: ${email}
+Password: ${password}
+
+Please log in and change your password after your first login.
+
+Regards,
+The 100acres CRM Team`;
+  
+  await sendMail(email, subject, text, null);
 }
 
 let io = null;
@@ -136,20 +133,48 @@ exports.deleteUser = async (req, res, next) => {
 
 exports.requestPasswordReset = async (req, res) => {
   const { email } = req.body;
+  console.log('Password reset request for email:', email);
+  
   try {
     const { user, token } = await userService.setResetToken(email);
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) {
+      console.log('User not found for password reset:', email);
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    console.log('Reset token generated for user:', email);
+    
     // Send reset email
-    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5000'}/reset-password/${token}`;
-    await transporter.sendMail({
-      from: process.env.SMTP_USER || 'your-email@gmail.com',
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password/${token}`;
+    console.log('Reset URL:', resetUrl);
+    
+    const mailOptions = {
+      from: process.env.EMAIL_USER || process.env.SMTP_USER || 'your-email@gmail.com',
       to: email,
       subject: 'Password Reset Request',
       text: `You requested a password reset. Click the link to reset your password: ${resetUrl}`,
-    });
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 8px;">
+        <h2 style="color: #e11d48;">Password Reset Request</h2>
+        <p>Hello,</p>
+        <p>You requested to reset your password. Click the button below to set a new password:</p>
+        <p style="margin: 30px 0;">
+          <a href="${resetUrl}" style="background-color: #e11d48; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Reset Password</a>
+        </p>
+        <p>Or copy and paste this link in your browser:</p>
+        <p style="word-break: break-all; color: #666;">${resetUrl}</p>
+        <p>If you didn't request this, please ignore this email.</p>
+        <p>Best regards,<br>100acres CRM Team</p>
+      </div>
+      `
+    };
+    
+    await sendMail(email, 'Password Reset Request', `Please use this link to reset your password: ${resetUrl}`, mailOptions.html);
+    console.log('Password reset email sent successfully to:', email);
     res.json({ message: 'Password reset email sent' });
   } catch (err) {
-    res.status(500).json({ message: 'Error sending reset email' });
+    console.error('Error in password reset:', err);
+    res.status(500).json({ message: 'Error sending reset email: ' + err.message });
   }
 };
 
