@@ -16,7 +16,7 @@ npm install
 npm start
 ```
 
-The server will run on `http://localhost:5001`
+The server will run on `https://crm.100acress.com/api`
 
 ### 2. Start the Frontend
 
@@ -77,7 +77,7 @@ sudo systemctl start mongod
 
 ### Test CORS:
 ```bash
-curl http://localhost:5001/test-cors
+curl https://crm.100acress.com/api/test-cors
 ```
 
 ### Test Password Reset:
