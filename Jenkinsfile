@@ -78,7 +78,7 @@ pipeline {
     }
 
     post {
-        success {
+        success {   
             echo "✅ CRM Frontend & Backend deployed!"
         }
         failure {

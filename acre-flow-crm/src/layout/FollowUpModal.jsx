@@ -38,7 +38,7 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
         place: formData.place,
         relatedTo: formData.relatedTo,
       };
-      const res = await fetch(`http://localhost:5001/api/leads/${lead._id}/followups`, {
+      const res = await fetch(`https://crm.100acress.com/api/api/leads/${lead._id}/followups`, {
         method: "POST",
 
 
