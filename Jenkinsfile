@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        DEPLOY_DIR="/var/www/html"
-        FRONTEND_DIR="acre-flow-crm"
-        BACKEND_DIR="crm-backend"
+        DEPLOY_DIR = "/var/www/html"
+        FRONTEND_DIR = "acre-flow-crm"
+        BACKEND_DIR = "crm-backend"
     }
 
     stages {
@@ -20,36 +20,36 @@ pipeline {
             steps {
                 dir("${FRONTEND_DIR}") {
                     sh '''
-                    rm -rf node_modules package-lock.json
-                    npm install
+                        rm -rf node_modules package-lock.json
+                        npm install
                     '''
                 }
             }
         }
 
-
         stage('🏗️ Build Frontend') {
-          steps {
-            dir('acre-flow-crm') {
-                sh '''
-                # Fix permissions before build
-                sudo chown -R jenkins:jenkins dist || true
-                sudo chmod -R 755 dist || true
-
-                npm rebuild
-                npm run build
-                '''
+            steps {
+                dir("${FRONTEND_DIR}") {
+                    sh '''
+                        npm run build
+                    '''
                 }
-          }
+            }
         }
-
 
         stage('🚀 Deploy Frontend to Nginx') {
             steps {
                 dir("${FRONTEND_DIR}") {
                     sh '''
-                        sudo rm -rf $DEPLOY_DIR/*
+                        if [ -d "$DEPLOY_DIR" ]; then
+                          sudo rm -rf $DEPLOY_DIR/*
+                        else
+                          sudo mkdir -p $DEPLOY_DIR
+                        fi
+
                         sudo cp -r dist/* $DEPLOY_DIR/
+                        sudo chown -R jenkins:jenkins $DEPLOY_DIR
+                        sudo chmod -R 755 $DEPLOY_DIR
                     '''
                 }
             }
@@ -59,11 +59,14 @@ pipeline {
         stage('📦 Install Backend Dependencies') {
             steps {
                 dir("${BACKEND_DIR}") {
-                    sh 'npm install'
+                    sh '''
+                        rm -rf node_modules package-lock.json
+                        npm install
+                    '''
                 }
             }
         }
-// aw
+
         stage('🚀 Run Backend via PM2') {
             steps {
                 dir("${BACKEND_DIR}") {
