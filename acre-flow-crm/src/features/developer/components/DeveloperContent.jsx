@@ -86,7 +86,7 @@
 
       const tabs = [
         { id: 'overview', label: 'System Overview', icon: Monitor },
-        { id: 'access-control', label: 'Access Control', icon: Users },
+        // { id: 'access-control', label: 'Access Control', icon: Users },
         // { id: 'database', label: 'Database', icon: Database },
         // { id: 'api', label: 'API Management', icon: Server },
         // { id: 'security', label: 'Security', icon: Shield },
@@ -94,8 +94,8 @@
         { id: 'create-employee', label: 'Create Employee', icon: UserPlus },
         // { id: 'project-enquiries', label: 'Project Enquiries', icon: BarChart3 },
         // { id: 'registered-users', label: 'Registered Users', icon: Users },
-        { id: 'blog-management', label: 'Blog Management', icon: FileText },
-        { id: 'admin-access', label: 'Admin Access', icon: Crown },
+        // { id: 'blog-management', label: 'Blog Management', icon: FileText },
+        // { id: 'admin-access', label: 'Admin Access', icon: Crown },
         // { id: 'performance', label: 'Performance', icon: Activity },
         // { id: 'deployment', label: 'Deployment', icon: GitBranch },
         // { id: 'tools', label: 'Dev Tools', icon: Wrench },
@@ -144,7 +144,7 @@
           };
           const token = localStorage.getItem('token');
           console.log('Token used for create employee:', token); // Debug log
-          const response = await fetch('https://crm.100acress.com/api/api/users', {
+          const response = await fetch('https://crm.100acress.com/api/users', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

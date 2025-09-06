@@ -27,7 +27,7 @@ const UserManagementContent = () => {
     const fetchUsers = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('https://crm.100acress.com/api/api/users', {
+        const response = await fetch('https://crm.100acress.com/api/users', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -159,7 +159,7 @@ const UserManagementContent = () => {
     const newStatus = userToToggle.status === 'active' ? 'inactive' : 'active';
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://crm.100acress.com/api/api/users/${userToToggle._id}/status`, {
+      const response = await fetch(`https://crm.100acress.com/api/users/${userToToggle._id}/status`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -194,7 +194,7 @@ const UserManagementContent = () => {
     try {
       const token = localStorage.getItem('token');
       let response;
-      let url = 'https://crm.100acress.com/api/api/users';
+      let url = 'https://crm.100acress.com/api/users';
       let method = 'POST';
 
       if (selectedUser) {
@@ -222,7 +222,7 @@ const UserManagementContent = () => {
       const data = await response.json();
       if (response.ok && data.success) {
         // Re-fetch all users to ensure pagination and filters are up-to-date
-        const fetchResponse = await fetch('https://crm.100acress.com/api/api/users', {
+        const fetchResponse = await fetch('https://crm.100acress.com/api/users', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -259,7 +259,7 @@ const UserManagementContent = () => {
     if (!selectedUser?._id) return;
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://crm.100acress.com/api/api/users/${selectedUser._id}`, {
+      const response = await fetch(`https://crm.100acress.com/api/users/${selectedUser._id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -269,7 +269,7 @@ const UserManagementContent = () => {
       const data = await response.json();
       if (response.ok && data.success) {
         // Re-fetch all users to ensure pagination and filters are up-to-date
-        const fetchResponse = await fetch('https://crm.100acress.com/api/api/users', {
+        const fetchResponse = await fetch('https://crm.100acress.com/api/users', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',

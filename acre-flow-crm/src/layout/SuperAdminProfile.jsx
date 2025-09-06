@@ -35,7 +35,7 @@ const SuperAdminProfile = () => {
   const [selectedChart, setSelectedChart] = useState('bar'); // Default to bar chart
 
   useEffect(() => {
-    const s = io('https://crm.100acress.com/api');
+    const s = io('http://localhost:5001');
     setSocket(s);
     console.log('Socket.IO client connected:', s);
     // Emit initial stats request
@@ -106,7 +106,7 @@ const SuperAdminProfile = () => {
     e.preventDefault();
     if (!meetingForm.title || !meetingForm.date) return;
 
-    await fetch('https://crm.100acress.com/api/api/meetings', {
+    await fetch('https://crm.100acress.com/api/meetings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(meetingForm)

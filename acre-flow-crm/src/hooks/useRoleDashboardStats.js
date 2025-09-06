@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import io from "socket.io-client";
 
-const SOCKET_URL = "https://crm.100acress.com/api";
+const SOCKET_URL = "http://localhost:5001";
 
 export function useRoleDashboardStats(userRole, userId) {
   const [roleStats, setRoleStats] = useState(null);
