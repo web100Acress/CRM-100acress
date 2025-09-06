@@ -35,7 +35,7 @@ const SuperAdminProfile = () => {
   const [selectedChart, setSelectedChart] = useState('bar'); // Default to bar chart
 
   useEffect(() => {
-    const s = io('http://localhost:5001');
+    const s = io('https://crm.100acress.com/api');
     setSocket(s);
     console.log('Socket.IO client connected:', s);
     // Emit initial stats request
