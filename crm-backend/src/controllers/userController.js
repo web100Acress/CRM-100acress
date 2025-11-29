@@ -187,4 +187,39 @@ exports.resetPassword = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: 'Error resetting password' });
   }
+};
+
+exports.updateUserStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    
+    // Validate status
+    if (!['active', 'inactive'].includes(status)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid status. Must be "active" or "inactive"' 
+      });
+    }
+    
+    const user = await userService.updateUserStatus(id, status);
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      });
+    }
+    
+    res.json({ 
+      success: true, 
+      message: `User status updated to ${status}`,
+      data: user 
+    });
+  } catch (err) {
+    console.error('Error updating user status:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error updating user status' 
+    });
+  }
 }; 
