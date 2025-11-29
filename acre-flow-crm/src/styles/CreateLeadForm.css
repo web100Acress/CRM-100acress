@@ -1,5 +1,4 @@
-
-    /* Base styles from your previous CSS, refined */
+/* Base styles from your previous CSS, refined */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
     .lead-form-dialog {
@@ -9,16 +8,33 @@
       box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15); /* More pronounced shadow */
       padding: 2.5rem; /* Increased padding */
       max-width: 650px; /* Wider form for better layout */
-      width: 95%; /* Responsive width */
+      width: 85%; /* Further reduced width for better mobile display */
       position: relative; /* Needed for absolute positioning of close button */
     }
 
-    .lead-form-title {
-      font-size: 1.8rem; /* Larger, more impactful title */
-      font-weight: 700;
-      color: #1a202c; /* Darker text for prominence */
-      text-align: center; /* Center align title */
-      margin-bottom: 1.5rem; /* More space below title */
+    /* Mobile-specific styles */
+    @media (max-width: 640px) {
+      .lead-form-dialog {
+        padding: 1.5rem; /* Reduced padding for mobile */
+        width: 98%; /* Almost full width on mobile */
+        margin: 0.5rem; /* Small margin */
+        max-height: 90vh; /* Limit height to fit screen */
+        overflow-y: auto; /* Enable scrolling if content overflows */
+      }
+
+      .lead-form-title {
+        font-size: 1.4rem; /* Smaller title on mobile */
+        margin-bottom: 1rem;
+      }
+
+      .form-actions {
+        flex-direction: column; /* Stack buttons vertically on mobile */
+        gap: 0.5rem;
+      }
+
+      .form-actions button {
+        width: 100%; /* Full-width buttons on mobile */
+      }
     }
 
     .dialog-close-button {

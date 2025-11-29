@@ -362,9 +362,6 @@ const SuperAdminProfile = () => {
           ))}
         </div>
 
-        {/* Consolidated Card for Chart Type Options and Dynamic Chart Rendering */}
-       
-
         {/* Dashboard Sections */}
         <div className="dashboard-sections-grid">
           {/* Lead Status Breakdown (Removed as it's now integrated into the chart card) */}
