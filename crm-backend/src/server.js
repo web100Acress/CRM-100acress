@@ -105,6 +105,7 @@ io.on('connection', (socket) => {
 });
 
 // ✅ API Routes
+app.use('/api/health', require('./routes/health'));
 app.use('/api/leads', require('./routes/leadRoutes'));
 app.use('/api/meetings', require('./routes/meetingRoutes'));
 app.use('/api/auth', require('./routes/auth'));

@@ -10,7 +10,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+  test:
 
     runs-on: ubuntu-latest
 
@@ -29,3 +29,12 @@ jobs:
     - run: npm ci
     - run: npm run build --if-present
     - run: npm test
+    - name: Test Frontend
+      run: |
+        cd acre-flow-crm
+        npm ci
+        npm test
+    - name: Build Frontend
+      run: |
+        cd acre-flow-crm
+        npm run build
