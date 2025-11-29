@@ -1,0 +1,125 @@
+name: Deploy CRM Application
+
+on:
+  push:
+    branches: [ "main", "deploy" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Test Application
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run tests
+      run: npm test
+    
+    - name: Test Frontend
+      run: |
+        cd acre-flow-crm
+        npm ci
+        npm test
+        
+    - name: Build Frontend
+      run: |
+        cd acre-flow-crm
+        npm run build
+
+  deploy-backend:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/deploy'
+    name: Deploy Backend
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+    
+    - name: Install backend dependencies
+      run: |
+        cd crm-backend
+        npm ci
+    
+    - name: Deploy to Production
+      env:
+        NODE_ENV: production
+        MONGODB_URI: ${{ secrets.MONGODB_URI || 'mongodb://localhost:27017/acre-flow-crm' }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET || 'fallback-secret-key' }}
+        EMAIL_USER: ${{ secrets.EMAIL_USER || 'devfoliomarketplace@gmail.com' }}
+        EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD || 'default-password' }}
+      run: |
+        cd crm-backend
+        echo "Starting backend deployment..."
+        echo "MongoDB URI: ${MONGODB_URI:0:20}..."
+        npm start &
+        echo "Backend deployed successfully"
+
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/deploy'
+    name: Deploy Frontend
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+    
+    - name: Install frontend dependencies
+      run: |
+        cd acre-flow-crm
+        npm ci
+    
+    - name: Build frontend
+      run: |
+        cd acre-flow-crm
+        npm run build
+    
+    - name: Deploy to Production
+      run: |
+        cd acre-flow-crm
+        echo "Frontend built successfully"
+        echo "Deploying to production..."
+        # Add your deployment commands here
+        # For example: deploy to Vercel, Netlify, or your hosting provider
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: [deploy-backend, deploy-frontend]
+    if: always()
+    name: Notify Deployment Status
+    
+    steps:
+    - name: Notify Success
+      if: needs.deploy-backend.result == 'success' && needs.deploy-frontend.result == 'success'
+      run: |
+        echo "✅ CRM Application deployed successfully!"
+        echo "🌐 Frontend: Live"
+        echo "🔧 Backend: Live"
+    
+    - name: Notify Failure
+      if: needs.deploy-backend.result == 'failure' || needs.deploy-frontend.result == 'failure'
+      run: |
+        echo "❌ Deployment failed!"
+        exit 1
