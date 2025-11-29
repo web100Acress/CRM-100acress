@@ -35,7 +35,7 @@ const SuperAdminProfile = () => {
   const [selectedChart, setSelectedChart] = useState('bar'); // Default to bar chart
 
   useEffect(() => {
-    const s = io('http://localhost:5001');
+    const s = io('http://13.203.201.65:5001');
     setSocket(s);
     console.log('Socket.IO client connected:', s);
     // Emit initial stats request
@@ -78,7 +78,7 @@ const SuperAdminProfile = () => {
         const token = localStorage.getItem('token');
         
         // Fetch users
-        const usersResponse = await fetch('http://localhost:5001/api/users', {
+        const usersResponse = await fetch('http://13.203.201.65:5001/api/users', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -88,7 +88,7 @@ const SuperAdminProfile = () => {
         setUsers(usersData.data || []);
 
         // Fetch leads
-        const leadsResponse = await fetch('http://localhost:5001/api/leads', {
+        const leadsResponse = await fetch('http://13.203.201.65:5001/api/leads', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -150,7 +150,7 @@ const SuperAdminProfile = () => {
     e.preventDefault();
     if (!meetingForm.title || !meetingForm.date) return;
 
-    await fetch('http://localhost:5001/api/meetings', {
+    await fetch('http://13.203.201.65:5001/api/meetings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(meetingForm)

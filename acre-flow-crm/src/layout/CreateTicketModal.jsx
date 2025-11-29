@@ -21,7 +21,7 @@ const CreateTicketModal = ({ isOpen, onClose, userRole }) => {
     const fetchLeads = async () => {
       setLoading(true);
       try {
-        const response = await fetch('http://localhost:5001/api/leads');
+        const response = await fetch('http://13.203.201.65:5001/api/leads');
         const data = await response.json();
         setLeadsList(data);
       } catch (error) {

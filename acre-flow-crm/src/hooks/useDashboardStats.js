@@ -30,6 +30,7 @@ export function useDashboardStats(userRole, userId) {
 
         switch (userRole) {
           case 'super-admin':
+            
             calculatedStats = {
               totalLeads: leads.length,
               activeUsers: users.filter(u => u.isActive !== false).length,
