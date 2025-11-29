@@ -1266,6 +1266,33 @@
     
     .mobile-leads-container {
       display: block;
+      max-height: calc(100vh - 200px); /* Leave space for header and pagination */
+      overflow-y: auto;
+      padding: 0 10px;
+    }
+    
+    /* Fix header section at top */
+    .lead-table-controls-header {
+      position: sticky;
+      top: 0;
+      background: white;
+      z-index: 10;
+      padding: 10px;
+      gap: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    /* Move pagination to bottom in mobile view */
+    .lead-pagination-controls {
+      order: 10; /* Move to bottom */
+      margin-top: 20px;
+      margin-bottom: 10px;
+      position: sticky;
+      bottom: 0;
+      background: white;
+      padding: 10px 0;
+      z-index: 10;
+      box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
     }
     
     .lead-table-container-wrapper {

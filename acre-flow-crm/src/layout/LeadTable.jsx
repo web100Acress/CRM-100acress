@@ -45,7 +45,7 @@ const LeadTable = ({ userRole }) => {
   const [selectedLeadForDetails, setSelectedLeadForDetails] = useState(null);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const leadsPerPage = 5;
+  const leadsPerPage = window.innerWidth <= 480 ? 30 : 5;
 
   useEffect(() => {
     const fetchLeads = async () => {
