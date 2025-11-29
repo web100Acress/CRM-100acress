@@ -31,21 +31,20 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 })
 
-// Mock ResizeObserver with proper constructor
-global.ResizeObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}))
+// Mock ResizeObserver with proper class constructor
+global.ResizeObserver = class ResizeObserver {
+  constructor(callback) {}
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+} as any
 
-// Mock IntersectionObserver with proper constructor
-global.IntersectionObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}))
+// Mock IntersectionObserver with proper class constructor
+global.IntersectionObserver = class IntersectionObserver {
+  constructor(callback, options) {}
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+} as any
 
-// Cleanup after each test
-afterEach(() => {
-  cleanup()
-})
+// Cleanup is handled automatically by vitest

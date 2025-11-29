@@ -1,6 +1,9 @@
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { BrowserRouter } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Provider } from 'react-redux'
+import store from '@/store'
 import Dashboard from '@/features/users/pages/Dashboard'
 
 // Mock the useDashboardStats hook
@@ -10,12 +13,26 @@ vi.mock('@/hooks/useDashboardStats', () => ({
 
 import { useDashboardStats } from '@/hooks/useDashboardStats'
 
-// Test wrapper component that provides Router context
-const TestWrapper = ({ children }) => (
-  <BrowserRouter>
-    {children}
-  </BrowserRouter>
-)
+// Test wrapper component that provides all required context
+const TestWrapper = ({ children }) => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  })
+
+  return (
+    <Provider store={store}>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          {children}
+        </BrowserRouter>
+      </QueryClientProvider>
+    </Provider>
+  )
+}
 
 describe('Dashboard Component', () => {
   beforeEach(() => {
