@@ -57,24 +57,72 @@ jobs:
         cd crm-backend
         npm ci
     
+    - name: Validate Environment Variables
+      run: |
+        echo "🔍 Validating required environment variables..."
+        
+        # Check critical secrets
+        if [ -z "${{ secrets.MONGODB_URI }}" ]; then
+          echo "⚠️ MONGODB_URI not configured, using fallback"
+          export MONGODB_URI="mongodb://localhost:27017/acre-flow-crm"
+        else
+          export MONGODB_URI="${{ secrets.MONGODB_URI }}"
+          echo "✅ MONGODB_URI configured"
+        fi
+        
+        if [ -z "${{ secrets.SMTP_USER }}" ]; then
+          echo "⚠️ SMTP_USER not configured, using fallback"
+          export SMTP_USER="devfoliomarketplace@gmail.com"
+          export SMTP_PASS="default-password"
+        else
+          export SMTP_USER="${{ secrets.SMTP_USER }}"
+          export SMTP_PASS="${{ secrets.SMTP_PASS }}"
+          echo "✅ SMTP_USER configured"
+        fi
+        
+        # Export all environment variables
+        export NODE_ENV=production
+        export JWT_SECRET="${{ secrets.JWT_SECRET || 'crm-jwt-secret-2024' }}"
+        export SMTP_HOST="${{ secrets.SMTP_HOST || 'smtp.gmail.com' }}"
+        export SMTP_PORT="${{ secrets.SMTP_PORT || '587' }}"
+        export SMTP_SECURE="${{ secrets.SMTP_SECURE || 'false' }}"
+        export EMAIL_FROM="${{ secrets.EMAIL_FROM || '100acres CRM <officialhundredacress@gmail.com>' }}"
+        export FRONTEND_URL="${{ secrets.FRONTEND_URL || 'https://your-domain.com' }}"
+        
+        echo "🎯 Environment variables validated"
+    
     - name: Deploy to Production
       env:
         NODE_ENV: production
-        MONGODB_URI: ${{ secrets.MONGODB_URI }}
-        JWT_SECRET: ${{ secrets.JWT_SECRET || 'crm-jwt-secret-2024' }}
-        SMTP_HOST: ${{ secrets.SMTP_HOST || 'smtp.gmail.com' }}
-        SMTP_PORT: ${{ secrets.SMTP_PORT || '587' }}
-        SMTP_SECURE: ${{ secrets.SMTP_SECURE || 'false' }}
-        SMTP_USER: ${{ secrets.SMTP_USER }}
-        SMTP_PASS: ${{ secrets.SMTP_PASS }}
-        EMAIL_FROM: ${{ secrets.EMAIL_FROM || '"100acres CRM <officialhundredacress@gmail.com>"' }}
-        FRONTEND_URL: ${{ secrets.FRONTEND_URL || 'https://your-domain.com' }}
+        MONGODB_URI: ${{ env.MONGODB_URI }}
+        JWT_SECRET: ${{ env.JWT_SECRET }}
+        SMTP_HOST: ${{ env.SMTP_HOST }}
+        SMTP_PORT: ${{ env.SMTP_PORT }}
+        SMTP_SECURE: ${{ env.SMTP_SECURE }}
+        SMTP_USER: ${{ env.SMTP_USER }}
+        SMTP_PASS: ${{ env.SMTP_PASS }}
+        EMAIL_FROM: ${{ env.EMAIL_FROM }}
+        FRONTEND_URL: ${{ env.FRONTEND_URL }}
       run: |
         cd crm-backend
         echo "🚀 Starting backend deployment..."
-        echo "📊 MongoDB: Connected"
-        echo "📧 Email: Configured"
+        echo "📊 MongoDB: ${MONGODB_URI:0:30}..."
+        echo "📧 Email: ${{ env.SMTP_USER }}"
         echo "🔐 JWT: Configured"
+        echo "🌐 Frontend: ${{ env.FRONTEND_URL }}"
+        
+        # Create .env file for production
+        echo "NODE_ENV=production" > .env
+        echo "MONGODB_URI=${{ env.MONGODB_URI }}" >> .env
+        echo "JWT_SECRET=${{ env.JWT_SECRET }}" >> .env
+        echo "SMTP_HOST=${{ env.SMTP_HOST }}" >> .env
+        echo "SMTP_PORT=${{ env.SMTP_PORT }}" >> .env
+        echo "SMTP_SECURE=${{ env.SMTP_SECURE }}" >> .env
+        echo "SMTP_USER=${{ env.SMTP_USER }}" >> .env
+        echo "SMTP_PASS=${{ env.SMTP_PASS }}" >> .env
+        echo "EMAIL_FROM=${{ env.EMAIL_FROM }}" >> .env
+        echo "FRONTEND_URL=${{ env.FRONTEND_URL }}" >> .env
+        
         npm start &
         echo "✅ Backend deployed successfully"
 
