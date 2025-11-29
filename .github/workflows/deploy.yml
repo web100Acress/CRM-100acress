@@ -34,6 +34,7 @@ jobs:
     - name: Build Frontend
       run: |
         cd acre-flow-crm
+        npm ci
         npm run build
 
   deploy-backend:
