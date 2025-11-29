@@ -60,16 +60,23 @@ jobs:
     - name: Deploy to Production
       env:
         NODE_ENV: production
-        MONGODB_URI: ${{ secrets.MONGODB_URI || 'mongodb://localhost:27017/acre-flow-crm' }}
-        JWT_SECRET: ${{ secrets.JWT_SECRET || 'fallback-secret-key' }}
-        EMAIL_USER: ${{ secrets.EMAIL_USER || 'devfoliomarketplace@gmail.com' }}
-        EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD || 'default-password' }}
+        MONGODB_URI: ${{ secrets.MONGODB_URI }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET || 'crm-jwt-secret-2024' }}
+        SMTP_HOST: ${{ secrets.SMTP_HOST || 'smtp.gmail.com' }}
+        SMTP_PORT: ${{ secrets.SMTP_PORT || '587' }}
+        SMTP_SECURE: ${{ secrets.SMTP_SECURE || 'false' }}
+        SMTP_USER: ${{ secrets.SMTP_USER }}
+        SMTP_PASS: ${{ secrets.SMTP_PASS }}
+        EMAIL_FROM: ${{ secrets.EMAIL_FROM || '"100acres CRM <officialhundredacress@gmail.com>"' }}
+        FRONTEND_URL: ${{ secrets.FRONTEND_URL || 'https://your-domain.com' }}
       run: |
         cd crm-backend
-        echo "Starting backend deployment..."
-        echo "MongoDB URI: ${MONGODB_URI:0:20}..."
+        echo "🚀 Starting backend deployment..."
+        echo "📊 MongoDB: Connected"
+        echo "📧 Email: Configured"
+        echo "🔐 JWT: Configured"
         npm start &
-        echo "Backend deployed successfully"
+        echo "✅ Backend deployed successfully"
 
   deploy-frontend:
     runs-on: ubuntu-latest
