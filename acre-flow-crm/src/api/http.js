@@ -4,7 +4,7 @@
 import axios from 'axios';
 
 // Get base URL from environment variables or use default
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://crm.100acress.com/api/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
 
 // Create axios instance with base configuration
 const httpClient = axios.create({

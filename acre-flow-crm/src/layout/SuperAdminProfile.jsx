@@ -35,7 +35,7 @@ const SuperAdminProfile = () => {
   const [selectedChart, setSelectedChart] = useState('bar'); // Default to bar chart
 
   useEffect(() => {
-    const s = io('https://crm.100acress.com/api/api');
+    const s = io('http://localhost:5001');
     setSocket(s);
     console.log('Socket.IO client connected:', s);
     // Emit initial stats request
@@ -70,6 +70,50 @@ const SuperAdminProfile = () => {
       socket.off('leadUpdate');
     };
   }, [socket]);
+
+  // HTTP fetching as backup
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        
+        // Fetch users
+        const usersResponse = await fetch('http://localhost:5001/api/users', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        const usersData = await usersResponse.json();
+        setUsers(usersData.data || []);
+
+        // Fetch leads
+        const leadsResponse = await fetch('http://localhost:5001/api/leads', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        const leadsData = await leadsResponse.json();
+        setLeads(leadsData.data || []);
+
+        // Update dashboard stats
+        setDashboardStats(prev => ({
+          ...prev,
+          totalUsers: usersData.data?.length || 0,
+          activeLeads: leadsData.data?.length || 0,
+          systemHealth: 'Good'
+        }));
+
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
 
   const superAdminData = {
     name: localStorage.getItem('userName') || 'Super Administrator',
@@ -106,7 +150,7 @@ const SuperAdminProfile = () => {
     e.preventDefault();
     if (!meetingForm.title || !meetingForm.date) return;
 
-    await fetch('https://crm.100acress.com/api/api/meetings', {
+    await fetch('http://localhost:5001/api/meetings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(meetingForm)
@@ -319,42 +363,7 @@ const SuperAdminProfile = () => {
         </div>
 
         {/* Consolidated Card for Chart Type Options and Dynamic Chart Rendering */}
-        {leadStatusData.length > 0 && (
-          <Card className="stat-card" style={{ minWidth: 320, minHeight: 260 }}>
-              <CardContent style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <h4 className="stat-title" style={{ textAlign: 'center', marginBottom: 8 }}>Leads by Status</h4>
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '12px 0' }}>
-                  {[
-                    { type: 'bar', label: 'Bar Chart', icon: '📊' },
-                    { type: 'pie', label: 'Pie Chart', icon: '🥧' },
-                  
-                    { type: 'column', label: 'Column Chart', icon: '📈' },
-                    { type: 'donut', label: 'Donut Chart', icon: '🍩' },
-                    { type: 'treemap', label: 'Treemap', icon: '🗺️' },
-                ].map(chart => (
-                  <span
-                    key={chart.type}
-                    onClick={() => setSelectedChart(chart.type)}
-                    style={{
-                      margin: '0 8px', /* Reduced margin for more compact look */
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      cursor: 'pointer',
-                      opacity: selectedChart === chart.type ? 1 : 0.6, /* Slightly increased opacity for non-selected */
-                      borderBottom: selectedChart === chart.type ? '2px solid #2563eb' : 'none',
-                      transition: 'all 0.2s ease-in-out', /* Smooth transition on hover/click */
-                    }}
-                  >
-                    <span role="img" aria-label={chart.label} style={{ fontSize: 24 }}>{chart.icon}</span> {/* Slightly smaller icon */}
-                    <span style={{ fontSize: 10 }}>{chart.label}</span> {/* Smaller label font size */}
-                  </span>
-                ))}
-              </div>
-              {renderLeadStatusChart()}
-            </CardContent>
-          </Card>
-        )}
+       
 
         {/* Dashboard Sections */}
         <div className="dashboard-sections-grid">
