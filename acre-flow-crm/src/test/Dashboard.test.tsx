@@ -1,0 +1,102 @@
+import { render, screen } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import Dashboard from '@/features/users/pages/Dashboard'
+
+// Mock the useDashboardStats hook
+vi.mock('@/hooks/useDashboardStats', () => ({
+  useDashboardStats: vi.fn(),
+}))
+
+import { useDashboardStats } from '@/hooks/useDashboardStats'
+
+describe('Dashboard Component', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('renders dashboard title for head role', () => {
+    const mockStats = {
+      managedLeads: 10,
+      totalTeams: 3,
+      pendingApprovals: 5,
+      overallConversion: 75
+    }
+
+    vi.mocked(useDashboardStats).mockReturnValue({
+      stats: mockStats,
+      loading: false,
+      error: null
+    })
+
+    render(<Dashboard userRole="head" />)
+    
+    expect(screen.getByText('Head Dashboard')).toBeInTheDocument()
+    expect(screen.getByText('Manage your teams and track performance')).toBeInTheDocument()
+  })
+
+  it('renders dashboard title for head-admin role', () => {
+    const mockStats = {
+      managedLeads: 15,
+      totalTeams: 5,
+      pendingApprovals: 8,
+      overallConversion: 82
+    }
+
+    vi.mocked(useDashboardStats).mockReturnValue({
+      stats: mockStats,
+      loading: false,
+      error: null
+    })
+
+    render(<Dashboard userRole="head-admin" />)
+    
+    expect(screen.getByText('Head Dashboard')).toBeInTheDocument()
+    expect(screen.getByText('Manage your teams and track performance')).toBeInTheDocument()
+  })
+
+  it('renders loading state', () => {
+    vi.mocked(useDashboardStats).mockReturnValue({
+      stats: null,
+      loading: true,
+      error: null
+    })
+
+    render(<Dashboard userRole="head" />)
+    
+    expect(screen.getByText('Loading dashboard data...')).toBeInTheDocument()
+  })
+
+  it('renders error state', () => {
+    vi.mocked(useDashboardStats).mockReturnValue({
+      stats: null,
+      loading: false,
+      error: 'Failed to fetch data'
+    })
+
+    render(<Dashboard userRole="head" />)
+    
+    expect(screen.getByText('Error loading dashboard: Failed to fetch data')).toBeInTheDocument()
+  })
+
+  it('renders correct stats for head role', () => {
+    const mockStats = {
+      managedLeads: 25,
+      totalTeams: 4,
+      pendingApprovals: 7,
+      overallConversion: 68
+    }
+
+    vi.mocked(useDashboardStats).mockReturnValue({
+      stats: mockStats,
+      loading: false,
+      error: null
+    })
+
+    render(<Dashboard userRole="head" />)
+    
+    expect(screen.getByText('25')).toBeInTheDocument() // Managed Leads
+    expect(screen.getByText('4')).toBeInTheDocument()  // Total Teams
+    expect(screen.getByText('7')).toBeInTheDocument()  // Pending Approvals
+    expect(screen.getByText('68%')).toBeInTheDocument() // Overall Conversion
+  })
+})
