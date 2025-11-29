@@ -144,7 +144,7 @@
           };
           const token = localStorage.getItem('token');
           console.log('Token used for create employee:', token); // Debug log
-          const response = await fetch('http://localhost:5001/api/api/users', {
+          const response = await fetch('http://13.203.201.65:5001/api/users', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

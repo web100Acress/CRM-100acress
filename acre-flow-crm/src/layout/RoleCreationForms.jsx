@@ -90,7 +90,7 @@ const RoleCreationForms = ({ userRole, formType }) => {
         try {
           const token = localStorage.getItem("token");
           const response = await fetch(
-            `http://localhost:5001/api/api/users?role=${roleToFetch}`,
+            `http://13.203.201.65:5001/api/users?role=${roleToFetch}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -118,7 +118,7 @@ const RoleCreationForms = ({ userRole, formType }) => {
     e.preventDefault();
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5001/api/api/users", {
+      const response = await fetch("http://13.203.201.65:5001/api/users", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
