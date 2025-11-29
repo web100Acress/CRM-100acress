@@ -73,6 +73,14 @@
       flex-direction: column;
     }
 
+    .lead-form-title {
+      font-size: 1.8rem; /* Larger, more impactful title */
+      font-weight: 700;
+      color: #1a202c; /* Darker text for prominence */
+      text-align: center; /* Center align title */
+      margin-bottom: 1.5rem; /* More space below title */
+    }
+
     .form-group label {
       font-size: 0.9rem; /* Slightly smaller, clean label */
       font-weight: 600;
@@ -95,6 +103,19 @@
       background-color: #f7fafc; /* Light background for input fields */
       transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
       width: 100%; /* Full width */
+    }
+
+    /* Mobile-specific styles for form fields */
+    @media (max-width: 640px) {
+      .lead-form-grid {
+        grid-template-columns: repeat(2, 1fr) !important; /* Two columns on mobile */
+        gap: 1rem; /* Reduced gap for mobile */
+      }
+
+      .form-input,
+      .form-select {
+        max-width: 165px !important; /* Reduced max width for input fields on mobile */
+      }
     }
 
     .form-input::placeholder {
