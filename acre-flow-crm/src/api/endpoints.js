@@ -1,7 +1,8 @@
   // Centralized API endpoints configuration
   // All API endpoint URLs are defined here for easy maintenance
 
-  const BASE_URL = 'https://crm.100acress.com/api/api';
+  const BASE_URL = 'http://localhost:5001';
+  // const BASE_URL = 'http://localhost:5001/api/api';
 
   export const ENDPOINTS = {
     // Auth endpoints

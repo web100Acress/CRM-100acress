@@ -18,6 +18,13 @@
         return res.status(404).json({ message: 'User not found' });
       }
       console.log('User found:', user.email, user.role);
+      
+      // Check if user is active
+      if (user.status === 'inactive') {
+        console.log('User account is inactive:', email);
+        return res.status(403).json({ message: 'Account is deactivated. Please contact administrator.' });
+      }
+      
       // Compare passwords
       const isMatch = await bcrypt.compare(password, user.password);
       console.log('Password match:', isMatch);
@@ -25,6 +32,9 @@
         console.log('Invalid password for user:', email);
         return res.status(401).json({ message: 'Invalid credentials' });
       }
+      
+      // Update last login
+      await User.findByIdAndUpdate(user._id, { lastLogin: new Date() });
 
       // Generate JWT token
       const token = jwt.sign(
@@ -40,7 +50,9 @@
           _id: user._id,
           name: user.name,
           email: user.email,
-          role: user.role
+          role: user.role,
+          status: user.status,
+          lastLogin: user.lastLogin
         }
       });
     } catch (error) {

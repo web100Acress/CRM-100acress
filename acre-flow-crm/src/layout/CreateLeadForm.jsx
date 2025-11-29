@@ -40,7 +40,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
   const fetchAssignableUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch("https://crm.100acress.com/api/api/leads/assignable-users", {
+      const response = await fetch(`http://localhost:5001/api/leads/assignable-users`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -90,7 +90,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://crm.100acress.com/api/api/leads', {
+      const response = await fetch(`http://localhost:5001/api/leads`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -182,7 +182,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              placeholder="e.g., John Doe"
+              placeholder="Enter Your Name"
               required
               className="form-input"
             />
@@ -195,7 +195,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
               name="email"
               value={formData.email}
               onChange={handleInputChange}
-              placeholder="e.g., john.doe@example.com"
+              placeholder="Enter Your Email"
               required
               className="form-input"
             />
@@ -209,7 +209,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
               name="phone"
               value={formData.phone}
               onChange={handleInputChange}
-              placeholder="+91 98765 43210"
+              placeholder="Enter Your Phon Number"
               required
               className="form-input"
             />

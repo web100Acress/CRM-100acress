@@ -41,15 +41,17 @@ const LeadTable = ({ userRole }) => {
   const currentUserId = localStorage.getItem("userId");
 
   const [chainModalLead, setChainModalLead] = useState(null);
+  const [showLeadDetails, setShowLeadDetails] = useState(false);
+  const [selectedLeadForDetails, setSelectedLeadForDetails] = useState(null);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const leadsPerPage = 5;
+  const leadsPerPage = window.innerWidth <= 480 ? 30 : 5;
 
   useEffect(() => {
     const fetchLeads = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch("https://crm.100acress.com/api/api/leads", {
+        const response = await fetch("http://localhost:5001/api/leads", {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -86,7 +88,7 @@ const LeadTable = ({ userRole }) => {
       try {
         const token = localStorage.getItem("token");
         const response = await fetch(
-          "https://crm.100acress.com/api/api/leads/assignable-users",
+          "http://localhost:5001/api/leads/assignable-users",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -139,7 +141,7 @@ const LeadTable = ({ userRole }) => {
     if (!window.confirm("Are you sure you want to delete this lead?")) return;
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`https://crm.100acress.com/api/api/leads/${leadId}`, {
+      const res = await fetch(`http://localhost:5001/api/leads/${leadId}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -166,7 +168,7 @@ const LeadTable = ({ userRole }) => {
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
-        `https://crm.100acress.com/api/api/leads/${lead._id}/followups`,
+        `http://localhost:5001/api/leads/${lead._id}/followups`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -186,7 +188,7 @@ const LeadTable = ({ userRole }) => {
   const handleAssignLead = async (leadId, userId) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`https://crm.100acress.com/api/api/leads/${leadId}`, {
+      const res = await fetch(`http://localhost:5001/api/leads/${leadId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -217,7 +219,7 @@ const LeadTable = ({ userRole }) => {
       setForwardingLead(leadId);
       const token = localStorage.getItem("token");
       const res = await fetch(
-        `https://crm.100acress.com/api/api/leads/${leadId}/forward`,
+        `http://localhost:5001/api/leads/${leadId}/forward`,
         {
           method: "POST",
           headers: {
@@ -231,7 +233,7 @@ const LeadTable = ({ userRole }) => {
       const data = await res.json();
       if (res.ok) {
         // Refresh the leads list
-        const leadsResponse = await fetch("https://crm.100acress.com/api/api/leads", {
+        const leadsResponse = await fetch("http://localhost:5001/api/api/leads", {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -478,7 +480,7 @@ const LeadTable = ({ userRole }) => {
                           try {
                             const token = localStorage.getItem("token");
                             await fetch(
-                              `https://crm.100acress.com/api/api/leads/${lead._id}`,
+                              `http://localhost:5001/api/api/leads/${lead._id}`,
                               {
                                 method: "PUT",
                                 headers: {
@@ -673,6 +675,163 @@ const LeadTable = ({ userRole }) => {
           </button>
         </div>
       )}
+
+      {/* Mobile View - Simplified Lead Cards */}
+      <div className="mobile-leads-container">
+        {currentLeads.length > 0 ? (
+          currentLeads.map((lead, index) => (
+            <div key={lead._id} className="mobile-lead-card">
+              <div className="mobile-lead-header">
+                <span className="mobile-lead-number">Lead #{index + 1}</span>
+                <span className={`lead-status-badge ${getStatusClass(lead.status)}`}>
+                  {lead.status}
+                </span>
+              </div>
+              <div className="mobile-lead-info">
+                <p className="mobile-lead-name">{lead.name}</p>
+                <p className="mobile-lead-contact">{lead.phone}</p>
+                {lead.lastContact && (
+                  <p className="mobile-lead-last-contact">Last: {new Date(lead.lastContact).toLocaleDateString()}</p>
+                )}
+              </div>
+              <div className="mobile-lead-actions">
+                <button 
+                  className="mobile-followup-btn"
+                  onClick={() => {
+                    handleFollowUp(lead);
+                  }}
+                >
+                  <MessageSquare size={14} />
+                  Follow-up
+                </button>
+                <button 
+                  className="mobile-view-details-btn"
+                  onClick={() => {
+                    setSelectedLeadForDetails(lead);
+                    setShowLeadDetails(true);
+                  }}
+                >
+                  <Eye size={16} />
+                  Details
+                </button>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="mobile-no-leads">No leads found</div>
+        )}
+      </div>
+
+      {/* Lead Details Modal */}
+      <Dialog open={showLeadDetails} onOpenChange={setShowLeadDetails}>
+        <DialogContent className="lead-details-dialog">
+          <DialogHeader>
+            <DialogTitle className="lead-details-title">Lead Details</DialogTitle>
+          </DialogHeader>
+          {selectedLeadForDetails && (
+            <div className="lead-details-content">
+              {/* Lead Header with Number */}
+              <div className="lead-details-header">
+                <div className="lead-details-number">Lead #{currentLeads.findIndex(l => l._id === selectedLeadForDetails._id) + 1}</div>
+                <div className={`lead-status-badge ${getStatusClass(selectedLeadForDetails.status)}`}>
+                  {selectedLeadForDetails.status}
+                </div>
+              </div>
+              
+              <div className="lead-details-grid">
+                <div className="lead-details-section">
+                  <h4><User size={16} /> Lead Information</h4>
+                  <p><strong>Name:</strong> {selectedLeadForDetails.name}</p>
+                  <p><strong>ID:</strong> #{selectedLeadForDetails.id}</p>
+                  <p><strong>Status:</strong> {selectedLeadForDetails.status}</p>
+                  <p><strong>Work Progress:</strong> {selectedLeadForDetails.workProgress || 'Pending'}</p>
+                </div>
+                
+                <div className="lead-details-section">
+                  <h4><Phone size={16} /> Contact Information</h4>
+                  <p><strong>Phone:</strong> {selectedLeadForDetails.phone}</p>
+                  <p><strong>Email:</strong> {selectedLeadForDetails.email}</p>
+                  <p><strong>Location:</strong> {selectedLeadForDetails.location}</p>
+                </div>
+                
+                <div className="lead-details-section">
+                  <h4><MapPin size={16} /> Property Details</h4>
+                  <p><strong>Property Type:</strong> {selectedLeadForDetails.property}</p>
+                  <p><strong>Budget:</strong> {selectedLeadForDetails.budget}</p>
+                </div>
+                
+                <div className="lead-details-section">
+                  <h4><UserCheck size={16} /> Assignment</h4>
+                  <p><strong>Assigned To:</strong> {
+                    selectedLeadForDetails.assignmentChain && selectedLeadForDetails.assignmentChain.length > 0
+                      ? `${selectedLeadForDetails.assignmentChain[selectedLeadForDetails.assignmentChain.length - 1].name} (${selectedLeadForDetails.assignmentChain[selectedLeadForDetails.assignmentChain.length - 1].role})`
+                      : 'Unassigned'
+                  }</p>
+                </div>
+              </div>
+              
+              {/* Actions Section */}
+              <div className="lead-details-actions-section">
+                <h4>Actions</h4>
+                <div className="lead-details-actions-grid">
+                  <button 
+                    className="lead-details-action-btn primary"
+                    onClick={() => {
+                      handleFollowUp(selectedLeadForDetails);
+                      setShowLeadDetails(false);
+                    }}
+                  >
+                    <MessageSquare size={16} />
+                    Add Follow-up
+                  </button>
+                  
+                  <button 
+                    className="lead-details-action-btn secondary"
+                    onClick={() => {
+                      handleViewFollowUps(selectedLeadForDetails);
+                      setShowLeadDetails(false);
+                    }}
+                  >
+                    <Eye size={16} />
+                    View Follow-ups
+                  </button>
+                  
+                  <button 
+                    className="lead-details-action-btn secondary"
+                    onClick={() => {
+                      setChainModalLead(selectedLeadForDetails);
+                      setShowLeadDetails(false);
+                    }}
+                  >
+                    <LinkIcon size={16} />
+                    Assignment Chain
+                  </button>
+                  
+                  {userRole === "super-admin" && (
+                    <button 
+                      className="lead-details-action-btn danger"
+                      onClick={() => {
+                        if (window.confirm('Are you sure you want to delete this lead?')) {
+                          handleDeleteLead(selectedLeadForDetails._id);
+                          setShowLeadDetails(false);
+                        }
+                      }}
+                    >
+                      <Trash2 size={16} />
+                      Delete Lead
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          <div className="lead-details-footer">
+            <Button variant="outline" onClick={() => setShowLeadDetails(false)}>
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* --- Modals --- */}
       {showFollowUp && selectedLead && (
