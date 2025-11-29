@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { BrowserRouter } from 'react-router-dom'
 import Dashboard from '@/features/users/pages/Dashboard'
 
 // Mock the useDashboardStats hook
@@ -8,6 +9,13 @@ vi.mock('@/hooks/useDashboardStats', () => ({
 }))
 
 import { useDashboardStats } from '@/hooks/useDashboardStats'
+
+// Test wrapper component that provides Router context
+const TestWrapper = ({ children }) => (
+  <BrowserRouter>
+    {children}
+  </BrowserRouter>
+)
 
 describe('Dashboard Component', () => {
   beforeEach(() => {
@@ -28,7 +36,11 @@ describe('Dashboard Component', () => {
       error: null
     })
 
-    render(<Dashboard userRole="head" />)
+    render(
+      <TestWrapper>
+        <Dashboard userRole="head" />
+      </TestWrapper>
+    )
     
     expect(screen.getByText('Head Dashboard')).toBeInTheDocument()
     expect(screen.getByText('Manage your teams and track performance')).toBeInTheDocument()
@@ -48,7 +60,11 @@ describe('Dashboard Component', () => {
       error: null
     })
 
-    render(<Dashboard userRole="head-admin" />)
+    render(
+      <TestWrapper>
+        <Dashboard userRole="head-admin" />
+      </TestWrapper>
+    )
     
     expect(screen.getByText('Head Dashboard')).toBeInTheDocument()
     expect(screen.getByText('Manage your teams and track performance')).toBeInTheDocument()
@@ -61,7 +77,11 @@ describe('Dashboard Component', () => {
       error: null
     })
 
-    render(<Dashboard userRole="head" />)
+    render(
+      <TestWrapper>
+        <Dashboard userRole="head" />
+      </TestWrapper>
+    )
     
     expect(screen.getByText('Loading dashboard data...')).toBeInTheDocument()
   })
@@ -73,7 +93,11 @@ describe('Dashboard Component', () => {
       error: 'Failed to fetch data'
     })
 
-    render(<Dashboard userRole="head" />)
+    render(
+      <TestWrapper>
+        <Dashboard userRole="head" />
+      </TestWrapper>
+    )
     
     expect(screen.getByText('Error loading dashboard: Failed to fetch data')).toBeInTheDocument()
   })
@@ -92,7 +116,11 @@ describe('Dashboard Component', () => {
       error: null
     })
 
-    render(<Dashboard userRole="head" />)
+    render(
+      <TestWrapper>
+        <Dashboard userRole="head" />
+      </TestWrapper>
+    )
     
     expect(screen.getByText('25')).toBeInTheDocument() // Managed Leads
     expect(screen.getByText('4')).toBeInTheDocument()  // Total Teams
