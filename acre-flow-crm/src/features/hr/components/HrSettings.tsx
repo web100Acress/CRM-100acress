@@ -158,7 +158,7 @@ const HrSettings = () => {
           <textarea
             value={settings.companyAddress}
             onChange={(e) => handleSettingChange('companyAddress', e.target.value)}
-            rows="3"
+            rows={3}
           />
         </div>
       </div>

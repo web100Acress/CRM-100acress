@@ -466,7 +466,7 @@ const ExpenseManagement = () => {
                   </div>
                   <div className="form-group full-width">
                     <label>Description</label>
-                    <textarea placeholder="Enter expense description" rows="3"></textarea>
+                    <textarea placeholder="Enter expense description" rows={3}></textarea>
                   </div>
                   <div className="form-group full-width">
                     <label>Upload Receipts</label>

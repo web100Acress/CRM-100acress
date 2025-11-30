@@ -13,8 +13,8 @@ const localStorageMock = {
 }
 global.localStorage = localStorageMock as any
 
-// Mock fetch
-global.fetch = vi.fn()
+// Mock fetch with proper typing
+global.fetch = vi.fn() as any
 
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {

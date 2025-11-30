@@ -18,8 +18,30 @@ describe('Basic Test Setup', () => {
   })
 
   it('should mock fetch', () => {
-    const mockFetch = vi.fn()
-    global.fetch = mockFetch
+    const mockFetch = vi.fn().mockImplementation(() => Promise.resolve({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({}),
+      text: () => Promise.resolve(''),
+      blob: () => Promise.resolve(new Blob()),
+      arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+      formData: () => Promise.resolve(new FormData()),
+      headers: new Headers(),
+      redirected: false,
+      statusText: 'OK',
+      type: 'basic',
+      url: 'http://example.com',
+      clone: () => ({} as Response)
+    }))
+    
+    // Add all fetch properties to the mock
+    Object.assign(mockFetch, {
+      preconnect: vi.fn(),
+      dnsPrefetch: vi.fn(),
+      prefetch: vi.fn()
+    })
+    
+    global.fetch = mockFetch as any
     
     fetch('http://example.com')
     expect(mockFetch).toHaveBeenCalledWith('http://example.com')
