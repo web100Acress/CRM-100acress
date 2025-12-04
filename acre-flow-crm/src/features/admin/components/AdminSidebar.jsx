@@ -1,12 +1,24 @@
 import React from 'react';
-import { BarChart3, Users, Settings, Shield, Activity } from 'lucide-react';
+import { BarChart3, Users, Settings, LogOut, Shield } from 'lucide-react';
 
 const AdminSidebar = ({ isOpen, activeTab, onTabChange }) => {
   const menuItems = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
-    { id: 'users', label: 'User Management', icon: Users },
-    { id: 'settings', label: 'System Settings', icon: Settings },
+    { id: 'users', label: 'User Manage', icon: Users },
+
   ];
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAdminLoggedIn');
+    localStorage.removeItem('adminEmail');
+    localStorage.removeItem('adminName');
+    localStorage.removeItem('adminRole');
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userName');
+    window.location.href = '/login';
+  };
 
   return (
     <>
@@ -53,7 +65,7 @@ const AdminSidebar = ({ isOpen, activeTab, onTabChange }) => {
           {/* Quick Stats */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-red-200 uppercase">Quick Stats</h3>
-            <div className="bg-red-700 rounded-lg p-4 space-y-3">
+            {/* <div className="bg-red-700 rounded-lg p-4 space-y-3">
               <div>
                 <p className="text-xs text-red-200">Total Users</p>
                 <p className="text-2xl font-bold">284</p>
@@ -66,7 +78,18 @@ const AdminSidebar = ({ isOpen, activeTab, onTabChange }) => {
                 <p className="text-xs text-red-200">System Health</p>
                 <p className="text-2xl font-bold">98%</p>
               </div>
-            </div>
+            </div> */}
+          </div>
+
+          {/* Logout Button */}
+          <div className="absolute bottom-0 left-0 right-0 p-6">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              <LogOut size={20} />
+              <span className="font-medium">Logout</span>
+            </button>
           </div>
         </div>
       </aside>

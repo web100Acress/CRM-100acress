@@ -63,65 +63,10 @@ const BlogOverview = () => {
       </div>
 
       {/* Top Posts and Engagement */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Top Performing Posts</h3>
-          <div className="space-y-4">
-            {topPosts.map((post, i) => (
-              <div key={i} className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition">
-                <h4 className="font-medium text-gray-900 mb-3">{post.title}</h4>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="flex items-center gap-2">
-                    <Eye size={18} className="text-blue-600" />
-                    <div>
-                      <p className="text-xs text-gray-600">Views</p>
-                      <p className="font-bold text-gray-900">{post.views}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <ThumbsUp size={18} className="text-pink-600" />
-                    <div>
-                      <p className="text-xs text-gray-600">Likes</p>
-                      <p className="font-bold text-gray-900">{post.likes}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <MessageSquare size={18} className="text-purple-600" />
-                    <div>
-                      <p className="text-xs text-gray-600">Comments</p>
-                      <p className="font-bold text-gray-900">{post.comments}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Engagement Trend */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Engagement Trend</h3>
-          <div className="space-y-4">
-            {['Week 1', 'Week 2', 'Week 3', 'Week 4'].map((week, i) => (
-              <div key={i}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-900">{week}</span>
-                  <span className="text-sm text-gray-600">{2500 + i * 300}</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-orange-500 h-2 rounded-full"
-                    style={{ width: `${60 + i * 10}%` }}
-                  ></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+   
 
       {/* Recent Activity */}
-      <div className="bg-white rounded-lg shadow p-6">
+      {/* <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-bold text-gray-900 mb-4">Recent Activity</h3>
         <div className="space-y-3">
           {[
@@ -139,7 +84,7 @@ const BlogOverview = () => {
             </div>
           ))}
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };
