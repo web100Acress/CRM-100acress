@@ -76,10 +76,7 @@ const BlogManagement = () => {
     <div className="space-y-6">
       {/* Header with Add Button */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Blog Posts</h2>
-          <p className="text-gray-600 mt-1">{posts.filter(p => p.status === 'published').length} published, {posts.filter(p => p.status === 'draft').length} drafts</p>
-        </div>
+      
         <button
           onClick={() => setShowAddForm(!showAddForm)}
           className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition"

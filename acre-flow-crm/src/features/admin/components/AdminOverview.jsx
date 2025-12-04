@@ -71,66 +71,7 @@ const AdminOverview = () => {
       </div>
 
       {/* System Status and Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">System Status</h3>
-          <div className="space-y-3">
-            {systemStatus.map((system, i) => (
-              <div key={i} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-900">{system.name}</p>
-                  <p className="text-sm text-gray-600">Uptime: {system.uptime}</p>
-                </div>
-                <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-                  {system.status}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h3>
-          <div className="space-y-2">
-            <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium">
-              Create Backup
-            </button>
-            <button className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium">
-              Clear Cache
-            </button>
-            <button className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm font-medium">
-              Run Diagnostics
-            </button>
-            <button className="w-full px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition text-sm font-medium">
-              View Logs
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Activities */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Recent Activities</h3>
-        <div className="space-y-3">
-          {recentActivities.map((activity, i) => (
-            <div key={i} className="flex items-center justify-between p-4 border-b last:border-b-0">
-              <div className="flex items-center gap-3">
-                <div className={`w-2 h-2 rounded-full ${
-                  activity.type === 'success' ? 'bg-green-500' :
-                  activity.type === 'warning' ? 'bg-orange-500' :
-                  'bg-blue-500'
-                }`}></div>
-                <div>
-                  <p className="font-medium text-gray-900">{activity.action}</p>
-                  <p className="text-sm text-gray-600">{activity.user || activity.details}</p>
-                </div>
-              </div>
-              <p className="text-xs text-gray-600">{activity.time}</p>
-            </div>
-          ))}
-        </div>
-      </div>
+   
     </div>
   );
 };

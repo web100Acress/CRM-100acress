@@ -83,17 +83,8 @@ const UserManagement = () => {
     <div className="space-y-6">
       {/* Header with Add Button */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">User Management</h2>
-          <p className="text-gray-600 mt-1">{users.length} total users</p>
-        </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-        >
-          <Plus size={20} />
-          Add User
-        </button>
+       
+       
       </div>
 
       {/* Add Form */}

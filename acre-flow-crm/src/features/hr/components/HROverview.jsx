@@ -65,70 +65,7 @@ const HROverview = () => {
         })}
       </div>
 
-      {/* Department Distribution */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Employees by Department</h3>
-          <div className="space-y-4">
-            {departments.map((dept, i) => (
-              <div key={i}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium text-gray-900">{dept.name}</span>
-                  <span className="text-sm text-gray-600">{dept.employees} employees</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div
-                    className={`${dept.color} h-3 rounded-full`}
-                    style={{ width: `${(dept.employees / 45) * 100}%` }}
-                  ></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Attendance Chart */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Attendance This Week</h3>
-          <div className="space-y-3">
-            {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((day, i) => (
-              <div key={i} className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-900">{day}</span>
-                <div className="flex items-center gap-2">
-                  <div className="w-24 bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-green-500 h-2 rounded-full"
-                      style={{ width: `${88 + Math.random() * 10}%` }}
-                    ></div>
-                  </div>
-                  <span className="text-sm text-gray-600 w-12">91%</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Activities */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Recent HR Activities</h3>
-        <div className="space-y-3">
-          {[
-            { action: 'New employee onboarded', name: 'John Doe', time: '2 hours ago' },
-            { action: 'Leave request approved', name: 'Sarah Johnson', time: '4 hours ago' },
-            { action: 'Performance review completed', name: 'Mike Davis', time: '1 day ago' },
-            { action: 'Salary increment processed', name: 'Emma Wilson', time: '2 days ago' },
-          ].map((activity, i) => (
-            <div key={i} className="flex items-center justify-between p-4 border-b last:border-b-0">
-              <div>
-                <p className="font-medium text-gray-900">{activity.action}</p>
-                <p className="text-sm text-gray-600">{activity.name}</p>
-              </div>
-              <p className="text-xs text-gray-600">{activity.time}</p>
-            </div>
-          ))}
-        </div>
-      </div>
+   
     </div>
   );
 };

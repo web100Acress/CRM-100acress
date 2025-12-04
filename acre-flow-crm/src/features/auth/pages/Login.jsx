@@ -165,7 +165,30 @@ const Login = () => {
         localStorage.removeItem("isDeveloperLoggedIn");
         localStorage.removeItem("isHrFinanceLoggedIn");
 
+        // Store department if available
+        if (data.user.department) {
+          localStorage.setItem("userDepartment", data.user.department);
+        }
+
         switch (data.user.role) {
+          // Department-based roles
+          case "sales_head":
+          case "sales_executive":
+            window.location.href = "/sales-head-dashboard";
+            break;
+          case "hr_manager":
+          case "hr_executive":
+            window.location.href = "/hr-dashboard";
+            break;
+          case "blog_manager":
+          case "blog_writer":
+            window.location.href = "/blog-dashboard";
+            break;
+          case "admin":
+          case "super_admin":
+            window.location.href = "/admin-dashboard";
+            break;
+          // Existing roles
           case "developer":
             window.location.href = "/developer-dashboard";
             break;

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, Target, Clock, Search, Filter, Download, Plus, Edit, Trash2, Eye } from 'lucide-react';
+import { Plus, Search, Filter, Download, Edit, Trash2, Eye } from 'lucide-react';
 
-const SalesMetrics = () => {
-  const [enquiries, setEnquiries] = useState([]);
+const ListedProperties = () => {
+  const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState('all');
@@ -15,21 +15,20 @@ const SalesMetrics = () => {
   // Status options
   const STATUS_OPTIONS = [
     { label: "All Status", value: "all" },
-    { label: "New", value: "new" },
-    { label: "Contacted", value: "contacted" },
-    { label: "Qualified", value: "qualified" },
-    { label: "Converted", value: "converted" },
-    { label: "Lost", value: "lost" },
+    { label: "Available", value: "available" },
+    { label: "Sold", value: "sold" },
+    { label: "Pending", value: "pending" },
+    { label: "Under Contract", value: "under_contract" },
   ];
 
-  // Fetch enquiries from API
+  // Fetch properties from API
   useEffect(() => {
-    const fetchEnquiries = async () => {
+    const fetchProperties = async () => {
       try {
         setLoading(true);
         const token = localStorage.getItem('myToken') || localStorage.getItem('token');
         
-        const response = await fetch(`${API_BASE_URL}/enquiries/all`, {
+        const response = await fetch(`${API_BASE_URL}/properties/all`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -39,40 +38,39 @@ const SalesMetrics = () => {
 
         if (response.ok) {
           const data = await response.json();
-          setEnquiries(data.data || []);
+          setProperties(data.data || []);
         } else {
-          console.error('Failed to fetch enquiries:', response.statusText);
+          console.error('Failed to fetch properties:', response.statusText);
           // Fallback to mock data
-          setEnquiries([
-            { _id: '1', customerName: 'John Smith', email: 'john@example.com', phone: '1234567890', property: 'Modern Apartment', status: 'new', budget: 250000, createdAt: new Date().toISOString() },
-            { _id: '2', customerName: 'Sarah Johnson', email: 'sarah@example.com', phone: '1234567891', property: 'Family House', status: 'contacted', budget: 450000, createdAt: new Date().toISOString() },
+          setProperties([
+            { _id: '1', title: 'Modern Apartment', price: 250000, location: 'Downtown', status: 'available', bedrooms: 3, bathrooms: 2, area: 1200, createdAt: new Date().toISOString() },
+            { _id: '2', title: 'Family House', price: 450000, location: 'Suburbs', status: 'sold', bedrooms: 4, bathrooms: 3, area: 2000, createdAt: new Date().toISOString() },
           ]);
         }
       } catch (error) {
-        console.error('Error fetching enquiries:', error);
+        console.error('Error fetching properties:', error);
         // Fallback to mock data
-        setEnquiries([
-          { _id: '1', customerName: 'John Smith', email: 'john@example.com', phone: '1234567890', property: 'Modern Apartment', status: 'new', budget: 250000, createdAt: new Date().toISOString() },
-          { _id: '2', customerName: 'Sarah Johnson', email: 'sarah@example.com', phone: '1234567891', property: 'Family House', status: 'contacted', budget: 450000, createdAt: new Date().toISOString() },
+        setProperties([
+          { _id: '1', title: 'Modern Apartment', price: 250000, location: 'Downtown', status: 'available', bedrooms: 3, bathrooms: 2, area: 1200, createdAt: new Date().toISOString() },
+          { _id: '2', title: 'Family House', price: 450000, location: 'Suburbs', status: 'sold', bedrooms: 4, bathrooms: 3, area: 2000, createdAt: new Date().toISOString() },
         ]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchEnquiries();
+    fetchProperties();
   }, []);
 
-  // Filter enquiries
-  const filteredEnquiries = enquiries
-    .filter(enquiry => {
+  // Filter properties
+  const filteredProperties = properties
+    .filter(property => {
       const searchMatch = !searchTerm || 
-        enquiry.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        enquiry.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        enquiry.property?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        enquiry.budget?.toString().includes(searchTerm);
+        property.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        property.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        property.price?.toString().includes(searchTerm);
       
-      const statusMatch = statusFilter === 'all' || enquiry.status === statusFilter;
+      const statusMatch = statusFilter === 'all' || property.status === statusFilter;
       
       return searchMatch && statusMatch;
     });
@@ -80,8 +78,8 @@ const SalesMetrics = () => {
   // Pagination
   const indexOfLastRow = currentPage * rowsPerPage;
   const indexOfFirstRow = indexOfLastRow - rowsPerPage;
-  const currentRows = filteredEnquiries.slice(indexOfFirstRow, indexOfLastRow);
-  const totalPages = Math.ceil(filteredEnquiries.length / rowsPerPage);
+  const currentRows = filteredProperties.slice(indexOfFirstRow, indexOfLastRow);
+  const totalPages = Math.ceil(filteredProperties.length / rowsPerPage);
 
   // Format price
   const formatPrice = (price) => {
@@ -106,16 +104,14 @@ const SalesMetrics = () => {
   // Get status badge classes
   const getStatusClasses = (status) => {
     switch (status) {
-      case 'new':
-        return 'bg-blue-100 text-blue-700';
-      case 'contacted':
-        return 'bg-yellow-100 text-yellow-700';
-      case 'qualified':
-        return 'bg-purple-100 text-purple-700';
-      case 'converted':
+      case 'available':
         return 'bg-green-100 text-green-700';
-      case 'lost':
+      case 'sold':
         return 'bg-red-100 text-red-700';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-700';
+      case 'under_contract':
+        return 'bg-blue-100 text-blue-700';
       default:
         return 'bg-gray-100 text-gray-700';
     }
@@ -123,17 +119,18 @@ const SalesMetrics = () => {
 
   // Export to CSV
   const exportToCSV = () => {
-    const headers = ['Customer Name', 'Email', 'Phone', 'Property', 'Budget', 'Status', 'Created At'];
+    const headers = ['Title', 'Price', 'Location', 'Status', 'Bedrooms', 'Bathrooms', 'Area', 'Created At'];
     const csvContent = [
       headers.join(','),
-      ...filteredEnquiries.map(enquiry => [
-        enquiry.customerName || '',
-        enquiry.email || '',
-        enquiry.phone || '',
-        enquiry.property || '',
-        enquiry.budget || '',
-        enquiry.status || '',
-        formatDate(enquiry.createdAt)
+      ...filteredProperties.map(property => [
+        property.title || '',
+        property.price || '',
+        property.location || '',
+        property.status || '',
+        property.bedrooms || '',
+        property.bathrooms || '',
+        property.area || '',
+        formatDate(property.createdAt)
       ].join(','))
     ].join('\n');
 
@@ -141,7 +138,7 @@ const SalesMetrics = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'resale-enquiries.csv';
+    link.download = 'properties.csv';
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -150,6 +147,7 @@ const SalesMetrics = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
+       
         <div className="flex gap-2">
           <button 
             onClick={exportToCSV}
@@ -158,7 +156,7 @@ const SalesMetrics = () => {
             <Download size={20} />
             <span>Export CSV</span>
           </button>
-        
+          
         </div>
       </div>
 
@@ -168,7 +166,7 @@ const SalesMetrics = () => {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
           <input
             type="text"
-            placeholder="Search enquiries..."
+            placeholder="Search properties..."
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -194,7 +192,7 @@ const SalesMetrics = () => {
         </select>
       </div>
 
-      {/* Enquiries Table */}
+      {/* Properties Table */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-12">
@@ -205,42 +203,46 @@ const SalesMetrics = () => {
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Budget</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Listed</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {currentRows.map((enquiry) => (
-                  <tr key={enquiry._id} className="hover:bg-gray-50">
+                {currentRows.map((property) => (
+                  <tr key={property._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{enquiry.customerName || 'Unknown'}</div>
-                      <div className="text-sm text-gray-500">ID: {enquiry._id}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{enquiry.email || 'N/A'}</div>
-                      <div className="text-sm text-gray-500">{enquiry.phone || 'N/A'}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{enquiry.property || 'N/A'}</div>
+                      <div className="text-sm font-medium text-gray-900">{property.title || 'Unknown Property'}</div>
+                      <div className="text-sm text-gray-500">ID: {property._id}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-semibold text-gray-900">
-                        {formatPrice(enquiry.budget)}
+                        {formatPrice(property.price)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClasses(enquiry.status)}`}>
-                        {enquiry.status ? enquiry.status.toUpperCase() : 'UNKNOWN'}
+                      <div className="text-sm text-gray-900">{property.location || 'N/A'}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {property.bedrooms || 0} Beds • {property.bathrooms || 0} Baths
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {property.area || 0} sq ft
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClasses(property.status)}`}>
+                        {property.status ? property.status.replace('_', ' ').toUpperCase() : 'UNKNOWN'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {formatDate(enquiry.createdAt)}
+                        {formatDate(property.createdAt)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -300,4 +302,4 @@ const SalesMetrics = () => {
   );
 };
 
-export default SalesMetrics;
+export default ListedProperties;
