@@ -34,6 +34,7 @@ const Login = () => {
   const SALES_HEAD = { email: "sales@example.com", password: "sales123" };
   const HR_MANAGER = { email: "hr@example.com", password: "hr123" };
   const BLOG_MANAGER = { email: "blog@example.com", password: "blog123" };
+  const ADMIN = { email: "admin@example.com", password: "admin123" };
   const HR_FINANCE = { email: "amanhr@gmail.com", password: "hr123" };
   const IT_INFRA = { email: "amanit@gmail.com", password: "it123" };
 
@@ -111,6 +112,22 @@ const Login = () => {
       localStorage.removeItem("isHRLoggedIn");
       localStorage.removeItem("isSalesHeadLoggedIn");
       window.location.href = "/blog-dashboard";
+      return;
+    }
+
+    if (
+      credentials.email === ADMIN.email &&
+      credentials.password === ADMIN.password
+    ) {
+      localStorage.setItem("isAdminLoggedIn", "true");
+      localStorage.setItem("adminEmail", credentials.email);
+      localStorage.setItem("adminName", "Admin");
+      localStorage.setItem("adminRole", "admin");
+      localStorage.removeItem("isDeveloperLoggedIn");
+      localStorage.removeItem("isHRLoggedIn");
+      localStorage.removeItem("isSalesHeadLoggedIn");
+      localStorage.removeItem("isBlogLoggedIn");
+      window.location.href = "/admin-dashboard";
       return;
     }
 
