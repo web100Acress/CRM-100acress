@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Save, AlertCircle, CheckCircle, Toggle2 } from 'lucide-react';
+import { Settings, Save, AlertCircle, CheckCircle } from 'lucide-react';
 
 const SystemSettings = () => {
   const [settings, setSettings] = useState({
