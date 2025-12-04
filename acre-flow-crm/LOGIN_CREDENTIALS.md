@@ -26,6 +26,14 @@ URL:      http://localhost:8080/login
 Redirect: /blog-dashboard
 ```
 
+### Admin
+```
+Email:    admin@example.com
+Password: admin123
+URL:      http://localhost:8080/login
+Redirect: /admin-dashboard
+```
+
 ### Developer
 ```
 Email:    amandev@gmail.com
@@ -72,9 +80,15 @@ Redirect: /it-infrastructure
 - Performance Tracking
 - Color: Orange
 
+### 🛡️ Admin Dashboard
+- System Overview & Health
+- User Management
+- System Settings & Configuration
+- Color: Red
+
 ### 👨‍💻 Developer Dashboard
 - System Overview
-- Role Assignment (NEW)
+- Role Assignment
 - Create Employee
 - Chat
 

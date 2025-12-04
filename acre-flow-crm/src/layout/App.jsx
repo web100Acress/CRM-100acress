@@ -24,6 +24,7 @@ import ItInfrastructure from "@/features/it/pages/ItInfrastructure";
 import SalesHeadDashboard from "@/features/sales/pages/SalesHeadDashboard";
 import HRDashboard from "@/features/hr/pages/HRDashboard";
 import BlogDashboard from "@/features/blog/pages/BlogDashboard";
+import AdminDashboard from "@/features/admin/pages/AdminDashboard";
 
 // Import Blog Components (temporarily disabled)
 // import BlogDashboard from "@/features/Blog_Components/BlogDashboard";
@@ -203,6 +204,7 @@ const App = () => {
           <Route path="/sales-head-dashboard" element={<SalesHeadDashboard />} />
           <Route path="/hr-dashboard" element={<HRDashboard />} />
           <Route path="/blog-dashboard" element={<BlogDashboard />} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
 
             {/* Blog Routes - Temporarily Disabled
             <Route
