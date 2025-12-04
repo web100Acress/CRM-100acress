@@ -1,8 +1,8 @@
   // Centralized API endpoints configuration
   // All API endpoint URLs are defined here for easy maintenance
 
-  const BASE_URL = 'http://13.203.201.65:5001';
   // const BASE_URL = 'http://localhost:5001';
+  const BASE_URL = 'http://localhost:5001';
 
   export const ENDPOINTS = {
     // Auth endpoints
