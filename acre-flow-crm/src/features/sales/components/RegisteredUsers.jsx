@@ -29,10 +29,11 @@ const RegisteredUsers = () => {
     const fetchUsers = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('myToken') || localStorage.getItem('token');
         
         console.log('Fetching users from:', `${API_BASE_URL}/postPerson/view/allusers`);
         console.log('Token available:', !!token);
+        console.log('Token value (first 10 chars):', token ? token.substring(0, 10) + '...' : 'none');
         
         // Try different approaches to handle CORS
         const fetchOptions = {
@@ -206,10 +207,7 @@ const RegisteredUsers = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Registered Users</h2>
-          <p className="text-gray-600">Manage all registered users</p>
-        </div>
+       
         <button 
           onClick={exportToCSV}
           className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"

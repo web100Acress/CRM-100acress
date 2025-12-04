@@ -19,7 +19,6 @@ import UserManagement from "@/features/users/pages/UserManagement";
 import Developer from "@/features/developer/pages/Developer";
 import DeveloperDashboard from "@/features/developer/pages/DeveloperDashboard";
 import ResetPassword from "@/features/auth/pages/ResetPassword";
-import HrFinance from "@/features/hr/pages/HrFinance";
 import ItInfrastructure from "@/features/it/pages/ItInfrastructure";
 import SalesHeadDashboard from "@/features/sales/pages/SalesHeadDashboard";
 import HRDashboard from "@/features/hr/pages/HRDashboard";
@@ -199,7 +198,6 @@ const App = () => {
 
       
        
-          <Route path="/hr-finance" element={<HrFinance />} />
           <Route path="/it-infrastructure" element={<ItInfrastructure />} />
           <Route path="/sales-head-dashboard" element={<SalesHeadDashboard />} />
           <Route path="/hr-dashboard" element={<HRDashboard />} />

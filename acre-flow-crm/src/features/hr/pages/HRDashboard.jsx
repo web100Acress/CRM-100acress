@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { LogOut, Menu, X, Users, BarChart3, Calendar, FileText, Award } from 'lucide-react';
+import { LogOut, Menu, X, Users, BarChart3, Calendar, FileText, Award, ChevronDown, User, Settings } from 'lucide-react';
 import HRSidebar from '../components/HRSidebar';
 import HROverview from '../components/HROverview';
-import EmployeeManagement from '../components/EmployeeManagement';
 import Attendance from '../components/Attendance';
 
 const HRDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [userInfo, setUserInfo] = useState(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   useEffect(() => {
     const hrName = localStorage.getItem('hrName') || 'HR Manager';
@@ -24,12 +24,16 @@ const HRDashboard = () => {
     window.location.href = '/login';
   };
 
+  // Get user initials for avatar
+  const getUserInitials = (name) => {
+    if (!name) return 'HR';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'overview':
         return <HROverview />;
-      case 'employees':
-        return <EmployeeManagement />;
       case 'attendance':
         return <Attendance />;
       default:
@@ -64,17 +68,61 @@ const HRDashboard = () => {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-medium text-gray-900">{userInfo?.name}</p>
-                <p className="text-xs text-gray-600">{userInfo?.email}</p>
+              {/* User Profile Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  {/* User Avatar */}
+                  <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
+                    <span className="text-white font-semibold text-sm">
+                      {getUserInitials(userInfo?.name)}
+                    </span>
+                  </div>
+                  
+                  {/* User Info */}
+                  <div className="text-right hidden sm:block">
+                    <p className="text-sm font-medium text-gray-900">{userInfo?.name}</p>
+                    <p className="text-xs text-gray-600">{userInfo?.email}</p>
+                  </div>
+                  
+                  {/* Dropdown Arrow */}
+                  <ChevronDown 
+                    size={16} 
+                    className={`text-gray-600 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`}
+                  />
+                </button>
+
+                {/* Dropdown Menu */}
+                {dropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                    {/* Profile Link */}
+                    <button className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors">
+                      <User size={16} className="text-gray-600" />
+                      <span className="text-sm text-gray-700">Profile</span>
+                    </button>
+                    
+                    {/* Settings Link */}
+                    <button className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors">
+                      <Settings size={16} className="text-gray-600" />
+                      <span className="text-sm text-gray-700">Settings</span>
+                    </button>
+                    
+                    {/* Divider */}
+                    <div className="border-t border-gray-200 my-2"></div>
+                    
+                    {/* Logout Button */}
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-3 px-4 py-2 hover:bg-red-50 transition-colors text-red-600"
+                    >
+                      <LogOut size={16} />
+                      <span className="text-sm font-medium">Logout</span>
+                    </button>
+                  </div>
+                )}
               </div>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-              >
-                <LogOut size={18} />
-                <span className="hidden sm:inline">Logout</span>
-              </button>
             </div>
           </div>
         </header>

@@ -1,12 +1,19 @@
 import React from 'react';
-import { Users, BarChart3, Calendar, FileText, Award, Settings } from 'lucide-react';
+import { Users, BarChart3, Calendar, FileText, Award, Settings, LogOut } from 'lucide-react';
 
 const HRSidebar = ({ isOpen, activeTab, onTabChange }) => {
   const menuItems = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
-    { id: 'employees', label: 'Employees', icon: Users },
     { id: 'attendance', label: 'Attendance', icon: Calendar },
   ];
+
+  const handleLogout = () => {
+    localStorage.removeItem('isHRLoggedIn');
+    localStorage.removeItem('hrEmail');
+    localStorage.removeItem('hrName');
+    localStorage.removeItem('hrRole');
+    window.location.href = '/login';
+  };
 
   return (
     <>
@@ -53,7 +60,7 @@ const HRSidebar = ({ isOpen, activeTab, onTabChange }) => {
           {/* Quick Stats */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-purple-200 uppercase">Quick Stats</h3>
-            <div className="bg-purple-700 rounded-lg p-4 space-y-3">
+            {/* <div className="bg-purple-700 rounded-lg p-4 space-y-3">
               <div>
                 <p className="text-xs text-purple-200">Total Employees</p>
                 <p className="text-2xl font-bold">156</p>
@@ -66,7 +73,18 @@ const HRSidebar = ({ isOpen, activeTab, onTabChange }) => {
                 <p className="text-xs text-purple-200">On Leave</p>
                 <p className="text-2xl font-bold">8</p>
               </div>
-            </div>
+            </div> */}
+          </div>
+
+          {/* Logout Button */}
+          <div className="absolute bottom-0 left-0 right-0 p-6">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              <LogOut size={20} />
+              <span className="font-medium">Logout</span>
+            </button>
           </div>
         </div>
       </aside>
