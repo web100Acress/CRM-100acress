@@ -31,6 +31,9 @@ const Login = () => {
 
   // Static credentials
   const DEVELOPER = { email: "amandev@gmail.com", password: "dev123" };
+  const SALES_HEAD = { email: "sales@example.com", password: "sales123" };
+  const HR_MANAGER = { email: "hr@example.com", password: "hr123" };
+  const BLOG_MANAGER = { email: "blog@example.com", password: "blog123" };
   const HR_FINANCE = { email: "amanhr@gmail.com", password: "hr123" };
   const IT_INFRA = { email: "amanit@gmail.com", password: "it123" };
 
@@ -67,6 +70,51 @@ const Login = () => {
     }
 
     if (
+      credentials.email === SALES_HEAD.email &&
+      credentials.password === SALES_HEAD.password
+    ) {
+      localStorage.setItem("isSalesHeadLoggedIn", "true");
+      localStorage.setItem("salesHeadEmail", credentials.email);
+      localStorage.setItem("salesHeadName", "Sales Head");
+      localStorage.setItem("salesHeadRole", "sales_head");
+      localStorage.removeItem("isDeveloperLoggedIn");
+      localStorage.removeItem("isHrLoggedIn");
+      localStorage.removeItem("isBlogLoggedIn");
+      window.location.href = "/sales-head-dashboard";
+      return;
+    }
+
+    if (
+      credentials.email === HR_MANAGER.email &&
+      credentials.password === HR_MANAGER.password
+    ) {
+      localStorage.setItem("isHRLoggedIn", "true");
+      localStorage.setItem("hrEmail", credentials.email);
+      localStorage.setItem("hrName", "HR Manager");
+      localStorage.setItem("hrRole", "hr_manager");
+      localStorage.removeItem("isDeveloperLoggedIn");
+      localStorage.removeItem("isSalesHeadLoggedIn");
+      localStorage.removeItem("isBlogLoggedIn");
+      window.location.href = "/hr-dashboard";
+      return;
+    }
+
+    if (
+      credentials.email === BLOG_MANAGER.email &&
+      credentials.password === BLOG_MANAGER.password
+    ) {
+      localStorage.setItem("isBlogLoggedIn", "true");
+      localStorage.setItem("blogEmail", credentials.email);
+      localStorage.setItem("blogName", "Blog Manager");
+      localStorage.setItem("blogRole", "blog_manager");
+      localStorage.removeItem("isDeveloperLoggedIn");
+      localStorage.removeItem("isHRLoggedIn");
+      localStorage.removeItem("isSalesHeadLoggedIn");
+      window.location.href = "/blog-dashboard";
+      return;
+    }
+
+    if (
       credentials.email === IT_INFRA.email &&
       credentials.password === IT_INFRA.password
     ) {
@@ -82,7 +130,7 @@ const Login = () => {
 
     // Backend login
     try {
-      const response = await fetch("http://13.203.201.65:5001/api/auth/login", {
+      const response = await fetch("http://localhost:5001/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
@@ -137,7 +185,7 @@ const Login = () => {
     setForgotStatus("");
     try {
       const res = await fetch(
-        "http://13.203.201.65:5001/api/auth/request-password-reset",
+        "http://localhost:5001/api/auth/request-password-reset",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

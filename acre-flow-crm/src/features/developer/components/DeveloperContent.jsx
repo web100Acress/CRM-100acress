@@ -43,7 +43,8 @@
     import { Button } from '@/layout/button';
     import { useToast } from '@/hooks/use-toast';
     import { useNavigate } from 'react-router-dom';
-    import DeveloperChat from './DeveloperChat'; // Import the chat component (to be created)
+    import DeveloperChat from './DeveloperChat';
+    import RoleAssignment from './RoleAssignment';
 
     const DeveloperContent = ({ userRole }) => {
       const [activeTab, setActiveTab] = useState('overview');
@@ -86,20 +87,9 @@
 
       const tabs = [
         { id: 'overview', label: 'System Overview', icon: Monitor },
-        // { id: 'access-control', label: 'Access Control', icon: Users },
-        // { id: 'database', label: 'Database', icon: Database },
-        // { id: 'api', label: 'API Management', icon: Server },
-        // { id: 'security', label: 'Security', icon: Shield },
-        // { id: 'logs', label: 'System Logs', icon: FileText },
+        { id: 'role-assignment', label: 'Role Assignment', icon: Users },
         { id: 'create-employee', label: 'Create Employee', icon: UserPlus },
-        // { id: 'project-enquiries', label: 'Project Enquiries', icon: BarChart3 },
-        // { id: 'registered-users', label: 'Registered Users', icon: Users },
-        // { id: 'blog-management', label: 'Blog Management', icon: FileText },
-        // { id: 'admin-access', label: 'Admin Access', icon: Crown },
-        // { id: 'performance', label: 'Performance', icon: Activity },
-        // { id: 'deployment', label: 'Deployment', icon: GitBranch },
-        // { id: 'tools', label: 'Dev Tools', icon: Wrench },
-        { id: 'chat', label: 'Chat', icon: Info }, // New Chat tab
+        { id: 'chat', label: 'Chat', icon: Info },
       ];
 
       const handleAction = (action) => {
@@ -144,7 +134,7 @@
           };
           const token = localStorage.getItem('token');
           console.log('Token used for create employee:', token); // Debug log
-          const response = await fetch('http://13.203.201.65:5001/api/users', {
+          const response = await fetch('http://localhost:5001/api/users', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -1195,6 +1185,8 @@
             return renderSecurity();
           case 'logs':
             return renderLogs();
+          case 'role-assignment':
+            return <RoleAssignment />;
           case 'create-employee':
             return renderCreateEmployee();
           case 'project-enquiries':
