@@ -62,7 +62,7 @@ const RoleAssignment = () => {
           password: formData.password,
           department: formData.department,
           role: formData.role,
-          name: formData.email.split('@')[0],
+          name: formData.email.split('@')[0], // Generate name from email
         }),
       });
 
@@ -73,6 +73,7 @@ const RoleAssignment = () => {
         setShowForm(false);
         setMessage('✅ User created and assigned successfully!');
         setTimeout(() => setMessage(''), 3000);
+        // Refresh the list to show the new user
         setTimeout(() => fetchAssignments(), 500);
       } else {
         setMessage(`❌ Error: ${data.message || 'Failed to create user'}`);
@@ -84,76 +85,8 @@ const RoleAssignment = () => {
     }
   };
 
-  const handleEditStart = (assignment) => {
-    setEditingAssignment(assignment.id);
-    setEditFormData({
-      department: assignment.department,
-      role: assignment.role,
-    });
-  };
-
-  const handleEditSave = async (assignmentId) => {
-    setEditLoading(true);
-    setMessage('');
-
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5001/api/users/${assignmentId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          department: editFormData.department,
-          role: editFormData.role,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        setMessage('✅ User role and department updated successfully!');
-        setEditingAssignment(null);
-        setTimeout(() => setMessage(''), 3000);
-        setTimeout(() => fetchAssignments(), 500);
-      } else {
-        setMessage(`❌ Error: ${data.message || 'Failed to update user'}`);
-      }
-    } catch (error) {
-      setMessage(`❌ Error: ${error.message}`);
-    } finally {
-      setEditLoading(false);
-    }
-  };
-
-  const handleEditCancel = () => {
-    setEditingAssignment(null);
-    setEditFormData({ department: '', role: '' });
-  };
-
-  const handleDelete = async (id) => {
-    setMessage('');
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5001/api/users/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        setAssignments(assignments.filter((a) => a.id !== id));
-        setMessage('✅ User deleted successfully!');
-        setTimeout(() => setMessage(''), 3000);
-      } else {
-        setMessage('❌ Error: Failed to delete user');
-      }
-    } catch (error) {
-      setMessage(`❌ Error: ${error.message}`);
-    }
+  const handleDelete = (id) => {
+    setAssignments(assignments.filter((a) => a.id !== id));
   };
 
   const getDepartmentColor = (deptId) => {
@@ -166,6 +99,7 @@ const RoleAssignment = () => {
     return dept?.label || deptId;
   };
 
+  // Fetch users from backend
   useEffect(() => {
     fetchAssignments();
   }, []);
@@ -174,7 +108,7 @@ const RoleAssignment = () => {
     try {
       setLoadingAssignments(true);
       const token = localStorage.getItem('token');
-
+      
       const response = await fetch('http://localhost:5001/api/users', {
         method: 'GET',
         headers: {
@@ -183,10 +117,11 @@ const RoleAssignment = () => {
         },
       });
       const data = await response.json();
-
+      
       if (response.ok && data.success && Array.isArray(data.data)) {
+        // Map backend users to assignments format
         const mappedAssignments = data.data
-          .filter(user => user.role && user.department)
+          .filter(user => user.role && user.department) // Only show users with role and department
           .map((user, index) => ({
             id: user._id || index,
             name: user.name || user.email.split('@')[0],
@@ -208,16 +143,11 @@ const RoleAssignment = () => {
     fetchAssignments();
   };
 
-  const handleFormSubmit = (e) => {
-    e.preventDefault();
-    handleAddAssignment(e);
-  };
-
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Role Assignment</h1>
+       
         <div className="flex gap-2">
           <button
             onClick={handleRefresh}
@@ -267,7 +197,7 @@ const RoleAssignment = () => {
       {showForm && (
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-bold text-gray-900 mb-4">Assign New Role</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form onSubmit={handleAddAssignment} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
               type="email"
               placeholder="Email Address"
@@ -314,13 +244,14 @@ const RoleAssignment = () => {
             </select>
             <div className="md:col-span-2 flex gap-2">
               <button
-                onClick={handleFormSubmit}
+                type="submit"
                 disabled={loading}
                 className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 {loading ? 'Creating User...' : 'Assign Role'}
               </button>
               <button
+                type="button"
                 onClick={() => setShowForm(false)}
                 disabled={loading}
                 className="flex-1 px-4 py-2 bg-gray-300 text-gray-900 rounded-lg hover:bg-gray-400 transition disabled:bg-gray-200 disabled:cursor-not-allowed"
@@ -328,7 +259,7 @@ const RoleAssignment = () => {
                 Cancel
               </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
 
@@ -347,119 +278,35 @@ const RoleAssignment = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {loadingAssignments ? (
-                <tr>
-                  <td colSpan="6" className="px-6 py-4 text-center text-gray-600">
-                    Loading...
+              {assignments.map((assignment) => (
+                <tr key={assignment.id} className="hover:bg-gray-50 transition">
+                  <td className="px-6 py-4">
+                    <p className="font-medium text-gray-900">{assignment.name}</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <p className="text-gray-600">{assignment.email}</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`px-3 py-1 ${getDepartmentColor(assignment.department)} text-white rounded-full text-sm font-medium`}>
+                      {getDepartmentLabel(assignment.department)}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <p className="text-gray-900 font-medium">{assignment.role.replace(/_/g, ' ').toUpperCase()}</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <p className="text-gray-600">{assignment.assignedDate}</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <button
+                      onClick={() => handleDelete(assignment.id)}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition"
+                    >
+                      <Trash2 size={18} className="text-red-600" />
+                    </button>
                   </td>
                 </tr>
-              ) : assignments.length === 0 ? (
-                <tr>
-                  <td colSpan="6" className="px-6 py-4 text-center text-gray-600">
-                    No assignments yet
-                  </td>
-                </tr>
-              ) : (
-                assignments.map((assignment) => (
-                  <tr key={assignment.id} className="hover:bg-gray-50 transition">
-                    {editingAssignment === assignment.id ? (
-                      <>
-                        <td className="px-6 py-4">
-                          <p className="font-medium text-gray-900">{assignment.name}</p>
-                        </td>
-                        <td className="px-6 py-4">
-                          <p className="text-gray-600">{assignment.email}</p>
-                        </td>
-                        <td className="px-6 py-4">
-                          <select
-                            value={editFormData.department}
-                            onChange={(e) => setEditFormData({ ...editFormData, department: e.target.value, role: '' })}
-                            className="px-3 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            {departments.map((dept) => (
-                              <option key={dept.id} value={dept.id}>
-                                {dept.label}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="px-6 py-4">
-                          <select
-                            value={editFormData.role}
-                            onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
-                            className="px-3 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value="">Select Role</option>
-                            {editFormData.department &&
-                              rolesByDepartment[editFormData.department]?.map((role) => (
-                                <option key={role.id} value={role.id}>
-                                  {role.label}
-                                </option>
-                              ))}
-                          </select>
-                        </td>
-                        <td className="px-6 py-4">
-                          <p className="text-gray-600">{assignment.assignedDate}</p>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleEditSave(assignment.id)}
-                              disabled={editLoading}
-                              className="p-2 hover:bg-green-100 rounded-lg transition disabled:bg-gray-100"
-                            >
-                              <Save size={18} className="text-green-600" />
-                            </button>
-                            <button
-                              onClick={handleEditCancel}
-                              disabled={editLoading}
-                              className="p-2 hover:bg-red-100 rounded-lg transition disabled:bg-gray-100"
-                            >
-                              <X size={18} className="text-red-600" />
-                            </button>
-                          </div>
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td className="px-6 py-4">
-                          <p className="font-medium text-gray-900">{assignment.name}</p>
-                        </td>
-                        <td className="px-6 py-4">
-                          <p className="text-gray-600">{assignment.email}</p>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`px-3 py-1 ${getDepartmentColor(assignment.department)} text-white rounded-full text-sm font-medium`}>
-                            {getDepartmentLabel(assignment.department)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <p className="text-gray-900 font-medium">{assignment.role.replace(/_/g, ' ').toUpperCase()}</p>
-                        </td>
-                        <td className="px-6 py-4">
-                          <p className="text-gray-600">{assignment.assignedDate}</p>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleEditStart(assignment)}
-                              className="p-2 hover:bg-blue-100 rounded-lg transition"
-                            >
-                              <Edit2 size={18} className="text-blue-600" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(assignment.id)}
-                              className="p-2 hover:bg-red-100 rounded-lg transition"
-                            >
-                              <Trash2 size={18} className="text-red-600" />
-                            </button>
-                          </div>
-                        </td>
-                      </>
-                    )}
-                  </tr>
-                ))
-              )}
+              ))}
             </tbody>
           </table>
         </div>
