@@ -4,7 +4,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-
+import Login from '@/features/admin/components/Login';
+import UserManagement from '@/features/admin/components/UserManagement';
 // Import pages from features
 // import Dashboard from '@/features/users/pages/Dashboard';
 // import Login from '@/features/auth/pages/Login';
@@ -46,9 +47,10 @@ const AppRoutes = ({ isLoggedIn, userRole, isDeveloperLoggedIn }) => {
   return (
     <Routes>
       {/* Auth Routes */}
-      {/* <Route path="/login" element={!isLoggedIn ? <Login /> : <Navigate to="/" replace />} /> */}
+      <Route path="/login" element={!isLoggedIn ? <Login /> : <Navigate to="/" replace />} />
       
       {/* Protected Routes */}
+      <Route path="/Admin/UserManagement" element={isLoggedIn && (userRole === "admin" || userRole === "crm_admin" || userRole === "hr" || userRole === "it") ? <UserManagement /> : <Navigate to="/login" replace />} />
       {/* <Route path="/" element={isLoggedIn ? <Dashboard userRole={userRole} /> : <Navigate to="/login" replace />} /> */}
       {/* <Route path="/leads" element={isLoggedIn ? <Leads userRole={userRole} /> : <Navigate to="/login" replace />} /> */}
       {/* <Route path="/tickets" element={isLoggedIn ? <Tickets userRole={userRole} /> : <Navigate to="/login" replace />} /> */}

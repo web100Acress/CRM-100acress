@@ -3,6 +3,7 @@ import { LogOut, Menu, X, BarChart3, Users, Settings, Shield, Activity, ChevronD
 import AdminSidebar from '../components/AdminSidebar';
 import AdminOverview from '../components/AdminOverview';
 import UserManagement from '../components/UserManagement';
+import CreateUser from '@/features/users/pages/CreateUser';
 // import SystemSettings from '../components/SystemSettings';
 
 const AdminDashboard = () => {
@@ -37,7 +38,8 @@ const AdminDashboard = () => {
         return <AdminOverview />;
       case 'users':
         return <UserManagement />;
-     
+      case 'register-user':
+        return <CreateUser userRole="admin" userType="employee" />;
       default:
         return <AdminOverview />;
     }
