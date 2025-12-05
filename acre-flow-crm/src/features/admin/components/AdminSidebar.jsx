@@ -1,14 +1,55 @@
 import React from 'react';
-import { BarChart3, Users, Settings, LogOut, Shield } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { BarChart3, Users, Settings, LogOut, Shield, FileText, Home, ShoppingCart, Briefcase, Phone, MapPin, CreditCard, Map, MessageSquare, Image, UserPlus, Package, Mail } from 'lucide-react';
+import { hasAdminAccess, hasSalesAccess, hasBlogAccess, hasHrAccess, getUserRole } from '../../../utils/roleGuard';
 
 const AdminSidebar = ({ isOpen, activeTab, onTabChange }) => {
-  const menuItems = [
-    { id: 'overview', label: 'Overview', icon: BarChart3 },
-    { id: 'users', label: 'User Manage', icon: Users },
-
+  // Get current user role
+  const userRole = getUserRole() || localStorage.getItem('adminRole') || 'user';
+  
+  // All available menu items with their required roles
+  const allMenuItems = [
+    { id: 'overview', label: 'Overview', icon: BarChart3, roles: ['admin', 'sales_head', 'hr_manager', 'blog_manager'] },
+    { id: 'register-user', label: 'Register User', icon: UserPlus, roles: ['admin'] },
+    { id: 'project-enquiries', label: 'Project Enquiries', icon: FileText, roles: ['admin', 'sales_head'] },
+    { id: 'listed-projects', label: 'Listed Projects', icon: Home, roles: ['admin', 'sales_head'] },
+    { id: 'project-order-manager', label: 'Project Order Manager', icon: Package, roles: ['admin', 'sales_head'] },
+    { id: 'resale-enquiries', label: 'Resale Enquiries', icon: Phone, roles: ['admin', 'sales_head'] },
+    { id: 'listed-properties', label: 'Listed Properties', icon: Home, roles: ['admin', 'sales_head'] },
+    { id: 'S3-manager', label: 'S3 Manager', icon: MapPin, roles: ['admin'] },
+    { id: 'contact Cards', label: 'Contact Cards', icon: Mail, roles: ['admin'] },
+    { id: 'sitemap-manager', label: 'Sitemap Manager', icon: Map, roles: ['admin'] },
+    { id: 'blog-post', label: 'Blog Post', icon: MessageSquare, roles: ['admin', 'blog_manager'] },
+    { id: 'banner-management', label: 'Banner Management', icon: Image, roles: ['admin', 'blog_manager'] },
+    { id: 'short-setting', label: 'Short setting', icon: Settings, roles: ['admin'] },
   ];
 
+  // Filter menu items based on user role
+  const menuItems = allMenuItems.filter(item => {
+    // Admin has access to everything
+    if (hasAdminAccess(userRole)) {
+      return true;
+    }
+    
+    // Check if user has any of the required roles for this menu item
+    return item.roles.some(role => {
+      const roleLower = role.toLowerCase();
+      const userRoleLower = userRole.toLowerCase();
+      
+      // Direct role match
+      if (roleLower === userRoleLower) return true;
+      
+      // Special cases
+      if (roleLower === 'sales_head' && (userRoleLower === 'sales_head' || userRoleLower === 'sales_executive')) return true;
+      if (roleLower === 'blog_manager' && (userRoleLower === 'blog_manager' || userRoleLower === 'blog_writer' || userRoleLower === 'blog')) return true;
+      if (roleLower === 'hr_manager' && (userRoleLower === 'hr_manager' || userRoleLower === 'hr_executive' || userRoleLower === 'hr')) return true;
+      
+      return false;
+    });
+  });
+
   const handleLogout = () => {
+    // Clear all CRM-related localStorage
     localStorage.removeItem('isAdminLoggedIn');
     localStorage.removeItem('adminEmail');
     localStorage.removeItem('adminName');
@@ -17,6 +58,22 @@ const AdminSidebar = ({ isOpen, activeTab, onTabChange }) => {
     localStorage.removeItem('userRole');
     localStorage.removeItem('userEmail');
     localStorage.removeItem('userName');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('token');
+    localStorage.removeItem('sourceSystem');
+    localStorage.removeItem('originalRole');
+    
+    // Clear 100acress-related localStorage
+    localStorage.removeItem('myToken');
+    
+    // Clear other role-specific logins
+    localStorage.removeItem('isDeveloperLoggedIn');
+    localStorage.removeItem('isHrFinanceLoggedIn');
+    localStorage.removeItem('isSalesHeadLoggedIn');
+    localStorage.removeItem('isHRLoggedIn');
+    localStorage.removeItem('isBlogLoggedIn');
+    localStorage.removeItem('isItLoggedIn');
+    
     window.location.href = '/login';
   };
 
@@ -28,7 +85,7 @@ const AdminSidebar = ({ isOpen, activeTab, onTabChange }) => {
           isOpen ? 'translate-x-0' : '-translate-x-full'
         } fixed lg:static lg:translate-x-0 z-40 w-64 h-screen bg-gradient-to-b from-red-900 to-red-800 text-white transition-transform duration-300 ease-in-out overflow-y-auto`}
       >
-        <div className="p-6">
+        <div className="p-6 flex flex-col h-screen">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-red-400 rounded-lg flex items-center justify-center">
@@ -39,22 +96,23 @@ const AdminSidebar = ({ isOpen, activeTab, onTabChange }) => {
           </div>
 
           {/* Menu Items */}
-          <nav className="space-y-2">
+          <nav className="space-y-2 flex-1">
             {menuItems.map((item) => {
               const Icon = item.icon;
               return (
-                <button
+                <Link
+                  to={`/admin/${item.id.replace(/\s+/g, '-').toLowerCase()}`}
                   key={item.id}
-                  onClick={() => onTabChange(item.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                     activeTab === item.id
                       ? 'bg-red-400 text-white'
                       : 'text-red-100 hover:bg-red-700'
                   }`}
+                  onClick={() => onTabChange(item.id)}
                 >
                   <Icon size={20} />
-                  <span className="font-medium">{item.label}</span>
-                </button>
+                  <span className="font-medium whitespace-nowrap">{item.label}</span>
+                </Link>
               );
             })}
           </nav>
@@ -81,14 +139,14 @@ const AdminSidebar = ({ isOpen, activeTab, onTabChange }) => {
             </div> */}
           </div>
 
-          {/* Logout Button */}
-          <div className="absolute bottom-0 left-0 right-0 p-6">
+          {/* Logout Button - Fixed at Bottom */}
+          <div className="mt-auto pt-6">
             <button
               onClick={handleLogout}
               className="w-full flex items-center gap-3 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
             >
               <LogOut size={20} />
-              <span className="font-medium">Logout</span>
+              <span className="font-medium whitespace-nowrap">Logout</span>
             </button>
           </div>
         </div>

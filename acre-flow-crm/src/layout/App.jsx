@@ -24,6 +24,8 @@ import SalesHeadDashboard from "@/features/sales/pages/SalesHeadDashboard";
 import HRDashboard from "@/features/hr/pages/HRDashboard";
 import BlogDashboard from "@/features/blog/pages/BlogDashboard";
 import AdminDashboard from "@/features/admin/pages/AdminDashboard";
+import AdminUserManagement from "@/features/admin/components/UserManagement";
+import ViewPropertyAdmin from "@/features/admin/components/ViewPropertyAdmin";
 
 // Import Blog Components (temporarily disabled)
 // import BlogDashboard from "@/features/Blog_Components/BlogDashboard";
@@ -203,6 +205,9 @@ const App = () => {
           <Route path="/hr-dashboard" element={<HRDashboard />} />
           <Route path="/blog-dashboard" element={<BlogDashboard />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/register-user" element={<AdminUserManagement />} />
+          <Route path="/Admin/viewproperty/:id" element={<ViewPropertyAdmin />} />
+          <Route path="/admin/view-property/:id" element={<ViewPropertyAdmin />} />
 
             {/* Blog Routes - Temporarily Disabled
             <Route

@@ -13,7 +13,10 @@ const allowedOrigins = [
   'http://127.0.0.1:3000',
   'https://100acress.com',
   'https://www.100acress.com',  // ✅ added
-  'https://api.100acress.com'
+  'https://api.100acress.com',
+  'http://localhost:5001',
+   'http://localhost:3500'
+  
 ];
 
 const corsOptions = {

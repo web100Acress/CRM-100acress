@@ -4,6 +4,8 @@
   const bcrypt = require('bcryptjs');
   const jwt = require('jsonwebtoken');
   const userController = require('../controllers/userController');
+  const { verifyAcressUserAccess } = require('../utils/verify100acressUser');
+  const { mapAcressRoleToCRM } = require('../services/roleMappingService');
 
   // LOGIN route
   router.post('/login', async (req, res) => {
@@ -39,8 +41,8 @@
       // Generate JWT token
       const token = jwt.sign(
         { userId: user._id, role: user.role, email: user.email },
-        process.env.JWT_SECRET || 'your-secret-key',
-        { expiresIn: '1d' }
+        process.env.JWT_SECRET || 'aman123',
+        { expiresIn: '7d' } // Changed from '1d' to '7d'
       );
 
       console.log('Login successful for:', email);
@@ -58,6 +60,65 @@
     } catch (error) {
       console.error('Login error:', error);
       res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Verify 100acress token and grant CRM access
+  router.post('/verify-100acress-token', async (req, res) => {
+    try {
+      const { token } = req.body;
+
+      if (!token) {
+        return res.status(400).json({
+          success: false,
+          message: 'Token is required',
+        });
+      }
+
+      // Verify 100acress token and get user data
+      const result = await verifyAcressUserAccess(token);
+
+      if (!result.success) {
+        return res.status(401).json({
+          success: false,
+          message: result.error || 'Invalid or expired token',
+        });
+      }
+
+      const acressUser = result.user;
+      const mappedRole = acressUser.mappedRole || mapAcressRoleToCRM(acressUser.role);
+
+      // Generate CRM token for the user
+      const crmToken = jwt.sign(
+        {
+          userId: acressUser._id,
+          role: mappedRole,
+          email: acressUser.email,
+          sourceSystem: '100acress',
+          originalRole: acressUser.role,
+        },
+        process.env.JWT_SECRET || 'aman123',
+        { expiresIn: '7d' }
+      );
+
+      return res.status(200).json({
+        success: true,
+        token: crmToken,
+        user: {
+          _id: acressUser._id,
+          email: acressUser.email,
+          name: acressUser.name,
+          role: mappedRole,
+          originalRole: acressUser.role,
+          sourceSystem: '100acress',
+        },
+      });
+    } catch (error) {
+      console.error('Error verifying 100acress token:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Server error while verifying token',
+      });
     }
   });
 

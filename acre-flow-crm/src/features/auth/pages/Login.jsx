@@ -29,6 +29,52 @@ const Login = () => {
 
   const navigate = null; // Remove navigate for demo
 
+  // Helper function to redirect based on role
+  const redirectBasedOnRole = (role) => {
+    switch (role) {
+      // Department-based roles
+      case "sales_head":
+      case "sales_executive":
+        window.location.href = "/sales-head-dashboard";
+        break;
+      case "hr_manager":
+      case "hr_executive":
+        window.location.href = "/hr-dashboard";
+        break;
+      case "blog_manager":
+      case "blog_writer":
+        window.location.href = "/blog-dashboard";
+        break;
+      case "admin":
+      case "super_admin":
+      case "superadmin":
+      case "super-admin":
+        window.location.href = "/admin-dashboard";
+        break;
+      // Existing roles
+      case "developer":
+        window.location.href = "/developer-dashboard";
+        break;
+      case "hr_finance":
+        window.location.href = "/hr-finance";
+        break;
+      case "it_infrastructure":
+        window.location.href = "/it-infrastructure";
+        break;
+      case "super-admin":
+        window.location.href = "/super-admin-dashboard";
+        break;
+      case "head-admin":
+        window.location.href = "/head-admin-dashboard";
+        break;
+      case "team-leader":
+        window.location.href = "/team-leader-dashboard";
+        break;
+      default:
+        window.location.href = "/";
+    }
+  };
+
   // Static credentials
   const DEVELOPER = { email: "amandev@gmail.com", password: "dev123" };
   const SALES_HEAD = { email: "sales@example.com", password: "sales123" };
@@ -123,10 +169,31 @@ const Login = () => {
       localStorage.setItem("adminEmail", credentials.email);
       localStorage.setItem("adminName", "Admin");
       localStorage.setItem("adminRole", "admin");
+      localStorage.setItem("userRole", "admin");
+      localStorage.setItem("sourceSystem", "static");
       localStorage.removeItem("isDeveloperLoggedIn");
       localStorage.removeItem("isHRLoggedIn");
       localStorage.removeItem("isSalesHeadLoggedIn");
       localStorage.removeItem("isBlogLoggedIn");
+      
+      // Try to get 100acress token for 100acress API access
+      try {
+        const acressLoginResponse = await fetch("http://localhost:3500/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(credentials),
+          credentials: "include",
+        });
+
+        const acressLoginData = await acressLoginResponse.json();
+        if (acressLoginResponse.ok && acressLoginData.token) {
+          localStorage.setItem("myToken", acressLoginData.token);
+        }
+      } catch (acressError) {
+        // If 100acress login fails, continue with static login
+        console.warn("Could not get 100acress token for static admin:", acressError);
+      }
+      
       window.location.href = "/admin-dashboard";
       return;
     }
@@ -145,75 +212,118 @@ const Login = () => {
       return;
     }
 
-    // Backend login
+    // Backend login - Try CRM first, then 100acress
     try {
-      const response = await fetch("http://localhost:5001/api/auth/login", {
+      // Try CRM login first
+      const crmResponse = await fetch("http://localhost:5001/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
         credentials: "include",
       });
 
-      const data = await response.json();
-      if (response.ok && data.token) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("userRole", data.user.role);
-        localStorage.setItem("userEmail", data.user.email);
-        localStorage.setItem("userName", data.user.name);
+      const crmData = await crmResponse.json();
+      if (crmResponse.ok && crmData.token) {
+        // CRM login successful
+        localStorage.setItem("token", crmData.token);
+        localStorage.setItem("userRole", crmData.user.role);
+        localStorage.setItem("userEmail", crmData.user.email);
+        localStorage.setItem("userName", crmData.user.name);
         localStorage.setItem("isLoggedIn", "true");
-        localStorage.setItem("userId", data.user._id);
+        localStorage.setItem("userId", crmData.user._id);
+        localStorage.setItem("sourceSystem", "crm");
         localStorage.removeItem("isDeveloperLoggedIn");
         localStorage.removeItem("isHrFinanceLoggedIn");
 
         // Store department if available
-        if (data.user.department) {
-          localStorage.setItem("userDepartment", data.user.department);
+        if (crmData.user.department) {
+          localStorage.setItem("userDepartment", crmData.user.department);
         }
 
-        switch (data.user.role) {
-          // Department-based roles
-          case "sales_head":
-          case "sales_executive":
-            window.location.href = "/sales-head-dashboard";
-            break;
-          case "hr_manager":
-          case "hr_executive":
-            window.location.href = "/hr-dashboard";
-            break;
-          case "blog_manager":
-          case "blog_writer":
-            window.location.href = "/blog-dashboard";
-            break;
-          case "admin":
-          case "super_admin":
-            window.location.href = "/admin-dashboard";
-            break;
-          // Existing roles
-          case "developer":
-            window.location.href = "/developer-dashboard";
-            break;
-          case "hr_finance":
-            window.location.href = "/hr-finance";
-            break;
-          case "it_infrastructure":
-            window.location.href = "/it-infrastructure";
-            break;
-          case "super-admin":
-            window.location.href = "/super-admin-dashboard";
-            break;
-          case "head-admin":
-            window.location.href = "/head-admin-dashboard";
-            break;
-          case "team-leader":
-            window.location.href = "/team-leader-dashboard";
-            break;
-          default:
-            window.location.href = "/";
+        // If user is admin, try to get 100acress token as well for 100acress API access
+        if (crmData.user.role === 'admin' || crmData.user.role === 'Admin') {
+          try {
+            const acressLoginResponse = await fetch("http://localhost:3500/api/auth/login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(credentials),
+              credentials: "include",
+            });
+
+            const acressLoginData = await acressLoginResponse.json();
+            if (acressLoginResponse.ok && acressLoginData.token) {
+              localStorage.setItem("myToken", acressLoginData.token);
+            }
+          } catch (acressError) {
+            // If 100acress login fails, continue with CRM login
+            // User can still use CRM features, just won't have 100acress API access
+            console.warn("Could not get 100acress token:", acressError);
+          }
         }
-      } else {
-        setError(data.message || "Invalid email or password");
+
+        // Redirect based on role
+        redirectBasedOnRole(crmData.user.role);
+        return;
+      }
+
+      // If CRM login fails, try 100acress login
+      try {
+        const acressResponse = await fetch("http://localhost:3500/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(credentials),
+          credentials: "include",
+        });
+
+        const acressData = await acressResponse.json();
+        
+        if (acressResponse.ok && acressData.token) {
+          // 100acress login successful, now verify with CRM backend
+          const verifyResponse = await fetch("http://localhost:5001/api/auth/verify-100acress-token", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: acressData.token }),
+            credentials: "include",
+          });
+
+          const verifyData = await verifyResponse.json();
+          
+          if (verifyResponse.ok && verifyData.success && verifyData.token) {
+            // Store 100acress token for 100acress API calls
+            localStorage.setItem("myToken", acressData.token);
+            // Store CRM token for CRM API calls
+            localStorage.setItem("token", verifyData.token);
+            localStorage.setItem("userRole", verifyData.user.role);
+            localStorage.setItem("userEmail", verifyData.user.email);
+            localStorage.setItem("userName", verifyData.user.name);
+            localStorage.setItem("isLoggedIn", "true");
+            localStorage.setItem("userId", verifyData.user._id);
+            localStorage.setItem("sourceSystem", "100acress");
+            localStorage.setItem("originalRole", verifyData.user.originalRole || verifyData.user.role);
+            
+            // Clear other login states
+            localStorage.removeItem("isDeveloperLoggedIn");
+            localStorage.removeItem("isHrFinanceLoggedIn");
+            localStorage.removeItem("isAdminLoggedIn");
+            localStorage.removeItem("isSalesHeadLoggedIn");
+            localStorage.removeItem("isHRLoggedIn");
+            localStorage.removeItem("isBlogLoggedIn");
+
+            // Redirect based on mapped role
+            redirectBasedOnRole(verifyData.user.role);
+            return;
+          } else {
+            setError(verifyData.message || "Failed to verify 100acress account with CRM");
+          }
+        } else {
+          setError(acressData.message || "Invalid email or password");
+        }
+      } catch (acressErr) {
+        // If 100acress login also fails, show error
+        setError(crmData.message || "Invalid email or password");
       }
     } catch (err) {
+      console.error("Login error:", err);
       setError("Login failed. Please try again.");
     }
 
