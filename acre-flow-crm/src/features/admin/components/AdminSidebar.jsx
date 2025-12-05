@@ -1,10 +1,22 @@
 import React from 'react';
-import { BarChart3, Users, Settings, LogOut, Shield } from 'lucide-react';
+import { BarChart3, Users, Settings, LogOut, Shield, FileText, Home, ShoppingCart, Briefcase, Phone, MapPin, CreditCard, Map, MessageSquare, Image, UserPlus, Package, Mail } from 'lucide-react';
 
 const AdminSidebar = ({ isOpen, activeTab, onTabChange }) => {
   const menuItems = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'users', label: 'User Manage', icon: Users },
+    { id: 'project-enquiries', label: 'Project Enquiries', icon: FileText },
+    { id: 'listed-projects', label: 'Listed Projects', icon: Home },
+    { id: 'project-order-manager', label: 'Project Order Manager', icon: Package },
+    { id: 'resale-enquiries', label: 'Resale Enquiries', icon: Phone },
+    { id: 'listed-properties', label: 'Listed Properties', icon: Home },
+    { id: 'S3-manager', label: 'S3 Manager', icon: MapPin },
+    { id: 'contact Cards', label: 'Contact Cards', icon: Mail },
+    { id: 'sitemap-manager', label: 'Sitemap Manager', icon: Map },
+    { id: 'blog-post', label: 'Blog Post', icon: MessageSquare },
+    { id: 'banner-management', label: 'Banner Management', icon: Image },
+    { id: 'register-user', label: 'Register User', icon: UserPlus },
+     { id: 'short-setting', label: 'Short setting', icon: Settings },
 
   ];
 
@@ -28,7 +40,7 @@ const AdminSidebar = ({ isOpen, activeTab, onTabChange }) => {
           isOpen ? 'translate-x-0' : '-translate-x-full'
         } fixed lg:static lg:translate-x-0 z-40 w-64 h-screen bg-gradient-to-b from-red-900 to-red-800 text-white transition-transform duration-300 ease-in-out overflow-y-auto`}
       >
-        <div className="p-6">
+        <div className="p-6 flex flex-col h-screen">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-red-400 rounded-lg flex items-center justify-center">
@@ -39,7 +51,7 @@ const AdminSidebar = ({ isOpen, activeTab, onTabChange }) => {
           </div>
 
           {/* Menu Items */}
-          <nav className="space-y-2">
+          <nav className="space-y-2 flex-1">
             {menuItems.map((item) => {
               const Icon = item.icon;
               return (
@@ -53,7 +65,7 @@ const AdminSidebar = ({ isOpen, activeTab, onTabChange }) => {
                   }`}
                 >
                   <Icon size={20} />
-                  <span className="font-medium">{item.label}</span>
+                  <span className="font-medium whitespace-nowrap">{item.label}</span>
                 </button>
               );
             })}
@@ -81,14 +93,14 @@ const AdminSidebar = ({ isOpen, activeTab, onTabChange }) => {
             </div> */}
           </div>
 
-          {/* Logout Button */}
-          <div className="absolute bottom-0 left-0 right-0 p-6">
+          {/* Logout Button - Fixed at Bottom */}
+          <div className="mt-auto pt-6">
             <button
               onClick={handleLogout}
               className="w-full flex items-center gap-3 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
             >
               <LogOut size={20} />
-              <span className="font-medium">Logout</span>
+              <span className="font-medium whitespace-nowrap">Logout</span>
             </button>
           </div>
         </div>
