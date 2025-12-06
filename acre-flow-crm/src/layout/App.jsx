@@ -38,6 +38,7 @@ import SitemapManager from '@/features/admin/pages/SitemapManager';
 import BlogPost from '@/features/admin/pages/BlogPost';
 import BannerManagement from '@/features/admin/pages/BannerManagement';
 import ShortSetting from '@/features/admin/pages/ShortSetting';
+import BackToTopButton from '@/features/admin/pages/BackToTopButton';
 
 // Import Blog Components (temporarily disabled)
 // import BlogDashboard from "@/features/Blog_Components/BlogDashboard";
@@ -233,6 +234,7 @@ const App = () => {
           <Route path="/admin/blog-post" element={<BlogPost />} />
           <Route path="/admin/banner-management" element={<BannerManagement />} />
           <Route path="/admin/short-setting" element={<ShortSetting />} />
+          <Route path="/admin/back-to-top" element={<BackToTopButton />} />
 
             {/* Blog Routes - Temporarily Disabled
             <Route
