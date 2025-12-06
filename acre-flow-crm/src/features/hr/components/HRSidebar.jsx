@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, BarChart3, Calendar, FileText, Award, Settings, LogOut } from 'lucide-react';
+import { Users, BarChart3, Calendar, FileText, Award, Settings, LogOut, Briefcase, Users2 } from 'lucide-react';
 
 const HRSidebar = ({ isOpen, activeTab, onTabChange }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -9,6 +9,8 @@ const HRSidebar = ({ isOpen, activeTab, onTabChange }) => {
   const menuItems = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'attendance', label: 'Attendance', icon: Calendar },
+    { id: 'all-users', label: 'All Users', icon: Users2 },
+    { id: 'all-jobs', label: 'All Jobs', icon: Briefcase },
   ];
 
   // Check real-time authentication status

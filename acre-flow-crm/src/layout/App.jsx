@@ -22,6 +22,9 @@ import ResetPassword from "@/features/auth/pages/ResetPassword";
 import ItInfrastructure from "@/features/it/pages/ItInfrastructure";
 import SalesHeadDashboard from "@/features/sales/pages/SalesHeadDashboard";
 import HRDashboard from "@/features/hr/pages/HRDashboard";
+import HRAllUsers from "@/features/hr/pages/HRAllUsers";
+import HRAllJobs from "@/features/hr/pages/HRAllJobs";
+import JobApplications from "@/features/hr/pages/JobApplications";
 import BlogDashboard from "@/features/blog/pages/BlogDashboard";
 import AdminDashboard from "@/features/admin/pages/AdminDashboard";
 import AdminUserManagement from "@/features/admin/components/UserManagement";
@@ -216,6 +219,9 @@ const App = () => {
           <Route path="/it-infrastructure" element={<ItInfrastructure />} />
           <Route path="/sales-head-dashboard" element={<SalesHeadDashboard />} />
           <Route path="/hr-dashboard" element={<HRDashboard />} />
+          <Route path="/hr-all-users" element={<HRAllUsers />} />
+          <Route path="/hr-all-jobs" element={<HRAllJobs />} />
+          <Route path="/hr/job-applications/:id" element={<JobApplications />} />
           <Route path="/blog-dashboard" element={<BlogDashboard />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/admin/register-user" element={<AdminUserManagement />} />
