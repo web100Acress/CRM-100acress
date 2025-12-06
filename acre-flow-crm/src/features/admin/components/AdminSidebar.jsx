@@ -101,7 +101,7 @@ const AdminSidebar = ({ isOpen }) => {
               const Icon = item.icon;
               return (
                 <NavLink
-                  to={`/admin/${item.id.replace(/\s+/g, '-').toLowerCase()}`}
+                  to={item.id === 'overview' ? '/admin-dashboard' : `/admin/${item.id.replace(/\s+/g, '-').toLowerCase()}`}
                   key={item.id}
                   className={({ isActive }) =>
                     `w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
