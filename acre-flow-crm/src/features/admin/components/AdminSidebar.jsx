@@ -1,9 +1,9 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { BarChart3, Users, Settings, LogOut, Shield, FileText, Home, ShoppingCart, Briefcase, Phone, MapPin, CreditCard, Map, MessageSquare, Image, UserPlus, Package, Mail } from 'lucide-react';
 import { hasAdminAccess, hasSalesAccess, hasBlogAccess, hasHrAccess, getUserRole } from '../../../utils/roleGuard';
 
-const AdminSidebar = ({ isOpen, activeTab, onTabChange }) => {
+const AdminSidebar = ({ isOpen }) => {
   // Get current user role
   const userRole = getUserRole() || localStorage.getItem('adminRole') || 'user';
   
@@ -11,7 +11,7 @@ const AdminSidebar = ({ isOpen, activeTab, onTabChange }) => {
   const allMenuItems = [
     { id: 'overview', label: 'Overview', icon: BarChart3, roles: ['admin', 'sales_head', 'hr_manager', 'blog_manager'] },
     { id: 'register-user', label: 'Register User', icon: UserPlus, roles: ['admin'] },
-    { id: 'project-enquiries', label: 'Project Enquiries', icon: FileText, roles: ['admin', 'sales_head'] },
+    { id: 'project-enquiries', label: 'Project Enquiries', icon: FileText, roles: ['admin'] },
     { id: 'listed-projects', label: 'Listed Projects', icon: Home, roles: ['admin', 'sales_head'] },
     { id: 'project-order-manager', label: 'Project Order Manager', icon: Package, roles: ['admin', 'sales_head'] },
     { id: 'resale-enquiries', label: 'Resale Enquiries', icon: Phone, roles: ['admin', 'sales_head'] },
@@ -100,19 +100,20 @@ const AdminSidebar = ({ isOpen, activeTab, onTabChange }) => {
             {menuItems.map((item) => {
               const Icon = item.icon;
               return (
-                <Link
+                <NavLink
                   to={`/admin/${item.id.replace(/\s+/g, '-').toLowerCase()}`}
                   key={item.id}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    activeTab === item.id
-                      ? 'bg-red-400 text-white'
-                      : 'text-red-100 hover:bg-red-700'
-                  }`}
-                  onClick={() => onTabChange(item.id)}
+                  className={({ isActive }) =>
+                    `w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                      isActive
+                        ? 'bg-red-400 text-white'
+                        : 'text-red-100 hover:bg-red-700'
+                    }`
+                  }
                 >
                   <Icon size={20} />
                   <span className="font-medium whitespace-nowrap">{item.label}</span>
-                </Link>
+                </NavLink>
               );
             })}
           </nav>
