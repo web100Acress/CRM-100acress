@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { parseYouTubeVideoId } from "../config/siteSettings";
-import { getApiBase } from "../config/apiBase";
-import Sidebar from "./Sidebar";
+// import { parseYouTubeVideoId } from "../config/siteSettings";
+import AdminSidebar from "../components/AdminSidebar";
+import api100acress from "../config/api100acressClient";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -172,11 +172,11 @@ const ShortsSettings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30">
+    <div className="bg-gray-50 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex">
       {/* Sidebar layout */}
-      <Sidebar />
+      <AdminSidebar />
       
-      <div className="ml-[250px] p-6 lg:p-8" style={{ width: 'calc(100% - 250px)' }}>
+      <div className="ml-0 p-16 lg:p-8" style={{ width: '100%' }}>
         {/* Enhanced Header Section */}
         <div className="mb-8">
           <div className="flex items-center mb-4">

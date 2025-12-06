@@ -15,8 +15,8 @@ import {
 } from 'react-icons/fa';
 import { MdCloudUpload, MdRefresh } from 'react-icons/md';
 import { toast } from 'react-toastify';
-import axios from 'axios';
-import Sidebar from './Sidebar';
+import AdminSidebar from "../components/AdminSidebar";
+import api100acress from "../config/api100acressClient";
 
 const S3Manager = () => {
   const [folders, setFolders] = useState([]);
@@ -553,8 +553,8 @@ const S3Manager = () => {
 
   return (
     <div className="min-h-screen flex bg-gray-50 dark:bg-gray-900 dark:text-gray-100">
-      <Sidebar />
-      <div className="flex-1 min-w-0 p-6 ml-[240px] transition-colors duration-300">
+      <AdminSidebar />
+      <div className="flex-1 min-w-0 p-6 ml-[80px] transition-colors duration-300">
         <div className="max-w-full mx-auto">
         {/* Header */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6">

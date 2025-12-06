@@ -28,8 +28,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
-import { getApiBase } from '../config/apiBase';
-import Sidebar from './Sidebar';
+import api100acress from "../config/api100acressClient"; // For 100acress backend
+import AdminSidebar from "../components/AdminSidebar";
 
 const ContactCardManagement = () => {
   const [contactCards, setContactCards] = useState([]);
@@ -139,7 +139,7 @@ const ContactCardManagement = () => {
   return (
     <div className="flex h-screen bg-gray-100">
       <div className="w-1/5">
-        <Sidebar />
+        <AdminSidebar />
       </div>
       <div className="w-4/5 overflow-auto">
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-6">

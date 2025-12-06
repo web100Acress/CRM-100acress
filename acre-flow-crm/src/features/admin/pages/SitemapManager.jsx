@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { API_BASE } from '../config/apiBase';
-import Sidebar from './Sidebar';
+import AdminSidebar from "../components/AdminSidebar";
+import api100acress from "../config/api100acressClient";
 import { MdEdit, MdDelete, MdAdd, MdSearch } from 'react-icons/md';
 
 const SitemapManagement = () => {
@@ -152,8 +152,8 @@ const SitemapManagement = () => {
   );
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex font-sans">
-      <Sidebar />
+    <div className="bg-gray-50 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex">
+      <AdminSidebar />
       <div className="flex-1 p-8 ml-0 lg:ml-[250px] transition-colors duration-300">
         <div className="max-w-7xl mx-auto">
           {/* Header Section */}
