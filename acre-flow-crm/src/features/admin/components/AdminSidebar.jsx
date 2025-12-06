@@ -83,7 +83,7 @@ const AdminSidebar = ({ isOpen }) => {
       <aside
         className={`${
           isOpen ? 'translate-x-0' : '-translate-x-full'
-        } fixed lg:static lg:translate-x-0 z-40 w-64 h-screen bg-gradient-to-b from-red-900 to-red-800 text-white transition-transform duration-300 ease-in-out overflow-y-auto`}
+        } fixed lg:relative lg:translate-x-0 z-40 w-64 h-screen bg-gradient-to-b from-red-900 to-red-800 text-white transition-transform duration-300 ease-in-out overflow-y-auto flex-shrink-0`}
       >
         <div className="p-6 flex flex-col h-screen">
           <div className="flex items-center justify-between mb-8">
