@@ -27,6 +27,18 @@ import AdminDashboard from "@/features/admin/pages/AdminDashboard";
 import AdminUserManagement from "@/features/admin/components/UserManagement";
 import ViewPropertyAdmin from "@/features/admin/components/ViewPropertyAdmin";
 
+import ProjectEnquiries from '@/features/admin/pages/ProjectEnquiries';
+import ListedProjects from '@/features/admin/pages/ListedProjects';
+import ProjectOrderManager from '@/features/admin/pages/ProjectOrderManager';
+import ResaleEnquiries from '@/features/admin/pages/ResaleEnquiries';
+import ListedProperties from '@/features/admin/pages/ListedProperties';
+import S3Manager from '@/features/admin/pages/S3Manager';
+import ContactCards from '@/features/admin/pages/ContactCards';
+import SitemapManager from '@/features/admin/pages/SitemapManager';
+import BlogPost from '@/features/admin/pages/BlogPost';
+import BannerManagement from '@/features/admin/pages/BannerManagement';
+import ShortSetting from '@/features/admin/pages/ShortSetting';
+
 // Import Blog Components (temporarily disabled)
 // import BlogDashboard from "@/features/Blog_Components/BlogDashboard";
 // import BlogManagement from "@/features/Blog_Components/BlogManagement";
@@ -208,6 +220,19 @@ const App = () => {
           <Route path="/admin/register-user" element={<AdminUserManagement />} />
           <Route path="/Admin/viewproperty/:id" element={<ViewPropertyAdmin />} />
           <Route path="/admin/view-property/:id" element={<ViewPropertyAdmin />} />
+
+          {/* New Admin Routes */}
+          <Route path="/admin/project-enquiries" element={<ProjectEnquiries />} />
+          <Route path="/admin/listed-projects" element={<ListedProjects />} />
+          <Route path="/admin/project-order-manager" element={<ProjectOrderManager />} />
+          <Route path="/admin/resale-enquiries" element={<ResaleEnquiries />} />
+          <Route path="/admin/listed-properties" element={<ListedProperties />} />
+          <Route path="/admin/s3-manager" element={<S3Manager />} />
+          <Route path="/admin/contact-cards" element={<ContactCards />} />
+          <Route path="/admin/sitemap-manager" element={<SitemapManager />} />
+          <Route path="/admin/blog-post" element={<BlogPost />} />
+          <Route path="/admin/banner-management" element={<BannerManagement />} />
+          <Route path="/admin/short-setting" element={<ShortSetting />} />
 
             {/* Blog Routes - Temporarily Disabled
             <Route
