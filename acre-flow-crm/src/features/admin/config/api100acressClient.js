@@ -21,8 +21,8 @@ api100acress.interceptors.request.use(
       const userRole = localStorage.getItem('userRole') || localStorage.getItem('adminRole');
       const sourceSystem = localStorage.getItem('sourceSystem');
       
-      // If user is admin and logged in via CRM, try to get 100acress token
-      if (crmToken && (userRole === 'admin' || userRole === 'Admin')) {
+      // If user is admin, hr, or super-admin and logged in via CRM, try to get 100acress token
+      if (crmToken && (userRole === 'admin' || userRole === 'Admin' || userRole === 'hr' || userRole === 'HR' || userRole === 'super-admin')) {
         // Since we can't store password, try using CRM token
         // If 100acress backend uses same JWT_SECRET, CRM token should work
         token = crmToken;
@@ -62,6 +62,9 @@ api100acress.interceptors.response.use(
         // User logged in via CRM but needs 100acress token
         // You might want to redirect to login or show a message
         console.warn('100acress API requires authentication. Please login via 100acress backend or contact admin.');
+      } else if (!userEmail) {
+        // No user info available
+        console.warn('No user authentication found for 100acress API.');
       }
     }
     return Promise.reject(error);

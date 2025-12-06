@@ -3,6 +3,8 @@ import { LogOut, Menu, X, Users, BarChart3, Calendar, FileText, Award, ChevronDo
 import HRSidebar from '../components/HRSidebar';
 import HROverview from '../components/HROverview';
 import Attendance from '../components/Attendance';
+import HRAllUsers from './HRAllUsers';
+import HRAllJobs from './HRAllJobs';
 
 const HRDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -36,6 +38,10 @@ const HRDashboard = () => {
         return <HROverview />;
       case 'attendance':
         return <Attendance />;
+      case 'all-users':
+        return <HRAllUsers />;
+      case 'all-jobs':
+        return <HRAllJobs />;
       default:
         return <HROverview />;
     }
