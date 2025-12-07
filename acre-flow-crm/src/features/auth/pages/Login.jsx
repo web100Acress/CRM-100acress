@@ -215,7 +215,7 @@ const Login = () => {
     // Backend login - Try CRM first, then 100acress
     try {
       // Try CRM login first
-      const crmResponse = await fetch("http://localhost:5001/api/auth/login", {
+      const crmResponse = await fetch("https://bcrm.100acress.com/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
@@ -279,7 +279,7 @@ const Login = () => {
         
         if (acressResponse.ok && acressData.token) {
           // 100acress login successful, now verify with CRM backend
-          const verifyResponse = await fetch("http://localhost:5001/api/auth/verify-100acress-token", {
+          const verifyResponse = await fetch("https://bcrm.100acress.com//api/auth/verify-100acress-token", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token: acressData.token }),
@@ -335,7 +335,7 @@ const Login = () => {
     setForgotStatus("");
     try {
       const res = await fetch(
-        "http://localhost:5001/api/auth/request-password-reset",
+        "https://bcrm.100acress.com//api/auth/request-password-reset",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
