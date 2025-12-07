@@ -71,46 +71,66 @@ jobs:
 
         PROJECT_DIR=/var/www/crm
 
-        # Create project directory if missing
-        [ ! -d $PROJECT_DIR ] && mkdir -p $PROJECT_DIR && chown ubuntu:ubuntu $PROJECT_DIR
+        # Ensure swap exists (helps npm builds on small instances)
+        if [ ! -f /swapfile ]; then
+          echo "💾 Creating swapfile..."
+          if ! sudo fallocate -l 2G /swapfile 2>/dev/null; then
+            sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
+          fi
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile || true
+        fi
 
-        cd $PROJECT_DIR
+        # Create project directory if missing
+        [ ! -d "$PROJECT_DIR" ] && sudo mkdir -p "$PROJECT_DIR" && sudo chown ubuntu:ubuntu "$PROJECT_DIR"
+
+        cd "$PROJECT_DIR"
 
         # Clone repo if not exists, else pull latest changes
         if [ ! -d ".git" ]; then
+          echo "📥 Cloning repository..."
           git clone ${{ env.REPO_URL }} .
         else
+          echo "📥 Pulling latest changes..."
           git pull origin main
         fi
 
         # Frontend build
+        echo "📦 Frontend install & build..."
         cd acre-flow-crm
-        npm ci
+        npm install
         npm run build
 
         # Backend install
+        echo "📦 Backend install..."
         cd ../crm-backend
-        npm ci
+        npm install
 
         # PM2 restart/start
-        cd $PROJECT_DIR
+        echo "🔄 Restarting PM2..."
+        cd "$PROJECT_DIR"
         pm2 install pm2-logrotate || true
         pm2 restart ecosystem.config.js || pm2 start ecosystem.config.js
         pm2 save
 
         # Restart Nginx
+        echo "🌐 Restarting Nginx..."
         sudo systemctl restart nginx
 
         echo "✅ Deployment completed!"
         EOF
 
-        # Copy and execute script on EC2
+        # Copy and execute script on EC2 (run in background with nohup)
         scp -o StrictHostKeyChecking=no -i ec2_key.pem deploy.sh ubuntu@${{ steps.ec2.outputs.EC2_PUBLIC_IP }}:/tmp/
-        ssh -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@${{ steps.ec2.outputs.EC2_PUBLIC_IP }} "chmod +x /tmp/deploy.sh && /tmp/deploy.sh"
+        ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -i ec2_key.pem ubuntu@${{ steps.ec2.outputs.EC2_PUBLIC_IP }} "chmod +x /tmp/deploy.sh && nohup /tmp/deploy.sh > deploy.log 2>&1 &"
 
     # 8️⃣ Health check
     - name: Health check
       run: |
+        echo "⏳ Waiting for services to start..."
+        sleep 60
+
         echo "🏥 Checking frontend..."
         curl -f -s http://${{ steps.ec2.outputs.EC2_PUBLIC_IP }} || (echo "Frontend down" && exit 1)
         echo "✅ Frontend accessible"
