@@ -9,7 +9,7 @@ on:
 
 env:
   AWS_REGION: ap-south-1
-  EC2_INSTANCE_ID: i-0172473e5f23efa98
+  EC2_INSTANCE_ID: i-0ef3eda6dd281400b
   EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
 
 jobs:
