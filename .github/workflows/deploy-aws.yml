@@ -71,50 +71,6 @@ jobs:
           sleep 10
         done
         
-    - name: Deploy application to EC2
-      run: |
-        # Create deployment script
-        cat > deploy.sh << 'EOF'
-        #!/bin/bash
-        set -e
-        
-        echo "🚀 Starting deployment..."
-        
-        # Navigate to project directory
-        cd /var/www/crm
-        
-        # Pull latest changes
-        echo "📥 Pulling latest changes..."
-        git pull origin main
-        
-        # Install frontend dependencies
-        echo "📦 Installing frontend dependencies..."
-        cd acre-flow-crm
-        npm ci
-        npm run build
-        
-        # Install backend dependencies
-        echo "📦 Installing backend dependencies..."
-        cd ../crm-backend
-        npm ci
-        
-        # Restart services with PM2
-        echo "🔄 Restarting services..."
-        cd /var/www/crm
-        pm2 restart ecosystem.config.js
-        pm2 save
-        
-        # Restart Nginx
-        echo "🌐 Restarting Nginx..."
-        sudo systemctl restart nginx
-        
-        echo "✅ Deployment completed successfully!"
-        EOF
-        
-        # Copy and execute deployment script
-        scp -o StrictHostKeyChecking=no -i ec2_key.pem deploy.sh ubuntu@${{ steps.ec2.outputs.EC2_PUBLIC_IP }}:/tmp/
-        ssh -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@${{ steps.ec2.outputs.EC2_PUBLIC_IP }} "chmod +x /tmp/deploy.sh && /tmp/deploy.sh"
-        
     - name: Setup initial deployment (if needed)
       run: |
         # Check if project exists, if not, run initial setup
@@ -185,6 +141,49 @@ jobs:
           fi
         "
         
+    - name: Deploy application to EC2
+      run: |
+        # Create deployment script
+        cat > deploy.sh << 'EOF'
+        #!/bin/bash
+        set -e
+        
+        echo "🚀 Starting deployment..."
+        
+        # Navigate to project directory
+        cd /var/www/crm
+        
+        # Pull latest changes
+        echo "📥 Pulling latest changes..."
+        git pull origin main
+        
+        # Install frontend dependencies
+        echo "📦 Installing frontend dependencies..."
+        cd acre-flow-crm
+        npm ci
+        npm run build
+        
+        # Install backend dependencies
+        echo "📦 Installing backend dependencies..."
+        cd ../crm-backend
+        npm ci
+        
+        # Restart services with PM2
+        echo "🔄 Restarting services..."
+        cd /var/www/crm
+        pm2 restart ecosystem.config.js
+        pm2 save
+        
+        # Restart Nginx
+        echo "🌐 Restarting Nginx..."
+        sudo systemctl restart nginx
+        
+        echo "✅ Deployment completed successfully!"
+        EOF
+        
+        # Copy and execute deployment script
+        scp -o StrictHostKeyChecking=no -i ec2_key.pem deploy.sh ubuntu@${{ steps.ec2.outputs.EC2_PUBLIC_IP }}:/tmp/
+        ssh -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@${{ steps.ec2.outputs.EC2_PUBLIC_IP }} "chmod +x /tmp/deploy.sh && /tmp/deploy.sh"
     - name: Health check
       run: |
         echo "🏥 Performing health check..."
