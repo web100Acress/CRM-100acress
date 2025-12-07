@@ -2,7 +2,7 @@
   // All API endpoint URLs are defined here for easy maintenance
 
   // const BASE_URL = 'http://localhost:5001';
-  const BASE_URL = 'http://localhost:5001';
+  const BASE_URL = 'https://bcrm.100acress.com/';
 
   export const ENDPOINTS = {
     // Auth endpoints
