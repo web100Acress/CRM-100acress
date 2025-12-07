@@ -78,7 +78,7 @@ jobs:
 
         # Clone repo if not exists, else pull latest changes
         if [ ! -d ".git" ]; then
-          git clone $REPO_URL .
+          git clone ${{ env.REPO_URL }} .
         else
           git pull origin main
         fi
