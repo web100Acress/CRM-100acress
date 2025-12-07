@@ -12,19 +12,19 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
-    # 1️⃣ Checkout repo
+    # 1️⃣ Checkout code
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     # 2️⃣ Setup Node.js
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
         cache: 'npm'
-        
+
     # 3️⃣ Configure AWS credentials
     - name: Configure AWS
       uses: aws-actions/configure-aws-credentials@v4
@@ -32,13 +32,13 @@ jobs:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.AWS_REGION }}
-        
+
     # 4️⃣ Prepare SSH key
     - name: Setup SSH key
       run: |
         echo "${{ secrets.EC2_SSH_KEY }}" > ec2_key.pem
         chmod 400 ec2_key.pem
-        
+
     # 5️⃣ Get EC2 public IP
     - name: Get EC2 Public IP
       id: ec2
@@ -47,8 +47,8 @@ jobs:
           --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
         echo "EC2_PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_OUTPUT
         echo "EC2 IP: $PUBLIC_IP"
-        
-    # 6️⃣ Wait for SSH availability
+
+    # 6️⃣ Wait for SSH to be ready
     - name: Wait for SSH
       run: |
         for i in {1..30}; do
@@ -59,70 +59,73 @@ jobs:
           echo "Attempt $i/30: SSH not ready, waiting 10s..."
           sleep 10
         done
-        
+
     # 7️⃣ Deploy application
     - name: Deploy application
       run: |
-        # Create deploy script
         cat > deploy.sh << 'EOF'
         #!/bin/bash
         set -e
         echo "🚀 Starting deployment..."
-        
+
+        PROJECT_DIR=/var/www/crm
+
         # Create project directory if missing
-        [ ! -d /var/www/crm ] && mkdir -p /var/www/crm && chown ubuntu:ubuntu /var/www/crm
-        
-        cd /var/www/crm
-        
-        # Clone repo if not exists
+        [ ! -d $PROJECT_DIR ] && mkdir -p $PROJECT_DIR && chown ubuntu:ubuntu $PROJECT_DIR
+
+        cd $PROJECT_DIR
+
+        # Clone repo if not exists, else pull latest changes
         if [ ! -d ".git" ]; then
-          git clone https://github.com/${GITHUB_REPOSITORY}.git .
+          git clone https://github.com/web100Acress/CRM-100acress.git .
         else
           git pull origin main
         fi
-        
+
         # Frontend build
         cd acre-flow-crm
         npm ci
         npm run build
-        
+
         # Backend install
         cd ../crm-backend
         npm ci
-        
-        # PM2 restart
-        cd /var/www/crm
+
+        # PM2 restart/start
+        cd $PROJECT_DIR
         pm2 install pm2-logrotate || true
         pm2 restart ecosystem.config.js || pm2 start ecosystem.config.js
         pm2 save
-        
-        # Nginx restart (assumes config already in place)
+
+        # Restart Nginx
         sudo systemctl restart nginx
-        
+
         echo "✅ Deployment completed!"
         EOF
-        
-        # Copy and execute script
+
+        # Copy and execute script on EC2
         scp -o StrictHostKeyChecking=no -i ec2_key.pem deploy.sh ubuntu@${{ steps.ec2.outputs.EC2_PUBLIC_IP }}:/tmp/
         ssh -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@${{ steps.ec2.outputs.EC2_PUBLIC_IP }} "chmod +x /tmp/deploy.sh && /tmp/deploy.sh"
-        
+
     # 8️⃣ Health check
     - name: Health check
       run: |
         echo "🏥 Checking frontend..."
         curl -f -s http://${{ steps.ec2.outputs.EC2_PUBLIC_IP }} || (echo "Frontend down" && exit 1)
         echo "✅ Frontend accessible"
-        
+
         echo "🏥 Checking backend..."
         curl -f -s http://${{ steps.ec2.outputs.EC2_PUBLIC_IP }}/api || (echo "Backend down" && exit 1)
         echo "✅ Backend accessible"
-        
+
     # 9️⃣ Cleanup
     - name: Cleanup
       run: rm -f ec2_key.pem deploy.sh
-        
+
+    # 🔟 Deployment summary
     - name: Deployment summary
       run: |
         echo "🎉 Deployment completed!"
         echo "🌐 Frontend: http://${{ steps.ec2.outputs.EC2_PUBLIC_IP }}"
         echo "🔧 Backend: http://${{ steps.ec2.outputs.EC2_PUBLIC_IP }}/api"
+        echo "📊 PM2 Status: ssh -i ec2_key.pem ubuntu@${{ steps.ec2.outputs.EC2_PUBLIC_IP }} 'pm2 status'"
