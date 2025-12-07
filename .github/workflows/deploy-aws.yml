@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 env:
-  AWS_REGION: us-east-1
+  AWS_REGION: ap-south-1
   EC2_INSTANCE_ID: i-0172473e5f23efa98
   EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
 
