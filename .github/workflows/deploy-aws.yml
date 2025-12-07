@@ -3,215 +3,126 @@ name: Deploy to AWS EC2
 on:
   push:
     branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
   workflow_dispatch:
 
 env:
   AWS_REGION: ap-south-1
   EC2_INSTANCE_ID: i-0ef3eda6dd281400b
-  EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     
     steps:
+    # 1️⃣ Checkout repo
     - name: Checkout code
       uses: actions/checkout@v4
       
+    # 2️⃣ Setup Node.js
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
         cache: 'npm'
         
-    - name: Configure AWS credentials
+    # 3️⃣ Configure AWS credentials
+    - name: Configure AWS
       uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.AWS_REGION }}
         
-    - name: Create SSH key file
+    # 4️⃣ Prepare SSH key
+    - name: Setup SSH key
       run: |
-        echo "$EC2_SSH_KEY" > ec2_key.pem
+        echo "${{ secrets.EC2_SSH_KEY }}" > ec2_key.pem
         chmod 400 ec2_key.pem
         
-    - name: Start EC2 instance if stopped
-      run: |
-        INSTANCE_STATE=$(aws ec2 describe-instances --instance-ids $EC2_INSTANCE_ID --query 'Reservations[0].Instances[0].State.Name' --output text)
-        if [ "$INSTANCE_STATE" = "stopped" ]; then
-          echo "Starting EC2 instance..."
-          aws ec2 start-instances --instance-ids $EC2_INSTANCE_ID
-          aws ec2 wait instance-running --instance-ids $EC2_INSTANCE_ID
-        elif [ "$INSTANCE_STATE" = "running" ]; then
-          echo "EC2 instance is already running"
-        else
-          echo "Instance state: $INSTANCE_STATE"
-          exit 1
-        fi
-        
+    # 5️⃣ Get EC2 public IP
     - name: Get EC2 Public IP
       id: ec2
       run: |
-        PUBLIC_IP=$(aws ec2 describe-instances --instance-ids $EC2_INSTANCE_ID --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
+        PUBLIC_IP=$(aws ec2 describe-instances --instance-ids ${{ env.EC2_INSTANCE_ID }} \
+          --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
         echo "EC2_PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_OUTPUT
         echo "EC2 IP: $PUBLIC_IP"
         
-    - name: Wait for SSH to be available
+    # 6️⃣ Wait for SSH availability
+    - name: Wait for SSH
       run: |
-        echo "Waiting for SSH to be available on ${{ steps.ec2.outputs.EC2_PUBLIC_IP }}..."
         for i in {1..30}; do
-          if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i ec2_key.pem ubuntu@${{ steps.ec2.outputs.EC2_PUBLIC_IP }} "echo 'SSH is ready'" 2>/dev/null; then
+          if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i ec2_key.pem ubuntu@${{ steps.ec2.outputs.EC2_PUBLIC_IP }} "echo SSH ready" &>/dev/null; then
             echo "SSH is ready!"
             break
           fi
-          echo "Attempt $i/30: SSH not ready, waiting 10 seconds..."
+          echo "Attempt $i/30: SSH not ready, waiting 10s..."
           sleep 10
         done
         
-    - name: Setup initial deployment (if needed)
+    # 7️⃣ Deploy application
+    - name: Deploy application
       run: |
-        # Check if project exists, if not, run initial setup
-        ssh -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@${{ steps.ec2.outputs.EC2_PUBLIC_IP }} "
-          if [ ! -d '/var/www/crm' ]; then
-            echo '🔧 Running initial setup...'
-            
-            # Update system
-            sudo apt update && sudo apt upgrade -y
-            
-            # Install Node.js
-            curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-            sudo apt-get install -y nodejs
-            
-            # Install MongoDB
-            wget -qO - https://www.mongodb.org/static/pgp/server-7.0.asc | sudo apt-key add -
-            echo 'deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/7.0 multiverse' | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
-            sudo apt-get update
-            sudo apt-get install -y mongodb-org
-            
-            # Install other software
-            sudo apt install nginx git -y
-            sudo npm install -g pm2 serve
-            
-            # Start MongoDB
-            sudo systemctl start mongod
-            sudo systemctl enable mongod
-            
-            # Create project directory
-            sudo mkdir -p /var/www/crm
-            sudo chown ubuntu:ubuntu /var/www/crm
-            
-            # Clone repository
-            cd /var/www
-            git clone https://github.com/${{ github.repository }}.git crm
-            cd crm
-            
-            # Install dependencies and build
-            cd acre-flow-crm
-            npm ci
-            npm run build
-            
-            cd ../crm-backend
-            npm ci
-            
-            # Start services
-            cd /var/www/crm
-            pm2 start ecosystem.config.js
-            pm2 save
-            pm2 startup
-            
-            # Configure Nginx
-            sudo cp nginx-crm.conf /etc/nginx/sites-available/crm
-            sudo ln -s /etc/nginx/sites-available/crm /etc/nginx/sites-enabled/
-            sudo rm /etc/nginx/sites-enabled/default
-            sudo nginx -t
-            sudo systemctl restart nginx
-            sudo systemctl enable nginx
-            
-            # Setup firewall
-            sudo ufw allow 'Nginx Full'
-            sudo ufw allow ssh
-            sudo ufw --force enable
-            
-            echo '✅ Initial setup completed!'
-          else
-            echo '📁 Project directory already exists, skipping initial setup'
-          fi
-        "
-        
-    - name: Deploy application to EC2
-      run: |
-        # Create deployment script
+        # Create deploy script
         cat > deploy.sh << 'EOF'
         #!/bin/bash
         set -e
-        
         echo "🚀 Starting deployment..."
         
-        # Navigate to project directory
+        # Create project directory if missing
+        [ ! -d /var/www/crm ] && mkdir -p /var/www/crm && chown ubuntu:ubuntu /var/www/crm
+        
         cd /var/www/crm
         
-        # Pull latest changes
-        echo "📥 Pulling latest changes..."
-        git pull origin main
+        # Clone repo if not exists
+        if [ ! -d ".git" ]; then
+          git clone https://github.com/${GITHUB_REPOSITORY}.git .
+        else
+          git pull origin main
+        fi
         
-        # Install frontend dependencies
-        echo "📦 Installing frontend dependencies..."
+        # Frontend build
         cd acre-flow-crm
         npm ci
         npm run build
         
-        # Install backend dependencies
-        echo "📦 Installing backend dependencies..."
+        # Backend install
         cd ../crm-backend
         npm ci
         
-        # Restart services with PM2
-        echo "🔄 Restarting services..."
+        # PM2 restart
         cd /var/www/crm
-        pm2 restart ecosystem.config.js
+        pm2 install pm2-logrotate || true
+        pm2 restart ecosystem.config.js || pm2 start ecosystem.config.js
         pm2 save
         
-        # Restart Nginx
-        echo "🌐 Restarting Nginx..."
+        # Nginx restart (assumes config already in place)
         sudo systemctl restart nginx
         
-        echo "✅ Deployment completed successfully!"
+        echo "✅ Deployment completed!"
         EOF
         
-        # Copy and execute deployment script
+        # Copy and execute script
         scp -o StrictHostKeyChecking=no -i ec2_key.pem deploy.sh ubuntu@${{ steps.ec2.outputs.EC2_PUBLIC_IP }}:/tmp/
         ssh -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@${{ steps.ec2.outputs.EC2_PUBLIC_IP }} "chmod +x /tmp/deploy.sh && /tmp/deploy.sh"
+        
+    # 8️⃣ Health check
     - name: Health check
       run: |
-        echo "🏥 Performing health check..."
-        sleep 30 # Wait for services to start
+        echo "🏥 Checking frontend..."
+        curl -f -s http://${{ steps.ec2.outputs.EC2_PUBLIC_IP }} || (echo "Frontend down" && exit 1)
+        echo "✅ Frontend accessible"
         
-        # Check if frontend is accessible
-        if curl -f -s http://${{ steps.ec2.outputs.EC2_PUBLIC_IP }} > /dev/null; then
-          echo "✅ Frontend is accessible"
-        else
-          echo "❌ Frontend is not accessible"
-          exit 1
-        fi
+        echo "🏥 Checking backend..."
+        curl -f -s http://${{ steps.ec2.outputs.EC2_PUBLIC_IP }}/api || (echo "Backend down" && exit 1)
+        echo "✅ Backend accessible"
         
-        # Check if backend API is accessible
-        if curl -f -s http://${{ steps.ec2.outputs.EC2_PUBLIC_IP }}/api > /dev/null; then
-          echo "✅ Backend API is accessible"
-        else
-          echo "❌ Backend API is not accessible"
-          exit 1
-        fi
-        
-    - name: Cleanup SSH key
-      if: always()
+    # 9️⃣ Cleanup
+    - name: Cleanup
       run: rm -f ec2_key.pem deploy.sh
         
     - name: Deployment summary
       run: |
-        echo "🎉 Deployment completed successfully!"
-        echo "🌐 Frontend URL: http://${{ steps.ec2.outputs.EC2_PUBLIC_IP }}"
-        echo "🔧 Backend API: http://${{ steps.ec2.outputs.EC2_PUBLIC_IP }}/api"
-        echo "📊 PM2 Status: ssh -i ec2_key.pem ubuntu@${{ steps.ec2.outputs.EC2_PUBLIC_IP }} 'pm2 status'"
+        echo "🎉 Deployment completed!"
+        echo "🌐 Frontend: http://${{ steps.ec2.outputs.EC2_PUBLIC_IP }}"
+        echo "🔧 Backend: http://${{ steps.ec2.outputs.EC2_PUBLIC_IP }}/api"
