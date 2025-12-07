@@ -28,10 +28,6 @@ const allowedOrigins = [
   'http://localhost:3500'
 
 ];
-const PORT = process.env.PORT || 5001;
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
 
 // ✅ Apply CORS globally for Express
 // ✅ Create HTTP server
@@ -172,7 +168,7 @@ app.post('/api/admin/seed-last-login', async (req, res) => {
   }
 });
 
-// ✅ Start Server
+// ✅ Start Server (single HTTP server used for both Express and Socket.IO)
 server.listen(port, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${port}`);
 });
