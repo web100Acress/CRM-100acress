@@ -61,10 +61,10 @@ jobs:
           sleep 10
         done
 
-    # 7️⃣ Deploy application
-    - name: Deploy application
+    # 7️⃣ Create deploy script
+    - name: Create deploy script
       run: |
-        cat > deploy.sh << 'EOF'
+        cat << 'EOF' > deploy.sh
         #!/bin/bash
         set -e
         echo "🚀 Starting deployment..."
@@ -95,6 +95,7 @@ jobs:
           echo "📥 Pulling latest changes..."
           git pull origin main
         fi
+
         echo "🐳 Deploying with Docker Compose..."
 
         # Ensure Docker is installed
@@ -105,19 +106,18 @@ jobs:
           sudo systemctl enable --now docker
         fi
 
-        # Ensure docker compose is available (plugin or standalone)
+        # Ensure docker compose exists (plugin or standalone)
         if docker compose version &>/dev/null; then
           DOCKER_COMPOSE="sudo docker compose"
         elif command -v docker-compose &>/dev/null; then
           DOCKER_COMPOSE="sudo docker-compose"
         else
-          echo "🧩 docker compose not found, installing plugin..."
+          echo "🧩 Installing docker compose plugin..."
           sudo apt-get update -y
           sudo apt-get install -y docker-compose-plugin
           DOCKER_COMPOSE="sudo docker compose"
         fi
 
-        # Build and start containers
         echo "📦 Building Docker images..."
         $DOCKER_COMPOSE -f docker-compose.yml build
 
@@ -127,9 +127,11 @@ jobs:
         echo "✅ Docker deployment completed!"
         EOF
 
-        # Copy and execute script on EC2 (run in background with nohup)
+    # 8️⃣ Upload & run script on EC2
+    - name: Upload & run script on EC2
+      run: |
         scp -o StrictHostKeyChecking=no -i ec2_key.pem deploy.sh ubuntu@${{ steps.ec2.outputs.EC2_PUBLIC_IP }}:/tmp/
-        ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -i ec2_key.pem ubuntu@${{ steps.ec2.outputs.EC2_PUBLIC_IP }} "chmod +x /tmp/deploy.sh && /tmp/deploy.sh > deploy.log 2>&1"
+        ssh -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@${{ steps.ec2.outputs.EC2_PUBLIC_IP }} "chmod +x /tmp/deploy.sh && sudo /tmp/deploy.sh"
 
     # 8️⃣ Health check
     - name: Health check
