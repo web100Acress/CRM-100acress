@@ -91,12 +91,30 @@ jobs:
             echo "Installing docker..."
             sudo apt-get update -y
             sudo apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
-            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmour -o /usr/share/keyrings/docker-archive-keyring.gpg
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
             echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
             sudo apt-get update -y
             sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+            
+            # Create docker group if it doesn't exist
+            sudo groupadd docker || true
+            
+            # Add ubuntu user to docker group and set permissions
+            sudo usermod -aG docker ubuntu
+            
+            # Start and enable Docker service
             sudo systemctl enable --now docker
-            sudo usermod -aG docker ubuntu || true
+            
+            # Set proper permissions on Docker socket
+            sudo chmod 666 /var/run/docker.sock || true
+            sudo chown root:docker /var/run/docker.sock || true
+            
+            # Test Docker without sudo
+            sudo -u ubuntu docker run --rm hello-world || echo "Docker test failed, continuing with deployment..."
+          else
+            # Ensure permissions are set even if Docker is already installed
+            sudo chmod 666 /var/run/docker.sock 2>/dev/null || true
+            sudo chown root:docker /var/run/docker.sock 2>/dev/null || true
           fi
 
           DOCKER_COMPOSE="docker compose"
