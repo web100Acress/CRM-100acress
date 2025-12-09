@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  backend:
+    build: ./crm-backend
+    container_name: crm-backend
+    restart: unless-stopped
+    env_file:
+      - ./crm-backend/.env
+    ports:
+      - "5001:5001"
+
+  frontend:
+    build: ./acre-flow-crm
+    container_name: crm-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"

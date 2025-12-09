@@ -95,49 +95,62 @@ jobs:
           echo "📥 Pulling latest changes..."
           git pull origin main
         fi
+        echo "� Deploying with Docker Compose..."
+        # Ensure docker and docker compose are available (assumes pre-installed, just logs versions)
+        docker --version || echo "Docker not found in PATH (deployment may fail)"
+        docker compose version || docker-compose --version || echo "docker compose not found in PATH (deployment may fail)"
 
-        # Frontend build
-        echo "📦 Frontend install & build..."
-        cd acre-flow-crm
-        npm install
-        npm run build
+        # Build and start containers
+        echo "� Building Docker images..."
+        docker compose -f docker-compose.yml build
 
-        # Backend install
-        echo "📦 Backend install..."
-        cd ../crm-backend
-        npm install
+        echo "🚀 Starting containers..."
+        docker compose -f docker-compose.yml up -d
 
-        # PM2 restart/start
-        echo "🔄 Restarting PM2..."
-        cd "$PROJECT_DIR"
-        pm2 install pm2-logrotate || true
-        pm2 restart ecosystem.config.js || pm2 start ecosystem.config.js
-        pm2 save
-
-        # Restart Nginx
-        echo "🌐 Restarting Nginx..."
-        sudo systemctl restart nginx
-
-        echo "✅ Deployment completed!"
+        echo "✅ Docker deployment completed!"
         EOF
 
         # Copy and execute script on EC2 (run in background with nohup)
         scp -o StrictHostKeyChecking=no -i ec2_key.pem deploy.sh ubuntu@${{ steps.ec2.outputs.EC2_PUBLIC_IP }}:/tmp/
-        ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -i ec2_key.pem ubuntu@${{ steps.ec2.outputs.EC2_PUBLIC_IP }} "chmod +x /tmp/deploy.sh && nohup /tmp/deploy.sh > deploy.log 2>&1 &"
+        ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -i ec2_key.pem ubuntu@${{ steps.ec2.outputs.EC2_PUBLIC_IP }} "chmod +x /tmp/deploy.sh && /tmp/deploy.sh > deploy.log 2>&1"
 
     # 8️⃣ Health check
     - name: Health check
       run: |
-        echo "⏳ Waiting for services to start..."
-        sleep 60
+        IP=${{ steps.ec2.outputs.EC2_PUBLIC_IP }}
 
-        echo "🏥 Checking frontend..."
-        curl -f -s http://${{ steps.ec2.outputs.EC2_PUBLIC_IP }} || (echo "Frontend down" && exit 1)
-        echo "✅ Frontend accessible"
+        echo "⏳ Waiting for services to start (initial delay)..."
+        sleep 120
 
-        echo "🏥 Checking backend..."
-        curl -f -s http://${{ steps.ec2.outputs.EC2_PUBLIC_IP }}/api || (echo "Backend down" && exit 1)
-        echo "✅ Backend accessible"
+        echo "🏥 Checking frontend with retries..."
+        MAX_ATTEMPTS=10
+        SLEEP_BETWEEN=15
+        for i in $(seq 1 $MAX_ATTEMPTS); do
+          if curl -f -s http://$IP/ >/dev/null; then
+            echo "✅ Frontend accessible"
+            break
+          fi
+          echo "Frontend attempt $i/$MAX_ATTEMPTS failed, retrying in ${SLEEP_BETWEEN}s..."
+          sleep $SLEEP_BETWEEN
+          if [ "$i" -eq "$MAX_ATTEMPTS" ]; then
+            echo "Frontend down after multiple attempts"
+            exit 1
+          fi
+        done
+
+        echo "🏥 Checking backend with retries..."
+        for i in $(seq 1 $MAX_ATTEMPTS); do
+          if curl -f -s http://$IP:5001/api/health >/dev/null; then
+            echo "✅ Backend accessible"
+            break
+          fi
+          echo "Backend attempt $i/$MAX_ATTEMPTS failed, retrying in ${SLEEP_BETWEEN}s..."
+          sleep $SLEEP_BETWEEN
+          if [ "$i" -eq "$MAX_ATTEMPTS" ]; then
+            echo "Backend down after multiple attempts"
+            exit 1
+          fi
+        done
 
     # 9️⃣ Cleanup
     - name: Cleanup
