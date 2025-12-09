@@ -48,7 +48,6 @@ const Login = () => {
       case "admin":
       case "super_admin":
       case "superadmin":
-      case "super-admin":
         window.location.href = "/admin-dashboard";
         break;
       // Existing roles
