@@ -69,7 +69,7 @@ jobs:
         set -e
         echo "🚀 Starting deployment..."
 
-        PROJECT_DIR=/var/www/crm
+        PROJECT_DIR=/home/ubuntu/CRM-100acress
 
         # Ensure swap exists (helps npm builds on small instances)
         if [ ! -f /swapfile ]; then
