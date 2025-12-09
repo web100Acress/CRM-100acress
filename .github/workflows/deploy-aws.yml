@@ -1,193 +1,72 @@
-name: Deploy to AWS EC2
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   workflow_dispatch:
 
 env:
-  AWS_REGION: ap-south-1
-  EC2_INSTANCE_ID: i-0ef3eda6dd281400b
-  REPO_URL: https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/web100Acress/CRM-100acress.git
+  DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
+  DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+  AWS_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+  EC2_HOST: ${{ secrets.EC2_HOST }}   # e.g., ubuntu@your-server-ip
+  PROJECT_DIR: /home/ubuntu/CRM-100acress
 
 jobs:
-  deploy:
+  build:
+    name: Build & Push Docker Images
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Save EC2 SSH key
+      # Build and push frontend
+      - name: Build & Push Frontend
         run: |
-          echo "${{ secrets.EC2_SSH_KEY }}" > ec2_key.pem
+          docker login -u $DOCKERHUB_USER -p $DOCKERHUB_TOKEN
+          docker build -t $DOCKERHUB_USER/crm-frontend:latest ./acre-flow-crm
+          docker push $DOCKERHUB_USER/crm-frontend:latest
+
+      # Build and push backend
+      - name: Build & Push Backend
+        run: |
+          docker login -u $DOCKERHUB_USER -p $DOCKERHUB_TOKEN
+          docker build -t $DOCKERHUB_USER/crm-backend:latest ./crm-backend
+          docker push $DOCKERHUB_USER/crm-backend:latest
+
+  deploy_frontend:
+    name: Deploy Frontend
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy frontend on server
+        run: |
+          echo "$AWS_SSH_KEY" > ec2_key.pem
           chmod 400 ec2_key.pem
+          ssh -o StrictHostKeyChecking=no -i ec2_key.pem $EC2_HOST << 'EOF'
+            docker pull $DOCKERHUB_USER/crm-frontend:latest
+            docker stop crm-frontend || true
+            docker rm crm-frontend || true
+            docker run -d --name crm-frontend -p 80:80 $DOCKERHUB_USER/crm-frontend:latest
+          EOF
+          rm -f ec2_key.pem
 
-      - name: Get EC2 Public IP
-        id: ec2
+  deploy_backend:
+    name: Deploy Backend
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy backend on server
         run: |
-          PUBLIC_IP=$(aws ec2 describe-instances --instance-ids ${{ env.EC2_INSTANCE_ID }} --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
-          echo "EC2_PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_OUTPUT
-          echo "Public IP: $PUBLIC_IP"
-
-      - name: Wait for SSH to become available
-        run: |
-          IP=${{ steps.ec2.outputs.EC2_PUBLIC_IP }}
-          for i in $(seq 1 30); do
-            if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i ec2_key.pem ubuntu@$IP "echo ok" &>/dev/null; then
-              echo "SSH ready"
-              exit 0
-            fi
-            echo "Attempt $i/30: SSH not ready, sleeping 10s..."
-            sleep 10
-          done
-          echo "SSH not available after 30 attempts"
-          exit 1
-
-      - name: Create deploy script on runner
-        run: |
-          cat > deploy.sh << 'SH'
-          #!/bin/bash
-          set -euo pipefail
-
-          PROJECT_DIR=/home/ubuntu/CRM-100acress
-          REPO_URL="$1"
-          BRANCH="${2:-main}"
-
-          if [ ! -f /swapfile ]; then
-            if ! sudo fallocate -l 2G /swapfile 2>/dev/null; then
-              sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
-            fi
-            sudo chmod 600 /swapfile
-            sudo mkswap /swapfile
-            sudo swapon /swapfile || true
-          fi
-
-          [ ! -d "$PROJECT_DIR" ] && sudo mkdir -p "$PROJECT_DIR" && sudo chown ubuntu:ubuntu "$PROJECT_DIR"
-          cd "$PROJECT_DIR"
-
-          if [ ! -d ".git" ]; then
-            git clone --branch "$BRANCH" "$REPO_URL" .
-          else
-            git fetch origin
-            git reset --hard "origin/$BRANCH"
-            git clean -fd
-          fi
-
-          if ! command -v docker &>/dev/null; then
-            echo "Installing docker..."
-            sudo apt-get update -y
-            sudo apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
-            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
-            sudo apt-get update -y
-            sudo apt-get install -y docker-ce docker-ce-cli containerd.io
-            
-            # Create docker group if it doesn't exist
-            sudo groupadd docker || true
-            
-            # Add ubuntu user to docker group and set permissions
-            sudo usermod -aG docker ubuntu
-            
-            # Start and enable Docker service
-            sudo systemctl enable --now docker
-            
-            # Set proper permissions on Docker socket
-            sudo chmod 666 /var/run/docker.sock || true
-            sudo chown root:docker /var/run/docker.sock || true
-            
-            # Test Docker without sudo
-            sudo -u ubuntu docker run --rm hello-world || echo "Docker test failed, continuing with deployment..."
-          else
-            # Ensure permissions are set even if Docker is already installed
-            sudo chmod 666 /var/run/docker.sock 2>/dev/null || true
-            sudo chown root:docker /var/run/docker.sock 2>/dev/null || true
-          fi
-
-          DOCKER_COMPOSE="docker compose"
-          if ! docker compose version &>/dev/null; then
-            if command -v docker-compose &>/dev/null; then
-              DOCKER_COMPOSE="docker-compose"
-            else
-              sudo apt-get update -y
-              sudo apt-get install -y docker-compose-plugin
-              DOCKER_COMPOSE="docker compose"
-            fi
-          fi
-
-          $DOCKER_COMPOSE -f docker-compose.yml pull || true
-          $DOCKER_COMPOSE -f docker-compose.yml build --no-cache
-          $DOCKER_COMPOSE -f docker-compose.yml up -d --remove-orphans
-
-          echo "Containers:"
-          sudo $DOCKER_COMPOSE -f docker-compose.yml ps
-          SH
-          chmod +x deploy.sh
-
-      - name: Upload backend env file
-        run: |
-          IP=${{ steps.ec2.outputs.EC2_PUBLIC_IP }}
-          # Create backend directory if it doesn't exist
-          ssh -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@$IP "mkdir -p /home/ubuntu/CRM-100acress/crm-backend"
-          # Upload backend .env file from GitHub Secrets
-          echo "${{ secrets.BACKEND_ENV }}" | ssh -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@$IP "cat > /home/ubuntu/CRM-100acress/crm-backend/.env"
-          # Set proper permissions
-          ssh -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@$IP "chmod 600 /home/ubuntu/CRM-100acress/crm-backend/.env"
-
-      - name: Upload & run deploy script on EC2
-        run: |
-          IP=${{ steps.ec2.outputs.EC2_PUBLIC_IP }}
-          scp -o StrictHostKeyChecking=no -i ec2_key.pem deploy.sh ubuntu@$IP:/tmp/deploy.sh
-          ssh -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@$IP "chmod +x /tmp/deploy.sh && /tmp/deploy.sh '${{ env.REPO_URL }}' main"
-
-      - name: Health check (frontend)
-        run: |
-          IP=${{ steps.ec2.outputs.EC2_PUBLIC_IP }}
-          echo "Waiting 20s..."
-          sleep 20
-          for i in {1..10}; do
-            if curl -fsS http://$IP:5000 >/dev/null; then
-              echo "Frontend OK"
-              break
-            fi
-            echo "Frontend attempt $i failed, sleeping 10s..."
-            sleep 10
-            if [ $i -eq 10 ]; then
-              echo "Frontend not responding"
-              exit 1
-            fi
-          done
-
-      - name: Health check (backend)
-        run: |
-          IP=${{ steps.ec2.outputs.EC2_PUBLIC_IP }}
-          for i in {1..10}; do
-            if curl -fsS http://$IP:5001/api/health >/dev/null; then
-              echo "✅ Backend is healthy"
-              exit 0
-            fi
-            echo "⏳ Backend attempt $i/10 failed, retrying in 10s..."
-            sleep 10
-          done
-          echo "❌ Backend health check failed after 10 attempts"
-          exit 1
-
-      - name: Cleanup on runner
-        if: always()
-        run: |
-          echo "Cleaning up temporary files..."
-          rm -f ec2_key.pem deploy.sh || true
-          echo "Cleanup complete"
+          echo "$AWS_SSH_KEY" > ec2_key.pem
+          chmod 400 ec2_key.pem
+          ssh -o StrictHostKeyChecking=no -i ec2_key.pem $EC2_HOST << 'EOF'
+            docker pull $DOCKERHUB_USER/crm-backend:latest
+            docker stop crm-backend || true
+            docker rm crm-backend || true
+            docker run -d --name crm-backend -p 5001:5001 $DOCKERHUB_USER/crm-backend:latest
+          EOF
+          rm -f ec2_key.pem
