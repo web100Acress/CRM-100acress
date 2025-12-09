@@ -145,7 +145,7 @@ jobs:
         MAX_ATTEMPTS=10
         SLEEP_BETWEEN=15
         for i in $(seq 1 $MAX_ATTEMPTS); do
-          if curl -f -s http://$IP/ >/dev/null; then
+          if curl -f -s http://$IP:5000 >/dev/null; then
             echo "✅ Frontend accessible"
             break
           fi
