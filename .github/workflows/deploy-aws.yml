@@ -15,170 +15,151 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # 1️⃣ Checkout code
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    # 2️⃣ Setup Node.js
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
 
-    # 3️⃣ Configure AWS credentials
-    - name: Configure AWS
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-    # 4️⃣ Create SSH key for EC2
-    - name: Setup SSH key
-      run: |
-        echo "${{ secrets.EC2_SSH_KEY }}" > ec2_key.pem
-        chmod 400 ec2_key.pem
+      - name: Save EC2 SSH key
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY }}" > ec2_key.pem
+          chmod 400 ec2_key.pem
 
-    # 5️⃣ Get EC2 public IP
-    - name: Get EC2 Public IP
-      id: ec2
-      run: |
-        PUBLIC_IP=$(aws ec2 describe-instances --instance-ids ${{ env.EC2_INSTANCE_ID }} \
-          --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
-        echo "EC2_PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_OUTPUT
-        echo "EC2 IP: $PUBLIC_IP"
+      - name: Get EC2 Public IP
+        id: ec2
+        run: |
+          PUBLIC_IP=$(aws ec2 describe-instances --instance-ids ${{ env.EC2_INSTANCE_ID }} --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
+          echo "EC2_PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_OUTPUT
+          echo "Public IP: $PUBLIC_IP"
 
-    # 6️⃣ Wait for SSH
-    - name: Wait for SSH
-      run: |
-        for i in {1..30}; do
-          if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i ec2_key.pem ubuntu@${{ steps.ec2.outputs.EC2_PUBLIC_IP }} "echo SSH ready" &>/dev/null; then
-            echo "SSH is ready!"
-            break
+      - name: Wait for SSH to become available
+        run: |
+          IP=${{ steps.ec2.outputs.EC2_PUBLIC_IP }}
+          for i in $(seq 1 30); do
+            if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i ec2_key.pem ubuntu@$IP "echo ok" &>/dev/null; then
+              echo "SSH ready"
+              exit 0
+            fi
+            echo "Attempt $i/30: SSH not ready, sleeping 10s..."
+            sleep 10
+          done
+          echo "SSH not available after 30 attempts"
+          exit 1
+
+      - name: Create deploy script on runner
+        run: |
+          cat > deploy.sh << 'SH'
+          #!/bin/bash
+          set -euo pipefail
+
+          PROJECT_DIR=/home/ubuntu/CRM-100acress
+          REPO_URL="$1"
+          BRANCH="${2:-main}"
+
+          if [ ! -f /swapfile ]; then
+            if ! sudo fallocate -l 2G /swapfile 2>/dev/null; then
+              sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
+            fi
+            sudo chmod 600 /swapfile
+            sudo mkswap /swapfile
+            sudo swapon /swapfile || true
           fi
-          echo "Attempt $i/30: SSH not ready, waiting 10s..."
-          sleep 10
-        done
 
-    # 7️⃣ Create deploy script
-    - name: Create deploy script
-      run: |
-        cat << 'EOF' > deploy.sh
-        #!/bin/bash
-        set -e
-        echo "🚀 Starting deployment..."
+          [ ! -d "$PROJECT_DIR" ] && sudo mkdir -p "$PROJECT_DIR" && sudo chown ubuntu:ubuntu "$PROJECT_DIR"
+          cd "$PROJECT_DIR"
 
-        PROJECT_DIR=/home/ubuntu/CRM-100acress
-
-        # Ensure swap exists (helps npm builds on small instances)
-        if [ ! -f /swapfile ]; then
-          echo "💾 Creating swapfile..."
-          if ! sudo fallocate -l 2G /swapfile 2>/dev/null; then
-            sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
+          if [ ! -d ".git" ]; then
+            git clone --branch "$BRANCH" "$REPO_URL" .
+          else
+            git fetch origin
+            git reset --hard "origin/$BRANCH"
+            git clean -fd
           fi
-          sudo chmod 600 /swapfile
-          sudo mkswap /swapfile
-          sudo swapon /swapfile || true
-        fi
 
-        # Create project directory if missing
-        [ ! -d "$PROJECT_DIR" ] && sudo mkdir -p "$PROJECT_DIR" && sudo chown ubuntu:ubuntu "$PROJECT_DIR"
-
-        cd "$PROJECT_DIR"
-
-        # Clone repo if not exists, else pull latest changes
-        if [ ! -d ".git" ]; then
-          echo "📥 Cloning repository..."
-          git clone ${{ env.REPO_URL }} .
-        else
-          echo "📥 Pulling latest changes..."
-          git pull origin main
-        fi
-
-        echo "🐳 Deploying with Docker Compose..."
-
-        # Ensure Docker is installed
-        if ! command -v docker &>/dev/null; then
-          echo "🐋 Docker not found, installing..."
-          sudo apt-get update -y
-          sudo apt-get install -y docker.io
-          sudo systemctl enable --now docker
-        fi
-
-        # Ensure docker compose exists (plugin or standalone)
-        if docker compose version &>/dev/null; then
-          DOCKER_COMPOSE="sudo docker compose"
-        elif command -v docker-compose &>/dev/null; then
-          DOCKER_COMPOSE="sudo docker-compose"
-        else
-          echo "🧩 Installing docker compose plugin..."
-          sudo apt-get update -y
-          sudo apt-get install -y docker-compose-plugin
-          DOCKER_COMPOSE="sudo docker compose"
-        fi
-
-        echo "📦 Building Docker images..."
-        $DOCKER_COMPOSE -f docker-compose.yml build
-
-        echo "🚀 Starting containers..."
-        $DOCKER_COMPOSE -f docker-compose.yml up -d
-
-        echo "✅ Docker deployment completed!"
-        EOF
-
-    # 8️⃣ Upload & run script on EC2
-    - name: Upload & run script on EC2
-      run: |
-        scp -o StrictHostKeyChecking=no -i ec2_key.pem deploy.sh ubuntu@${{ steps.ec2.outputs.EC2_PUBLIC_IP }}:/tmp/
-        ssh -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@${{ steps.ec2.outputs.EC2_PUBLIC_IP }} "chmod +x /tmp/deploy.sh && sudo /tmp/deploy.sh"
-
-    # 8️⃣ Health check
-    - name: Health check
-      run: |
-        IP=${{ steps.ec2.outputs.EC2_PUBLIC_IP }}
-
-        echo "⏳ Waiting for services to start (initial delay)..."
-        sleep 120
-
-        echo "🏥 Checking frontend with retries..."
-        MAX_ATTEMPTS=10
-        SLEEP_BETWEEN=15
-        for i in $(seq 1 $MAX_ATTEMPTS); do
-          if curl -f -s http://$IP:5000 >/dev/null; then
-            echo "✅ Frontend accessible"
-            break
+          if ! command -v docker &>/dev/null; then
+            echo "Installing docker..."
+            sudo apt-get update -y
+            sudo apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmour -o /usr/share/keyrings/docker-archive-keyring.gpg
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
+            sudo apt-get update -y
+            sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+            sudo systemctl enable --now docker
+            sudo usermod -aG docker ubuntu || true
           fi
-          echo "Frontend attempt $i/$MAX_ATTEMPTS failed, retrying in ${SLEEP_BETWEEN}s..."
-          sleep $SLEEP_BETWEEN
-          if [ "$i" -eq "$MAX_ATTEMPTS" ]; then
-            echo "Frontend down after multiple attempts"
-            exit 1
-          fi
-        done
 
-        echo "🏥 Checking backend with retries..."
-        for i in $(seq 1 $MAX_ATTEMPTS); do
-          if curl -f -s http://$IP:5001/api/health >/dev/null; then
-            echo "✅ Backend accessible"
-            break
+          DOCKER_COMPOSE="docker compose"
+          if ! docker compose version &>/dev/null; then
+            if command -v docker-compose &>/dev/null; then
+              DOCKER_COMPOSE="docker-compose"
+            else
+              sudo apt-get update -y
+              sudo apt-get install -y docker-compose-plugin
+              DOCKER_COMPOSE="docker compose"
+            fi
           fi
-          echo "Backend attempt $i/$MAX_ATTEMPTS failed, retrying in ${SLEEP_BETWEEN}s..."
-          sleep $SLEEP_BETWEEN
-          if [ "$i" -eq "$MAX_ATTEMPTS" ]; then
-            echo "Backend down after multiple attempts"
-            exit 1
-          fi
-        done
 
-    # 9️⃣ Cleanup
-    - name: Cleanup
-      run: rm -f ec2_key.pem deploy.sh
+          $DOCKER_COMPOSE -f docker-compose.yml pull || true
+          $DOCKER_COMPOSE -f docker-compose.yml build --no-cache
+          $DOCKER_COMPOSE -f docker-compose.yml up -d --remove-orphans
 
-    # 🔟 Deployment summary
-    - name: Deployment summary
-      run: |
-        echo "🎉 Deployment completed!"
-        echo "🌐 Frontend: http://${{ steps.ec2.outputs.EC2_PUBLIC_IP }}"
-        echo "🔧 Backend: http://${{ steps.ec2.outputs.EC2_PUBLIC_IP }}/api"
-        echo "📊 PM2 Status: ssh -i ec2_key.pem ubuntu@${{ steps.ec2.outputs.EC2_PUBLIC_IP }} 'pm2 status'"
+          echo "Containers:"
+          sudo $DOCKER_COMPOSE -f docker-compose.yml ps
+          SH
+          chmod +x deploy.sh
+
+      - name: Upload & run deploy script on EC2
+        run: |
+          IP=${{ steps.ec2.outputs.EC2_PUBLIC_IP }}
+          scp -o StrictHostKeyChecking=no -i ec2_key.pem deploy.sh ubuntu@$IP:/tmp/deploy.sh
+          ssh -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@$IP "chmod +x /tmp/deploy.sh && /tmp/deploy.sh '${{ env.REPO_URL }}' main"
+
+      - name: Health check (frontend)
+        run: |
+          IP=${{ steps.ec2.outputs.EC2_PUBLIC_IP }}
+          echo "Waiting 20s..."
+          sleep 20
+          for i in {1..10}; do
+            if curl -fsS http://$IP:5000 >/dev/null; then
+              echo "Frontend OK"
+              break
+            fi
+            echo "Frontend attempt $i failed, sleeping 10s..."
+            sleep 10
+            if [ $i -eq 10 ]; then
+              echo "Frontend not responding"
+              exit 1
+            fi
+          done
+
+      - name: Health check (backend)
+        run: |
+          IP=${{ steps.ec2.outputs.EC2_PUBLIC_IP }}
+          for i in {1..10}; do
+            if curl -fsS http://$IP:5001/api/health >/dev/null; then
+              echo "✅ Backend is healthy"
+              exit 0
+            fi
+            echo "⏳ Backend attempt $i/10 failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "❌ Backend health check failed after 10 attempts"
+          exit 1
+
+      - name: Cleanup on runner
+        if: always()
+        run: |
+          echo "Cleaning up temporary files..."
+          rm -f ec2_key.pem deploy.sh || true
+          echo "Cleanup complete"
