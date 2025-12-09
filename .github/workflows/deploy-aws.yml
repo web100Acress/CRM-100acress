@@ -1,15 +1,22 @@
-name: Deploy CRM Frontend & Backend
+name: Deploy CRM Frontend & Backend to EC2
 
 on:
   push:
     branches:
       - main
 
+env:
+  EC2_USER: ubuntu
+  EC2_HOST: 3.7.71.56       # Your new EC2 instance
+  FRONTEND_DIR: acre-flow-crm
+  BACKEND_DIR: crm-backend
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Source
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Save EC2 SSH key
@@ -17,28 +24,27 @@ jobs:
           echo "${{ secrets.EC2_SSH_KEY }}" > ec2_key.pem
           chmod 400 ec2_key.pem
 
-      # --- Frontend Build & Deploy ---
-      - name: Build Frontend Docker Image
-        run: docker build -t crm-frontend:latest ./acre-flow-crm
+      - name: Build Frontend Docker image
+        run: docker build -t crm-frontend:latest ./${{ env.FRONTEND_DIR }}
 
-      - name: Deploy Frontend to EC2
+      - name: Build Backend Docker image
+        run: docker build -t crm-backend:latest ./${{ env.BACKEND_DIR }}
+
+      - name: Deploy Frontend & Backend to EC2
         run: |
-          ssh -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no -i ec2_key.pem ${{ env.EC2_USER }}@${{ env.EC2_HOST }} << 'EOF'
+            # --- Frontend ---
             docker stop crm-frontend || true
             docker rm crm-frontend || true
             docker run -d -p 80:80 --name crm-frontend crm-frontend:latest
-          EOF
 
-      # --- Backend Build & Deploy ---
-      - name: Build Backend Docker Image
-        run: docker build -t crm-backend:latest ./crm-backend
-
-      - name: Deploy Backend to EC2
-        run: |
-          ssh -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+            # --- Backend ---
             docker stop crm-backend || true
             docker rm crm-backend || true
             docker run -d -p 5001:5001 --name crm-backend crm-backend:latest
+
+            # Optional: remove dangling images to save space
+            docker image prune -f
           EOF
 
       - name: Cleanup SSH Key
