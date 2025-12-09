@@ -1,4 +1,4 @@
-name: Deploy CRM to EC2 (Docker)
+name: Deploy CRM using Docker Hub
 
 on:
   push:
@@ -6,29 +6,50 @@ on:
       - main
 
 env:
+  IMAGE_NAME: hunderedacress/crm-100acress
   EC2_USER: ubuntu
-  EC2_HOST: 3.7.71.56
-  PROJECT_DIR: /home/ubuntu/CRM-100acress
+  EC2_HOST: ${{ secrets.EC2_HOST }}
 
 jobs:
-  deploy:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Save SSH key
+      - name: Login to Docker Hub
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | \
+          docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Build & Push Backend Image
+        run: |
+          docker build -t $IMAGE_NAME:backend ./crm-backend
+          docker push $IMAGE_NAME:backend
+
+      - name: Build & Push Frontend Image
+        run: |
+          docker build -t $IMAGE_NAME:frontend ./acre-flow-crm
+          docker push $IMAGE_NAME:frontend
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Save EC2 SSH Key
         run: |
           echo "${{ secrets.EC2_SSH_KEY }}" > ec2_key.pem
           chmod 400 ec2_key.pem
 
       - name: Deploy on EC2
         run: |
-          ssh -o StrictHostKeyChecking=no -i ec2_key.pem ${EC2_USER}@${EC2_HOST} << 'EOF'
+          ssh -o StrictHostKeyChecking=no -i ec2_key.pem \
+          $EC2_USER@$EC2_HOST << 'EOF'
             set -e
 
-            echo "🔹 Ensure Docker"
+            echo "🔹 Install Docker if missing"
             if ! command -v docker &>/dev/null; then
               sudo apt update -y
               sudo apt install -y docker.io
@@ -36,37 +57,28 @@ jobs:
               sudo usermod -aG docker ubuntu
             fi
 
-            echo "🔹 Prepare project"
-            mkdir -p /home/ubuntu/CRM-100acress
-            cd /home/ubuntu/CRM-100acress
+            echo "🔹 Pull images"
+            docker pull hunderedacress/crm-100acress:backend
+            docker pull hunderedacress/crm-100acress:frontend
 
-            if [ ! -d ".git" ]; then
-              git clone https://github.com/web100Acress/CRM-100acress.git .
-            else
-              git pull origin main
-            fi
-
-            echo "🔹 Build Backend Image"
-            docker build -t crm-backend ./crm-backend
-
-            echo "🔹 Build Frontend Image"
-            docker build -t crm-frontend ./acre-flow-crm
-
-            echo "🔹 Restart containers"
+            echo "🔹 Stop old containers"
             docker rm -f crm-backend crm-frontend || true
 
+            echo "🔹 Run backend"
             docker run -d \
               --name crm-backend \
               -p 5001:5001 \
-              crm-backend
+              hunderedacress/crm-100acress:backend
 
+            echo "🔹 Run frontend"
             docker run -d \
               --name crm-frontend \
               -p 80:80 \
-              crm-frontend
+              hunderedacress/crm-100acress:frontend
 
             docker image prune -f
-            echo "✅ DEPLOY DONE"
+
+            echo "✅ DEPLOY SUCCESS"
           EOF
 
       - name: Cleanup
