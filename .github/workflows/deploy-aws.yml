@@ -137,6 +137,16 @@ jobs:
           SH
           chmod +x deploy.sh
 
+      - name: Upload backend env file
+        run: |
+          IP=${{ steps.ec2.outputs.EC2_PUBLIC_IP }}
+          # Create backend directory if it doesn't exist
+          ssh -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@$IP "mkdir -p /home/ubuntu/CRM-100acress/crm-backend"
+          # Upload backend .env file from GitHub Secrets
+          echo "${{ secrets.BACKEND_ENV }}" | ssh -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@$IP "cat > /home/ubuntu/CRM-100acress/crm-backend/.env"
+          # Set proper permissions
+          ssh -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@$IP "chmod 600 /home/ubuntu/CRM-100acress/crm-backend/.env"
+
       - name: Upload & run deploy script on EC2
         run: |
           IP=${{ steps.ec2.outputs.EC2_PUBLIC_IP }}
