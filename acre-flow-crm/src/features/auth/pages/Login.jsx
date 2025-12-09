@@ -31,7 +31,9 @@ const Login = () => {
 
   // Helper function to redirect based on role
   const redirectBasedOnRole = (role) => {
-    switch (role) {
+    const normalizedRole = (role || '').toLowerCase().trim();
+
+    switch (normalizedRole) {
       // Department-based roles
       case "sales_head":
       case "sales_executive":
