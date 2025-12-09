@@ -4,10 +4,17 @@ FROM node:20-alpine AS build
 WORKDIR /app
 
 COPY package*.json ./
+
+# Install dependencies
 RUN npm ci
 
+# Copy source code
 COPY . .
 
+# Increase Node.js heap size to avoid OOM during Vite build
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+
+# Build frontend for production
 RUN npm run build
 
 # Serve stage
