@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api100acress = axios.create({
-  baseURL: 'http://localhost:3500', // This client is for 100acress Backend (port 3500) for user data etc.
+  baseURL: 'https://api.100acress.com', // This client is for 100acress Backend (port 3500) for user data etc.
   headers: {
     'Content-Type': 'application/json',
   },
