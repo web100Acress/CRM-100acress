@@ -179,7 +179,7 @@ const Login = () => {
       
       // Try to get 100acress token for 100acress API access
       try {
-        const acressLoginResponse = await fetch("http://localhost:3500/api/auth/login", {
+        const acressLoginResponse = await fetch("https://api.100acress.com/api/auth/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(credentials),
@@ -244,7 +244,7 @@ const Login = () => {
         // If user is admin, try to get 100acress token as well for 100acress API access
         if (crmData.user.role === 'admin' || crmData.user.role === 'Admin') {
           try {
-            const acressLoginResponse = await fetch("http://localhost:3500/api/auth/login", {
+            const acressLoginResponse = await fetch("https://api.100acress.com/api/auth/login", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(credentials),
@@ -269,7 +269,7 @@ const Login = () => {
 
       // If CRM login fails, try 100acress login
       try {
-        const acressResponse = await fetch("http://localhost:3500/api/auth/login", {
+        const acressResponse = await fetch("https://api.100acress.com/api/auth/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(credentials),
@@ -280,7 +280,7 @@ const Login = () => {
         
         if (acressResponse.ok && acressData.token) {
           // 100acress login successful, now verify with CRM backend
-          const verifyResponse = await fetch("https://bcrm.100acress.com//api/auth/verify-100acress-token", {
+          const verifyResponse = await fetch("https://bcrm.100acress.com/api/auth/verify-100acress-token", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token: acressData.token }),
