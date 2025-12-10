@@ -690,7 +690,7 @@ const Projects = () => {
                           </button>
                         </Link>
 
-                        <Link to={`/Admin/ProjectsEdit/${id}`}>
+                        <Link to={`/Admin/ProjectsEdit/${pUrl}`}>
                           <button
                             type="button"
                             className="action-button edit-button"

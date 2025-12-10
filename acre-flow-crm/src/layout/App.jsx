@@ -32,6 +32,8 @@ import ViewPropertyAdmin from "@/features/admin/components/ViewPropertyAdmin";
 
 import ProjectEnquiries from '@/features/admin/pages/ProjectEnquiries';
 import ListedProjects from '@/features/admin/pages/ListedProjects';
+import ProjectView from '@/features/admin/pages/ProjectView';
+import ProjectEdit from '@/features/admin/pages/ProjectEdit';
 import ProjectOrderManager from '@/features/admin/pages/ProjectOrderManager';
 import ResaleEnquiries from '@/features/admin/pages/ResaleEnquiries';
 import ListedProperties from '@/features/admin/pages/ListedProperties';
@@ -213,34 +215,32 @@ const App = () => {
                 )
               }
             />
-
-      
-       
-          <Route path="/it-infrastructure" element={<ItInfrastructure />} />
-          <Route path="/sales-head-dashboard" element={<SalesHeadDashboard />} />
-          <Route path="/hr-dashboard" element={<HRDashboard />} />
-          <Route path="/hr-all-users" element={<HRAllUsers />} />
-          <Route path="/hr-all-jobs" element={<HRAllJobs />} />
-          <Route path="/hr/job-applications/:id" element={<JobApplications />} />
-          <Route path="/blog-dashboard" element={<BlogDashboard />} />
-          <Route path="/admin-dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/register-user" element={<AdminUserManagement />} />
-          <Route path="/Admin/viewproperty/:id" element={<ViewPropertyAdmin />} />
-          <Route path="/admin/view-property/:id" element={<ViewPropertyAdmin />} />
-
-          {/* New Admin Routes */}
-          <Route path="/admin/project-enquiries" element={<ProjectEnquiries />} />
-          <Route path="/admin/listed-projects" element={<ListedProjects />} />
-          <Route path="/admin/project-order-manager" element={<ProjectOrderManager />} />
-          <Route path="/admin/resale-enquiries" element={<ResaleEnquiries />} />
-          <Route path="/admin/listed-properties" element={<ListedProperties />} />
-          <Route path="/admin/s3-manager" element={<S3Manager />} />
-          <Route path="/admin/contact-cards" element={<ContactCards />} />
-          <Route path="/admin/sitemap-manager" element={<SitemapManager />} />
-          <Route path="/admin/blog-post" element={<BlogPost />} />
-          <Route path="/admin/banner-management" element={<BannerManagement />} />
-          <Route path="/admin/short-setting" element={<ShortSetting />} />
-          <Route path="/admin/back-to-top" element={<BackToTopButton />} />
+            <Route path="/it-infrastructure" element={<ItInfrastructure />} />
+            <Route path="/sales-head-dashboard" element={<SalesHeadDashboard />} />
+            <Route path="/hr-dashboard" element={<HRDashboard />} />
+            <Route path="/hr-all-users" element={<HRAllUsers />} />
+            <Route path="/hr-all-jobs" element={<HRAllJobs />} />
+            <Route path="/hr/job-applications/:id" element={<JobApplications />} />
+            <Route path="/blog-dashboard" element={<BlogDashboard />} />
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/register-user" element={<AdminUserManagement />} />
+            <Route path="/Admin/viewproperty/:id" element={<ViewPropertyAdmin />} />
+            <Route path="/admin/view-property/:id" element={<ViewPropertyAdmin />} />
+            <Route path="/Admin/ProjectsView/:pUrl" element={<ProjectView />} />
+            <Route path="/Admin/ProjectsEdit/:pUrl" element={<ProjectEdit />} />
+            {/* New Admin Routes */}
+            <Route path="/admin/project-enquiries" element={<ProjectEnquiries />} />
+            <Route path="/admin/listed-projects" element={<ListedProjects />} />
+            <Route path="/admin/project-order-manager" element={<ProjectOrderManager />} />
+            <Route path="/admin/resale-enquiries" element={<ResaleEnquiries />} />
+            <Route path="/admin/listed-properties" element={<ListedProperties />} />
+            <Route path="/admin/s3-manager" element={<S3Manager />} />
+            <Route path="/admin/contact-cards" element={<ContactCards />} />
+            <Route path="/admin/sitemap-manager" element={<SitemapManager />} />
+            <Route path="/admin/blog-post" element={<BlogPost />} />
+            <Route path="/admin/banner-management" element={<BannerManagement />} />
+            <Route path="/admin/short-setting" element={<ShortSetting />} />
+            <Route path="/admin/back-to-top" element={<BackToTopButton />} />
 
             {/* Blog Routes - Temporarily Disabled
             <Route

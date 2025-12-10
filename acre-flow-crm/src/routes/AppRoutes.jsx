@@ -9,6 +9,7 @@ import AdminDashboard from '@/features/admin/pages/AdminDashboard';
 import UserManagement from '@/features/admin/components/UserManagement';
 import ProjectEnquiries from '@/features/admin/pages/ProjectEnquiries';
 import ListedProjects from '@/features/admin/pages/ListedProjects';
+import ProjectView from '@/features/admin/pages/ProjectView';
 import ProjectOrderManager from '@/features/admin/pages/ProjectOrderManager';
 import ResaleEnquiries from '@/features/admin/pages/ResaleEnquiries';
 import ListedProperties from '@/features/admin/pages/ListedProperties';
@@ -76,6 +77,9 @@ const AppRoutes = ({ isLoggedIn, userRole, isDeveloperLoggedIn }) => {
         <Route path="short-setting" element={<ShortSetting />} />
         <Route path="user-management" element={<UserManagement />} />
       </Route>
+
+      {/* Project View Route */}
+      <Route path="/Admin/ProjectsView/:pUrl" element={isLoggedIn && (userRole === "admin" || userRole === "sales_head") ? <ProjectView /> : <Navigate to="/login" replace />} />
 
       {/* Protected Routes */}
       {/* <Route path="/Admin/UserManagement" element={isLoggedIn && (userRole === "admin" || userRole === "crm_admin" || userRole === "hr" || userRole === "it") ? <UserManagement /> : <Navigate to="/login" replace />} />
