@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import AdminSidebar from "./AdminSidebar";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import api100acress from "../config/api100acressClient"; // Use 100acress client, not CRM client
+import api100acress from "../config/api100acressClient"; 
 import { message, Modal, notification } from "antd";
 import { MdSearch, MdVisibility, MdEdit, MdDelete, MdExpandMore, MdExpandLess } from "react-icons/md";
 import Tippy from '@tippyjs/react';
@@ -137,14 +137,18 @@ const ViewPropertyAdmin = () => {
       setLoadingPropertyDetails(true);
       setSelectedProperty(propertyId);
       
-      // Fetch property details
+      // Fetch property details - same as ViewDetails component
       const res = await api100acress.get(`/postPerson/propertyoneView/${propertyId}`);
       
-      console.log('✅ Property details:', res.data);
+      // Extract the first property from postProperty array
+      const propertyData = res.data?.data?.postProperty?.[0];
       
-      const propertyData = res.data?.data || res.data || res;
-      setPropertyDetails(propertyData);
-      setViewModalVisible(true);
+      if (propertyData) {
+        setPropertyDetails(propertyData);
+        setViewModalVisible(true);
+      } else {
+        messageApi.warning('No property data received from server');
+      }
     } catch (error) {
       console.error('❌ Error fetching property details:', error);
       messageApi.error(error.response?.data?.message || 'Failed to load property details');
@@ -256,8 +260,9 @@ const ViewPropertyAdmin = () => {
   if (loading) {
     return (
       <>
-        <AdminSidebar />
+        {contextHolder}
         <div className="flex bg-gray-50 min-h-screen">
+          <AdminSidebar />
           <div className="flex-1 p-8 ml-64 overflow-auto">
             <div className="max-w-6xl mx-auto">
               <div className="text-center py-12">
@@ -274,8 +279,8 @@ const ViewPropertyAdmin = () => {
   return (
     <>
       {contextHolder}
-      <AdminSidebar />
       <div className="flex bg-gray-50 min-h-screen">
+        <AdminSidebar />
         <div className="flex-1 p-8 ml-64 overflow-auto">
           <div className="max-w-6xl mx-auto space-y-8">
             {/* Search Bar */}
@@ -292,12 +297,7 @@ const ViewPropertyAdmin = () => {
                 </Tippy>
                 <MdSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={22} />
               </div>
-              <Link 
-                to={`/admin/add-property/${id}`}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
-                Add Property
-              </Link>
+             
             </div>
 
             {/* User Info */}
@@ -453,22 +453,84 @@ const ViewPropertyAdmin = () => {
           <div className="max-h-[70vh] overflow-y-auto">
             <div className="space-y-4">
               {/* Property Images */}
-              {propertyDetails.image && propertyDetails.image.length > 0 && (
+              {((propertyDetails.frontImage && propertyDetails.frontImage.url) || 
+                (propertyDetails.otherImage && propertyDetails.otherImage.length > 0) ||
+                (propertyDetails.image && propertyDetails.image.length > 0) || 
+                (propertyDetails.images && propertyDetails.images.length > 0) ||
+                propertyDetails.imageUrl ||
+                propertyDetails.mainImage) && (
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">Images</h3>
+                  <h3 className="text-lg font-semibold mb-3 text-gray-800">Property Images</h3>
                   <div className="grid grid-cols-2 gap-4">
-                    {propertyDetails.image.map((img, idx) => (
-                      <img
-                        key={idx}
-                        src={img.url || img}
-                        alt={`Property ${idx + 1}`}
-                        className="w-full h-48 object-cover rounded-lg border"
-                        onError={(e) => {
-                          e.target.src = 'https://via.placeholder.com/400x300?text=No+Image';
-                        }}
-                      />
+                    {/* Front Image */}
+                    {propertyDetails.frontImage && propertyDetails.frontImage.url && (
+                      <div className="relative group">
+                        <img
+                          src={propertyDetails.frontImage.url}
+                          alt="Front Image"
+                          className="w-full h-48 object-cover rounded-lg border shadow-md transition-transform duration-300 group-hover:scale-105"
+                          onError={(e) => {
+                            e.target.src = 'https://via.placeholder.com/400x300?text=Image+Not+Available';
+                          }}
+                          onLoad={(e) => {
+                            e.target.style.opacity = '1';
+                          }}
+                          style={{ opacity: '0', transition: 'opacity 0.3s ease' }}
+                        />
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300 rounded-lg"></div>
+                      </div>
+                    )}
+                    
+                    {/* Other Images */}
+                    {propertyDetails.otherImage && Array.isArray(propertyDetails.otherImage) && propertyDetails.otherImage.map((img, idx) => (
+                      <div key={idx} className="relative group">
+                        <img
+                          src={img.url || img}
+                          alt={`Property ${idx + 1}`}
+                          className="w-full h-48 object-cover rounded-lg border shadow-md transition-transform duration-300 group-hover:scale-105"
+                          onError={(e) => {
+                            e.target.src = 'https://via.placeholder.com/400x300?text=Image+Not+Available';
+                          }}
+                          onLoad={(e) => {
+                            e.target.style.opacity = '1';
+                          }}
+                          style={{ opacity: '0', transition: 'opacity 0.3s ease' }}
+                        />
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300 rounded-lg"></div>
+                      </div>
+                    ))}
+                    
+                    {/* Fallback: image/images array */}
+                    {!(propertyDetails.frontImage || propertyDetails.otherImage) && (propertyDetails.image || propertyDetails.images || []).map((img, idx) => (
+                      <div key={idx} className="relative group">
+                        <img
+                          src={img.url || img.src || img}
+                          alt={`Property ${idx + 1}`}
+                          className="w-full h-48 object-cover rounded-lg border shadow-md transition-transform duration-300 group-hover:scale-105"
+                          onError={(e) => {
+                            e.target.src = 'https://via.placeholder.com/400x300?text=Image+Not+Available';
+                          }}
+                          onLoad={(e) => {
+                            e.target.style.opacity = '1';
+                          }}
+                          style={{ opacity: '0', transition: 'opacity 0.3s ease' }}
+                        />
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300 rounded-lg"></div>
+                      </div>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* No Images Available */}
+              {!(propertyDetails.frontImage || propertyDetails.otherImage || propertyDetails.image || propertyDetails.images || propertyDetails.imageUrl || propertyDetails.mainImage) && (
+                <div className="bg-gray-50 p-6 rounded-lg text-center">
+                  <div className="text-gray-400 mb-2">
+                    <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <p className="text-gray-500">No images available for this property</p>
                 </div>
               )}
 
@@ -476,19 +538,19 @@ const ViewPropertyAdmin = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-semibold text-gray-600">Property Name</label>
-                  <p className="text-lg">{propertyDetails.propertyName || 'N/A'}</p>
+                  <p className="text-lg font-medium">{propertyDetails.propertyName || propertyDetails.name || 'N/A'}</p>
                 </div>
                 <div>
                   <label className="text-sm font-semibold text-gray-600">Property Type</label>
-                  <p className="text-lg">{propertyDetails.propertyType || 'N/A'}</p>
+                  <p className="text-lg font-medium">{propertyDetails.propertyType || propertyDetails.type || 'N/A'}</p>
                 </div>
                 <div>
                   <label className="text-sm font-semibold text-gray-600">City</label>
-                  <p className="text-lg">{propertyDetails.city || 'N/A'}</p>
+                  <p className="text-lg font-medium">{propertyDetails.city || 'N/A'}</p>
                 </div>
                 <div>
                   <label className="text-sm font-semibold text-gray-600">State</label>
-                  <p className="text-lg">{propertyDetails.state || 'N/A'}</p>
+                  <p className="text-lg font-medium">{propertyDetails.state || 'N/A'}</p>
                 </div>
                 <div>
                   <label className="text-sm font-semibold text-gray-600">Price</label>
@@ -498,7 +560,7 @@ const ViewPropertyAdmin = () => {
                 </div>
                 <div>
                   <label className="text-sm font-semibold text-gray-600">Area</label>
-                  <p className="text-lg">{propertyDetails.area ? `${propertyDetails.area} sq.ft` : 'N/A'}</p>
+                  <p className="text-lg font-medium">{propertyDetails.area ? `${propertyDetails.area} sq.ft` : 'N/A'}</p>
                 </div>
               </div>
 
@@ -544,36 +606,58 @@ const ViewPropertyAdmin = () => {
                     <p className="text-lg">{propertyDetails.floor}</p>
                   </div>
                 )}
+                <div>
+                  <label className="text-sm font-semibold text-gray-600">Built Year</label>
+                  <p className="text-lg">{propertyDetails.builtYear || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-gray-600">Furnishing</label>
+                  <p className="text-lg">{propertyDetails.furnishing || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-gray-600">Available Date</label>
+                  <p className="text-lg">{propertyDetails.availableDate || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-gray-600">Type</label>
+                  <p className="text-lg">{propertyDetails.type || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-gray-600">Select Property Type</label>
+                  <p className="text-lg">{propertyDetails.selectPropertyType || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-gray-600">LandMark</label>
+                  <p className="text-lg">{propertyDetails.landMark || 'N/A'}</p>
+                </div>
               </div>
 
-              {/* Contact Information */}
-              {(propertyDetails.mobile || propertyDetails.email) && (
-                <div className="border-t pt-4">
-                  <h3 className="text-lg font-semibold mb-2">Contact Information</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    {propertyDetails.mobile && (
-                      <div>
-                        <label className="text-sm font-semibold text-gray-600">Mobile</label>
-                        <p className="text-lg">{propertyDetails.mobile}</p>
-                      </div>
-                    )}
-                    {propertyDetails.email && (
-                      <div>
-                        <label className="text-sm font-semibold text-gray-600">Email</label>
-                        <p className="text-lg">{propertyDetails.email}</p>
-                      </div>
-                    )}
-                  </div>
+              {/* Project Description */}
+              {propertyDetails.projectDescription && (
+                <div>
+                  <label className="text-sm font-semibold text-gray-600">Project Description</label>
+                  <p className="text-lg text-gray-700 whitespace-pre-wrap">{propertyDetails.projectDescription}</p>
+                </div>
+              )}
+
+              {/* Amenities */}
+              {(propertyDetails.amenities || propertyDetails.Amenities) && (
+                <div>
+                  <label className="text-sm font-semibold text-gray-600">Amenities</label>
+                  <p className="text-lg text-gray-700">
+                    {propertyDetails.amenities || propertyDetails.Amenities || 'No Amenities'}
+                  </p>
                 </div>
               )}
             </div>
           </div>
         ) : (
           <div className="text-center py-12 text-gray-500">
-            <p>No property details available</p>
+            <p>No property details available.</p>
           </div>
         )}
       </Modal>
+      {contextHolder}
     </>
   );
 };
