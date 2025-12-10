@@ -216,7 +216,7 @@ const Login = () => {
     // Backend login - Try CRM first, then 100acress
     try {
       // Try CRM login first
-      const crmResponse = await fetch("https://bcrm.100acress.com/api/auth/login", {
+      const crmResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
