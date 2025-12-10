@@ -52,7 +52,7 @@ const RoleAssignment = () => {
     setMessage('');
 
     try {
-      const response = await fetch('http://localhost:5001/api/users', {
+      const response = await fetch('https://bcrm.100acress.com/api/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -109,7 +109,7 @@ const RoleAssignment = () => {
       setLoadingAssignments(true);
       const token = localStorage.getItem('token');
       
-      const response = await fetch('http://localhost:5001/api/users', {
+      const response = await fetch('https://bcrm.100acress.com/api/users', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

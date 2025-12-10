@@ -134,7 +134,7 @@
           };
           const token = localStorage.getItem('token');
           console.log('Token used for create employee:', token); // Debug log
-          const response = await fetch('http://localhost:5001/api/users', {
+          const response = await fetch('https://bcrm.100acress.com/api/users', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
