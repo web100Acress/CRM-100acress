@@ -662,9 +662,11 @@ const UserAdmin = () => {
       {/* View Property Modal */}
       <Modal
         title={
-          <div className="flex items-center gap-2">
-            <MdVisibility className="text-red-500" size={24} />
-            <span className="text-xl font-bold">User Properties</span>
+          <div className="flex items-center gap-3 bg-gradient-to-r from-blue-50 to-purple-50 -m-6 p-4 rounded-t-lg">
+            <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg shadow-lg">
+              <MdVisibility className="text-white" size={20} />
+            </div>
+            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">User Properties</span>
           </div>
         }
         open={viewPropertyModalVisible}
@@ -673,36 +675,55 @@ const UserAdmin = () => {
           <button
             key="close"
             onClick={handleClosePropertyModal}
-            className="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors"
+            className="px-8 py-3 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
           >
             Close
           </button>
         ]}
-        width={900}
+        width={1000}
         centered
+        className="elegant-modal"
+        styles={{
+          body: { padding: '24px', borderRadius: '12px' },
+          maskBg: 'rgba(0, 0, 0, 0.5)',
+          content: { borderRadius: '16px', overflow: 'hidden' }
+        }}
       >
         {loadingProperties ? (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
-            <p className="mt-4 text-gray-600">Loading properties...</p>
+          <div className="text-center py-16 bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl">
+            <div className="inline-block relative">
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-gradient-to-r from-blue-200 to-purple-200 border-t-transparent"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="h-8 w-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse"></div>
+              </div>
+            </div>
+            <p className="mt-6 text-gray-700 font-medium text-lg">Loading properties...</p>
+            <p className="text-gray-500 text-sm mt-2">Please wait while we fetch the information</p>
           </div>
         ) : (
-          <div className="max-h-[70vh] overflow-y-auto">
+          <div className="max-h-[70vh] overflow-y-auto pr-2">
             {/* User Details */}
-            <div className="bg-gray-50 p-4 rounded-lg mb-4">
-              <h3 className="text-lg font-semibold mb-2">User Information</h3>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="text-sm font-semibold text-gray-600">Name</label>
-                  <p className="text-base">{userDetails.name}</p>
+            <div className="bg-gradient-to-br from-blue-50 to-purple-50 p-6 rounded-2xl mb-6 shadow-lg border border-blue-100">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl shadow-md">
+                  <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
+                    <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"></div>
+                  </div>
                 </div>
-                <div>
-                  <label className="text-sm font-semibold text-gray-600">Email</label>
-                  <p className="text-base">{userDetails.email}</p>
+                <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">User Information</h3>
+              </div>
+              <div className="grid grid-cols-3 gap-6">
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-blue-50">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</label>
+                  <p className="text-base font-medium text-gray-800 mt-1">{userDetails.name || 'N/A'}</p>
                 </div>
-                <div>
-                  <label className="text-sm font-semibold text-gray-600">Mobile</label>
-                  <p className="text-base">{userDetails.mobile}</p>
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-purple-50">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</label>
+                  <p className="text-base font-medium text-gray-800 mt-1 break-all">{userDetails.email || 'N/A'}</p>
+                </div>
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-pink-50">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Mobile</label>
+                  <p className="text-base font-medium text-gray-800 mt-1">{userDetails.mobile || 'N/A'}</p>
                 </div>
               </div>
             </div>

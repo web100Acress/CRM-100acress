@@ -13,9 +13,16 @@ const AdminDashboard = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   useEffect(() => {
-    const adminName = localStorage.getItem('adminName') || 'Admin';
-    const adminEmail = localStorage.getItem('adminEmail') || 'admin@example.com';
-    setUserInfo({ name: adminName, email: adminEmail });
+    // Get real-time logged-in user data
+    const userName = localStorage.getItem('userName') || localStorage.getItem('adminName') || 'Admin';
+    const userEmail = localStorage.getItem('userEmail') || localStorage.getItem('adminEmail') || 'admin@example.com';
+    const userRole = localStorage.getItem('userRole') || localStorage.getItem('adminRole') || 'admin';
+    
+    setUserInfo({ 
+      name: userName, 
+      email: userEmail,
+      role: userRole
+    });
   }, []);
 
   // Get user initials for avatar
@@ -25,10 +32,19 @@ const AdminDashboard = () => {
   };
 
   const handleLogout = () => {
+    // Clear all user-related localStorage items
     localStorage.removeItem('isAdminLoggedIn');
     localStorage.removeItem('adminEmail');
     localStorage.removeItem('adminName');
     localStorage.removeItem('adminRole');
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('sourceSystem');
+    
     window.location.href = '/login';
   };
 
