@@ -34,6 +34,8 @@ import ProjectEnquiries from '@/features/admin/pages/ProjectEnquiries';
 import ListedProjects from '@/features/admin/pages/ListedProjects';
 import ProjectView from '@/features/admin/pages/ProjectView';
 import ProjectEdit from '@/features/admin/pages/ProjectEdit';
+import ProjectsAddBhk from '@/features/admin/pages/ProjectsAddBhk';
+import ProjectAddHighlights from '@/features/admin/pages/ProjectAddHighlights';
 import ProjectOrderManager from '@/features/admin/pages/ProjectOrderManager';
 import ResaleEnquiries from '@/features/admin/pages/ResaleEnquiries';
 import ListedProperties from '@/features/admin/pages/ListedProperties';
@@ -228,6 +230,8 @@ const App = () => {
             <Route path="/admin/view-property/:id" element={<ViewPropertyAdmin />} />
             <Route path="/Admin/ProjectsView/:pUrl" element={<ProjectView />} />
             <Route path="/Admin/ProjectsEdit/:pUrl" element={<ProjectEdit />} />
+            <Route path="/Admin/ProjectsAddBhk/:id" element={<ProjectsAddBhk />} />
+            <Route path="/Admin/ProjectAddHighlights/:id" element={<ProjectAddHighlights />} />
             {/* New Admin Routes */}
             <Route path="/admin/project-enquiries" element={<ProjectEnquiries />} />
             <Route path="/admin/listed-projects" element={<ListedProjects />} />
