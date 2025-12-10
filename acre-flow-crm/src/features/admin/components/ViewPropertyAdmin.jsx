@@ -19,9 +19,33 @@ const ViewPropertyAdmin = () => {
   const [deletingUser, setDeletingUser] = useState(false);
   const [loading, setLoading] = useState(true);
   const [viewModalVisible, setViewModalVisible] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [propertyDetails, setPropertyDetails] = useState(null);
   const [loadingPropertyDetails, setLoadingPropertyDetails] = useState(false);
+  const [editingPropertyId, setEditingPropertyId] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    propertyType: "",
+    propertyName: "",
+    frontImage: null,
+    otherImage: [],
+    address: "",
+    city: "",
+    state: "",
+    price: "",
+    area: "",
+    descripation: "",
+    landMark: "",
+    amenities: [],
+    builtYear: "",
+    furnishing: "",
+    type: "",
+    availableDate: "",
+    propertyLooking: "",
+    subType: "",
+    verify: "unverified",
+  });
+  const [editingLoading, setEditingLoading] = useState(false);
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -163,6 +187,137 @@ const ViewPropertyAdmin = () => {
     setPropertyDetails(null);
   };
 
+  const handleEditProperty = async (propertyId) => {
+    try {
+      setEditingLoading(true);
+      setEditingPropertyId(propertyId);
+      
+      // Fetch property details for editing
+      const res = await api100acress.get(`/postPerson/propertyoneView/${propertyId}`);
+      const propertyData = res.data?.data?.postProperty?.[0];
+      
+      if (propertyData) {
+        // Normalize the data for the edit form
+        setEditFormData({
+          propertyType: propertyData.propertyType || "",
+          propertyName: propertyData.propertyName || "",
+          frontImage: propertyData.frontImage || null,
+          otherImage: Array.isArray(propertyData.otherImage) ? propertyData.otherImage : [],
+          address: propertyData.address || "",
+          city: propertyData.city || "",
+          state: propertyData.state || "",
+          price: propertyData.price || "",
+          area: propertyData.area || "",
+          descripation: propertyData.descripation || "",
+          landMark: propertyData.landMark || "",
+          amenities: propertyData.amenities || [],
+          builtYear: propertyData.builtYear || "",
+          furnishing: propertyData.furnishing || "",
+          type: propertyData.type || "",
+          availableDate: propertyData.availableDate || "",
+          propertyLooking: propertyData.propertyLooking || "",
+          subType: propertyData.subType || "",
+          verify: propertyData.verify || "unverified",
+        });
+        setEditModalVisible(true);
+      } else {
+        messageApi.warning('No property data received from server');
+      }
+    } catch (error) {
+      console.error('❌ Error fetching property for edit:', error);
+      messageApi.error(error.response?.data?.message || 'Failed to load property for editing');
+    } finally {
+      setEditingLoading(false);
+    }
+  };
+
+  const handleCloseEditModal = () => {
+    setEditModalVisible(false);
+    setEditingPropertyId(null);
+    setEditFormData({
+      propertyType: "",
+      propertyName: "",
+      frontImage: null,
+      otherImage: [],
+      address: "",
+      city: "",
+      state: "",
+      price: "",
+      area: "",
+      descripation: "",
+      landMark: "",
+      amenities: [],
+      builtYear: "",
+      furnishing: "",
+      type: "",
+      availableDate: "",
+      propertyLooking: "",
+      subType: "",
+      verify: "unverified",
+    });
+  };
+
+  const handleEditFormChange = (field, value) => {
+    setEditFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleUpdateProperty = async () => {
+    try {
+      setEditingLoading(true);
+      messageApi.open({
+        key: 'updateProperty',
+        type: 'loading',
+        content: 'Updating property...',
+      });
+
+      const formData = new FormData();
+      
+      // Append all fields
+      for (const key in editFormData) {
+        if (editFormData[key] !== undefined && editFormData[key] !== null && key !== 'frontImage' && key !== 'otherImage') {
+          formData.append(key, editFormData[key]);
+        }
+      }
+
+      // Append front image if it's a file
+      if (editFormData.frontImage && editFormData.frontImage.file) {
+        formData.append('frontImage', editFormData.frontImage.file);
+      }
+
+      // Append other images if they are files
+      if (Array.isArray(editFormData.otherImage)) {
+        editFormData.otherImage.forEach((img) => {
+          if (img && img.file) {
+            formData.append('otherImage', img.file);
+          }
+        });
+      }
+
+      const res = await api100acress.post(`/postPerson/propertyoneUpdate/${editingPropertyId}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      if (res.status === 200) {
+        messageApi.destroy('updateProperty');
+        messageApi.success('Property updated successfully');
+        
+        // Refresh the property list
+        setViewAllProperty(prev => prev.map(p => p._id === editingPropertyId ? { ...p, ...editFormData } : p));
+        
+        handleCloseEditModal();
+      }
+    } catch (error) {
+      console.error('❌ Error updating property:', error);
+      messageApi.destroy('updateProperty');
+      messageApi.error(error.response?.data?.message || 'Failed to update property');
+    } finally {
+      setEditingLoading(false);
+    }
+  };
+
   const handleDeleteProperty = async (propertyId) => {
     if (!window.confirm("Are you sure you want to delete this property?")) {
       return;
@@ -262,16 +417,16 @@ const ViewPropertyAdmin = () => {
       <>
         {contextHolder}
         <div className="flex bg-gray-50 min-h-screen">
-          <AdminSidebar />
-          <div className="flex-1 p-8 ml-64 overflow-auto">
-            <div className="max-w-6xl mx-auto">
-              <div className="text-center py-12">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
-                <p className="mt-4 text-gray-600">Loading property data...</p>
-              </div>
+        <AdminSidebar />
+        <div className="flex-1 p-8 ml-0 overflow-auto">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center py-12">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+              <p className="mt-4 text-gray-600">Loading property data...</p>
             </div>
           </div>
         </div>
+      </div>
       </>
     );
   }
@@ -281,7 +436,7 @@ const ViewPropertyAdmin = () => {
       {contextHolder}
       <div className="flex bg-gray-50 min-h-screen">
         <AdminSidebar />
-        <div className="flex-1 p-8 ml-64 overflow-auto">
+        <div className="flex-1 p-8 ml-0 overflow-auto">
           <div className="max-w-6xl mx-auto space-y-8">
             {/* Search Bar */}
             <div className="flex justify-between items-center mb-6">
@@ -378,11 +533,13 @@ const ViewPropertyAdmin = () => {
                                   >
                                     <MdVisibility className="inline mr-1" /> View
                                   </button>
-                                  <Link to={`/admin/edit-property/${item._id}`}>
-                                    <button className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded transition-colors">
-                                      <MdEdit className="inline mr-1" /> Edit
-                                    </button>
-                                  </Link>
+                                  <button
+                                    onClick={() => handleEditProperty(item._id)}
+                                    disabled={editingLoading}
+                                    className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    <MdEdit className="inline mr-1" /> Edit
+                                  </button>
                                   <button
                                     onClick={() => handleDeleteProperty(item._id)}
                                     className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded transition-colors"
@@ -421,6 +578,299 @@ const ViewPropertyAdmin = () => {
           </div>
         </div>
       </div>
+
+      {/* Edit Property Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <MdEdit className="text-yellow-500" size={24} />
+            <span className="text-xl font-bold">Edit Property</span>
+          </div>
+        }
+        open={editModalVisible}
+        onCancel={handleCloseEditModal}
+        footer={[
+          <button
+            key="cancel"
+            onClick={handleCloseEditModal}
+            className="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors"
+          >
+            Cancel
+          </button>,
+          <button
+            key="update"
+            onClick={handleUpdateProperty}
+            disabled={editingLoading}
+            className="px-6 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition-colors disabled:opacity-50"
+          >
+            {editingLoading ? 'Updating...' : 'Update'}
+          </button>
+        ]}
+        width={900}
+        centered
+      >
+        <div className="max-h-[70vh] overflow-y-auto">
+          <div className="space-y-4">
+            {/* Images Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              {/* Front Image */}
+              <div className="bg-white rounded-lg border border-gray-200 p-4">
+                <label className="block text-sm font-semibold text-gray-600 mb-2">Front Image</label>
+                <div className="flex items-center justify-center h-40 w-full overflow-hidden rounded-lg bg-gray-50 border border-gray-200 mb-3">
+                  {editFormData.frontImage && editFormData.frontImage.url ? (
+                    <img 
+                      src={editFormData.frontImage.url} 
+                      alt="Front" 
+                      className="max-h-full max-w-full object-contain"
+                    />
+                  ) : (
+                    <span className="text-gray-400 text-sm">No Front Image</span>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      const file = e.target.files[0];
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        handleEditFormChange('frontImage', {
+                          url: event.target.result,
+                          file: file
+                        });
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  className="w-full text-sm"
+                />
+              </div>
+
+              {/* Other Images */}
+              <div className="bg-white rounded-lg border border-gray-200 p-4">
+                <label className="block text-sm font-semibold text-gray-600 mb-2">Other Images</label>
+                <div className="flex flex-wrap gap-2 mb-3 max-h-40 overflow-y-auto">
+                  {editFormData.otherImage && Array.isArray(editFormData.otherImage) && editFormData.otherImage.length > 0 ? (
+                    editFormData.otherImage.map((img, idx) => (
+                      <div key={idx} className="relative group">
+                        <img
+                          src={img.url || img}
+                          alt={`Image ${idx + 1}`}
+                          className="w-20 h-20 object-cover rounded-lg border border-gray-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditFormData(prev => ({
+                              ...prev,
+                              otherImage: prev.otherImage.filter((_, i) => i !== idx)
+                            }));
+                          }}
+                          className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <span className="text-gray-400 text-sm">No Other Images</span>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => {
+                    if (e.target.files) {
+                      const files = Array.from(e.target.files);
+                      const newImages = files.map((file) => {
+                        const reader = new FileReader();
+                        let url = '';
+                        reader.onload = (event) => {
+                          url = event.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                        return { url: '', file };
+                      });
+                      
+                      // Process files with proper async handling
+                      Promise.all(files.map(file => {
+                        return new Promise((resolve) => {
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            resolve({ url: event.target.result, file });
+                          };
+                          reader.readAsDataURL(file);
+                        });
+                      })).then((processedImages) => {
+                        setEditFormData(prev => ({
+                          ...prev,
+                          otherImage: [...(prev.otherImage || []), ...processedImages]
+                        }));
+                      });
+                    }
+                  }}
+                  className="w-full text-sm"
+                />
+              </div>
+            </div>
+            {/* Property Name */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-600 mb-2">Property Name</label>
+              <input
+                type="text"
+                value={editFormData.propertyName}
+                onChange={(e) => handleEditFormChange('propertyName', e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-yellow-500 focus:outline-none"
+              />
+            </div>
+
+            {/* Property Type */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-600 mb-2">Property Type</label>
+              <input
+                type="text"
+                value={editFormData.propertyType}
+                onChange={(e) => handleEditFormChange('propertyType', e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-yellow-500 focus:outline-none"
+              />
+            </div>
+
+            {/* Address */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-600 mb-2">Address</label>
+              <input
+                type="text"
+                value={editFormData.address}
+                onChange={(e) => handleEditFormChange('address', e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-yellow-500 focus:outline-none"
+              />
+            </div>
+
+            {/* City & State */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-600 mb-2">City</label>
+                <input
+                  type="text"
+                  value={editFormData.city}
+                  onChange={(e) => handleEditFormChange('city', e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-yellow-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-600 mb-2">State</label>
+                <input
+                  type="text"
+                  value={editFormData.state}
+                  onChange={(e) => handleEditFormChange('state', e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-yellow-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Price & Area */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-600 mb-2">Price</label>
+                <input
+                  type="text"
+                  value={editFormData.price}
+                  onChange={(e) => handleEditFormChange('price', e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-yellow-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-600 mb-2">Area (sq.ft)</label>
+                <input
+                  type="text"
+                  value={editFormData.area}
+                  onChange={(e) => handleEditFormChange('area', e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-yellow-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {/* LandMark & Built Year */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-600 mb-2">LandMark</label>
+                <input
+                  type="text"
+                  value={editFormData.landMark}
+                  onChange={(e) => handleEditFormChange('landMark', e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-yellow-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-600 mb-2">Built Year</label>
+                <input
+                  type="text"
+                  value={editFormData.builtYear}
+                  onChange={(e) => handleEditFormChange('builtYear', e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-yellow-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Furnishing & Available Date */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-600 mb-2">Furnishing</label>
+                <input
+                  type="text"
+                  value={editFormData.furnishing}
+                  onChange={(e) => handleEditFormChange('furnishing', e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-yellow-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-600 mb-2">Available Date</label>
+                <input
+                  type="text"
+                  value={editFormData.availableDate}
+                  onChange={(e) => handleEditFormChange('availableDate', e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-yellow-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Type & Property Looking */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-600 mb-2">Type</label>
+                <input
+                  type="text"
+                  value={editFormData.type}
+                  onChange={(e) => handleEditFormChange('type', e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-yellow-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-600 mb-2">Property Looking</label>
+                <input
+                  type="text"
+                  value={editFormData.propertyLooking}
+                  onChange={(e) => handleEditFormChange('propertyLooking', e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-yellow-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-600 mb-2">Description</label>
+              <textarea
+                value={editFormData.descripation}
+                onChange={(e) => handleEditFormChange('descripation', e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-yellow-500 focus:outline-none"
+                rows="3"
+              />
+            </div>
+          </div>
+        </div>
+      </Modal>
 
       {/* View Property Modal */}
       <Modal
