@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:5001', // This client is for CRM Backend (port 5001) for login etc.
+  baseURL: 'https://bcrm.100acress.com', // This client is for CRM Backend (port 5001) for login etc.
   headers: {
     'Content-Type': 'application/json',
   },
