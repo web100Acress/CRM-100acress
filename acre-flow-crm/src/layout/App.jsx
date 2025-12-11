@@ -38,6 +38,8 @@ import ProjectAddHighlights from '@/features/admin/pages/ProjectAddHighlights';
 import ProjectOrderManager from '@/features/admin/pages/ProjectOrderManager';
 import ResaleEnquiries from '@/features/admin/pages/ResaleEnquiries';
 import ListedProperties from '@/features/admin/pages/ListedProperties';
+import ViewPropertyDetails from '@/features/admin/pages/ViewPropertyDetails';
+import EditPropertyDetails from '@/features/admin/pages/EditPropertyDetails';
 import S3Manager from '@/features/admin/pages/S3Manager';
 import ContactCards from '@/features/admin/pages/ContactCards';
 import SitemapManager from '@/features/admin/pages/SitemapManager';
@@ -277,6 +279,8 @@ const App = () => {
             <Route path="/admin/project-order-manager" element={<ProjectOrderManager />} />
             <Route path="/admin/resale-enquiries" element={<ResaleEnquiries />} />
             <Route path="/admin/listed-properties" element={<ListedProperties />} />
+            <Route path="/Admin/viewproperty/viewdetails/:id" element={<ViewPropertyDetails />} />
+            <Route path="/Admin/viewproperty/editdetails/:id" element={<EditPropertyDetails />} />
             <Route path="/admin/s3-manager" element={<S3Manager />} />
             <Route path="/admin/contact-cards" element={<ContactCards />} />
             <Route path="/admin/sitemap-manager" element={<SitemapManager />} />
