@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Edit3, Eye, BarChart3, Settings, LogOut } from 'lucide-react';
+import { FileText, Edit3, Eye, BarChart3, Settings, LogOut, Users, FileText as DocumentIcon } from 'lucide-react';
 
 const BlogSidebar = ({ isOpen, activeTab, onTabChange }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -9,6 +9,8 @@ const BlogSidebar = ({ isOpen, activeTab, onTabChange }) => {
   const menuItems = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'manage', label: 'Manage Posts', icon: FileText },
+    { id: 'all-blogs', label: 'All Blogs', icon: DocumentIcon },
+    { id: 'blog-users', label: 'Blog Users', icon: Users }
   ];
 
   // Check real-time authentication status
