@@ -8,7 +8,7 @@ const HRSidebar = ({ isOpen, activeTab, onTabChange }) => {
 
   const menuItems = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
-    { id: 'attendance', label: 'Attendance', icon: Calendar },
+    // { id: 'attendance', label: 'Attendance', icon: Calendar },
     { id: 'all-users', label: 'Users', icon: Users2 },
     { id: 'all-jobs', label: 'Jobs', icon: Briefcase },
     { id: 'leave-management', label: 'Leave', icon: Plane }
