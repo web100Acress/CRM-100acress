@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LogOut, Menu, X, Users, BarChart3, Calendar, FileText, Award, ChevronDown, User, Settings } from 'lucide-react';
+import api100acress from '../../admin/config/api100acressClient';
 import HRSidebar from '../components/HRSidebar';
 import HROverview from '../components/HROverview';
 import Attendance from '../components/Attendance';
@@ -13,9 +14,16 @@ const HRDashboard = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   useEffect(() => {
-    const hrName = localStorage.getItem('hrName') || 'HR Manager';
-    const hrEmail = localStorage.getItem('hrEmail') || 'hr@example.com';
-    setUserInfo({ name: hrName, email: hrEmail });
+    // Use localStorage data directly since HR users don't have API permissions
+    const hrName = localStorage.getItem('hrName');
+    const hrEmail = localStorage.getItem('hrEmail');
+    
+    if (hrName && hrEmail) {
+      setUserInfo({ name: hrName, email: hrEmail });
+    } else {
+      console.log('HR user data not found in localStorage');
+      setUserInfo(null);
+    }
   }, []);
 
   const handleLogout = () => {

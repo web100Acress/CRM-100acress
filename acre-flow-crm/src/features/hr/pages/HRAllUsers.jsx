@@ -34,16 +34,17 @@ const ItDashboard = () => {
         return;
       }
 
-      const response = await api100acress.get("/api/hr/users", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
+      const response = await api100acress.get("/postPerson/view/allusers");
       setUsers(response.data.data || []);
     } catch (error) {
       console.error("Error fetching users:", error);
-      alert(error.response?.data?.message || "Failed to fetch users");
+      // HR users don't have permission to view all users
+      if (error.response?.status === 403) {
+        alert("HR users don't have permission to view all users. This feature is available to Admin users only.");
+      } else {
+        alert(error.response?.data?.message || "Failed to fetch users");
+      }
+      setUsers([]); // Clear users on error
     } finally {
       setLoading(false);
     }
