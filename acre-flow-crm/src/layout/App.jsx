@@ -24,6 +24,7 @@ import HRDashboard from "@/features/hr/pages/HRDashboard";
 import HRAllUsers from "@/features/hr/pages/HRAllUsers";
 import HRAllJobs from "@/features/hr/pages/HRAllJobs";
 import JobApplications from "@/features/hr/pages/JobApplications";
+import LeaveManagement from "@/features/hr/pages/LeaveManagement";
 import BlogDashboard from "@/features/blog/pages/BlogDashboard";
 import AdminDashboard from "@/features/admin/pages/AdminDashboard";
 import AdminUserManagement from "@/features/admin/components/UserManagement";
@@ -266,6 +267,7 @@ const App = () => {
             <Route path="/hr-all-users" element={<HRAllUsers />} />
             <Route path="/hr-all-jobs" element={<HRAllJobs />} />
             <Route path="/hr/job-applications/:id" element={<JobApplications />} />
+            <Route path="/hr/leave-management" element={<LeaveManagement />} />
             <Route path="/blog-dashboard" element={<BlogDashboard />} />
             <Route path="/admin-dashboard" element={<AdminDashboard />} />
             <Route path="/admin/register-user" element={<AdminUserManagement />} />

@@ -6,6 +6,7 @@ import HROverview from '../components/HROverview';
 import Attendance from '../components/Attendance';
 import HRAllUsers from './HRAllUsers';
 import HRAllJobs from './HRAllJobs';
+import LeaveManagement from './LeaveManagement';
 
 const HRDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -50,6 +51,8 @@ const HRDashboard = () => {
         return <HRAllUsers />;
       case 'all-jobs':
         return <HRAllJobs />;
+      case 'leave-management':
+        return <LeaveManagement />;
       default:
         return <HROverview />;
     }
