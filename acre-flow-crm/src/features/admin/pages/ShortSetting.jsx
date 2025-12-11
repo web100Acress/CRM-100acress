@@ -5,6 +5,33 @@ import api100acress from "../config/api100acressClient";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+// Helper function to parse YouTube video ID from URL or return the ID if it's already an ID
+const parseYouTubeVideoId = (input) => {
+  if (!input || typeof input !== 'string') return '';
+  
+  const trimmed = input.trim();
+  
+  // If it looks like a video ID (11 characters, alphanumeric with - and _)
+  if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
+    return trimmed;
+  }
+  
+  // Extract video ID from various YouTube URL formats
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/.*[?&]v=([a-zA-Z0-9_-]{11})/,
+  ];
+  
+  for (const pattern of patterns) {
+    const match = trimmed.match(pattern);
+    if (match && match[1]) {
+      return match[1];
+    }
+  }
+  
+  return '';
+};
+
 const ShortsSettings = () => {
   const [input, setInput] = useState("");
   const [savedId, setSavedId] = useState("");
@@ -20,9 +47,9 @@ const ShortsSettings = () => {
     const load = async () => {
       setIsLoading(true);
       try {
-        const res = await fetch(`${getApiBase()}/settings/shorts-video-id`);
-        if (res.ok) {
-          const data = await res.json();
+        const res = await api100acress.get('/settings/shorts-video-id');
+        if (res.data) {
+          const data = res.data;
           const value = data?.value || "";
           const list = Array.isArray(data?.list) ? data.list : [];
           setSavedId(value);
@@ -97,20 +124,15 @@ const ShortsSettings = () => {
     }
 
     try {
-      const res = await fetch(`${getApiBase()}/settings/shorts-video-id`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ value: parsedList }),
+      const res = await api100acress.put('/settings/shorts-video-id', {
+        value: parsedList
       });
       
-      if (!res.ok) {
+      if (!res.data) {
         throw new Error("Failed to save setting");
       }
 
-      const data = await res.json();
+      const data = res.data;
       const current = data?.value || parsedList[0];
       const list = Array.isArray(data?.list) ? data.list : parsedList;
       setSavedId(current);
@@ -141,13 +163,8 @@ const ShortsSettings = () => {
     const token = localStorage.getItem("myToken");
     
     try {
-      await fetch(`${getApiBase()}/settings/shorts-video-id`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ value: "" }),
+      await api100acress.put('/settings/shorts-video-id', {
+        value: ""
       });
       
       toast.success("🧹 Shorts videos cleared successfully!", {
