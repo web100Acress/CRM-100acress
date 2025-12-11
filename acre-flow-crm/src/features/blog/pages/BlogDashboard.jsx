@@ -3,6 +3,7 @@ import { LogOut, Menu, X, FileText, Edit3, Eye, Trash2, ChevronDown, User, Setti
 import BlogSidebar from '../components/BlogSidebar';
 import BlogOverview from '../components/BlogOverview';
 import BlogManagement from '../components/BlogManagement';
+import BlogUser from '../pages/BlogUser';
 
 const BlogDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -40,6 +41,8 @@ const BlogDashboard = () => {
         return <BlogOverview />;
       case 'manage':
         return <BlogManagement />;
+      case 'blog-users':
+        return <BlogUser />;
       default:
         return <BlogOverview />;
     }
