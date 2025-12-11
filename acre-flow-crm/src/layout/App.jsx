@@ -44,6 +44,8 @@ import S3Manager from '@/features/admin/pages/S3Manager';
 import ContactCards from '@/features/admin/pages/ContactCards';
 import SitemapManager from '@/features/admin/pages/SitemapManager';
 import BlogPost from '@/features/admin/pages/BlogPost';
+import BlogViewAdmin from '@/features/admin/pages/BlogViewAdmin';
+import BlogEdit from '@/features/admin/pages/BlogEdit';
 import BannerManagement from '@/features/admin/pages/BannerManagement';
 import ShortSetting from '@/features/admin/pages/ShortSetting';
 import BackToTopButton from '@/features/admin/pages/BackToTopButton';
@@ -285,6 +287,8 @@ const App = () => {
             <Route path="/admin/contact-cards" element={<ContactCards />} />
             <Route path="/admin/sitemap-manager" element={<SitemapManager />} />
             <Route path="/admin/blog-post" element={<BlogPost />} />
+            <Route path="/Admin/blog/view/:id" element={<BlogViewAdmin />} />
+            <Route path="/Admin/blog/edit/:id" element={<BlogEdit />} />
             <Route path="/admin/banner-management" element={<BannerManagement />} />
             <Route path="/admin/short-setting" element={<ShortSetting />} />
             <Route path="/admin/back-to-top" element={<BackToTopButton />} />
