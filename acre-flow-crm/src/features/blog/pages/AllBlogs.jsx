@@ -526,8 +526,8 @@ export default function AllBlogs() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex items-center justify-between border-t border-gray-100 -mx-0.5 -mt-0.5">
-                      <div className="flex items-center -space-x-0.5">
+                    <div className="flex items-center justify-between border-t border-gray-100 pt-2 mt-2 px-1">
+                      <div className="flex items-center space-x-1">
                         {/* View Blog */}
                         <button
                           onClick={() =>
@@ -536,12 +536,12 @@ export default function AllBlogs() {
                               "_blank"
                             )
                           }
-                          className="group p-0.25 rounded-full transition-all duration-300 hover:scale-110"
+                          className="p-1.5 rounded-lg hover:bg-blue-50 transition-all duration-200 group"
                           title="View Blog"
                         >
                           <Eye
-                            size={10}
-                            className="text-blue-600 group-hover:text-blue-700 transition-colors duration-300"
+                            size={14}
+                            className="text-blue-600 group-hover:text-blue-700"
                           />
                         </button>
 
@@ -554,12 +554,12 @@ export default function AllBlogs() {
                             }
                             history(`/seo/blogs/edit/${blog._id}`);
                           }}
-                          className="group p-0.25 rounded-full transition-all duration-300 hover:scale-110"
+                          className="p-1.5 rounded-lg hover:bg-indigo-50 transition-all duration-200 group"
                           title="Edit Blog"
                         >
                           <Edit
-                            size={10}
-                            className="text-indigo-600 group-hover:text-indigo-700 transition-colors duration-300"
+                            size={14}
+                            className="text-indigo-600 group-hover:text-indigo-700"
                           />
                         </button>
 
@@ -573,21 +573,25 @@ export default function AllBlogs() {
                             setBlogToDelete(blog);
                             showModal();
                           }}
-                          className="group p-0.25 rounded-full transition-all duration-300 hover:scale-110"
+                          className="p-1.5 rounded-lg hover:bg-red-50 transition-all duration-200 group"
                           title="Delete Blog"
                         >
                           <Trash2
-                            size={10}
-                            className="text-red-600 group-hover:text-red-700 transition-colors duration-300"
+                            size={14}
+                            className="text-red-600 group-hover:text-red-700"
                           />
                         </button>
                       </div>
 
-                      {/* Publish Toggle - Made more compact and responsive */}
-                      <div className="flex-shrink-0 ml-0.5">
-                        <div 
-                          className={`relative inline-flex items-center cursor-pointer select-none transition-all duration-200 ${
-                            isOwnedByMe(blog) ? 'opacity-100' : 'opacity-60 cursor-not-allowed'
+                      {/* Publish Toggle */}
+                      <div className="flex-shrink-0">
+                        <button
+                          className={`relative inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+                            isOwnedByMe(blog)
+                              ? blog?.isPublished
+                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                              : 'bg-gray-50 text-gray-400 cursor-not-allowed'
                           }`}
                           onClick={() => {
                             if (!isOwnedByMe(blog)) {
@@ -597,31 +601,20 @@ export default function AllBlogs() {
                             handleIsPublished(!blog?.isPublished, blog._id);
                           }}
                           title={blog?.isPublished ? "Click to Unpublish" : "Click to Publish"}
+                          disabled={!isOwnedByMe(blog)}
                         >
-                          {/* Toggle Container */}
-                          <div className="flex items-center min-w-[60px]">
-                            {/* Toggle Switch */}
-                            <div className={`w-9 h-5 rounded-full transition-colors duration-200 ${
-                              blog?.isPublished 
-                                ? 'bg-green-500 shadow-inner' 
-                                : 'bg-gray-300 hover:bg-gray-400'
-                            }`}>
-                              {/* Toggle Knob */}
-                              <div className={`absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform duration-200 ${
-                                blog?.isPublished ? 'translate-x-4' : 'translate-x-0'
-                              }`}></div>
-                            </div>
+                          <div className="flex items-center space-x-1.5">
+                            {/* Toggle Indicator */}
+                            <div className={`w-2 h-2 rounded-full transition-colors duration-200 ${
+                              blog?.isPublished ? 'bg-green-500' : 'bg-gray-400'
+                            }`}></div>
                             
                             {/* Status Text */}
-                            <span className={`ml-1.5 text-[10px] font-medium whitespace-nowrap ${
-                              blog?.isPublished 
-                                ? 'text-green-600' 
-                                : 'text-gray-500'
-                            }`}>
-                              {blog?.isPublished ? '' : 'Draft'}
+                            <span>
+                              {blog?.isPublished ? 'Published' : 'Draft'}
                             </span>
                           </div>
-                        </div>
+                        </button>
                       </div>
                     </div>
                   </div>
