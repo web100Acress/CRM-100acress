@@ -7,7 +7,6 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import DashboardLayout from "./DashboardLayout";
 import { useState, useEffect } from "react";
 import store from "@/store";
-
 import Dashboard from "@/features/users/pages/Dashboard";
 import Leads from "@/features/leads/pages/Leads";
 import Tickets from "@/features/tickets/pages/Tickets";
@@ -65,6 +64,18 @@ const App = () => {
 
   const [isDeveloperLoggedIn, setIsDeveloperLoggedIn] = useState(false);
 
+  const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
+
+  const handleLogout = () => {
+    localStorage.removeItem("isLoggedIn");
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("token");
+    localStorage.removeItem("isDeveloperLoggedIn");
+    setIsLoggedIn(false);
+    setUserRole("employee");
+    setIsDeveloperLoggedIn(false);
+  };
+
   useEffect(() => {
     const checkAuthStatus = () => {
       const loggedIn = localStorage.getItem("isLoggedIn") === "true";
@@ -87,6 +98,34 @@ const App = () => {
       window.removeEventListener("storage", checkAuthStatus);
     };
   }, []);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    let inactivityTimer;
+
+    const resetInactivityTimer = () => {
+      clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(() => {
+        handleLogout();
+      }, INACTIVITY_TIMEOUT);
+    };
+
+    const events = ["mousedown", "keydown", "scroll", "touchstart", "click"];
+
+    events.forEach((event) => {
+      window.addEventListener(event, resetInactivityTimer);
+    });
+
+    resetInactivityTimer();
+
+    return () => {
+      clearTimeout(inactivityTimer);
+      events.forEach((event) => {
+        window.removeEventListener(event, resetInactivityTimer);
+      });
+    };
+  }, [isLoggedIn]);
 
 
 
