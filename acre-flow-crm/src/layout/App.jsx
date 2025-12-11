@@ -55,6 +55,7 @@ import BackToTopButton from '@/features/admin/pages/BackToTopButton';
 // import BlogDashboard from "@/features/blog/pages/BlogDashboard";
 import BlogOverview from "@/features/blog/components/BlogOverview";
 import BlogUser from "@/features/blog/pages/BlogUser";
+import AllBlogs from "@/features/blog/pages/AllBlogs";
 // import DraftManagement from "@/features/Blog_Components/DraftManagement";
 // import BlogSection from "@/features/Blog_Components/BlogSection";
 // import SingleBlog from "@/features/Blog_Components/SingleBlog";
@@ -271,6 +272,7 @@ const App = () => {
             <Route path="/hr/leave-management" element={<LeaveManagement />} />
             <Route path="/blog-dashboard" element={<BlogDashboard />} />
             <Route path="/blog-users" element={<BlogUser />} />
+            <Route path="/all-blogs" element={<AllBlogs />} />
             <Route path="/admin-dashboard" element={<AdminDashboard />} />
             <Route path="/admin/register-user" element={<AdminUserManagement />} />
             <Route path="/Admin/viewproperty/:id" element={<ViewPropertyAdmin />} />
