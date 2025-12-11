@@ -124,7 +124,7 @@ const ProjectEnquiries = () => {
       <AdminSidebar isOpen={sidebarOpen} />
       <div className="flex-1 flex flex-col overflow-hidden">
       {contextHolder}
-        <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+        {/* <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center gap-4">
               <button
@@ -173,7 +173,7 @@ const ProjectEnquiries = () => {
               </div>
             </div>
           </div>
-        </header>
+        </header> */}
 
         <main className="flex-1 overflow-auto">
           <div className="p-6">
