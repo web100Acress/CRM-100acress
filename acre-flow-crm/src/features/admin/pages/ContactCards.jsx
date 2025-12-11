@@ -27,9 +27,8 @@ import {
   Building
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import axios from 'axios';
-import api100acress from "../config/api100acressClient"; // For 100acress backend
-import AdminSidebar from "../components/AdminSidebar";
+import api100acress from "../config/api100acressClient";
+import AdminSidebar from '../components/AdminSidebar';
 
 const ContactCardManagement = () => {
   const [contactCards, setContactCards] = useState([]);
@@ -66,18 +65,15 @@ const ContactCardManagement = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('myToken');
-      const response = await axios.get(
-        `${getApiBase()}/api/contact-cards`,
-        {
-          headers: { 'x-access-token': token },
-          params: {
-            page: pagination.currentPage,
-            limit: 10,
-            search: searchTerm,
-            status: statusFilter === 'all' ? undefined : statusFilter
-          }
+      const response = await api100acress.get('/api/contact-cards', {
+        headers: { 'x-access-token': token },
+        params: {
+          page: pagination.currentPage,
+          limit: 10,
+          search: searchTerm,
+          status: statusFilter === 'all' ? undefined : statusFilter
         }
-      );
+      });
 
       if (response.data.success) {
         setContactCards(response.data.data);
@@ -98,7 +94,7 @@ const ContactCardManagement = () => {
 
     try {
       const token = localStorage.getItem('myToken');
-      await axios.delete(`${getApiBase()}/api/contact-cards/${id}`, {
+      await api100acress.delete(`/api/contact-cards/${id}`, {
         headers: { 'x-access-token': token }
       });
       
@@ -499,8 +495,8 @@ const ContactCardModal = ({ isOpen, onClose, onSuccess, editData = null }) => {
     try {
       const token = localStorage.getItem('myToken');
       const url = editData 
-        ? `${getApiBase()}/api/contact-cards/${editData._id}`
-        : `${getApiBase()}/api/contact-cards`;
+        ? `/api/contact-cards/${editData._id}`
+        : '/api/contact-cards';
       
       const method = editData ? 'put' : 'post';
 
