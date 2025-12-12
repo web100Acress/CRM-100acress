@@ -11,6 +11,7 @@ const HRSidebar = ({ isOpen, activeTab, onTabChange }) => {
     // { id: 'attendance', label: 'Attendance', icon: Calendar },
     { id: 'all-users', label: 'Users', icon: Users2 },
     { id: 'all-jobs', label: 'Jobs', icon: Briefcase },
+    { id: 'onboarding', label: 'Onboarding', icon: Users, route: '/hr/onboarding' },
     { id: 'leave-management', label: 'Leave', icon: Plane }
   ];
 
@@ -122,7 +123,7 @@ const HRSidebar = ({ isOpen, activeTab, onTabChange }) => {
               return (
                 <button
                   key={item.id}
-                  onClick={() => onTabChange(item.id)}
+                  onClick={() => item.route ? window.location.href = item.route : onTabChange(item.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                     activeTab === item.id
                       ? 'bg-purple-400 text-white'
