@@ -5,6 +5,7 @@ import BlogOverview from '../components/BlogOverview';
 import BlogManagement from '../components/BlogManagement';
 import BlogUser from '../pages/BlogUser';
 import AllBlogs from '../pages/AllBlogs';
+import ManageBlog from '../pages/ManageBlog';
 
 const BlogDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -42,6 +43,8 @@ const BlogDashboard = () => {
         return <BlogOverview />;
       case 'manage':
         return <BlogManagement />;
+      case 'manageBlog':
+        return <ManageBlog />;
       case 'blog-users':
         return <BlogUser />;
       case 'all-blogs':

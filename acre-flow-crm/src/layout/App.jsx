@@ -58,6 +58,7 @@ import BackToTopButton from '@/features/admin/pages/BackToTopButton';
 import BlogOverview from "@/features/blog/components/BlogOverview";
 import BlogUser from "@/features/blog/pages/BlogUser";
 import AllBlogs from "@/features/blog/pages/AllBlogs";
+import ManageBlog from "@/features/blog/pages/ManageBlog";
 // import DraftManagement from "@/features/Blog_Components/DraftManagement";
 // import BlogSection from "@/features/Blog_Components/BlogSection";
 // import SingleBlog from "@/features/Blog_Components/SingleBlog";
@@ -380,7 +381,7 @@ const App = () => {
               path="/seo/blogs/manage"
               element={
                 isLoggedIn ? (
-                  <BlogManagement />
+                  <ManageBlog />
                 ) : (
                   <Navigate to="/login" replace />
                 )

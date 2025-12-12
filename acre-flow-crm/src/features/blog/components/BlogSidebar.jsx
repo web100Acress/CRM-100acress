@@ -9,6 +9,7 @@ const BlogSidebar = ({ isOpen, activeTab, onTabChange }) => {
   const menuItems = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'manage', label: 'Add Blog', icon: FileText },
+    { id: 'manageBlog', label: 'Manage Blog', icon: Settings },
     { id: 'all-blogs', label: 'All Blogs', icon: DocumentIcon },
     { id: 'blog-users', label: 'Blog Users', icon: Users }
   ];
