@@ -78,17 +78,9 @@ const App = () => {
     localStorage.removeItem("userRole");
     localStorage.removeItem("token");
     localStorage.removeItem("isDeveloperLoggedIn");
-    localStorage.removeItem("isSalesHeadLoggedIn");
-    localStorage.removeItem("isHRLoggedIn");
-    localStorage.removeItem("isBlogLoggedIn");
-    localStorage.removeItem("isAdminLoggedIn");
-    localStorage.removeItem("isItLoggedIn");
-    localStorage.removeItem("isHrFinanceLoggedIn");
     setIsLoggedIn(false);
     setUserRole("employee");
     setIsDeveloperLoggedIn(false);
-    // Redirect to login page
-    window.location.href = "/login";
   };
 
   useEffect(() => {
@@ -98,46 +90,10 @@ const App = () => {
 
       const developerLoggedIn =
         localStorage.getItem("isDeveloperLoggedIn") === "true";
-      const salesHeadLoggedIn =
-        localStorage.getItem("isSalesHeadLoggedIn") === "true";
-      const hrLoggedIn =
-        localStorage.getItem("isHRLoggedIn") === "true";
-      const blogLoggedIn =
-        localStorage.getItem("isBlogLoggedIn") === "true";
-      const adminLoggedIn =
-        localStorage.getItem("isAdminLoggedIn") === "true";
-      const itLoggedIn =
-        localStorage.getItem("isItLoggedIn") === "true";
-      const hrFinanceLoggedIn =
-        localStorage.getItem("isHrFinanceLoggedIn") === "true";
-
-      // Check if any user is logged in
-      const anyUserLoggedIn = loggedIn || developerLoggedIn || salesHeadLoggedIn || 
-                             hrLoggedIn || blogLoggedIn || adminLoggedIn || itLoggedIn || hrFinanceLoggedIn;
 
       setIsLoggedIn(loggedIn);
       setUserRole(role);
       setIsDeveloperLoggedIn(developerLoggedIn);
-
-      // If no user is logged in but localStorage has some old data, clear it and redirect
-      if (!anyUserLoggedIn) {
-        // Clear all possible login states
-        localStorage.removeItem("isLoggedIn");
-        localStorage.removeItem("userRole");
-        localStorage.removeItem("token");
-        localStorage.removeItem("isDeveloperLoggedIn");
-        localStorage.removeItem("isSalesHeadLoggedIn");
-        localStorage.removeItem("isHRLoggedIn");
-        localStorage.removeItem("isBlogLoggedIn");
-        localStorage.removeItem("isAdminLoggedIn");
-        localStorage.removeItem("isItLoggedIn");
-        localStorage.removeItem("isHrFinanceLoggedIn");
-        
-        // Only redirect if not already on login page
-        if (window.location.pathname !== "/login") {
-          window.location.href = "/login";
-        }
-      }
 
       setIsLoading(false);
     };
@@ -151,21 +107,7 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    const checkAnyUserLoggedIn = () => {
-      const developerLoggedIn = localStorage.getItem("isDeveloperLoggedIn") === "true";
-      const salesHeadLoggedIn = localStorage.getItem("isSalesHeadLoggedIn") === "true";
-      const hrLoggedIn = localStorage.getItem("isHRLoggedIn") === "true";
-      const blogLoggedIn = localStorage.getItem("isBlogLoggedIn") === "true";
-      const adminLoggedIn = localStorage.getItem("isAdminLoggedIn") === "true";
-      const itLoggedIn = localStorage.getItem("isItLoggedIn") === "true";
-      const hrFinanceLoggedIn = localStorage.getItem("isHrFinanceLoggedIn") === "true";
-      const loggedIn = localStorage.getItem("isLoggedIn") === "true";
-
-      return loggedIn || developerLoggedIn || salesHeadLoggedIn || hrLoggedIn || 
-             blogLoggedIn || adminLoggedIn || itLoggedIn || hrFinanceLoggedIn;
-    };
-
-    if (!checkAnyUserLoggedIn()) return;
+    if (!isLoggedIn) return;
 
     let inactivityTimer;
 
@@ -190,7 +132,7 @@ const App = () => {
         window.removeEventListener(event, resetInactivityTimer);
       });
     };
-  }, []);
+  }, [isLoggedIn]);
 
 
 
@@ -321,357 +263,41 @@ const App = () => {
                 )
               }
             />
-            <Route
-              path="/hr-finance"
-              element={
-                localStorage.getItem("isHrFinanceLoggedIn") === "true" ? (
-                  <ItInfrastructure />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/it-infrastructure"
-              element={
-                localStorage.getItem("isItLoggedIn") === "true" ? (
-                  <ItInfrastructure />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/sales-head-dashboard"
-              element={
-                localStorage.getItem("isSalesHeadLoggedIn") === "true" ? (
-                  <SalesHeadDashboard />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/hr-dashboard"
-              element={
-                localStorage.getItem("isHRLoggedIn") === "true" ? (
-                  <HRDashboard />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/hr-all-users"
-              element={
-                localStorage.getItem("isHRLoggedIn") === "true" ? (
-                  <HRAllUsers />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/hr-all-jobs"
-              element={
-                localStorage.getItem("isHRLoggedIn") === "true" ? (
-                  <HRAllJobs />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/hr/job-applications/:id"
-              element={
-                localStorage.getItem("isHRLoggedIn") === "true" ? (
-                  <JobApplications />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/hr/leave-management"
-              element={
-                localStorage.getItem("isHRLoggedIn") === "true" ? (
-                  <LeaveManagement />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/blog-dashboard"
-              element={
-                localStorage.getItem("isBlogLoggedIn") === "true" ? (
-                  <BlogDashboard />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/blog-users"
-              element={
-                localStorage.getItem("isBlogLoggedIn") === "true" ? (
-                  <BlogUser />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/all-blogs"
-              element={
-                localStorage.getItem("isBlogLoggedIn") === "true" ? (
-                  <AllBlogs />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/admin-dashboard"
-              element={
-                localStorage.getItem("isAdminLoggedIn") === "true" ? (
-                  <AdminDashboard />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/admin/register-user"
-              element={
-                localStorage.getItem("isAdminLoggedIn") === "true" ? (
-                  <AdminUserManagement />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/Admin/viewproperty/:id"
-              element={
-                localStorage.getItem("isAdminLoggedIn") === "true" ? (
-                  <ViewPropertyAdmin />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/admin/view-property/:id"
-              element={
-                localStorage.getItem("isAdminLoggedIn") === "true" ? (
-                  <ViewPropertyAdmin />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/Admin/ProjectsView/:pUrl"
-              element={
-                localStorage.getItem("isAdminLoggedIn") === "true" ? (
-                  <ProjectView />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/Admin/ProjectsEdit/:pUrl"
-              element={
-                localStorage.getItem("isAdminLoggedIn") === "true" ? (
-                  <ProjectEdit />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/Admin/ProjectsAddBhk/:id"
-              element={
-                localStorage.getItem("isAdminLoggedIn") === "true" ? (
-                  <ProjectsAddBhk />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/Admin/ProjectAddHighlights/:id"
-              element={
-                localStorage.getItem("isAdminLoggedIn") === "true" ? (
-                  <ProjectAddHighlights />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
+            <Route path="/it-infrastructure" element={<ItInfrastructure />} />
+            <Route path="/sales-head-dashboard" element={<SalesHeadDashboard />} />
+            <Route path="/hr-dashboard" element={<HRDashboard />} />
+            <Route path="/hr-all-users" element={<HRAllUsers />} />
+            <Route path="/hr-all-jobs" element={<HRAllJobs />} />
+            <Route path="/hr/job-applications/:id" element={<JobApplications />} />
+            <Route path="/hr/leave-management" element={<LeaveManagement />} />
+            <Route path="/blog-dashboard" element={<BlogDashboard />} />
+            <Route path="/blog-users" element={<BlogUser />} />
+            <Route path="/all-blogs" element={<AllBlogs />} />
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/register-user" element={<AdminUserManagement />} />
+            <Route path="/Admin/viewproperty/:id" element={<ViewPropertyAdmin />} />
+            <Route path="/admin/view-property/:id" element={<ViewPropertyAdmin />} />
+            <Route path="/Admin/ProjectsView/:pUrl" element={<ProjectView />} />
+            <Route path="/Admin/ProjectsEdit/:pUrl" element={<ProjectEdit />} />
+            <Route path="/Admin/ProjectsAddBhk/:id" element={<ProjectsAddBhk />} />
+            <Route path="/Admin/ProjectAddHighlights/:id" element={<ProjectAddHighlights />} />
             {/* New Admin Routes */}
-            <Route
-              path="/admin/project-enquiries"
-              element={
-                localStorage.getItem("isAdminLoggedIn") === "true" ? (
-                  <ProjectEnquiries />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/admin/listed-projects"
-              element={
-                localStorage.getItem("isAdminLoggedIn") === "true" ? (
-                  <ListedProjects />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/admin/project-order-manager"
-              element={
-                localStorage.getItem("isAdminLoggedIn") === "true" ? (
-                  <ProjectOrderManager />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/admin/resale-enquiries"
-              element={
-                localStorage.getItem("isAdminLoggedIn") === "true" ? (
-                  <ResaleEnquiries />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/admin/listed-properties"
-              element={
-                localStorage.getItem("isAdminLoggedIn") === "true" ? (
-                  <ListedProperties />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/Admin/viewproperty/viewdetails/:id"
-              element={
-                localStorage.getItem("isAdminLoggedIn") === "true" ? (
-                  <ViewPropertyDetails />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/Admin/viewproperty/editdetails/:id"
-              element={
-                localStorage.getItem("isAdminLoggedIn") === "true" ? (
-                  <EditPropertyDetails />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/admin/s3-manager"
-              element={
-                localStorage.getItem("isAdminLoggedIn") === "true" ? (
-                  <S3Manager />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/admin/contact-cards"
-              element={
-                localStorage.getItem("isAdminLoggedIn") === "true" ? (
-                  <ContactCards />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/admin/sitemap-manager"
-              element={
-                localStorage.getItem("isAdminLoggedIn") === "true" ? (
-                  <SitemapManager />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/admin/blog-post"
-              element={
-                localStorage.getItem("isAdminLoggedIn") === "true" ? (
-                  <BlogPost />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/Admin/blog/view/:id"
-              element={
-                localStorage.getItem("isAdminLoggedIn") === "true" ? (
-                  <BlogViewAdmin />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/Admin/blog/edit/:id"
-              element={
-                localStorage.getItem("isAdminLoggedIn") === "true" ? (
-                  <BlogEdit />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/admin/banner-management"
-              element={
-                localStorage.getItem("isAdminLoggedIn") === "true" ? (
-                  <BannerManagement />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/admin/short-setting"
-              element={
-                localStorage.getItem("isAdminLoggedIn") === "true" ? (
-                  <ShortSetting />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/admin/back-to-top"
-              element={
-                localStorage.getItem("isAdminLoggedIn") === "true" ? (
-                  <BackToTopButton />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
+            <Route path="/admin/project-enquiries" element={<ProjectEnquiries />} />
+            <Route path="/admin/listed-projects" element={<ListedProjects />} />
+            <Route path="/admin/project-order-manager" element={<ProjectOrderManager />} />
+            <Route path="/admin/resale-enquiries" element={<ResaleEnquiries />} />
+            <Route path="/admin/listed-properties" element={<ListedProperties />} />
+            <Route path="/Admin/viewproperty/viewdetails/:id" element={<ViewPropertyDetails />} />
+            <Route path="/Admin/viewproperty/editdetails/:id" element={<EditPropertyDetails />} />
+            <Route path="/admin/s3-manager" element={<S3Manager />} />
+            <Route path="/admin/contact-cards" element={<ContactCards />} />
+            <Route path="/admin/sitemap-manager" element={<SitemapManager />} />
+            <Route path="/admin/blog-post" element={<BlogPost />} />
+            <Route path="/Admin/blog/view/:id" element={<BlogViewAdmin />} />
+            <Route path="/Admin/blog/edit/:id" element={<BlogEdit />} />
+            <Route path="/admin/banner-management" element={<BannerManagement />} />
+            <Route path="/admin/short-setting" element={<ShortSetting />} />
+            <Route path="/admin/back-to-top" element={<BackToTopButton />} />
 
             {/* Blog Routes - Temporarily Disabled
             <Route
