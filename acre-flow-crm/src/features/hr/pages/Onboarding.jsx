@@ -100,6 +100,12 @@ const Onboarding = () => {
 
   const inviteStage = async (id, stage) => {
     try {
+      // Handle documentation stage separately
+      if (stage === 'documentation') {
+        await sendDocsInvite(id);
+        return;
+      }
+
       const type = prompt("Invite type: online/offline", "online");
       if (!type) return;
       let payload = { stage, type };
@@ -334,8 +340,10 @@ const Onboarding = () => {
         content: form.message || undefined,
         tasks,
       };
-      await api.post(`/api/hr/onboarding/${activeItem._id}/invite`, payload);
+      await api100acress.post(`/api/hr/onboarding/${activeItem._id}/invite`, payload);
+      toast?.success ? toast.success('Invite sent successfully!') : alert('Invite sent successfully!');
       fetchList();
+      closeWizard();
     } catch (e) {
       alert(e?.response?.data?.message || 'Failed to send invite');
     }
@@ -348,9 +356,9 @@ const Onboarding = () => {
       if (stage === 'documentation') {
         const body = {};
         if (form.joiningDate) body.joiningDate = form.joiningDate;
-        await api.post(`/api/hr/onboarding/${activeItem._id}/docs-complete`, body);
+        await api100acress.post(`/api/hr/onboarding/${activeItem._id}/docs-complete`, body);
       } else if (['interview1','hrDiscussion'].includes(stage)) {
-        await api.post(`/api/hr/onboarding/${activeItem._id}/complete-stage`, { stage, feedback: form.message });
+        await api100acress.post(`/api/hr/onboarding/${activeItem._id}/complete-stage`, { stage, feedback: form.message });
       } else {
         alert('Invalid stage to complete.');
         return;
@@ -380,7 +388,7 @@ const Onboarding = () => {
       if (form.joiningDate) formData.append('joiningDate', form.joiningDate);
 
       // Use apiClient with FormData support
-      await api.post(`/api/hr/onboarding/${activeItem._id}/docs-submit`, formData, {
+      await api100acress.post(`/api/hr/onboarding/${activeItem._id}/docs-submit`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -401,7 +409,7 @@ const Onboarding = () => {
         alert('Invalid stage to reject.');
         return;
       }
-      await api.post(`/api/hr/onboarding/${activeItem._id}/reject-stage`, { stage, reason: form.rejectReason });
+      await api100acress.post(`/api/hr/onboarding/${activeItem._id}/reject-stage`, { stage, reason: form.rejectReason });
       fetchList();
     } catch (e) {
       alert(e?.response?.data?.message || 'Failed to reject stage');
@@ -411,7 +419,7 @@ const Onboarding = () => {
   const submitResetFromWizard = async () => {
     try {
       if (!activeItem) return;
-      await api.post(`/api/hr/onboarding/${activeItem._id}/reset`, { stage: form.resetStage, reason: form.resetReason });
+      await api100acress.post(`/api/hr/onboarding/${activeItem._id}/reset`, { stage: form.resetStage, reason: form.resetReason });
       alert('Onboarding reset to selected stage');
       fetchList();
       closeWizard();
