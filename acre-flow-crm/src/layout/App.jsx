@@ -25,6 +25,7 @@ import HRAllUsers from "@/features/hr/pages/HRAllUsers";
 import HRAllJobs from "@/features/hr/pages/HRAllJobs";
 import JobApplications from "@/features/hr/pages/JobApplications";
 import LeaveManagement from "@/features/hr/pages/LeaveManagement";
+import Onboarding from "@/features/hr/pages/Onboarding";
 import BlogDashboard from "@/features/blog/pages/BlogDashboard";
 import AdminDashboard from "@/features/admin/pages/AdminDashboard";
 import AdminUserManagement from "@/features/admin/components/UserManagement";
@@ -81,6 +82,8 @@ const App = () => {
     setIsLoggedIn(false);
     setUserRole("employee");
     setIsDeveloperLoggedIn(false);
+    // Redirect to login page
+    window.location.href = "/login";
   };
 
   useEffect(() => {
@@ -270,6 +273,7 @@ const App = () => {
             <Route path="/hr-all-jobs" element={<HRAllJobs />} />
             <Route path="/hr/job-applications/:id" element={<JobApplications />} />
             <Route path="/hr/leave-management" element={<LeaveManagement />} />
+            <Route path="/hr/onboarding" element={<Onboarding />} />
             <Route path="/blog-dashboard" element={<BlogDashboard />} />
             <Route path="/blog-users" element={<BlogUser />} />
             <Route path="/all-blogs" element={<AllBlogs />} />
