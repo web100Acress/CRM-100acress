@@ -55,6 +55,11 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use('/api', routes);
 
+// Root route redirect to login
+app.get('/', (req, res) => {
+  res.redirect('/login');
+});
+
 // Error handler
 app.use(errorHandler);
 

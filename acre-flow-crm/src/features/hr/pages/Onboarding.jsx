@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import HRSidebar from "../components/HRSidebar";
+// import HRSidebar from "../components/HRSidebar";
 import api100acress from "../../admin/config/api100acressClient";
 import { CheckCircle, Circle, Clock, Calendar, User, Mail, ChevronRight, FileText, X } from "lucide-react";
 import { toast } from 'react-hot-toast';
@@ -908,7 +908,7 @@ const Onboarding = () => {
 
   return (
     <div className="flex bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
-      <HRSidebar />
+      {/* <HRSidebar /> */}
       <div className="flex-1 p-6 md:p-8 lg:p-10 ml-0 md:ml-6">
         <div className="max-w-7xl mx-auto">
           {/* Header Section */}

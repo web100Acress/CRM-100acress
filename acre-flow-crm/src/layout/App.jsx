@@ -26,6 +26,7 @@ import HRAllJobs from "@/features/hr/pages/HRAllJobs";
 import JobApplications from "@/features/hr/pages/JobApplications";
 import LeaveManagement from "@/features/hr/pages/LeaveManagement";
 import Onboarding from "@/features/hr/pages/Onboarding";
+import Offboarding from "@/features/hr/pages/Offboarding";
 import BlogDashboard from "@/features/blog/pages/BlogDashboard";
 import AdminDashboard from "@/features/admin/pages/AdminDashboard";
 import AdminUserManagement from "@/features/admin/components/UserManagement";
@@ -127,6 +128,17 @@ const App = () => {
       window.addEventListener(event, resetInactivityTimer);
     });
 
+    // Add window close event listener for automatic logout
+    const handleBeforeUnload = (event) => {
+      // Clear authentication when window is closed
+      localStorage.removeItem("isLoggedIn");
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("token");
+      localStorage.removeItem("isDeveloperLoggedIn");
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
     resetInactivityTimer();
 
     return () => {
@@ -134,6 +146,7 @@ const App = () => {
       events.forEach((event) => {
         window.removeEventListener(event, resetInactivityTimer);
       });
+      window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, [isLoggedIn]);
 
@@ -167,11 +180,7 @@ const App = () => {
             <Route
               path="/"
               element={
-                isLoggedIn ? (
-                  <Dashboard userRole={userRole} />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
+                <Navigate to="/login" replace />
               }
             />
             <Route
@@ -274,6 +283,7 @@ const App = () => {
             <Route path="/hr/job-applications/:id" element={<JobApplications />} />
             <Route path="/hr/leave-management" element={<LeaveManagement />} />
             <Route path="/hr/onboarding" element={<Onboarding />} />
+            <Route path="/hr/offboarding" element={<Offboarding />} />
             <Route path="/blog-dashboard" element={<BlogDashboard />} />
             <Route path="/blog-users" element={<BlogUser />} />
             <Route path="/all-blogs" element={<AllBlogs />} />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, BarChart3, Calendar, FileText, Award, Settings, LogOut, Briefcase, Users2, Plane } from 'lucide-react';
+import { Users, BarChart3, Calendar, FileText, Award, Settings, LogOut, Briefcase, Users2, Plane, User } from 'lucide-react';
 
 const HRSidebar = ({ isOpen, activeTab, onTabChange }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -11,7 +11,8 @@ const HRSidebar = ({ isOpen, activeTab, onTabChange }) => {
     // { id: 'attendance', label: 'Attendance', icon: Calendar },
     { id: 'all-users', label: 'Users', icon: Users2 },
     { id: 'all-jobs', label: 'Jobs', icon: Briefcase },
-    { id: 'onboarding', label: 'Onboarding', icon: Users, route: '/hr/onboarding' },
+    { id: 'onboarding', label: 'Onboarding', icon: Users },
+    { id: 'offboarding', label: 'Offboarding', icon: User },
     { id: 'leave-management', label: 'Leave', icon: Plane }
   ];
 
@@ -123,7 +124,7 @@ const HRSidebar = ({ isOpen, activeTab, onTabChange }) => {
               return (
                 <button
                   key={item.id}
-                  onClick={() => item.route ? window.location.href = item.route : onTabChange(item.id)}
+                  onClick={() => onTabChange && onTabChange(item.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                     activeTab === item.id
                       ? 'bg-purple-400 text-white'
