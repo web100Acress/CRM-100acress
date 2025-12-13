@@ -70,7 +70,7 @@ const InsertProject = () => {
   // Function to fetch states from backend
   const fetchStatesFromBackend = async () => {
     try {
-      const { data } = await api.get("project/viewAll/data?sort=-createdAt");
+      const { data } = await api100acress.get("project/viewAll/data?sort=-createdAt");
       if (data?.data) {
         // Extract unique state names and sort them
         const uniqueStates = [...new Set(
@@ -93,7 +93,7 @@ const InsertProject = () => {
   };
   const fetchCitiesFromBackend = async () => {
     try {
-      const { data } = await api.get("project/viewAll/data?sort=-createdAt");
+      const { data } = await api100acress.get("project/viewAll/data?sort=-createdAt");
       if (data?.data) {
         // Extract unique city names and sort them
         const uniqueCities = [...new Set(
@@ -118,7 +118,7 @@ const InsertProject = () => {
   // Function to fetch builders from backend
   const fetchBuildersFromBackend = async () => {
     try {
-      const { data } = await api.get("project/viewAll/data?sort=-createdAt");
+      const { data } = await api100acress.get("project/viewAll/data?sort=-createdAt");
       if (data?.data) {
         // Extract unique builder names and sort them
         const uniqueBuilders = [...new Set(
@@ -317,7 +317,7 @@ const InsertProject = () => {
           status: "active",
         };
 
-        const response = await api.post(builderApiEndpoint, builderData);
+        const response = await api100acress.post(builderApiEndpoint, builderData);
 
         if (response.status === 200) {
           const result = response.data;
@@ -743,7 +743,7 @@ const InsertProject = () => {
         Authorization: `Bearer ${token.replace(/^"/, "").replace(/"$/, "")}`,
       });
 
-      const response = await api.post(apiEndpoint, formDataAPI, {
+      const response = await api100acress.post(apiEndpoint, formDataAPI, {
         // Let axios/browser set multipart boundary automatically; auth handled by api client
         withCredentials: true,
       });
@@ -925,7 +925,7 @@ const InsertProject = () => {
       <AdminSidebar />
       {contextHolder} {/* Ant Design message context holder */}
       {/* Main content area */}
-      <div className="flex-1 p-8 ml-64">
+      <div className="flex-1 p-8 ml-0 overflow-auto font-sans">
         {/* Page Header */}
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-extrabold text-gray-900 mb-2 flex items-center gap-2 justify-center">
