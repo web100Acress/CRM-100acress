@@ -40,6 +40,7 @@ import ProjectEdit from '@/features/admin/pages/ProjectEdit';
 import ProjectsAddBhk from '@/features/admin/pages/ProjectsAddBhk';
 import ProjectAddHighlights from '@/features/admin/pages/ProjectAddHighlights';
 import ProjectOrderManager from '@/features/admin/pages/ProjectOrderManager';
+import ProjectOrderManagement from '@/features/admin/pages/ProjectOrderManagement';
 import ResaleEnquiries from '@/features/admin/pages/ResaleEnquiries';
 import ListedProperties from '@/features/admin/pages/ListedProperties';
 import ViewPropertyDetails from '@/features/admin/pages/ViewPropertyDetails';
@@ -302,6 +303,7 @@ const App = () => {
             <Route path="/admin/listed-projects" element={<ListedProjects />} />
             <Route path="/admin/project-insert" element={<InsertProject />} />
             <Route path="/admin/project-order-manager" element={<ProjectOrderManager />} />
+            <Route path="/admin/project-order-management" element={<ProjectOrderManagement />} />
             <Route path="/admin/resale-enquiries" element={<ResaleEnquiries />} />
             <Route path="/admin/listed-properties" element={<ListedProperties />} />
             <Route path="/Admin/viewproperty/viewdetails/:id" element={<ViewPropertyDetails />} />

@@ -13,6 +13,7 @@ const AdminSidebar = ({ isOpen }) => {
     { id: 'register-user', label: 'Register User', icon: UserPlus, roles: ['admin', 'crm_admin'] },
     { id: 'project-enquiries', label: 'Project Enquiries', icon: FileText, roles: ['admin', 'crm_admin'] },
     { id: 'listed-projects', label: 'Listed Projects', icon: Home, roles: ['admin', 'sales_head'] },
+    { id: 'project-order-management', label: 'Project Order Management', icon: Package, roles: ['admin'] },
     { id: 'project-order-manager', label: 'Project Order Manager', icon: Package, roles: ['admin', 'sales_head'] },
     { id: 'resale-enquiries', label: 'Resale Enquiries', icon: Phone, roles: ['admin', 'sales_head'] },
     { id: 'listed-properties', label: 'Listed Properties', icon: Home, roles: ['admin', 'sales_head'] },
