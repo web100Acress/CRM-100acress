@@ -74,7 +74,7 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
             <X className="icon" />
           </button>
 
-          <h2 className="modal-title">Add Follow-up</h2>
+          <h2 className="modal-title">Follow-up</h2>
 
           <form onSubmit={handleSubmit} className="form">
             {error && <div className="form-error">{error}</div>}
@@ -84,7 +84,7 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
               <textarea
                 id="comment"
                 name="comment"
-                rows="4"
+                rows="3"
                 className="form-textarea"
                 value={formData.comment}
                 onChange={handleChange}
@@ -92,32 +92,6 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
                 placeholder="Enter your follow-up comments..."
                 disabled={loading}
               />
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="author">Author</label>
-                <input
-                  type="text"
-                  id="author"
-                  name="author"
-                  className="form-input disabled"
-                  value={formData.author}
-                  disabled
-                  placeholder="Your Name"
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="role">Role</label>
-                <input
-                  type="text"
-                  id="role"
-                  name="role"
-                  className="form-input disabled"
-                  value={formData.role}
-                  disabled
-                />
-              </div>
             </div>
 
             <div className="form-row">
@@ -156,20 +130,7 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
                 className="form-input"
                 value={formData.place}
                 onChange={handleChange}
-                required
                 placeholder="e.g., Online Meeting, Client Office"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="relatedTo">Related to</label>
-              <input
-                type="text"
-                id="relatedTo"
-                name="relatedTo"
-                className="form-input disabled"
-                value={formData.relatedTo}
-                disabled
               />
             </div>
 
@@ -186,7 +147,7 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
               ) : (
                 <>
                   <Send className="icon" />
-                  Submit Follow-up
+                  Add Follow-up
                 </>
               )}
             </button>

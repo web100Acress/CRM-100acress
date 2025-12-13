@@ -17,12 +17,13 @@
       background: #fff;
       border-radius: 10px;
       box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-      padding: 24px;
+      padding: 20px;
       width: 100%;
-      max-width: 500px;
-      max-height: 90vh;
+      max-width: 400px;
+      max-height: 85vh;
       overflow-y: auto;
       position: relative;
+      margin: 0 20px;
     }
     .modal-close {
       position: absolute;
@@ -77,12 +78,16 @@
     }
     .form-row {
       display: flex;
-      flex-direction: column;
-      gap: 16px;
+      flex-direction: row;
+      gap: 12px;
     }
-    @media (min-width: 600px) {
+    .form-row .form-group {
+      flex: 1;
+    }
+    @media (max-width: 320px) {
       .form-row {
-        flex-direction: row;
+        flex-direction: column;
+        gap: 16px;
       }
     }
     .submit-btn {
