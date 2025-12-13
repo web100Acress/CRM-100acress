@@ -4,7 +4,7 @@ import api100acress from "../config/api100acressClient";
 import { message } from "antd";
 import { useNavigate } from "react-router-dom";
 import { ClipLoader } from "react-spinners";
-import { ChevronLeft, ChevronRight, Search, Menu, X, ChevronDown, User, Settings as SettingsIcon, LogOut } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Menu, X, ChevronDown, User, Settings as SettingsIcon, LogOut, Calendar } from 'lucide-react';
 
 const ProjectEnquiries = () => {
   const [search, setSearch] = useState("");
@@ -17,6 +17,9 @@ const ProjectEnquiries = () => {
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
   const [messageApi, contextHolder] = message.useMessage();
+  const [dateFilter, setDateFilter] = useState('');
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [filterType, setFilterType] = useState('day'); // 'day' or 'month'
   const navigate = useNavigate();
   const pageSize = 10;
 
@@ -42,15 +45,94 @@ const ProjectEnquiries = () => {
   const fetchData = async (page = 1) => {
     setLoading(true);
     try {
-      const response = await api100acress.get(
-        `/userViewAll?limit=${pageSize}&page=${page}&search=${encodeURIComponent(search)}`
-      );
+      let url = `/userViewAll?limit=${pageSize}&page=${page}&search=${encodeURIComponent(search)}`;
+      
+      // Add date filter to API call
+      if (dateFilter) {
+        if (filterType === 'day') {
+          url += `&date=${dateFilter}`;
+        } else if (filterType === 'month') {
+          url += `&month=${dateFilter}`;
+        }
+      }
+      
+      console.log('Fetching URL:', url);
+      console.log('Date filter:', dateFilter, 'Filter type:', filterType);
+      
+      const response = await api100acress.get(url);
       const payload = response.data;
+      console.log('API Response:', payload);
+      
       let rows = payload?.data || payload?.users || (Array.isArray(payload) ? payload : []);
+      
+      // If date filter is applied and API doesn't support it, filter on frontend
+      if (dateFilter && filterType === 'month') {
+        const filterYear = new Date(dateFilter).getFullYear();
+        const filterMonth = new Date(dateFilter).getMonth();
+        
+        console.log('Frontend month filtering - Year:', filterYear, 'Month:', filterMonth);
+        
+        rows = rows.filter((row) => {
+          try {
+            const rowDate = new Date(row.createdAt || row.date || row.submittedAt);
+            return rowDate.getFullYear() === filterYear && rowDate.getMonth() === filterMonth;
+          } catch (e) {
+            console.warn('Error parsing date for row:', row);
+            return false;
+          }
+        });
+        
+        console.log('Rows after frontend month filter:', rows.length);
+      }
+      
+      if (dateFilter && filterType === 'day') {
+        const filterDate = new Date(dateFilter).toDateString();
+        
+        console.log('Frontend day filtering - Date:', filterDate);
+        
+        rows = rows.filter((row) => {
+          try {
+            const rowDate = new Date(row.createdAt || row.date || row.submittedAt);
+            return rowDate.toDateString() === filterDate;
+          } catch (e) {
+            console.warn('Error parsing date for row:', row);
+            return false;
+          }
+        });
+        
+        console.log('Rows after frontend day filter:', rows.length);
+      }
+      
       const filteredRows = rows.filter((r) => !(/footer\s*instant\s*call/i.test((r?.projectName || '').trim())));
+      
+      console.log('Total rows before footer filter:', rows.length);
+      console.log('Total rows after footer filter:', filteredRows.length);
+      console.log('Payload total:', payload?.total, 'Data total:', payload?.data?.[0]?.totalCount);
+      
       setData(filteredRows);
-      setTotal(payload?.total || payload?.data?.[0]?.totalCount || 0);
+      
+      // For filtered data, use filteredRows length
+      const apiTotal = payload?.total || payload?.data?.[0]?.totalCount || 0;
+      const finalTotal = dateFilter ? filteredRows.length : (apiTotal > 0 ? apiTotal : filteredRows.length);
+      
+      console.log('Final total being set:', finalTotal);
+      setTotal(finalTotal);
       setCurrentPage(page);
+      
+      // Log available months for debugging
+      if (dateFilter && filterType === 'month') {
+        const availableMonths = {};
+        (payload?.data || payload?.users || (Array.isArray(payload) ? payload : [])).forEach(row => {
+          try {
+            const rowDate = new Date(row.createdAt || row.date || row.submittedAt);
+            const monthYear = rowDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            availableMonths[monthYear] = (availableMonths[monthYear] || 0) + 1;
+          } catch (e) {
+            // Skip invalid dates
+          }
+        });
+        console.log('Available months with data:', availableMonths);
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
       messageApi.error("Error fetching data. Please try again.");
@@ -64,11 +146,23 @@ const ProjectEnquiries = () => {
       fetchData(1);
     }, 300); // Debounce search input
     return () => clearTimeout(delayDebounceFn);
-  }, [search]);
+  }, [search, dateFilter, filterType]);
 
   useEffect(() => {
     fetchData(currentPage);
   }, [currentPage]);
+
+  // Close calendar when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (calendarOpen && !event.target.closest('.calendar-container')) {
+        setCalendarOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [calendarOpen]);
 
 
   const totalPages = Math.ceil(total / pageSize);
@@ -119,62 +213,77 @@ const ProjectEnquiries = () => {
     }
   };
 
+  const handleDateFilterChange = (date) => {
+    if (filterType === 'day') {
+      // Format as YYYY-MM-DD for API
+      const formattedDate = new Date(date).toISOString().split('T')[0];
+      setDateFilter(formattedDate);
+    } else if (filterType === 'month') {
+      // Format as YYYY-MM for API
+      const formattedMonth = new Date(date).toISOString().slice(0, 7);
+      setDateFilter(formattedMonth);
+    }
+    setCalendarOpen(false);
+    setCurrentPage(1); // Reset to first page when filter changes
+  };
+
+  const clearDateFilter = () => {
+    setDateFilter('');
+    setCalendarOpen(false);
+    setCurrentPage(1);
+  };
+
+  const formatDateForDisplay = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (filterType === 'month') {
+      return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    }
+    return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
+  const generateCalendarDays = (selectedDate = null) => {
+    const dateToUse = selectedDate ? new Date(selectedDate) : new Date();
+    const currentMonth = dateToUse.getMonth();
+    const currentYear = dateToUse.getFullYear();
+    const firstDay = new Date(currentYear, currentMonth, 1);
+    const lastDay = new Date(currentYear, currentMonth + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+    
+    const days = [];
+    
+    // Add empty cells for days before month starts
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      days.push(null);
+    }
+    
+    // Add all days of the month
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push(new Date(currentYear, currentMonth, i));
+    }
+    
+    return days;
+  };
+
+  const generateMonthOptions = () => {
+    const months = [];
+    const today = new Date();
+    
+    // Generate last 12 months
+    for (let i = 0; i < 12; i++) {
+      const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      months.push(date);
+    }
+    
+    return months;
+  };
+
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
       <AdminSidebar isOpen={sidebarOpen} />
       <div className="flex-1 flex flex-col overflow-hidden">
       {contextHolder}
-        {/* <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between px-6 py-4">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg lg:hidden"
-              >
-                {sidebarOpen ? <X size={24} className="text-gray-700 dark:text-gray-300"/> : <Menu size={24} className="text-gray-700 dark:text-gray-300"/>}
-              </button>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <button 
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center">
-                    <span className="text-white font-semibold text-sm">{getUserInitials(userInfo?.name)}</span>
-                  </div>
-                  <div className="text-right hidden sm:block">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">{userInfo?.name}</p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">{userInfo?.email}</p>
-                  </div>
-                  <ChevronDown size={16} className={`text-gray-600 dark:text-gray-400 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
-                </button>
-                
-                {dropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
-                    <button className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                      <User size={16} className="text-gray-600 dark:text-gray-400" />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">Profile</span>
-                    </button>
-                    <button className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                      <SettingsIcon size={16} className="text-gray-600 dark:text-gray-400" />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">Settings</span>
-                    </button>
-                    <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
-                    <button 
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-4 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-red-600 dark:text-red-400"
-                    >
-                      <LogOut size={16} />
-                      <span className="text-sm font-medium">Logout</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </header> */}
-
         <main className="flex-1 overflow-auto">
           <div className="p-6">
             <div className="mb-8">
@@ -194,6 +303,112 @@ const ProjectEnquiries = () => {
                   }}
                   className="px-4 py-3 bg-transparent text-gray-700 dark:text-gray-200 outline-none flex-grow text-base placeholder-gray-400 dark:placeholder-gray-500"
                 />
+              </div>
+
+              {/* Calendar Filter */}
+              <div className="relative calendar-container">
+                <div className="flex items-center gap-2">
+                  {/* Filter Type Toggle */}
+                  <div className="flex bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-1">
+                    <button
+                      onClick={() => setFilterType('day')}
+                      className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                        filterType === 'day'
+                          ? 'bg-blue-500 text-white'
+                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                      }`}
+                    >
+                      Day
+                    </button>
+                    <button
+                      onClick={() => setFilterType('month')}
+                      className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                        filterType === 'month'
+                          ? 'bg-blue-500 text-white'
+                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                      }`}
+                    >
+                      Month
+                    </button>
+                  </div>
+
+                  {/* Calendar Button */}
+                  <button
+                    onClick={() => setCalendarOpen(!calendarOpen)}
+                    className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <Calendar className="w-4 h-4 text-gray-500" />
+                    <span className="text-gray-700 dark:text-gray-200 text-sm">
+                      {dateFilter ? formatDateForDisplay(dateFilter) : 'Select Date'}
+                    </span>
+                    {dateFilter && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          clearDateFilter();
+                        }}
+                        className="ml-1 text-gray-400 hover:text-red-500"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </button>
+                </div>
+
+                {/* Calendar Dropdown */}
+                {calendarOpen && (
+                  <div className="absolute top-full mt-2 left-0 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 z-50 min-w-[300px]">
+                    {filterType === 'day' ? (
+                      /* Day View Calendar */
+                      <div>
+                        <div className="text-center mb-3 font-semibold text-gray-700 dark:text-gray-200">
+                          {(dateFilter ? new Date(dateFilter) : new Date()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                        </div>
+                        <div className="grid grid-cols-7 gap-1 text-xs mb-2">
+                          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                            <div key={i} className="text-center font-medium text-gray-500 dark:text-gray-400 p-1">
+                              {day}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="grid grid-cols-7 gap-1">
+                          {generateCalendarDays(dateFilter).map((day, i) => (
+                            <div key={i} className="aspect-square min-h-[32px]">
+                              {day ? (
+                                <button
+                                  onClick={() => handleDateFilterChange(day)}
+                                  className="w-full h-full flex items-center justify-center rounded hover:bg-blue-100 dark:hover:bg-blue-900 text-sm text-gray-700 dark:text-gray-200 transition-colors border border-gray-100 dark:border-gray-600"
+                                >
+                                  {day.getDate()}
+                                </button>
+                              ) : (
+                                <div className="border border-transparent" />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      /* Month View */
+                      <div>
+                        <div className="text-center mb-3 font-semibold text-gray-700 dark:text-gray-200">
+                          Select Month
+                        </div>
+                        <div className="space-y-1 max-h-60 overflow-y-auto">
+                          {generateMonthOptions().map((month, i) => (
+                            <button
+                              key={i}
+                              onClick={() => handleDateFilterChange(month)}
+                              className="w-full text-left px-3 py-2 rounded hover:bg-blue-100 dark:hover:bg-blue-900 text-sm text-gray-700 dark:text-gray-200 transition-colors"
+                            >
+                              {month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Selection Info and Clear */}

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import api100acress from "../config/api100acressClient";
 import AdminSidebar from "../components/AdminSidebar";
-import { MdArticle, MdImage, MdTitle, MdDescription, MdCategory, MdPerson } from "react-icons/md";
+import { MdArticle, MdImage, MdTitle, MdDescription, MdCategory, MdPerson, MdOpenInNew, MdArrowBack } from "react-icons/md";
 
 const BlogViewAdmin = () => {
   const [viewDetails, setViewDetails] = useState({
@@ -11,9 +11,31 @@ const BlogViewAdmin = () => {
     blog_Title: "",
     blog_Image: "",
     author: "",
+    blog_Slug: "", // Add slug for URL
   });
   const [loading, setLoading] = useState(true);
   const { id } = useParams();
+  const navigate = useNavigate();
+
+  const handleViewOnSite = () => {
+    // Try different URL structures based on common blog URL patterns
+    let blogUrl;
+    
+    if (viewDetails.blog_Slug) {
+      // Use slug if available
+      blogUrl = `https://100acress.com/blog/${viewDetails.blog_Slug}`;
+    } else {
+      // Fallback to ID if no slug
+      blogUrl = `https://100acress.com/blog/${id}`;
+    }
+    
+    console.log('Opening blog URL:', blogUrl);
+    window.open(blogUrl, '_blank');
+  };
+
+  const handleBack = () => {
+    navigate(-1); // Go back to previous page
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -34,6 +56,7 @@ const BlogViewAdmin = () => {
             blog_Title: blogData.blog_Title || "",
             blog_Image: blogData.blog_Image || "",
             author: blogData.author || "",
+            blog_Slug: blogData.blog_Slug || blogData.slug || blogData.blog_slug || "", // Try multiple slug field names
           });
         } else {
           console.error(`Blog with ID ${id} not found`);
@@ -73,9 +96,27 @@ const BlogViewAdmin = () => {
         <div className="flex-1 p-8 ml-0 overflow-auto font-sans">
           <div className="w-full space-y-10">
             {/* Header */}
-            <div className="flex items-center gap-2 mb-8">
-              <MdArticle className="text-3xl text-blue-500 animate-pulse" />
-              <h1 className="text-3xl font-bold text-gray-800">Blog Details</h1>
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-2">
+                <MdArticle className="text-3xl text-blue-500 animate-pulse" />
+                <h1 className="text-3xl font-bold text-gray-800">Blog Details</h1>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleBack}
+                  className="flex items-center gap-2 px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold shadow-md transition-all duration-300 hover:shadow-lg"
+                >
+                  <MdArrowBack className="text-xl" />
+                  Back
+                </button>
+                <button
+                  onClick={handleViewOnSite}
+                  className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold shadow-md transition-all duration-300 hover:shadow-lg"
+                >
+                  <MdOpenInNew className="text-xl" />
+                  View on Site
+                </button>
+              </div>
             </div>
             {/* Card View */}
             <section className="bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-100 p-8">
