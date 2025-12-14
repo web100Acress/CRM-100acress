@@ -371,7 +371,7 @@ const Onboarding = () => {
   return (
     <div className="flex bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
       <div className="flex-1 p-6 md:p-8 lg:p-10 ml-0 md:ml-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="w-full mx-auto">
           <Header />
           <StatsCards stats={stats} />
           <FilterTabs filterStatus={filterStatus} setFilterStatus={setFilterStatus} stats={stats} />
