@@ -92,24 +92,12 @@ const ItDashboard = () => {
       const newStatus =
         currentStatus === "authorized" ? "unauthorized" : "authorized";
 
-      const response = await fetch(
-        `https://bcrm.100acress.com/api/users/${userId}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-          },
-          body: JSON.stringify({ status: newStatus }),
-        }
-      );
+      const response = await api100acress.patch(`/api/users/${userId}`, { status: newStatus });
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
+      if (response.data && response.data.success) {
         fetchAllUsers();
       } else {
-        alert(data.message || "Failed to update user status");
+        alert(response.data?.message || "Failed to update user status");
       }
     } catch (error) {
       console.error("Error:", error);
@@ -151,7 +139,7 @@ const ItDashboard = () => {
   return (
     <div className="flex bg-gray-100 min-h-screen">
       <div className="flex-1 p-3 sm:p-4 lg:p-6 ml-0 md:-ml-4">
-        <div className="max-w-7xl mx-auto">
+        <div className="w-full">
           {/* Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
             <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition p-4 sm:p-6 border-l-4 border-blue-500">
