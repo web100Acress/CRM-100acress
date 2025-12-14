@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Users, BarChart3, Calendar, FileText, Award, Settings, LogOut, Briefcase, Users2, Plane, User } from 'lucide-react';
+import { Users, BarChart3, Calendar, FileText, Award, Settings, LogOut, Briefcase, Users2, Plane, User, X } from 'lucide-react';
 
-const HRSidebar = ({ isOpen, activeTab, onTabChange }) => {
+const HRSidebar = ({ isOpen, activeTab, onTabChange, onClose }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -93,8 +93,17 @@ const HRSidebar = ({ isOpen, activeTab, onTabChange }) => {
                 </p>
               </div>
             </div>
+            
+            {/* Close Button for Mobile */}
+            <button
+              onClick={onClose}
+              className="lg:hidden p-2 hover:bg-purple-700 rounded-lg transition-colors"
+            >
+              <X size={20} className="text-white" />
+            </button>
+            
             {/* Real-time status indicator */}
-            <div className={`w-3 h-3 rounded-full ${isLoggedIn ? 'bg-green-400' : 'bg-red-400'} animate-pulse`}></div>
+            <div className={`hidden lg:block w-3 h-3 rounded-full ${isLoggedIn ? 'bg-green-400' : 'bg-red-400'} animate-pulse`}></div>
           </div>
 
           {/* User Info Card */}
@@ -190,7 +199,7 @@ const HRSidebar = ({ isOpen, activeTab, onTabChange }) => {
       {isOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
-          onClick={() => {}}
+          onClick={onClose}
         ></div>
       )}
     </>
