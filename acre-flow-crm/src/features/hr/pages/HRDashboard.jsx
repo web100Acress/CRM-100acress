@@ -11,7 +11,7 @@ import Onboarding from './Onboarding';
 import Offboarding from './Offboarding';
 
 const HRDashboard = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Start with closed sidebar for mobile
   const [activeTab, setActiveTab] = useState('overview');
   const [userInfo, setUserInfo] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -27,6 +27,20 @@ const HRDashboard = () => {
       console.log('HR user data not found in localStorage');
       setUserInfo(null);
     }
+
+    // Check screen size and set sidebar accordingly
+    const checkScreenSize = () => {
+      if (window.innerWidth >= 1024) { // lg breakpoint
+        setSidebarOpen(true);
+      } else {
+        setSidebarOpen(false);
+      }
+    };
+
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    
+    return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
   const handleLogout = () => {
@@ -71,6 +85,7 @@ const HRDashboard = () => {
         isOpen={sidebarOpen} 
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        onClose={() => setSidebarOpen(false)}
       />
 
       {/* Main Content */}
