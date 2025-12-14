@@ -1,11 +1,17 @@
 import axios from 'axios';
 
+const baseURL =
+  import.meta.env?.VITE_100ACRESS_API_BASE_URL ||
+  (window.location.hostname === 'localhost'
+    ? 'http://localhost:3500'
+    : 'https://api.100acress.com');
+
 const api100acress = axios.create({
-  baseURL: 'https://api.100acress.com', // This client is for 100acress Backend (port 3500) for user data etc.
+  baseURL, // This client is for 100acress Backend (port 3500) for user data etc.
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true,
+  withCredentials: false,
 });
 
 api100acress.interceptors.request.use(

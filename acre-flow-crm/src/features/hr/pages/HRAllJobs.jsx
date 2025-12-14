@@ -1,7 +1,7 @@
 import React, { useContext, useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { RxCross2 } from "react-icons/rx";
-import { FaFileExport, FaSearch, FaEye } from "react-icons/fa";
+import { FaFileExport, FaSearch, FaEye, FaLock, FaUnlock } from "react-icons/fa";
 import api100acress from "../../admin/config/api100acressClient";
 import JobApplications from "./JobApplications";
 
@@ -27,6 +27,7 @@ const JobPosting = () => {
     experience: "",
     skill: "",
     jobProfile: "",
+    status: "open",
   });
 
   const fetchJobOpenings = async () => {
@@ -57,6 +58,7 @@ const JobPosting = () => {
       experience: "",
       skill: "",
       jobProfile: "",
+      status: "open",
     });
   };
 
@@ -92,6 +94,24 @@ const JobPosting = () => {
     );
     if (confirmDeletion) {
       handleDeleteUser(id);
+    }
+  };
+
+  const handleToggleJobStatus = async (id, currentStatus) => {
+    try {
+      const newStatus = currentStatus === "open" ? "closed" : "open";
+      const res = await api100acress.patch(
+        `/career/opening/${id}`,
+        {
+          status: newStatus,
+        },
+        { withCredentials: false },
+      );
+      if (res.status >= 200 && res.status < 300) {
+        fetchJobOpenings();
+      }
+    } catch (error) {
+      console.log(error || error.message);
     }
   };
 
@@ -257,6 +277,15 @@ const JobPosting = () => {
                   onChange={handleChange}
                   rows="5"
                 />
+                <select
+                  name="status"
+                  value={job.status}
+                  onChange={handleChange}
+                  className="w-full rounded-md border-2 border-gray-300 p-2 text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition duration-300"
+                >
+                  <option value="open">Open</option>
+                  <option value="closed">Closed</option>
+                </select>
                 <button
                   type="submit"
                   className="w-full bg-blue-600 text-white font-semibold py-2 rounded-md hover:bg-blue-500 transition duration-300"
@@ -336,11 +365,6 @@ const JobPosting = () => {
               </div>
 
               <div className="flex gap-2 p-4 sm:p-6 border-t border-gray-200 bg-gray-50">
-                <Link to={`/hr/job-applications/${viewingJob._id}`} className="flex-1">
-                  {/* <button className="w-full bg-green-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-green-600 transition duration-300 text-sm">
-                    View Applications
-                  </button> */}
-                </Link>
                 <button
                   onClick={() => {
                     setSelectedOpening(viewingJob);
@@ -350,6 +374,29 @@ const JobPosting = () => {
                   className="flex-1 bg-gray-700 text-white font-semibold py-2 px-4 rounded-md hover:bg-gray-800 transition duration-300 text-sm"
                 >
                   Applications ({applicantsSummary[viewingJob._id]?.count || 0})
+                </button>
+                <button
+                  onClick={() => {
+                    handleToggleJobStatus(viewingJob._id, viewingJob.status);
+                    setViewingJob(null);
+                  }}
+                  className={`flex-1 font-semibold py-2 px-4 rounded-md transition duration-300 text-sm text-white flex items-center justify-center gap-2 ${
+                    viewingJob.status === "open"
+                      ? "bg-orange-500 hover:bg-orange-600"
+                      : "bg-green-500 hover:bg-green-600"
+                  }`}
+                >
+                  {viewingJob.status === "open" ? (
+                    <>
+                      <FaLock size={14} />
+                      Close Job
+                    </>
+                  ) : (
+                    <>
+                      <FaUnlock size={14} />
+                      Open Job
+                    </>
+                  )}
                 </button>
                 <button
                   onClick={() => {
@@ -406,11 +453,13 @@ const JobPosting = () => {
                         {truncate(item.jobProfile, 60)}
                       </td>
                       <td className="px-6 py-4 space-x-2 whitespace-nowrap text-center">
-                        <Link to={`/hr/job-applications/${item._id}`}>
-                          {/* <button className="bg-green-500 text-white font-semibold py-1 px-3 rounded-md hover:bg-green-600 transition duration-300 text-xs">
-                            View Applications
-                          </button> */}
-                        </Link>
+                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                          item.status === "open"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                        }`}>
+                          {item.status === "open" ? "Open" : "Closed"}
+                        </span>
                         <button
                           onClick={() => {
                             setSelectedOpening(item);
@@ -419,6 +468,16 @@ const JobPosting = () => {
                           className="bg-gray-700 text-white font-semibold py-1 px-3 rounded-md hover:bg-gray-800 transition duration-300 text-xs"
                         >
                           Applications ({applicantsSummary[item._id]?.count || 0})
+                        </button>
+                        <button
+                          onClick={() => handleToggleJobStatus(item._id, item.status)}
+                          className={`font-semibold py-1 px-3 rounded-md transition duration-300 text-xs text-white ${
+                            item.status === "open"
+                              ? "bg-orange-500 hover:bg-orange-600"
+                              : "bg-green-500 hover:bg-green-600"
+                          }`}
+                        >
+                          {item.status === "open" ? "Close" : "Open"}
                         </button>
                         <button
                           onClick={() => handleDeleteButtonClick(item._id)}
@@ -451,7 +510,16 @@ const JobPosting = () => {
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1">
-                    <p className="text-xs text-gray-600 font-semibold">Job #{index + 1}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs text-gray-600 font-semibold">Job #{index + 1}</p>
+                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${
+                        item.status === "open"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}>
+                        {item.status === "open" ? "Open" : "Closed"}
+                      </span>
+                    </div>
                     <h3 className="font-bold text-gray-900 text-sm sm:text-base truncate">
                       {item.jobTitle || "—"}
                     </h3>
@@ -481,11 +549,6 @@ const JobPosting = () => {
                 </div>
 
                 <div className="flex gap-2">
-                  <Link to={`/hr/job-applications/${item._id}`} className="flex-1">
-                    <button className="w-full bg-green-500 text-white font-semibold py-2 rounded-md hover:bg-green-600 transition duration-300 text-xs sm:text-sm">
-                      View Apps
-                    </button>
-                  </Link>
                   <button
                     onClick={() => {
                       setSelectedOpening(item);
@@ -494,6 +557,16 @@ const JobPosting = () => {
                     className="flex-1 bg-gray-700 text-white font-semibold py-2 rounded-md hover:bg-gray-800 transition duration-300 text-xs sm:text-sm"
                   >
                     Apps ({applicantsSummary[item._id]?.count || 0})
+                  </button>
+                  <button
+                    onClick={() => handleToggleJobStatus(item._id, item.status)}
+                    className={`flex-1 font-semibold py-2 rounded-md transition duration-300 text-xs sm:text-sm text-white ${
+                      item.status === "open"
+                        ? "bg-orange-500 hover:bg-orange-600"
+                        : "bg-green-500 hover:bg-green-600"
+                    }`}
+                  >
+                    {item.status === "open" ? "Close" : "Open"}
                   </button>
                   <button
                     onClick={() => handleDeleteButtonClick(item._id)}
