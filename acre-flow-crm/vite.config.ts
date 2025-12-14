@@ -4,17 +4,10 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }: any) => ({
+export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 5000,
-    proxy: {
-      '/api': {
-        target: 'https://bcrm.100acress.com',
-        changeOrigin: true,
-        secure: true,
-      }
-    }
   },
   plugins: [
     react(),
@@ -23,7 +16,7 @@ export default defineConfig(({ mode }: any) => ({
   ].filter(Boolean),
   resolve: {
     alias: {
-      "@": path.resolve(process.cwd(), "./src"),
+      "@": path.resolve(__dirname, "./src"),
     },
   },
   test: {
