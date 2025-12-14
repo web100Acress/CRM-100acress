@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Users, DollarSign, FileText, Award, Plus, Trash2, RefreshCw, Edit2, Save, X } from 'lucide-react';
+import { Users, DollarSign, FileText, Award, Plus, Trash2, RefreshCw, Edit2, Save, X, Eye } from 'lucide-react';
 
 const RoleAssignment = () => {
   const [assignments, setAssignments] = useState([]);
   const [loadingAssignments, setLoadingAssignments] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState(null);
+  const [viewingAssignment, setViewingAssignment] = useState(null);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -332,8 +333,8 @@ const RoleAssignment = () => {
         </div>
       )}
 
-      {/* Assignments Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      {/* Assignments Table - Desktop View */}
+      <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
@@ -464,6 +465,94 @@ const RoleAssignment = () => {
           </table>
         </div>
       </div>
+
+      {/* Mobile View - Name and View Button */}
+      <div className="md:hidden space-y-2">
+        {loadingAssignments ? (
+          <div className="text-center text-gray-600 py-4">Loading...</div>
+        ) : assignments.length === 0 ? (
+          <div className="text-center text-gray-600 py-4">No assignments yet</div>
+        ) : (
+          assignments.map((assignment) => (
+            <div key={assignment.id} className="bg-white rounded-lg shadow p-3 sm:p-4 flex items-center justify-between gap-2 sm:gap-3">
+              <p className="font-medium text-gray-900 flex-1 truncate text-sm sm:text-base">{assignment.name}</p>
+              <button
+                onClick={() => setViewingAssignment(assignment)}
+                className="flex items-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-1.5 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-xs sm:text-sm whitespace-nowrap flex-shrink-0"
+              >
+                <Eye size={14} className="sm:hidden" />
+                <Eye size={16} className="hidden sm:block" />
+                <span className="hidden xs:inline">View Details</span>
+              </button>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Modal Popup for Mobile View */}
+      {viewingAssignment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-lg max-w-sm w-full p-6 space-y-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Assignment Details</h2>
+              <button
+                onClick={() => setViewingAssignment(null)}
+                className="p-1 hover:bg-gray-100 rounded-lg transition"
+              >
+                <X size={20} className="text-gray-600" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm font-semibold text-gray-600">Name</p>
+                <p className="text-gray-900 font-medium">{viewingAssignment.name}</p>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-600">Email</p>
+                <p className="text-gray-900">{viewingAssignment.email}</p>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-600">Department</p>
+                <span className={`inline-block px-3 py-1 ${getDepartmentColor(viewingAssignment.department)} text-white rounded-full text-sm font-medium mt-1`}>
+                  {getDepartmentLabel(viewingAssignment.department)}
+                </span>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-600">Role</p>
+                <p className="text-gray-900 font-medium">{viewingAssignment.role.replace(/_/g, ' ').toUpperCase()}</p>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-600">Assigned Date</p>
+                <p className="text-gray-900">{viewingAssignment.assignedDate}</p>
+              </div>
+            </div>
+
+            <div className="pt-4 flex gap-2 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  handleEditStart(viewingAssignment);
+                  setViewingAssignment(null);
+                }}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+              >
+                <Edit2 size={16} />
+                Edit
+              </button>
+              <button
+                onClick={() => {
+                  handleDelete(viewingAssignment.id);
+                  setViewingAssignment(null);
+                }}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+              >
+                <Trash2 size={16} />
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
