@@ -1,0 +1,527 @@
+// ============================================
+// src/pages/Onboarding/index.jsx (Main Component)
+// ============================================
+
+import React, { useState } from "react";
+import { toast } from 'react-hot-toast';
+import { X, FileText, CheckCircle, Circle, Clock } from "lucide-react";
+
+// Import hooks
+import { useOnboarding } from "./hooks/useOnboarding";
+
+// Import constants
+import { stageLabels, WIZARD_MODES } from "./constants";
+
+// Import services
+import { onboardingService } from "./services/onboardingService";
+
+// Import components
+import { Modal } from "./components/Modal";
+import { StageProgress } from "./components/StageProgress";
+import { Header } from "./components/Header";
+import { StatsCards } from "./components/StatsCards";
+import { FilterTabs } from "./components/FilterTabs";
+import { CandidatesList } from "./components/CandidatesList";
+
+// Import forms
+import { Interview1Form } from "./components/forms/Interview1Form";
+import { HRDiscussionForm } from "./components/forms/HRDiscussionForm";
+import { DocumentationForm } from "./components/forms/DocumentationForm";
+
+// Import modals
+// (DocumentsModal and StageDetailsModal would be separate files)
+
+const Onboarding = () => {
+  const { list, filteredList, stats, loading, error, filterStatus, setFilterStatus, fetchList } = useOnboarding();
+
+  // Wizard Modal States
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [activeItem, setActiveItem] = useState(null);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [wizardMode, setWizardMode] = useState(WIZARD_MODES.VIEW);
+  const [selectedStage, setSelectedStage] = useState(null);
+
+  // Documents Modal States
+  const [documentsOpen, setDocumentsOpen] = useState(false);
+  const [documentsItem, setDocumentsItem] = useState(null);
+
+  // Form State
+  const [form, setForm] = useState({
+    stage: 'interview1',
+    mode: 'online',
+    meetingLink: '',
+    location: '',
+    start: '',
+    end: '',
+    message: '',
+    tasksRaw: '',
+    panFile: null,
+    aadhaarFile: null,
+    photoFile: null,
+    marksheetFile: null,
+    otherFile1: null,
+    otherFile2: null,
+    joiningDate: '',
+    rejectReason: '',
+    resetStage: 'interview1',
+    resetReason: '',
+  });
+
+  // ==================== Wizard Functions ====================
+
+  const openWizard = (it, mode = WIZARD_MODES.VIEW) => {
+    setActiveItem(it);
+    setWizardMode(mode);
+
+    let stepIndex = 0;
+    if (mode === WIZARD_MODES.VIEW) {
+      const current = it.stages[it.currentStageIndex];
+      const stage = current === 'success' ? 'documentation' : current;
+      stepIndex = it.stages.indexOf(stage);
+    } else {
+      stepIndex = it.currentStageIndex;
+      if (it.status === 'completed') {
+        stepIndex = it.stages.length - 1;
+      }
+    }
+
+    setCurrentStep(stepIndex);
+
+    // Pre-populate form
+    const currentStage = it.stages[stepIndex];
+    let formData = {
+      stage: currentStage,
+      mode: 'online',
+      meetingLink: '',
+      location: '',
+      start: '',
+      end: '',
+      message: '',
+      tasksRaw: '',
+      panUrl: '', aadhaarUrl: '', photoUrl: '', marksheetUrl: '', other1: '', other2: '',
+      joiningDate: it.joiningDate || '',
+      rejectReason: '',
+      resetStage: 'interview1',
+      resetReason: ''
+    };
+
+    if (it.stageData && it.stageData[currentStage] && it.stageData[currentStage].invite) {
+      const stageInvite = it.stageData[currentStage].invite;
+      formData.mode = stageInvite.type || 'online';
+      formData.meetingLink = stageInvite.meetingLink || '';
+      formData.location = stageInvite.location || '';
+      formData.start = stageInvite.scheduledAt ? new Date(stageInvite.scheduledAt).toISOString().slice(0, 16) : '';
+      formData.end = stageInvite.endsAt ? new Date(stageInvite.endsAt).toISOString().slice(0, 16) : '';
+      formData.message = stageInvite.content || '';
+      formData.tasksRaw = stageInvite.tasks ? stageInvite.tasks.map(t => t.title).join('\n') : '';
+    }
+
+    if (it.documents && it.documents.length > 0) {
+      it.documents.forEach(doc => {
+        if (doc.docType === 'pan') formData.panUrl = doc.url;
+        if (doc.docType === 'aadhaar') formData.aadhaarUrl = doc.url;
+        if (doc.docType === 'photo') formData.photoUrl = doc.url;
+        if (doc.docType === 'marksheet') formData.marksheetUrl = doc.url;
+        if (doc.docType === 'other' && !formData.other1) formData.other1 = doc.url;
+        if (doc.docType === 'other' && formData.other1) formData.other2 = doc.url;
+      });
+    }
+
+    setForm(formData);
+    setWizardOpen(true);
+  };
+
+  const closeWizard = () => {
+    setWizardOpen(false);
+    setActiveItem(null);
+    setCurrentStep(0);
+    setWizardMode(WIZARD_MODES.VIEW);
+    setSelectedStage(null);
+  };
+
+  const openCompletedSteps = (it) => {
+    setActiveItem(it);
+    setWizardMode(WIZARD_MODES.COMPLETED);
+    setWizardOpen(true);
+  };
+
+  const openStageDetails = (it, stage) => {
+    setActiveItem(it);
+    setSelectedStage(stage);
+    setWizardMode(WIZARD_MODES.STAGE_DETAILS);
+    setWizardOpen(true);
+  };
+
+  // ==================== Documents Modal Functions ====================
+
+  const openDocumentsModal = (it) => {
+    setDocumentsItem(it);
+    setDocumentsOpen(true);
+  };
+
+  const closeDocumentsModal = () => {
+    setDocumentsOpen(false);
+    setDocumentsItem(null);
+  };
+
+  // ==================== Form Submission Functions ====================
+
+  const submitInviteFromWizard = async () => {
+    try {
+      if (!activeItem) return;
+      const stage = activeItem.stages[currentStep];
+      if (!['interview1','hrDiscussion'].includes(stage)) {
+        alert('Invites are only for Interview 1 or HR Discussion stages.');
+        return;
+      }
+      const type = form.mode;
+      const tasks = (form.tasksRaw || '').split('\n').map(l => l.trim()).filter(Boolean).map(t => ({ title: t }));
+      const payload = {
+        stage,
+        type,
+        meetingLink: type === 'online' ? (form.meetingLink || undefined) : undefined,
+        location: type === 'offline' ? (form.location || undefined) : undefined,
+        scheduledAt: form.start ? new Date(form.start) : undefined,
+        endsAt: form.end ? new Date(form.end) : undefined,
+        content: form.message || undefined,
+        tasks,
+      };
+      await onboardingService.inviteStage(activeItem._id, payload);
+      toast?.success ? toast.success('Invite sent successfully!') : alert('Invite sent successfully!');
+      fetchList();
+      closeWizard();
+    } catch (e) {
+      alert(e?.response?.data?.message || 'Failed to send invite');
+    }
+  };
+
+  const submitCompleteFromWizard = async () => {
+    try {
+      if (!activeItem) return;
+      const stage = activeItem.stages[currentStep];
+      if (stage === 'documentation') {
+        const body = {};
+        if (form.joiningDate) body.joiningDate = form.joiningDate;
+        await onboardingService.docsComplete(activeItem._id, body);
+      } else if (['interview1','hrDiscussion'].includes(stage)) {
+        await onboardingService.completeStage(activeItem._id, stage, form.message);
+      } else {
+        alert('Invalid stage to complete.');
+        return;
+      }
+      fetchList();
+    } catch (e) {
+      alert(e?.response?.data?.message || 'Failed to complete stage');
+    }
+  };
+
+  const submitDocsFromWizard = async () => {
+    try {
+      if (!activeItem) return;
+      const formData = new FormData();
+      if (form.panFile) formData.append('pan', form.panFile);
+      if (form.aadhaarFile) formData.append('aadhaar', form.aadhaarFile);
+      if (form.photoFile) formData.append('photo', form.photoFile);
+      if (form.marksheetFile) formData.append('marksheet', form.marksheetFile);
+      if (form.otherFile1) formData.append('other1', form.otherFile1);
+      if (form.otherFile2) formData.append('other2', form.otherFile2);
+      if (form.joiningDate) formData.append('joiningDate', form.joiningDate);
+      await onboardingService.docsSubmit(activeItem._id, formData);
+      fetchList();
+      alert('Documents uploaded successfully!');
+    } catch (e) {
+      alert(e?.response?.data?.message || 'Failed to upload documents');
+    }
+  };
+
+  const submitRejectFromWizard = async () => {
+    try {
+      if (!activeItem) return;
+      const stage = activeItem.stages[currentStep];
+      if (!['interview1','hrDiscussion','documentation'].includes(stage)) {
+        alert('Invalid stage to reject.');
+        return;
+      }
+      await onboardingService.rejectStage(activeItem._id, stage, form.rejectReason);
+      fetchList();
+    } catch (e) {
+      alert(e?.response?.data?.message || 'Failed to reject stage');
+    }
+  };
+
+  const submitResetFromWizard = async () => {
+    try {
+      if (!activeItem) return;
+      await onboardingService.reset(activeItem._id, form.resetStage, form.resetReason);
+      alert('Onboarding reset to selected stage');
+      fetchList();
+      closeWizard();
+    } catch (e) {
+      alert(e?.response?.data?.message || 'Failed to reset onboarding');
+    }
+  };
+
+  const sendDocsInvite = async (id) => {
+    try {
+      const uploadLink = await onboardingService.generateUploadLink(id);
+      if (!uploadLink) {
+        alert('Failed to generate upload link');
+        return;
+      }
+      const content = prompt("Message to candidate (optional)", "Please upload your documents for verification.");
+      await onboardingService.sendDocsInvite(id, uploadLink, content);
+      alert('Documentation invite sent');
+      fetchList();
+    } catch (e) {
+      alert(e?.response?.data?.message || 'Failed to send docs invite');
+    }
+  };
+
+  const sendUploadLink = async (onboardingId) => {
+    try {
+      const link = await onboardingService.generateUploadLink(onboardingId);
+      if (link) {
+        try { await navigator.clipboard.writeText(link); } catch {}
+        toast?.success ? toast.success('Upload link copied to clipboard') : alert('Link: ' + link);
+        window.open(link, '_blank');
+      } else {
+        alert('Link sent to candidate email.');
+      }
+    } catch (e) {
+      alert(e?.response?.data?.message || 'Failed to send link');
+    }
+  };
+
+  // ==================== Render Stage Form ====================
+
+  const renderStageForm = () => {
+    if (!activeItem) return null;
+    const stage = activeItem.stages[currentStep];
+
+    if (wizardMode === WIZARD_MODES.VIEW) {
+      // View mode logic
+
+      return (
+        <div className="space-y-6">
+          <div className="text-center">
+            <h4 className="text-xl font-semibold text-gray-900 mb-2">Current Stage: {stageLabels.find((x) => x.key === stage)?.label || stage}</h4>
+            <p className="text-gray-600">Viewing onboarding progress for {activeItem.candidateName}</p>
+          </div>
+          <div className="space-y-4">
+            {activeItem.stages.slice(0, currentStep + 1).map((stageItem, index) => {
+              const isCompleted = index < currentStep || (index === currentStep && activeItem.status === 'completed');
+              const isCurrent = index === currentStep && activeItem.status !== 'completed';
+              return (
+                <div key={stageItem} className={`border rounded-lg p-4 ${isCurrent ? 'border-blue-500 bg-blue-50' : isCompleted ? 'border-green-500 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="flex items-center space-x-3 mb-2">
+                    {isCompleted ? (
+                      <CheckCircle className="text-green-500" size={20} />
+                    ) : isCurrent ? (
+                      <Clock className="text-blue-500" size={20} />
+                    ) : (
+                      <Circle className="text-gray-400" size={20} />
+                    )}
+                    <span className={`font-medium ${isCurrent ? 'text-blue-900' : isCompleted ? 'text-green-900' : 'text-gray-700'}`}>
+                      {stageLabels.find((x) => x.key === stageItem)?.label || stageItem}
+                    </span>
+                  </div>
+                  {stageItem === 'success' && activeItem.joiningDate && (
+                    <p className="text-sm text-gray-600 ml-8">Joining Date: {new Date(activeItem.joiningDate).toLocaleDateString()}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    if (stage === 'interview1') {
+      const isCompleted = activeItem.currentStageIndex > activeItem.stages.indexOf('interview1');
+      const isCurrent = activeItem.currentStageIndex === activeItem.stages.indexOf('interview1') && activeItem.status !== 'completed';
+      return <Interview1Form form={form} setForm={setForm} isCompleted={isCompleted} isCurrent={isCurrent} />;
+    }
+
+    if (stage === 'hrDiscussion') {
+      return <HRDiscussionForm form={form} setForm={setForm} />;
+    }
+
+    if (stage === 'documentation') {
+      return <DocumentationForm form={form} setForm={setForm} />;
+    }
+
+    if (stage === 'success') {
+      return (
+        <div className="text-center py-8">
+          <CheckCircle size={48} className="text-green-500 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">Onboarding Completed!</h3>
+          <p className="text-gray-600">The candidate has successfully completed all stages.</p>
+          {activeItem && activeItem.joiningDate && (
+            <p className="text-blue-600 mt-2">Joining Date: {new Date(activeItem.joiningDate).toLocaleDateString()}</p>
+          )}
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  // ==================== Main Render ====================
+
+  return (
+    <div className="flex bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+      <div className="flex-1 p-6 md:p-8 lg:p-10 ml-0 md:ml-6">
+        <div className="max-w-7xl mx-auto">
+          <Header />
+          <StatsCards stats={stats} />
+          <FilterTabs filterStatus={filterStatus} setFilterStatus={setFilterStatus} stats={stats} />
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-center">
+              <span className="font-medium">{error}</span>
+            </div>
+          )}
+
+          <CandidatesList 
+            filteredList={filteredList} 
+            loading={loading} 
+            filterStatus={filterStatus}
+            onViewDetails={openWizard}
+            onViewDocuments={openDocumentsModal}
+          />
+        </div>
+      </div>
+
+      {/* Wizard Modal */}
+      <Modal open={wizardOpen} onClose={closeWizard}>
+        <div className="px-6 py-5 border-b bg-gray-50 relative">
+          <button onClick={closeWizard} className="absolute top-4 right-4 p-1 rounded-full hover:bg-gray-200 transition-colors">
+            <X size={20} className="text-gray-500" />
+          </button>
+          <h3 className="text-lg font-semibold text-gray-900 pr-8">{activeItem?.candidateName}</h3>
+          <div className="mt-3">
+            {activeItem && wizardMode === WIZARD_MODES.MANAGE && (
+              <StageProgress stages={activeItem.stages} currentIndex={currentStep} status={activeItem.status} />
+            )}
+          </div>
+        </div>
+        <div className="p-6 max-h-[70vh] overflow-auto">
+          {activeItem ? renderStageForm() : <div className="text-center py-8">Loading...</div>}
+        </div>
+        <div className="px-6 py-4 bg-gray-50 border-t flex items-center justify-between">
+          <button
+            onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+            disabled={currentStep === 0 || wizardMode === WIZARD_MODES.VIEW}
+            className="px-4 py-2 rounded-md bg-white border border-gray-200 text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Back
+          </button>
+          <div className="space-x-2">
+            {wizardMode === WIZARD_MODES.VIEW && (
+              <>
+                <button onClick={() => openCompletedSteps(activeItem)} className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700">
+                  Completed Steps
+                </button>
+                {activeItem && activeItem.status !== 'completed' && (
+                  <button onClick={() => openWizard(activeItem, WIZARD_MODES.MANAGE)} className="px-4 py-2 rounded-md bg-purple-600 text-white hover:bg-purple-700">
+                    Proceed to Manage
+                  </button>
+                )}
+                <button onClick={closeWizard} className="px-4 py-2 rounded-md bg-gray-600 text-white hover:bg-gray-700">
+                  Close
+                </button>
+              </>
+            )}
+            {wizardMode === WIZARD_MODES.MANAGE && (
+              <>
+                {activeItem && activeItem.status !== 'completed' && activeItem.stages && activeItem.stages[currentStep] !== 'success' && (
+                  <>
+                    {(activeItem.stages[currentStep] === 'interview1' || activeItem.stages[currentStep] === 'hrDiscussion') && (
+                      <button onClick={submitInviteFromWizard} className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700">Send Invite</button>
+                    )}
+                    {activeItem.stages[currentStep] === 'documentation' && (
+                      <>
+                        <button onClick={() => sendDocsInvite(activeItem._id)} className="px-4 py-2 rounded-md bg-purple-600 text-white hover:bg-purple-700">Invite to Candidate</button>
+                        <button onClick={() => sendUploadLink(activeItem._id)} className="px-4 py-2 rounded-md bg-orange-600 text-white hover:bg-orange-700">Open Upload Form</button>
+                        <button onClick={submitDocsFromWizard} className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700">Submit Documents</button>
+                      </>
+                    )}
+                    <button onClick={submitCompleteFromWizard} className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700">Mark Done</button>
+                    <button onClick={submitRejectFromWizard} className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700">Reject</button>
+                    <button onClick={submitResetFromWizard} className="px-4 py-2 rounded-md bg-amber-600 text-white hover:bg-amber-700">Reset to Stage</button>
+                  </>
+                )}
+                {activeItem && activeItem.status === 'completed' && activeItem.stages && currentStep === activeItem.stages.length - 1 ? (
+                  <button onClick={closeWizard} className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700">Complete Onboarding</button>
+                ) : (
+                  activeItem && activeItem.stages && (
+                    <button
+                      onClick={() => setCurrentStep(Math.min(activeItem.stages.length - 1, currentStep + 1))}
+                      disabled={currentStep === activeItem.stages.length - 1}
+                      className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  )
+                )}
+              </>
+            )}
+            {wizardMode === WIZARD_MODES.COMPLETED && (
+              <button onClick={closeWizard} className="px-4 py-2 rounded-md bg-gray-600 text-white hover:bg-gray-700">
+                Close
+              </button>
+            )}
+          </div>
+        </div>
+      </Modal>
+
+      {/* Documents Modal */}
+      <Modal open={documentsOpen} onClose={closeDocumentsModal}>
+        <div className="px-6 py-5 border-b bg-gray-50 relative">
+          <button onClick={closeDocumentsModal} className="absolute top-4 right-4 p-1 rounded-full hover:bg-gray-200 transition-colors">
+            <X size={20} className="text-gray-500" />
+          </button>
+          <h3 className="text-lg font-semibold text-gray-900 pr-8">{documentsItem?.candidateName} - Documents</h3>
+        </div>
+        <div className="p-6 max-h-[70vh] overflow-auto">
+          {documentsItem ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {documentsItem.documents && documentsItem.documents.length > 0 ? (
+                  documentsItem.documents.map((doc, index) => (
+                    <div key={index} className="border rounded-lg p-4 bg-gray-50">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium text-gray-900 capitalize">{doc.docType}</span>
+                        <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                          View Document
+                        </a>
+                      </div>
+                      <p className="text-sm text-gray-600 truncate">{doc.url}</p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="col-span-full text-center py-8">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <FileText className="text-gray-400" size={32} />
+                    </div>
+                    <p className="text-gray-500 text-lg font-medium">No documents uploaded yet</p>
+                    <p className="text-gray-400 text-sm mt-1">Documents will appear here once uploaded by the candidate</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8">Loading...</div>
+          )}
+        </div>
+        <div className="px-6 py-4 bg-gray-50 border-t flex justify-end">
+          <button onClick={closeDocumentsModal} className="px-4 py-2 rounded-md bg-gray-600 text-white hover:bg-gray-700">
+            Close
+          </button>
+        </div>
+      </Modal>
+    </div>
+  );
+};
+
+export default Onboarding;
