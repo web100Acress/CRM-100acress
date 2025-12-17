@@ -23,8 +23,8 @@ const FilesSection = () => {
     try {
       setLoading(true);
       const url = filterDept === 'All'
-        ? 'http://localhost:5001/api/activity/files'
-        : `http://localhost:5001/api/activity/files/department/${filterDept}`;
+        ? 'https://bcrm.100acress.com/api/activity/files'
+        : `https://bcrm.100acress.com/api/activity/files/department/${filterDept}`;
 
       const response = await fetch(url);
       const data = await response.json();
@@ -42,7 +42,7 @@ const FilesSection = () => {
       const department = localStorage.getItem('activityDepartment');
       const email = localStorage.getItem('activityDepartmentEmail');
 
-      const response = await fetch('http://localhost:5001/api/activity/files', {
+      const response = await fetch('https://bcrm.100acress.com/api/activity/files', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
