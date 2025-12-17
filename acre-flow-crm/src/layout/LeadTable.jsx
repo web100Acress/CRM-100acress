@@ -51,7 +51,7 @@ const LeadTable = ({ userRole }) => {
     const fetchLeads = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch("http://localhost:5001/api/leads", {
+        const response = await fetch("https://bcrm.100acress.com/api/leads", {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -88,7 +88,7 @@ const LeadTable = ({ userRole }) => {
       try {
         const token = localStorage.getItem("token");
         const response = await fetch(
-          "http://localhost:5001/api/leads/assignable-users",
+          "https://bcrm.100acress.com/api/leads/assignable-users",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -141,7 +141,7 @@ const LeadTable = ({ userRole }) => {
     if (!window.confirm("Are you sure you want to delete this lead?")) return;
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:5001/api/leads/${leadId}`, {
+      const res = await fetch(`https://bcrm.100acress.com/api/leads/${leadId}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -168,7 +168,7 @@ const LeadTable = ({ userRole }) => {
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
-        `http://localhost:5001/api/leads/${lead._id}/followups`,
+        `https://bcrm.100acress.com/api/leads/${lead._id}/followups`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -188,7 +188,7 @@ const LeadTable = ({ userRole }) => {
   const handleAssignLead = async (leadId, userId) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:5001/api/leads/${leadId}`, {
+      const res = await fetch(`https://bcrm.100acress.com/api/leads/${leadId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -219,7 +219,7 @@ const LeadTable = ({ userRole }) => {
       setForwardingLead(leadId);
       const token = localStorage.getItem("token");
       const res = await fetch(
-        `http://localhost:5001/api/leads/${leadId}/forward`,
+        `https://bcrm.100acress.com/api/leads/${leadId}/forward`,
         {
           method: "POST",
           headers: {
@@ -233,7 +233,7 @@ const LeadTable = ({ userRole }) => {
       const data = await res.json();
       if (res.ok) {
         // Refresh the leads list
-        const leadsResponse = await fetch("http://localhost:5001/api/leads", {
+        const leadsResponse = await fetch("https://bcrm.100acress.com/api/leads", {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -480,7 +480,7 @@ const LeadTable = ({ userRole }) => {
                           try {
                             const token = localStorage.getItem("token");
                             await fetch(
-                              `http://localhost:5001/api/leads/${lead._id}`,
+                              `https://bcrm.100acress.com/api/leads/${lead._id}`,
                               {
                                 method: "PUT",
                                 headers: {
