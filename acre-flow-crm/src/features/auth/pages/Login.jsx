@@ -213,6 +213,28 @@ const Login = () => {
       return;
     }
 
+    // Try Activity Hub Department Login
+    try {
+      const activityResponse = await fetch("http://localhost:5001/api/activity/departments/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(credentials),
+      });
+
+      const activityData = await activityResponse.json();
+      if (activityResponse.ok && activityData.success && activityData.data) {
+        // Activity Hub login successful
+        localStorage.setItem("activityDepartment", activityData.data.name);
+        localStorage.setItem("activityDepartmentEmail", activityData.data.email);
+        localStorage.setItem("activityDepartmentId", activityData.data.id);
+        localStorage.setItem("isActivityLoggedIn", "true");
+        window.location.href = "/activity-dashboard";
+        return;
+      }
+    } catch (activityError) {
+      console.log("Activity Hub login attempt failed, trying other methods...");
+    }
+
     // Backend login - Try CRM first, then 100acress
     try {
       // Try CRM login first

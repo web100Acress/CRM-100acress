@@ -45,6 +45,7 @@
     import { useNavigate } from 'react-router-dom';
     import DeveloperChat from './DeveloperChat';
     import RoleAssignment from './RoleAssignment';
+    import ActivityCredentials from './ActivityCredentials';
 
     const DeveloperContent = ({ userRole }) => {
       const [activeTab, setActiveTab] = useState('overview');
@@ -89,6 +90,7 @@
         { id: 'overview', label: 'System Overview', icon: Monitor },
         { id: 'role-assignment', label: 'Role Assignment', icon: Users },
         { id: 'create-employee', label: 'Create Employee', icon: UserPlus },
+        { id: 'activity', label: 'Activity Hub', icon: Activity },
         { id: 'chat', label: 'Chat', icon: Info },
       ];
 
@@ -1189,6 +1191,8 @@
             return <RoleAssignment />;
           case 'create-employee':
             return renderCreateEmployee();
+          case 'activity':
+            return <ActivityCredentials />;
           case 'project-enquiries':
             return renderProjectEnquiries();
           case 'registered-users':
