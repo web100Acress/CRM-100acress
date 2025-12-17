@@ -495,6 +495,108 @@ exports.checkEmailExists = async (req, res) => {
   }
 };
 
+// Update Activity Department Credential
+exports.updateActivityCredential = async (req, res) => {
+  try {
+    const { departmentId, credentialId } = req.params;
+    const { email, password, userName } = req.body;
+    const userId = req.user?.userId || req.user?.id || req.user?._id;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'User not authenticated' });
+    }
+
+    // Find the department
+    const department = await ActivityDepartment.findById(departmentId);
+    if (!department) {
+      return res.status(404).json({ success: false, message: 'Department not found' });
+    }
+
+    // Find the credential to update
+    const credentialIndex = department.credentials.findIndex(cred => cred._id.toString() === credentialId);
+    if (credentialIndex === -1) {
+      return res.status(404).json({ success: false, message: 'Credential not found' });
+    }
+
+    // Hash new password if provided
+    let hashedPassword = department.credentials[credentialIndex].password;
+    if (password && password !== '•••••••') {
+      hashedPassword = await bcrypt.hash(password, 10);
+    }
+
+    // Update the credential
+    department.credentials[credentialIndex] = {
+      ...department.credentials[credentialIndex],
+      email: email || department.credentials[credentialIndex].email,
+      password: hashedPassword,
+      userName: userName || department.credentials[credentialIndex].userName
+    };
+
+    await department.save();
+
+    // Send email notification about the update
+    try {
+      const transporter = nodemailer.createTransporter({
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASSWORD
+        }
+      });
+
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: department.credentials[credentialIndex].email,
+        subject: 'Activity Hub Credential Updated',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px; text-align: center;">
+              <h1 style="color: white; margin: 0; font-size: 28px;">🔐 Activity Hub Credential Updated</h1>
+            </div>
+            <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px;">
+              <h2 style="color: #2d3748; margin-bottom: 20px;">Your credentials have been updated</h2>
+              
+              <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <p style="color: #4a5568; margin-bottom: 10px;"><strong>Department:</strong> ${department.name}</p>
+                <p style="color: #4a5568; margin-bottom: 10px;"><strong>Email:</strong> ${department.credentials[credentialIndex].email}</p>
+                <p style="color: #4a5568; margin-bottom: 10px;"><strong>Username:</strong> ${department.credentials[credentialIndex].userName}</p>
+                ${password && password !== '•••••••' ? '<p style="color: #4a5568; margin-bottom: 10px;"><strong>Password has been updated</strong></p>' : '<p style="color: #6b7280; margin-bottom: 10px;"><strong>Password unchanged</strong></p>'}
+              </div>
+              
+              <div style="text-align: center; margin-top: 30px;">
+                <a href="https://your-activity-login-url.com/activity-login" 
+                   style="background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+                  🚀 Access Activity Hub
+                </a>
+              </div>
+            </div>
+          </div>
+        `
+      };
+
+      await transporter.sendMail(mailOptions);
+      console.log('Update email sent to:', department.credentials[credentialIndex].email);
+    } catch (emailError) {
+      console.error('Error sending update email:', emailError);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Credential updated successfully',
+      data: {
+        id: department._id,
+        name: department.name,
+        description: department.description,
+        color: department.color,
+        credentialsCount: department.credentials.length
+      }
+    });
+  } catch (error) {
+    console.error('Error updating credential:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // Activity Department Login - Support both credential-based and department-based login
 exports.activityDepartmentLogin = async (req, res) => {
   try {
