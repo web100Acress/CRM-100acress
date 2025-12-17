@@ -46,8 +46,8 @@ const ReportsSection = () => {
     try {
       setLoading(true);
       const url = filterDept === 'All' 
-        ? 'http://localhost:5001/api/activity/reports'
-        : `http://localhost:5001/api/activity/reports/department/${filterDept}`;
+        ? 'https://bcrm.100acress.com/api/activity/reports'
+        : `https://bcrm.100acress.com/api/activity/reports/department/${filterDept}`;
       
       const response = await fetch(url);
       const data = await response.json();
@@ -87,7 +87,7 @@ const ReportsSection = () => {
       const finalTitle = (formData.title || '').trim() || trimmedContent.split('\n')[0].slice(0, 60) || 'Report';
       const finalDescription = (formData.description || '').trim();
 
-      const response = await fetch('http://localhost:5001/api/activity/reports', {
+      const response = await fetch('https://bcrm.100acress.com/api/activity/reports', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

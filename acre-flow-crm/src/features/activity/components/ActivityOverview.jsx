@@ -17,11 +17,11 @@ const ActivityOverview = () => {
   const fetchStats = async () => {
     try {
       const [reports, files, content, thoughts, departments] = await Promise.all([
-        fetch('http://localhost:5001/api/activity/reports').then(r => r.json()),
-        fetch('http://localhost:5001/api/activity/files').then(r => r.json()),
-        fetch('http://localhost:5001/api/activity/content').then(r => r.json()),
-        fetch('http://localhost:5001/api/activity/thoughts').then(r => r.json()),
-        fetch('http://localhost:5001/api/activity/departments').then(r => r.json())
+        fetch('https://bcrm.100acress.com/api/activity/reports').then(r => r.json()),
+        fetch('https://bcrm.100acress.com/api/activity/files').then(r => r.json()),
+        fetch('https://bcrm.100acress.com/api/activity/content').then(r => r.json()),
+        fetch('https://bcrm.100acress.com/api/activity/thoughts').then(r => r.json()),
+        fetch('https://bcrm.100acress.com/api/activity/departments').then(r => r.json())
       ]);
 
       setStats({

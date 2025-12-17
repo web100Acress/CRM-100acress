@@ -24,8 +24,8 @@ const ThoughtsSection = () => {
     try {
       setLoading(true);
       const url = filterDept === 'All'
-        ? 'http://localhost:5001/api/activity/thoughts'
-        : `http://localhost:5001/api/activity/thoughts/department/${filterDept}`;
+        ? 'https://bcrm.100acress.com/api/activity/thoughts'
+        : `https://bcrm.100acress.com/api/activity/thoughts/department/${filterDept}`;
 
       const response = await fetch(url);
       const data = await response.json();
@@ -43,7 +43,7 @@ const ThoughtsSection = () => {
       const department = localStorage.getItem('activityDepartment');
       const email = localStorage.getItem('activityDepartmentEmail');
 
-      const response = await fetch('http://localhost:5001/api/activity/thoughts', {
+      const response = await fetch('https://bcrm.100acress.com/api/activity/thoughts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -66,7 +66,7 @@ const ThoughtsSection = () => {
 
   const handleLike = async (thoughtId) => {
     try {
-      await fetch(`http://localhost:5001/api/activity/thoughts/${thoughtId}/like`, {
+      await fetch(`https://bcrm.100acress.com/api/activity/thoughts/${thoughtId}/like`, {
         method: 'POST'
       });
       fetchThoughts();
@@ -82,7 +82,7 @@ const ThoughtsSection = () => {
       const department = localStorage.getItem('activityDepartment');
       const email = localStorage.getItem('activityDepartmentEmail');
 
-      await fetch(`http://localhost:5001/api/activity/thoughts/${thoughtId}/reply`, {
+      await fetch(`https://bcrm.100acress.com/api/activity/thoughts/${thoughtId}/reply`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

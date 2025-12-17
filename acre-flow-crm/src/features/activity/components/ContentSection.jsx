@@ -24,8 +24,8 @@ const ContentSection = () => {
     try {
       setLoading(true);
       const url = filterDept === 'All'
-        ? 'http://localhost:5001/api/activity/content'
-        : `http://localhost:5001/api/activity/content/department/${filterDept}`;
+        ? 'https://bcrm.100acress.com/api/activity/content'
+        : `https://bcrm.100acress.com/api/activity/content/department/${filterDept}`;
 
       const response = await fetch(url);
       const data = await response.json();
@@ -43,7 +43,7 @@ const ContentSection = () => {
       const department = localStorage.getItem('activityDepartment');
       const email = localStorage.getItem('activityDepartmentEmail');
 
-      const response = await fetch('http://localhost:5001/api/activity/content', {
+      const response = await fetch('https://bcrm.100acress.com/api/activity/content', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -67,7 +67,7 @@ const ContentSection = () => {
 
   const handleLike = async (contentId) => {
     try {
-      await fetch(`http://localhost:5001/api/activity/content/${contentId}/like`, {
+      await fetch(`https://bcrm.100acress.com/api/activity/content/${contentId}/like`, {
         method: 'POST'
       });
       fetchContent();
@@ -83,7 +83,7 @@ const ContentSection = () => {
       const department = localStorage.getItem('activityDepartment');
       const email = localStorage.getItem('activityDepartmentEmail');
 
-      await fetch(`http://localhost:5001/api/activity/content/${contentId}/comment`, {
+      await fetch(`https://bcrm.100acress.com/api/activity/content/${contentId}/comment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
