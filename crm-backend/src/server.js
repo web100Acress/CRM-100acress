@@ -3,6 +3,7 @@ const express = require('express');
 const http = require('http');
 const cors = require('cors');
 const socketio = require('socket.io');
+const socketConfig = require('./socket-config');
 
 const app = require('./app'); // app.js = express instance
 const connectDB = require('./config/db'); // MongoDB connection
@@ -11,6 +12,7 @@ const meetingController = require('./controllers/meetingController');
 const User = require('./models/userModel');
 const Lead = require('./models/leadModel');
 const ChatMessage = require('./models/chatMessageModel');
+const ActivityReport = require('./models/activityReportModel');
 
 // ✅ Connect to MongoDB
 connectDB();
@@ -36,13 +38,7 @@ const allowedOrigins = [
 const server = http.createServer(app);
 
 // ✅ Setup Socket.IO with same CORS rules
-const io = socketio(server, {
-  cors: {
-    origin: allowedOrigins,
-    methods: ['GET', 'POST'],
-    credentials: true
-  }
-});
+const io = socketio(server, socketConfig);
 
 // ✅ Attach SocketIO controller
 meetingController.setSocketIO(io);
@@ -147,15 +143,32 @@ io.on('connection', (socket) => {
       const query = {};
       
       if (filters.department && filters.department !== 'All') {
-        query['sender.department'] = filters.department;
+        query.department = filters.department;
       }
 
-      const messages = await ChatMessage
+      // Fetch from ActivityReport collection since that's where the data is stored
+      const reports = await ActivityReport
         .find(query)
-        .sort({ timestamp: -1 })
+        .sort({ createdAt: -1 })
         .limit(50);
 
-      console.log('📨 Found messages:', messages.length);
+      console.log('📨 Found reports:', reports.length);
+      
+      // Transform ActivityReport data to match chat message format
+      const messages = reports.map(report => ({
+        _id: report._id,
+        content: report.content || report.description,
+        sender: {
+          name: report.submittedBy,
+          email: report.submittedByEmail,
+          department: report.department
+        },
+        type: report.reportType || 'Custom',
+        timestamp: report.createdAt,
+        attachments: report.attachments || [],
+        images: []
+      }));
+
       socket.emit('chatHistory', messages.reverse());
       console.log('✅ Chat history sent:', messages.length, 'messages');
     } catch (error) {
