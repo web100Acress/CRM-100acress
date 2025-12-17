@@ -462,16 +462,32 @@ exports.checkEmailExists = async (req, res) => {
     
     console.log('Checking if email exists in Activity departments:', email);
 
+    // First, let's see all departments and their credentials for debugging
+    const allDepartments = await ActivityDepartment.find({});
+    console.log('All departments in database:', allDepartments.length);
+    
+    allDepartments.forEach(dept => {
+      console.log(`Department: ${dept.name}, Credentials: ${dept.credentials.length}`);
+      dept.credentials.forEach(cred => {
+        console.log(`  - Email: ${cred.email}`);
+      });
+    });
+
     // Find department that has this email in credentials
     const department = await ActivityDepartment.findOne({
       'credentials.email': email
     });
 
     console.log('Email exists check result:', department ? 'Found' : 'Not found');
+    console.log('Department found:', department ? department.name : 'None');
 
     res.status(200).json({
       success: true,
-      exists: !!department
+      exists: !!department,
+      debug: {
+        totalDepartments: allDepartments.length,
+        departmentName: department ? department.name : null
+      }
     });
   } catch (error) {
     console.error('Error checking email existence:', error);
