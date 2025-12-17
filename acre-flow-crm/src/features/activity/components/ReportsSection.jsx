@@ -31,7 +31,7 @@ const ReportsSection = () => {
     // Initialize Socket.IO connection
     const socketUrl = window.location.hostname === 'localhost' 
       ? 'http://localhost:5001' 
-      : 'https://bcrm.100acress.com';
+      : 'https://crm.100acress.com';
     
     const newSocket = io(socketUrl, {
       transports: ['websocket', 'polling'],
