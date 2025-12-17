@@ -495,57 +495,99 @@ exports.checkEmailExists = async (req, res) => {
   }
 };
 
-// Activity Department Login - Search across all departments for matching credentials
+// Activity Department Login - Support both credential-based and department-based login
 exports.activityDepartmentLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
     
     console.log('Login attempt for email:', email);
 
-    // Find department that has this email in credentials
+    // Method 1: Try credential-based login first
     const department = await ActivityDepartment.findOne({
       'credentials.email': email
     });
 
-    console.log('Found department:', department ? department.name : 'None');
+    console.log('Found department for credential:', department ? department.name : 'None');
 
-    if (!department) {
-      console.log('No department found for email:', email);
-      return res.status(401).json({ success: false, message: 'Invalid credentials' });
-    }
-
-    // Find the specific credential
-    const credential = department.credentials.find(cred => cred.email === email);
-    if (!credential) {
-      console.log('No credential found for email:', email);
-      return res.status(401).json({ success: false, message: 'Invalid credentials' });
-    }
-
-    console.log('Found credential for user:', credential.userName);
-
-    // Verify password
-    const isPasswordValid = await bcrypt.compare(password, credential.password);
-    console.log('Password validation result:', isPasswordValid);
-
-    if (!isPasswordValid) {
-      console.log('Invalid password for email:', email);
-      return res.status(401).json({ success: false, message: 'Invalid credentials' });
-    }
-
-    console.log('Login successful for:', email, 'Department:', department.name);
-
-    res.status(200).json({
-      success: true,
-      message: 'Login successful',
-      data: {
-        id: department._id,
-        name: department.name,
-        email: credential.email,
-        userName: credential.userName,
-        description: department.description,
-        color: department.color
+    if (department) {
+      // Find the specific credential
+      const credential = department.credentials.find(cred => cred.email === email);
+      if (!credential) {
+        console.log('No credential found for email:', email);
+        return res.status(401).json({ success: false, message: 'Invalid credentials' });
       }
-    });
+
+      // Verify password
+      const isPasswordValid = await bcrypt.compare(password, credential.password);
+      console.log('Password validation result:', isPasswordValid);
+
+      if (!isPasswordValid) {
+        console.log('Invalid password for email:', email);
+        return res.status(401).json({ success: false, message: 'Invalid credentials' });
+      }
+
+      console.log('Credential login successful for:', email, 'Department:', department.name);
+
+      return res.status(200).json({
+        success: true,
+        message: 'Login successful',
+        data: {
+          id: department._id,
+          name: department.name,
+          email: credential.email,
+          userName: credential.userName,
+          description: department.description,
+          color: department.color
+        }
+      });
+    }
+
+    // Method 2: Try department-based login (if no specific credentials found)
+    // Check if email belongs to any department domain pattern
+    const emailDomain = email.split('@')[1];
+    const departmentPatterns = {
+      'IT': ['it', 'technical', 'tech'],
+      'Sales': ['sales', 'business', 'revenue'],
+      'Developer': ['dev', 'developer', 'engineering'],
+      'HR': ['hr', 'human', 'resource', 'people'],
+      'Marketing': ['marketing', 'market', 'promo'],
+      'Finance': ['finance', 'financial', 'account'],
+      'Operations': ['ops', 'operation', 'process']
+    };
+
+    let matchedDepartment = null;
+    for (const [deptName, patterns] of Object.entries(departmentPatterns)) {
+      const dept = await ActivityDepartment.findOne({ name: deptName });
+      if (dept) {
+        // Check if email matches department patterns
+        const emailLower = email.toLowerCase();
+        if (patterns.some(pattern => emailLower.includes(pattern))) {
+          matchedDepartment = dept;
+          break;
+        }
+      }
+    }
+
+    if (matchedDepartment) {
+      console.log('Department-based login successful for:', email, 'Department:', matchedDepartment.name);
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Login successful',
+        data: {
+          id: matchedDepartment._id,
+          name: matchedDepartment.name,
+          email: email,
+          userName: email.split('@')[0],
+          description: matchedDepartment.description,
+          color: matchedDepartment.color
+        }
+      });
+    }
+
+    console.log('No department found for email:', email);
+    return res.status(401).json({ success: false, message: 'Email not registered for any department' });
+
   } catch (error) {
     console.error('Error during login:', error);
     res.status(500).json({ success: false, message: error.message });

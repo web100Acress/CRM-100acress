@@ -22,7 +22,7 @@ const ActivityCredentials = () => {
   const fetchDepartments = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5001/api/activity/departments');
+      const response = await fetch('https://bcrm.100acress.com/api/activity/departments');
       const data = await response.json();
       setDepartments(data.data || []);
     } catch (error) {
@@ -37,7 +37,7 @@ const ActivityCredentials = () => {
     try {
       const token = localStorage.getItem('token');
       
-      const response = await fetch('http://localhost:5001/api/activity/departments', {
+      const response = await fetch('https://bcrm.100acress.com/api/activity/departments', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
