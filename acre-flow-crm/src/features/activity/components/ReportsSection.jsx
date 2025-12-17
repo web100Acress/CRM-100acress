@@ -29,7 +29,11 @@ const ReportsSection = () => {
 
   useEffect(() => {
     // Initialize Socket.IO connection
-    const newSocket = io('https://bcrm.100acress.com', {
+    const socketUrl = window.location.hostname === 'localhost' 
+      ? 'http://localhost:5001' 
+      : 'https://bcrm.100acress.com';
+    
+    const newSocket = io(socketUrl, {
       transports: ['websocket', 'polling'],
       forceNew: true
     });
@@ -38,7 +42,7 @@ const ReportsSection = () => {
       console.log('✅ Connected to chat server');
       setSocketConnected(true);
       setSocket(newSocket);
-    });
+    }); 
 
     newSocket.on('disconnect', () => {
       console.log('❌ Disconnected from chat server');
