@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, X, Eye, Download, Filter, Upload } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Plus, X, Download, Filter, Paperclip, Image as ImageIcon, Send, ChevronDown, ChevronUp } from 'lucide-react';
 
 const ReportsSection = () => {
   const [reports, setReports] = useState([]);
-  const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [filterDept, setFilterDept] = useState('All');
   const [loggedInDept, setLoggedInDept] = useState('');
+  const [showComposerAdvanced, setShowComposerAdvanced] = useState(false);
   const allDepartments = ['IT', 'Sales', 'Developer', 'HR', 'Marketing', 'Finance', 'Operations'];
   const visibleDepartments = loggedInDept ? [loggedInDept] : ['All', ...allDepartments];
+  const fileInputRef = useRef(null);
+  const imageInputRef = useRef(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -74,19 +76,24 @@ const ReportsSection = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const submitReport = async () => {
     try {
       const department = localStorage.getItem('activityDepartment');
       const email = localStorage.getItem('activityDepartmentEmail');
+
+      const trimmedContent = (formData.content || '').trim();
+      if (!trimmedContent) return;
+
+      const finalTitle = (formData.title || '').trim() || trimmedContent.split('\n')[0].slice(0, 60) || 'Report';
+      const finalDescription = (formData.description || '').trim();
 
       const response = await fetch('http://localhost:5001/api/activity/reports', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: formData.title,
-          description: formData.description,
-          content: formData.content,
+          title: finalTitle,
+          description: finalDescription,
+          content: trimmedContent,
           reportType: formData.reportType,
           submitterName: formData.submitterName,
           attachments: [...formData.files.map(f => f.name), ...formData.images.map(f => f.name)],
@@ -106,11 +113,18 @@ const ReportsSection = () => {
           files: [],
           images: []
         });
-        setShowModal(false);
+        setShowComposerAdvanced(false);
         fetchReports();
       }
     } catch (error) {
       console.error('Error submitting report:', error);
+    }
+  };
+
+  const handleComposerKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      submitReport();
     }
   };
 
@@ -119,11 +133,11 @@ const ReportsSection = () => {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900">Reports</h2>
         <button
-          onClick={() => setShowModal(true)}
+          onClick={() => setShowComposerAdvanced((v) => !v)}
           className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
         >
           <Plus size={20} />
-          Submit Report
+          {showComposerAdvanced ? 'Hide Options' : 'Report Options'}
         </button>
       </div>
 
@@ -186,14 +200,14 @@ const ReportsSection = () => {
           </aside>
 
           <div className="col-span-12 md:col-span-8 lg:col-span-9">
-            <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden flex flex-col h-[70vh]">
               <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
                 <p className="text-sm text-gray-700">
                   {loggedInDept ? `Chat feed (logged in as ${loggedInDept})` : 'Chat feed'}
                 </p>
               </div>
 
-              <div className="p-4 space-y-3 bg-gray-50 max-h-[65vh] overflow-y-auto">
+              <div className="p-4 space-y-3 bg-gray-50 overflow-y-auto flex-1">
                 {[...reports]
                   .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
                   .map((report) => {
@@ -257,163 +271,151 @@ const ReportsSection = () => {
                     );
                   })}
               </div>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b">
-              <h3 className="text-xl font-bold text-gray-900">Submit Report</h3>
-              <button onClick={() => setShowModal(false)}>
-                <X size={24} className="text-gray-600" />
-              </button>
-            </div>
+              <div className="border-t border-gray-200 bg-white">
+                {showComposerAdvanced && (
+                  <div className="p-3 bg-gray-50 border-b border-gray-200">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Your Name</label>
+                        <input
+                          type="text"
+                          value={formData.submitterName}
+                          onChange={(e) => setFormData({ ...formData, submitterName: e.target.value })}
+                          placeholder="Enter your name"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Report Type</label>
+                        <select
+                          value={formData.reportType}
+                          onChange={(e) => setFormData({ ...formData, reportType: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option>Daily</option>
+                          <option>Weekly</option>
+                          <option>Monthly</option>
+                          <option>Quarterly</option>
+                          <option>Custom</option>
+                        </select>
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Title (optional)</label>
+                        <input
+                          type="text"
+                          value={formData.title}
+                          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                          placeholder="Auto-generated if empty"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Description (optional)</label>
+                        <input
+                          type="text"
+                          value={formData.description}
+                          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                          placeholder="Short summary"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Your Name</label>
-                <input
-                  type="text"
-                  value={formData.submitterName}
-                  onChange={(e) => setFormData({ ...formData, submitterName: e.target.value })}
-                  placeholder="Enter your name"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+                {(formData.files.length > 0 || formData.images.length > 0) && (
+                  <div className="px-3 pt-3">
+                    <div className="flex flex-wrap gap-2">
+                      {formData.files.map((f, idx) => (
+                        <div key={`f-${idx}`} className="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full text-xs text-gray-700">
+                          <Paperclip size={14} className="text-gray-500" />
+                          <span className="max-w-[180px] truncate">{f.name}</span>
+                          <button type="button" onClick={() => removeFile(idx, 'files')} className="text-gray-500 hover:text-red-600">
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ))}
+                      {formData.images.map((f, idx) => (
+                        <div key={`i-${idx}`} className="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full text-xs text-gray-700">
+                          <ImageIcon size={14} className="text-gray-500" />
+                          <span className="max-w-[180px] truncate">{f.name}</span>
+                          <button type="button" onClick={() => removeFile(idx, 'images')} className="text-gray-500 hover:text-red-600">
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                <input
-                  type="text"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Report Type</label>
-                <select
-                  value={formData.reportType}
-                  onChange={(e) => setFormData({ ...formData, reportType: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option>Daily</option>
-                  <option>Weekly</option>
-                  <option>Monthly</option>
-                  <option>Quarterly</option>
-                  <option>Custom</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Content</label>
-                <textarea
-                  value={formData.content}
-                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  rows="4"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Upload Files</label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-blue-500 transition-colors">
+                <div className="p-3 flex items-end gap-2">
                   <input
+                    ref={fileInputRef}
                     type="file"
                     multiple
                     onChange={(e) => handleFileUpload(e, 'files')}
                     className="hidden"
-                    id="file-input"
                   />
-                  <label htmlFor="file-input" className="cursor-pointer flex flex-col items-center gap-2">
-                    <Upload size={24} className="text-gray-400" />
-                    <span className="text-sm text-gray-600">Click to upload files or drag and drop</span>
-                  </label>
-                </div>
-                {formData.files.length > 0 && (
-                  <div className="mt-3 space-y-2">
-                    {formData.files.map((file, idx) => (
-                      <div key={idx} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                        <span className="text-sm text-gray-700">{file.name}</span>
-                        <button
-                          type="button"
-                          onClick={() => removeFile(idx, 'files')}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Upload Images</label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-blue-500 transition-colors">
                   <input
+                    ref={imageInputRef}
                     type="file"
                     multiple
                     accept="image/*"
                     onChange={(e) => handleFileUpload(e, 'images')}
                     className="hidden"
-                    id="image-input"
                   />
-                  <label htmlFor="image-input" className="cursor-pointer flex flex-col items-center gap-2">
-                    <Upload size={24} className="text-gray-400" />
-                    <span className="text-sm text-gray-600">Click to upload images or drag and drop</span>
-                  </label>
-                </div>
-                {formData.images.length > 0 && (
-                  <div className="mt-3 space-y-2">
-                    {formData.images.map((image, idx) => (
-                      <div key={idx} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                        <span className="text-sm text-gray-700">{image.name}</span>
-                        <button
-                          type="button"
-                          onClick={() => removeFile(idx, 'images')}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
 
-              <div className="flex gap-4 pt-4">
-                <button
-                  type="submit"
-                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                >
-                  Submit Report
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 bg-gray-200 text-gray-900 py-2 rounded-lg hover:bg-gray-300 transition-colors font-medium"
-                >
-                  Cancel
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="p-2 rounded-full hover:bg-gray-100 text-gray-700"
+                    title="Attach files"
+                  >
+                    <Paperclip size={20} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => imageInputRef.current?.click()}
+                    className="p-2 rounded-full hover:bg-gray-100 text-gray-700"
+                    title="Attach images"
+                  >
+                    <ImageIcon size={20} />
+                  </button>
+
+                  <div className="flex-1">
+                    <textarea
+                      value={formData.content}
+                      onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                      onKeyDown={handleComposerKeyDown}
+                      rows={1}
+                      placeholder="Type a message"
+                      className="w-full resize-none px-4 py-2 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
+                    <p className="text-[11px] text-gray-500 mt-1">Press Enter to send • Shift+Enter for new line</p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={submitReport}
+                    disabled={!String(formData.content || '').trim()}
+                    className="p-2 rounded-full bg-blue-600 text-white disabled:bg-gray-300 disabled:text-gray-600"
+                    title="Send"
+                  >
+                    <Send size={20} />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowComposerAdvanced((v) => !v)}
+                    className="p-2 rounded-full hover:bg-gray-100 text-gray-700"
+                    title="More options"
+                  >
+                    {showComposerAdvanced ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+                  </button>
+                </div>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}
