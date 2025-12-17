@@ -54,6 +54,7 @@ import BlogEdit from '@/features/admin/pages/BlogEdit';
 import BannerManagement from '@/features/admin/pages/BannerManagement';
 import ShortSetting from '@/features/admin/pages/ShortSetting';
 import BackToTopButton from '@/features/admin/pages/BackToTopButton';
+import ActivityDashboard from '@/features/activity/pages/ActivityDashboard';
 
 // Import Blog Components (temporarily disabled)
 // import BlogDashboard from "@/features/blog/pages/BlogDashboard";
@@ -317,6 +318,9 @@ const App = () => {
             <Route path="/admin/banner-management" element={<BannerManagement />} />
             <Route path="/admin/short-setting" element={<ShortSetting />} />
             <Route path="/admin/back-to-top" element={<BackToTopButton />} />
+            
+            {/* Activity Routes */}
+            <Route path="/activity-dashboard" element={<ActivityDashboard />} />
 
             {/* Blog Routes - Temporarily Disabled
             <Route
