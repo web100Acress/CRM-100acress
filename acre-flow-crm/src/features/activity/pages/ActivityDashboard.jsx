@@ -14,19 +14,53 @@ const ActivityDashboard = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   useEffect(() => {
-    const departmentName = localStorage.getItem('activityDepartment');
-    const departmentEmail = localStorage.getItem('activityDepartmentEmail');
+    const currentSessionId = localStorage.getItem('currentActivitySession');
+    const activeSessions = JSON.parse(localStorage.getItem('activeActivitySessions') || '[]');
     
-    if (departmentName && departmentEmail) {
-      setUserInfo({ name: departmentName, email: departmentEmail });
+    if (currentSessionId && activeSessions.includes(currentSessionId)) {
+      const sessionKey = `activity_${currentSessionId}`;
+      const departmentName = localStorage.getItem(sessionKey + '_department');
+      const departmentEmail = localStorage.getItem(sessionKey + '_email');
+      const userName = localStorage.getItem(sessionKey + '_userName');
+      
+      if (departmentName && departmentEmail) {
+        setUserInfo({ 
+          name: departmentName, 
+          email: departmentEmail,
+          userName: userName,
+          sessionId: currentSessionId
+        });
+      }
     }
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('activityDepartment');
-    localStorage.removeItem('activityDepartmentEmail');
-    localStorage.removeItem('activityDepartmentId');
-    localStorage.removeItem('isActivityLoggedIn');
+    const currentSessionId = localStorage.getItem('currentActivitySession');
+    const activeSessions = JSON.parse(localStorage.getItem('activeActivitySessions') || '[]');
+    
+    if (currentSessionId) {
+      const sessionKey = `activity_${currentSessionId}`;
+      
+      // Remove current session data
+      localStorage.removeItem(sessionKey + '_department');
+      localStorage.removeItem(sessionKey + '_email');
+      localStorage.removeItem(sessionKey + '_departmentId');
+      localStorage.removeItem(sessionKey + '_userName');
+      localStorage.removeItem(sessionKey + '_sessionId');
+      
+      // Remove from active sessions
+      const updatedSessions = activeSessions.filter(id => id !== currentSessionId);
+      localStorage.setItem('activeActivitySessions', JSON.stringify(updatedSessions));
+      
+      // Set current session to next available if any
+      if (updatedSessions.length > 0) {
+        localStorage.setItem('currentActivitySession', updatedSessions[0]);
+      } else {
+        localStorage.removeItem('currentActivitySession');
+        localStorage.removeItem('isActivityLoggedIn');
+      }
+    }
+    
     window.location.href = '/login';
   };
 

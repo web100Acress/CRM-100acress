@@ -234,11 +234,25 @@ const Login = () => {
 
           const activityData = await activityResponse.json();
           if (activityResponse.ok && activityData.success && activityData.data) {
-            // Activity Hub login successful
-            localStorage.setItem("activityDepartment", activityData.data.name);
-            localStorage.setItem("activityDepartmentEmail", activityData.data.email);
-            localStorage.setItem("activityDepartmentId", activityData.data.id);
+            // Activity Hub login successful - use unique session ID for multiple users
+            const sessionId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            const sessionKey = `activity_${sessionId}`;
+            
+            localStorage.setItem(sessionKey + "_department", activityData.data.name);
+            localStorage.setItem(sessionKey + "_email", activityData.data.email);
+            localStorage.setItem(sessionKey + "_departmentId", activityData.data.id);
+            localStorage.setItem(sessionKey + "_userName", activityData.data.userName);
+            localStorage.setItem(sessionKey + "_sessionId", sessionId);
             localStorage.setItem("isActivityLoggedIn", "true");
+            localStorage.setItem("currentActivitySession", sessionId);
+            
+            // Store all active sessions
+            const activeSessions = JSON.parse(localStorage.getItem("activeActivitySessions") || "[]");
+            if (!activeSessions.includes(sessionId)) {
+              activeSessions.push(sessionId);
+              localStorage.setItem("activeActivitySessions", JSON.stringify(activeSessions));
+            }
+            
             window.location.href = "/activity-dashboard";
             return;
           } else {
