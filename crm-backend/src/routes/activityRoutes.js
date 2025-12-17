@@ -6,6 +6,7 @@ const authMiddleware = require('../middlewares/auth');
 // Activity Department Routes
 router.post('/departments', authMiddleware, activityController.createActivityDepartment);
 router.get('/departments', activityController.getAllActivityDepartments);
+router.post('/departments/check-email', activityController.checkEmailExists);
 router.post('/departments/login', activityController.activityDepartmentLogin);
 
 // Report Routes
