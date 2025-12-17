@@ -3,7 +3,6 @@ const express = require('express');
 const http = require('http');
 const cors = require('cors');
 const socketio = require('socket.io');
-const socketConfig = require('./socket-config');
 
 const app = require('./app'); // app.js = express instance
 const connectDB = require('./config/db'); // MongoDB connection
@@ -11,8 +10,6 @@ const { port } = require('./config/config');
 const meetingController = require('./controllers/meetingController');
 const User = require('./models/userModel');
 const Lead = require('./models/leadModel');
-const ChatMessage = require('./models/chatMessageModel');
-const ActivityReport = require('./models/activityReportModel');
 
 // ✅ Connect to MongoDB
 connectDB();
@@ -27,8 +24,6 @@ const allowedOrigins = [
   'https://100acress.com',
   'https://www.100acress.com',   // ✅ Added
   'https://api.100acress.com',
-  'https://bcrm.100acress.com',
-  'https://crm.100acress.com',
   'http://localhost:5001',
   'http://localhost:3500'
 
@@ -39,7 +34,13 @@ const allowedOrigins = [
 const server = http.createServer(app);
 
 // ✅ Setup Socket.IO with same CORS rules
-const io = socketio(server, socketConfig);
+const io = socketio(server, {
+  cors: {
+    origin: allowedOrigins,
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
+});
 
 // ✅ Attach SocketIO controller
 meetingController.setSocketIO(io);
@@ -101,83 +102,6 @@ io.on('connection', (socket) => {
     socket.emit('roleDashboardStats', stats);
   });
 
-  // Chat functionality
-  socket.on('joinChatRoom', (department) => {
-    socket.join(department);
-    console.log(`✅ User joined chat room: ${department}`);
-  });
-
-  socket.on('leaveChatRoom', (department) => {
-    socket.leave(department);
-    console.log(`✅ User left chat room: ${department}`);
-  });
-
-  socket.on('sendMessage', async (messageData) => {
-    try {
-      // Save message to database
-      const message = new ChatMessage({
-        content: messageData.content,
-        sender: {
-          name: messageData.sender.name,
-          email: messageData.sender.email,
-          department: messageData.sender.department
-        },
-        type: messageData.type || 'Custom',
-        attachments: messageData.attachments || [],
-        images: messageData.images || []
-      });
-
-      await message.save();
-
-      // Broadcast to all connected clients in the department room
-      io.emit('newMessage', message);
-      console.log('✅ Message sent:', message._id);
-    } catch (error) {
-      console.error('❌ Error sending message:', error);
-      socket.emit('messageError', { error: 'Failed to send message' });
-    }
-  });
-
-  socket.on('requestChatHistory', async (filters = {}) => {
-    try {
-      console.log('📡 Received requestChatHistory with filters:', filters);
-      const query = {};
-      
-      if (filters.department && filters.department !== 'All') {
-        query.department = filters.department;
-      }
-
-      // Fetch from ActivityReport collection since that's where the data is stored
-      const reports = await ActivityReport
-        .find(query)
-        .sort({ createdAt: -1 })
-        .limit(50);
-
-      console.log('📨 Found reports:', reports.length);
-      
-      // Transform ActivityReport data to match chat message format
-      const messages = reports.map(report => ({
-        _id: report._id,
-        content: report.content || report.description,
-        sender: {
-          name: report.submittedBy,
-          email: report.submittedByEmail,
-          department: report.department
-        },
-        type: report.reportType || 'Custom',
-        timestamp: report.createdAt,
-        attachments: report.attachments || [],
-        images: []
-      }));
-
-      socket.emit('chatHistory', messages.reverse());
-      console.log('✅ Chat history sent:', messages.length, 'messages');
-    } catch (error) {
-      console.error('❌ Error fetching chat history:', error);
-      socket.emit('messageError', { error: 'Failed to fetch chat history' });
-    }
-  });
-
   socket.on('disconnect', () => {
     console.log('❌ Client disconnected:', socket.id);
   });
@@ -189,7 +113,6 @@ app.use('/api/leads', require('./routes/leadRoutes'));
 app.use('/api/meetings', require('./routes/meetingRoutes'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/userRoutes'));
-app.use('/api/activity', require('./routes/activityRoutes'));
 
 // ✅ Temporary route to seed last login data
 app.post('/api/admin/seed-last-login', async (req, res) => {
