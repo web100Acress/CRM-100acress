@@ -10,6 +10,7 @@ const { port } = require('./config/config');
 const meetingController = require('./controllers/meetingController');
 const User = require('./models/userModel');
 const Lead = require('./models/leadModel');
+const ChatMessage = require('./models/chatMessageModel');
 
 // ✅ Connect to MongoDB
 connectDB();
@@ -100,6 +101,66 @@ io.on('connection', (socket) => {
     }
 
     socket.emit('roleDashboardStats', stats);
+  });
+
+  // Chat functionality
+  socket.on('joinChatRoom', (department) => {
+    socket.join(department);
+    console.log(`✅ User joined chat room: ${department}`);
+  });
+
+  socket.on('leaveChatRoom', (department) => {
+    socket.leave(department);
+    console.log(`✅ User left chat room: ${department}`);
+  });
+
+  socket.on('sendMessage', async (messageData) => {
+    try {
+      // Save message to database
+      const message = new ChatMessage({
+        content: messageData.content,
+        sender: {
+          name: messageData.sender.name,
+          email: messageData.sender.email,
+          department: messageData.sender.department
+        },
+        type: messageData.type || 'Custom',
+        attachments: messageData.attachments || [],
+        images: messageData.images || []
+      });
+
+      await message.save();
+
+      // Broadcast to all connected clients in the department room
+      io.emit('newMessage', message);
+      console.log('✅ Message sent:', message._id);
+    } catch (error) {
+      console.error('❌ Error sending message:', error);
+      socket.emit('messageError', { error: 'Failed to send message' });
+    }
+  });
+
+  socket.on('requestChatHistory', async (filters = {}) => {
+    try {
+      console.log('📡 Received requestChatHistory with filters:', filters);
+      const query = {};
+      
+      if (filters.department && filters.department !== 'All') {
+        query['sender.department'] = filters.department;
+      }
+
+      const messages = await ChatMessage
+        .find(query)
+        .sort({ timestamp: -1 })
+        .limit(50);
+
+      console.log('📨 Found messages:', messages.length);
+      socket.emit('chatHistory', messages.reverse());
+      console.log('✅ Chat history sent:', messages.length, 'messages');
+    } catch (error) {
+      console.error('❌ Error fetching chat history:', error);
+      socket.emit('messageError', { error: 'Failed to fetch chat history' });
+    }
   });
 
   socket.on('disconnect', () => {

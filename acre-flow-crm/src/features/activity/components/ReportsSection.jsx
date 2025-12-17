@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Plus, X, Download, Filter, Paperclip, Image as ImageIcon, Send, ChevronDown, ChevronUp, Palette } from 'lucide-react';
+import { io } from 'socket.io-client';
 
 const ReportsSection = () => {
   const [reports, setReports] = useState([]);
@@ -10,6 +11,8 @@ const ReportsSection = () => {
   const [showComposerAdvanced, setShowComposerAdvanced] = useState(false);
   const [chatTheme, setChatTheme] = useState('light');
   const [isMobile, setIsMobile] = useState(false);
+  const [socket, setSocket] = useState(null);
+  const [socketConnected, setSocketConnected] = useState(false);
   const allDepartments = ['IT', 'Sales', 'Developer', 'HR', 'Marketing', 'Finance', 'Operations'];
   const visibleDepartments = loggedInDept ? [loggedInDept] : ['All', ...allDepartments];
   const fileInputRef = useRef(null);
@@ -25,6 +28,33 @@ const ReportsSection = () => {
   });
 
   useEffect(() => {
+    // Initialize Socket.IO connection
+    const newSocket = io('https://bcrm.100acress.com', {
+      transports: ['websocket', 'polling'],
+      forceNew: true
+    });
+
+    newSocket.on('connect', () => {
+      console.log('✅ Connected to chat server');
+      setSocketConnected(true);
+      setSocket(newSocket);
+    });
+
+    newSocket.on('disconnect', () => {
+      console.log('❌ Disconnected from chat server');
+      setSocketConnected(false);
+    });
+
+    newSocket.on('newMessage', (message) => {
+      console.log('📨 New message received:', message);
+      setReports(prev => [...prev, message]);
+    });
+
+    newSocket.on('messageError', (error) => {
+      console.error('❌ Socket error:', error);
+    });
+
+    // Get user session info
     const currentSessionId = localStorage.getItem('currentActivitySession');
     const activeSessions = JSON.parse(localStorage.getItem('activeActivitySessions') || '[]');
     
@@ -38,6 +68,8 @@ const ReportsSection = () => {
       if (department) {
         setLoggedInDept(department);
         setFilterDept(department);
+        // Join department room
+        newSocket.emit('joinChatRoom', department);
       }
       if (email) {
         setLoggedInEmail(email);
@@ -49,7 +81,10 @@ const ReportsSection = () => {
         setChatTheme(savedTheme);
       }
     }
-    fetchReports();
+
+    return () => {
+      newSocket.disconnect();
+    };
   }, []);
 
   useEffect(() => {
@@ -110,24 +145,48 @@ const ReportsSection = () => {
   };
 
   useEffect(() => {
-    fetchReports();
-  }, [filterDept]);
-
-  const fetchReports = async () => {
-    try {
-      setLoading(true);
-      const url = filterDept === 'All' 
-        ? 'https://bcrm.100acress.com/api/activity/reports'
-        : `https://bcrm.100acress.com/api/activity/reports/department/${filterDept}`;
-      
-      const response = await fetch(url);
-      const data = await response.json();
-      setReports(data.data || []);
-    } catch (error) {
-      console.error('Error fetching reports:', error);
-    } finally {
-      setLoading(false);
+    if (socket && socketConnected) {
+      fetchChatHistory();
     }
+  }, [filterDept, socket, socketConnected]);
+
+  const fetchChatHistory = () => {
+    if (!socket) {
+      console.log('❌ Socket not available for fetchChatHistory');
+      return;
+    }
+    
+    console.log('📡 Requesting chat history for department:', filterDept);
+    setLoading(true);
+    socket.emit('requestChatHistory', { department: filterDept });
+    
+    // Listen for chat history response
+    socket.once('chatHistory', (messages) => {
+      console.log('📨 Received chat history:', messages);
+      const messageData = messages || [];
+      
+      // If no messages, show demo message for testing
+      if (messageData.length === 0) {
+        const demoMessage = {
+          _id: 'demo-' + Date.now(),
+          content: 'Welcome to real-time chat! This is a demo message. Start typing to send real messages!',
+          sender: {
+            name: 'System',
+            email: 'system@chat.com',
+            department: 'All'
+          },
+          type: 'Custom',
+          timestamp: new Date(),
+          attachments: [],
+          images: []
+        };
+        setReports([demoMessage]);
+      } else {
+        setReports(messageData);
+      }
+      
+      setLoading(false);
+    });
   };
 
   const handleFileUpload = (e, type) => {
@@ -148,6 +207,11 @@ const ReportsSection = () => {
   };
 
   const submitReport = async () => {
+    if (!socket || !socketConnected) {
+      console.error('Socket not connected');
+      return;
+    }
+
     try {
       const currentSessionId = localStorage.getItem('currentActivitySession');
       const activeSessions = JSON.parse(localStorage.getItem('activeActivitySessions') || '[]');
@@ -169,35 +233,32 @@ const ReportsSection = () => {
       const finalTitle = (formData.title || '').trim() || trimmedContent.split('\n')[0].slice(0, 60) || 'Report';
       const finalDescription = (formData.description || '').trim();
 
-      const response = await fetch('https://bcrm.100acress.com/api/activity/reports', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: finalTitle,
-          description: finalDescription,
-          content: trimmedContent,
-          reportType: formData.reportType,
-          submitterName: userName,
-          attachments: [...formData.files.map(f => f.name), ...formData.images.map(f => f.name)],
-          department,
-          submittedBy: userName,
-          submittedByEmail: email
-        })
-      });
+      // Send message via Socket.IO
+      const messageData = {
+        content: trimmedContent,
+        sender: {
+          name: userName,
+          email: email,
+          department: department
+        },
+        type: formData.reportType,
+        attachments: formData.files.map(f => ({ name: f.name, url: URL.createObjectURL(f), type: 'file' })),
+        images: formData.images.map(f => ({ name: f.name, url: URL.createObjectURL(f) }))
+      };
 
-      if (response.ok) {
-        setFormData({ 
-          title: '', 
-          description: '', 
-          content: '', 
-          reportType: 'Custom',
-          submitterName: '',
-          files: [],
-          images: []
-        });
-        setShowComposerAdvanced(false);
-        fetchReports();
-      }
+      socket.emit('sendMessage', messageData);
+
+      // Clear form
+      setFormData({ 
+        title: '', 
+        description: '', 
+        content: '', 
+        reportType: 'Custom',
+        submitterName: '',
+        files: [],
+        images: []
+      });
+      setShowComposerAdvanced(false);
     } catch (error) {
       console.error('Error submitting report:', error);
     }
@@ -286,6 +347,9 @@ const ReportsSection = () => {
               <div className={`${currentTheme.headerBg} px-4 py-3 border-b border-gray-200 flex items-center justify-between`}>
                 <p className={`text-sm ${chatTheme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
                   {loggedInDept ? `Chat feed (logged in as ${loggedInDept})` : 'Chat feed'}
+                  <span className={`ml-2 inline-flex items-center gap-1 text-xs ${socketConnected ? 'text-green-600' : 'text-red-600'}`}>
+                    {socketConnected ? '● Connected' : '● Disconnected'}
+                  </span>
                 </p>
                 <button
                   type="button"
