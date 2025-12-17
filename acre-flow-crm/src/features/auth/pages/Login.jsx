@@ -242,7 +242,7 @@ const Login = () => {
             window.location.href = "/activity-dashboard";
             return;
           } else {
-            // Handle specific error responses
+            // Handle specific error responses for Activity login
             if (activityResponse.status === 401) {
               setError("Invalid department credentials. Please check your email and password.");
             } else if (activityResponse.status === 404) {
@@ -250,7 +250,7 @@ const Login = () => {
             } else {
               setError(activityData.message || "Activity login failed");
             }
-            return;
+            return; // Stop here - don't try regular login
           }
         }
       }
