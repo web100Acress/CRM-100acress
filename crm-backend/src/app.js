@@ -18,7 +18,6 @@ const allowedOrigins = [
   'http://localhost:3500',
   'https://crm.100acress.com',
   'https://bcrm.100acress.com'
-  
 ];
 
 const corsOptions = {
@@ -27,7 +26,10 @@ const corsOptions = {
     if (!origin) return callback(null, true);
     
     // Check if the origin is in the allowed list
-    if (allowedOrigins.indexOf(origin) === -1) {
+    if (
+      allowedOrigins.indexOf(origin) === -1 &&
+      !/^https:\/\/.*\.100acress\.com$/.test(origin)
+    ) {
       const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
       console.warn('CORS denied for origin:', origin);
       return callback(new Error(msg), false);
