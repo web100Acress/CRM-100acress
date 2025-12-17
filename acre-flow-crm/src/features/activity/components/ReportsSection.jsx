@@ -291,7 +291,7 @@ const ReportsSection = () => {
                 </button>
               </div>
 
-              <div className={`p-4 space-y-3 ${currentTheme.chatBg} overflow-y-auto flex-1`}>
+              <div className={`p-4 space-y-3 ${currentTheme.chatBg} overflow-y-auto flex-1 flex flex-col`}>
                 {[...reports]
                   .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
                   .map((report) => {
@@ -299,7 +299,7 @@ const ReportsSection = () => {
                     const senderName = report.submittedBy || report.department;
 
                     return (
-                      <div key={report._id} className={`flex ${isFromMe ? 'justify-start' : 'justify-end'}`}>
+                      <div key={report._id} className={`flex w-full ${isFromMe ? 'justify-start' : 'justify-end'}`}>
                         <div
                           className={
                             `max-w-[85%] rounded-2xl px-4 py-3 shadow-sm ` +
