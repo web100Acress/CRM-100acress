@@ -25,18 +25,29 @@ const ReportsSection = () => {
   });
 
   useEffect(() => {
-    const department = localStorage.getItem('activityDepartment');
-    const email = localStorage.getItem('activityDepartmentEmail');
-    const savedTheme = localStorage.getItem('activityReportsChatTheme');
-    if (department) {
-      setLoggedInDept(department);
-      setFilterDept(department);
-    }
-    if (email) {
-      setLoggedInEmail(email);
-    }
-    if (savedTheme) {
-      setChatTheme(savedTheme);
+    const currentSessionId = localStorage.getItem('currentActivitySession');
+    const activeSessions = JSON.parse(localStorage.getItem('activeActivitySessions') || '[]');
+    
+    if (currentSessionId && activeSessions.includes(currentSessionId)) {
+      const sessionKey = `activity_${currentSessionId}`;
+      const department = localStorage.getItem(sessionKey + '_department');
+      const email = localStorage.getItem(sessionKey + '_email');
+      const userName = localStorage.getItem(sessionKey + '_userName');
+      const savedTheme = localStorage.getItem('activityReportsChatTheme');
+      
+      if (department) {
+        setLoggedInDept(department);
+        setFilterDept(department);
+      }
+      if (email) {
+        setLoggedInEmail(email);
+      }
+      if (userName) {
+        setFormData(prev => ({ ...prev, submitterName: userName }));
+      }
+      if (savedTheme) {
+        setChatTheme(savedTheme);
+      }
     }
     fetchReports();
   }, []);
