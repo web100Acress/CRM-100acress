@@ -213,34 +213,50 @@ const Login = () => {
       return;
     }
 
-    // Try Activity Hub Department Login
+    // Try Activity Hub Department Login - check if email exists in Activity departments
     try {
-      const activityResponse = await fetch("https://bcrm.100acress.com/api/activity/departments/login", {
+      // First check if this email exists in any Activity department
+      const checkResponse = await fetch("https://bcrm.100acress.com/api/activity/departments/check-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(credentials),
+        body: JSON.stringify({ email: credentials.email }),
       });
 
-      const activityData = await activityResponse.json();
-      if (activityResponse.ok && activityData.success && activityData.data) {
-        // Activity Hub login successful
-        localStorage.setItem("activityDepartment", activityData.data.name);
-        localStorage.setItem("activityDepartmentEmail", activityData.data.email);
-        localStorage.setItem("activityDepartmentId", activityData.data.id);
-        localStorage.setItem("isActivityLoggedIn", "true");
-        window.location.href = "/activity-dashboard";
-        return;
-      } else if (activityResponse.status === 401) {
-        setError("Invalid Activity Hub credentials");
-        setLoading(false);
-        return;
-      } else if (activityResponse.status === 404) {
-        setError("Activity Hub department not found");
-        setLoading(false);
-        return;
+      if (checkResponse.ok) {
+        const checkData = await checkResponse.json();
+        if (checkData.success && checkData.exists) {
+          // Email exists in Activity departments, try login
+          const activityResponse = await fetch("https://bcrm.100acress.com/api/activity/departments/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(credentials),
+          });
+
+          const activityData = await activityResponse.json();
+          if (activityResponse.ok && activityData.success && activityData.data) {
+            // Activity Hub login successful
+            localStorage.setItem("activityDepartment", activityData.data.name);
+            localStorage.setItem("activityDepartmentEmail", activityData.data.email);
+            localStorage.setItem("activityDepartmentId", activityData.data.id);
+            localStorage.setItem("isActivityLoggedIn", "true");
+            window.location.href = "/activity-dashboard";
+            return;
+          } else {
+            // Handle specific error responses
+            if (activityResponse.status === 401) {
+              setError("Invalid department credentials. Please check your email and password.");
+            } else if (activityResponse.status === 404) {
+              setError("Department not found. Please contact your administrator.");
+            } else {
+              setError(activityData.message || "Activity login failed");
+            }
+            return;
+          }
+        }
       }
     } catch (activityError) {
-      console.log("Activity Hub login attempt failed, trying other methods...");
+      // If check fails, continue to normal login flow
+      console.log("Activity department check failed, continuing to normal login...");
     }
 
     // Backend login - Try CRM first, then 100acress
@@ -271,9 +287,25 @@ const Login = () => {
           localStorage.setItem("userDepartment", crmData.user.department);
         }
 
-        // If user is admin, note that 100acress API integration is not available
+        // If user is admin, try to get 100acress token as well for 100acress API access
         if (crmData.user.role === 'admin' || crmData.user.role === 'Admin') {
-          console.log("100acress API integration not available - user can still use CRM features");
+          try {
+            const acressLoginResponse = await fetch("https://api.100acress.com/api/auth/login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(credentials),
+              credentials: "include",
+            });
+
+            const acressLoginData = await acressLoginResponse.json();
+            if (acressLoginResponse.ok && acressLoginData.token) {
+              localStorage.setItem("myToken", acressLoginData.token);
+            }
+          } catch (acressError) {
+            // If 100acress login fails, continue with CRM login
+            // User can still use CRM features, just won't have 100acress API access
+            console.warn("Could not get 100acress token:", acressError);
+          }
         }
 
         // Redirect based on role
@@ -281,22 +313,68 @@ const Login = () => {
         return;
       }
 
-      // If CRM login fails with 401, show specific error
-      if (crmResponse.status === 401) {
-        setError("Invalid email or password");
-        setLoading(false);
-        return;
-      } else if (crmResponse.status === 404) {
-        setError("User not found");
-        setLoading(false);
-        return;
+      // If CRM login fails, try 100acress login
+      try {
+        const acressResponse = await fetch("https://api.100acress.com/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(credentials),
+          credentials: "include",
+        });
+
+        const acressData = await acressResponse.json();
+        
+        if (acressResponse.ok && acressData.token) {
+          // 100acress login successful, now verify with CRM backend
+          const verifyResponse = await fetch("https://bcrm.100acress.com/api/auth/verify-100acress-token", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: acressData.token }),
+            credentials: "include",
+          });
+
+          const verifyData = await verifyResponse.json();
+          
+          if (verifyResponse.ok && verifyData.success && verifyData.token) {
+            // Store 100acress token for 100acress API calls
+            localStorage.setItem("myToken", acressData.token);
+            // Store CRM token for CRM API calls
+            localStorage.setItem("token", verifyData.token);
+            localStorage.setItem("userRole", verifyData.user.role);
+            localStorage.setItem("userEmail", verifyData.user.email);
+            localStorage.setItem("userName", verifyData.user.name);
+            localStorage.setItem("isLoggedIn", "true");
+            localStorage.setItem("userId", verifyData.user._id);
+            localStorage.setItem("sourceSystem", "100acress");
+            localStorage.setItem("originalRole", verifyData.user.originalRole || verifyData.user.role);
+            
+            // Clear other login states
+            localStorage.removeItem("isDeveloperLoggedIn");
+            localStorage.removeItem("isHrFinanceLoggedIn");
+            localStorage.removeItem("isAdminLoggedIn");
+            localStorage.removeItem("isSalesHeadLoggedIn");
+            localStorage.removeItem("isHRLoggedIn");
+            localStorage.removeItem("isBlogLoggedIn");
+
+            // Redirect based on mapped role
+            redirectBasedOnRole(verifyData.user.role);
+            return;
+          } else {
+            setError(verifyData.message || "Failed to verify 100acress account with CRM");
+          }
+        } else {
+          setError(acressData.message || "Invalid email or password");
+        }
+      } catch (acressErr) {
+        // If 100acress login also fails, show error
+        setError(crmData.message || "Invalid email or password");
       }
     } catch (err) {
       console.error("Login error:", err);
       setError("Login failed. Please try again.");
     }
 
-    setLoading(false);
+    setIsLoading(false);
   };
 
   const handleForgotPassword = async () => {

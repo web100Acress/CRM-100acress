@@ -104,7 +104,9 @@ exports.createActivityDepartment = async (req, res) => {
 // Get all Activity Departments
 exports.getAllActivityDepartments = async (req, res) => {
   try {
-    const departments = await ActivityDepartment.find().select('-password');
+    const departments = await ActivityDepartment.find()
+      .select('-credentials.password')
+      .sort({ createdAt: -1 });
     res.status(200).json({
       success: true,
       data: departments
@@ -453,31 +455,68 @@ exports.likeThought = async (req, res) => {
   }
 };
 
-// Activity Department Login - Search across all departments for matching credentials
-exports.activityDepartmentLogin = async (req, res) => {
+// Check if email exists in Activity departments
+exports.checkEmailExists = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email } = req.body;
+    
+    console.log('Checking if email exists in Activity departments:', email);
 
     // Find department that has this email in credentials
     const department = await ActivityDepartment.findOne({
       'credentials.email': email
     });
 
+    console.log('Email exists check result:', department ? 'Found' : 'Not found');
+
+    res.status(200).json({
+      success: true,
+      exists: !!department
+    });
+  } catch (error) {
+    console.error('Error checking email existence:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Activity Department Login - Search across all departments for matching credentials
+exports.activityDepartmentLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    console.log('Login attempt for email:', email);
+
+    // Find department that has this email in credentials
+    const department = await ActivityDepartment.findOne({
+      'credentials.email': email
+    });
+
+    console.log('Found department:', department ? department.name : 'None');
+
     if (!department) {
+      console.log('No department found for email:', email);
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
     // Find the specific credential
     const credential = department.credentials.find(cred => cred.email === email);
     if (!credential) {
+      console.log('No credential found for email:', email);
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
+    console.log('Found credential for user:', credential.userName);
+
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, credential.password);
+    console.log('Password validation result:', isPasswordValid);
+
     if (!isPasswordValid) {
+      console.log('Invalid password for email:', email);
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
+
+    console.log('Login successful for:', email, 'Department:', department.name);
 
     res.status(200).json({
       success: true,
