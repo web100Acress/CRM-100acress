@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, X, Download, Filter, Paperclip, Image as ImageIcon, Send, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, X, Download, Filter, Paperclip, Image as ImageIcon, Send, ChevronDown, ChevronUp, Palette } from 'lucide-react';
 
 const ReportsSection = () => {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filterDept, setFilterDept] = useState('All');
   const [loggedInDept, setLoggedInDept] = useState('');
+  const [loggedInEmail, setLoggedInEmail] = useState('');
   const [showComposerAdvanced, setShowComposerAdvanced] = useState(false);
+  const [chatTheme, setChatTheme] = useState('light');
   const allDepartments = ['IT', 'Sales', 'Developer', 'HR', 'Marketing', 'Finance', 'Operations'];
   const visibleDepartments = loggedInDept ? [loggedInDept] : ['All', ...allDepartments];
   const fileInputRef = useRef(null);
@@ -23,12 +25,61 @@ const ReportsSection = () => {
 
   useEffect(() => {
     const department = localStorage.getItem('activityDepartment');
+    const email = localStorage.getItem('activityDepartmentEmail');
+    const savedTheme = localStorage.getItem('activityReportsChatTheme');
     if (department) {
       setLoggedInDept(department);
       setFilterDept(department);
     }
+    if (email) {
+      setLoggedInEmail(email);
+    }
+    if (savedTheme) {
+      setChatTheme(savedTheme);
+    }
     fetchReports();
   }, []);
+
+  const cycleChatTheme = () => {
+    const themes = ['light', 'soft', 'mint', 'dark'];
+    const currentIndex = themes.indexOf(chatTheme);
+    const nextTheme = themes[(currentIndex + 1) % themes.length];
+    setChatTheme(nextTheme);
+    localStorage.setItem('activityReportsChatTheme', nextTheme);
+  };
+
+  const themeClasses = {
+    light: {
+      chatBg: 'bg-gray-50',
+      mineBubble: 'bg-green-100 text-gray-900',
+      otherBubble: 'bg-white border border-gray-200 text-gray-900',
+      headerBg: 'bg-gray-50',
+      composerBg: 'bg-white'
+    },
+    soft: {
+      chatBg: 'bg-slate-100',
+      mineBubble: 'bg-indigo-100 text-gray-900',
+      otherBubble: 'bg-white border border-gray-200 text-gray-900',
+      headerBg: 'bg-slate-50',
+      composerBg: 'bg-white'
+    },
+    mint: {
+      chatBg: 'bg-emerald-50',
+      mineBubble: 'bg-emerald-100 text-gray-900',
+      otherBubble: 'bg-white border border-emerald-100 text-gray-900',
+      headerBg: 'bg-emerald-50',
+      composerBg: 'bg-white'
+    },
+    dark: {
+      chatBg: 'bg-gray-900',
+      mineBubble: 'bg-green-700 text-white',
+      otherBubble: 'bg-gray-800 border border-gray-700 text-white',
+      headerBg: 'bg-gray-900',
+      composerBg: 'bg-gray-900'
+    }
+  };
+
+  const currentTheme = themeClasses[chatTheme] || themeClasses.light;
 
   const setDeptFilter = (dept) => {
     if (loggedInDept) {
@@ -201,55 +252,73 @@ const ReportsSection = () => {
 
           <div className="col-span-12 md:col-span-8 lg:col-span-9">
             <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden flex flex-col h-[70vh]">
-              <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
-                <p className="text-sm text-gray-700">
+              <div className={`${currentTheme.headerBg} px-4 py-3 border-b border-gray-200 flex items-center justify-between`}>
+                <p className={`text-sm ${chatTheme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
                   {loggedInDept ? `Chat feed (logged in as ${loggedInDept})` : 'Chat feed'}
                 </p>
+                <button
+                  type="button"
+                  onClick={cycleChatTheme}
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm border transition-colors ${
+                    chatTheme === 'dark'
+                      ? 'border-gray-700 text-gray-200 hover:bg-gray-800'
+                      : 'border-gray-200 text-gray-700 hover:bg-white'
+                  }`}
+                  title="Change chat background"
+                >
+                  <Palette size={16} />
+                  <span className="capitalize">{chatTheme}</span>
+                </button>
               </div>
 
-              <div className="p-4 space-y-3 bg-gray-50 overflow-y-auto flex-1">
+              <div className={`p-4 space-y-3 ${currentTheme.chatBg} overflow-y-auto flex-1`}>
                 {[...reports]
                   .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
                   .map((report) => {
-                    const isMine = Boolean(loggedInDept) && report.department === loggedInDept;
-                    const senderLabel = isMine ? 'You' : (report.submittedBy || report.department);
+                    const isFromMe = Boolean(loggedInEmail) && Boolean(report.submittedByEmail) && report.submittedByEmail === loggedInEmail;
+                    const senderName = report.submittedBy || report.department;
 
                     return (
-                      <div key={report._id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+                      <div key={report._id} className={`flex ${isFromMe ? 'justify-start' : 'justify-end'}`}>
                         <div
                           className={
                             `max-w-[85%] rounded-2xl px-4 py-3 shadow-sm ` +
-                            (isMine ? 'bg-green-100' : 'bg-white border border-gray-200')
+                            (isFromMe ? currentTheme.mineBubble : currentTheme.otherBubble)
                           }
                         >
                           <div className="flex items-start justify-between gap-3 mb-1">
                             <div className="min-w-0">
-                              <p className="text-xs font-semibold text-gray-700 truncate">
-                                {senderLabel} • {report.department}
+                              <p className={`text-xs font-semibold truncate ${chatTheme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
+                                {senderName} • {report.department}
+                                {isFromMe ? (
+                                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full bg-green-200 text-green-900 text-[10px] font-semibold">
+                                    You
+                                  </span>
+                                ) : null}
                               </p>
                             </div>
-                            <span className="shrink-0 px-2 py-0.5 bg-gray-100 text-gray-700 text-[10px] font-semibold rounded-full">
+                            <span className={`shrink-0 px-2 py-0.5 text-[10px] font-semibold rounded-full ${chatTheme === 'dark' ? 'bg-gray-700 text-gray-100' : 'bg-gray-100 text-gray-700'}`}>
                               {report.reportType}
                             </span>
                           </div>
 
-                          <p className="text-sm font-semibold text-gray-900 break-words">{report.title}</p>
+                          <p className={`text-sm font-semibold break-words ${chatTheme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{report.title}</p>
 
                           {report.description ? (
-                            <p className="text-sm text-gray-700 mt-1 break-words">{report.description}</p>
+                            <p className={`text-sm mt-1 break-words ${chatTheme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>{report.description}</p>
                           ) : null}
 
                           {report.content ? (
-                            <p className="text-sm text-gray-800 mt-2 whitespace-pre-wrap break-words">{report.content}</p>
+                            <p className={`text-sm mt-2 whitespace-pre-wrap break-words ${chatTheme === 'dark' ? 'text-gray-100' : 'text-gray-800'}`}>{report.content}</p>
                           ) : null}
 
                           {Array.isArray(report.attachments) && report.attachments.length > 0 ? (
                             <div className="mt-3 space-y-1">
-                              <p className="text-xs font-semibold text-gray-700">Attachments</p>
+                              <p className={`text-xs font-semibold ${chatTheme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>Attachments</p>
                               <div className="space-y-1">
                                 {report.attachments.map((name, idx) => (
-                                  <div key={`${report._id}-att-${idx}`} className="flex items-center gap-2 text-xs text-gray-700">
-                                    <Download size={14} className="text-gray-500" />
+                                  <div key={`${report._id}-att-${idx}`} className={`flex items-center gap-2 text-xs ${chatTheme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
+                                    <Download size={14} className={chatTheme === 'dark' ? 'text-gray-300' : 'text-gray-500'} />
                                     <span className="break-all">{name}</span>
                                   </div>
                                 ))}
@@ -257,12 +326,12 @@ const ReportsSection = () => {
                             </div>
                           ) : null}
 
-                          <div className="mt-2 flex items-center justify-end gap-2 text-[11px] text-gray-500">
+                          <div className={`mt-2 flex items-center justify-end gap-2 text-[11px] ${chatTheme === 'dark' ? 'text-gray-300' : 'text-gray-500'}`}>
                             <span>
                               {new Date(report.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                             <span>•</span>
-                            <span className="px-2 py-0.5 rounded bg-green-100 text-green-800">
+                            <span className={`px-2 py-0.5 rounded ${chatTheme === 'dark' ? 'bg-green-800 text-green-100' : 'bg-green-100 text-green-800'}`}>
                               {report.status}
                             </span>
                           </div>
@@ -272,26 +341,26 @@ const ReportsSection = () => {
                   })}
               </div>
 
-              <div className="border-t border-gray-200 bg-white">
+              <div className={`border-t border-gray-200 ${currentTheme.composerBg}`}>
                 {showComposerAdvanced && (
-                  <div className="p-3 bg-gray-50 border-b border-gray-200">
+                  <div className={`p-3 border-b border-gray-200 ${chatTheme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Your Name</label>
+                        <label className={`block text-xs font-medium mb-1 ${chatTheme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>Your Name</label>
                         <input
                           type="text"
                           value={formData.submitterName}
                           onChange={(e) => setFormData({ ...formData, submitterName: e.target.value })}
                           placeholder="Enter your name"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${chatTheme === 'dark' ? 'bg-gray-800 border-gray-700 text-white' : 'border-gray-300'}`}
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Report Type</label>
+                        <label className={`block text-xs font-medium mb-1 ${chatTheme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>Report Type</label>
                         <select
                           value={formData.reportType}
                           onChange={(e) => setFormData({ ...formData, reportType: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${chatTheme === 'dark' ? 'bg-gray-800 border-gray-700 text-white' : 'border-gray-300'}`}
                         >
                           <option>Daily</option>
                           <option>Weekly</option>
@@ -301,23 +370,23 @@ const ReportsSection = () => {
                         </select>
                       </div>
                       <div className="md:col-span-2">
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Title (optional)</label>
+                        <label className={`block text-xs font-medium mb-1 ${chatTheme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>Title (optional)</label>
                         <input
                           type="text"
                           value={formData.title}
                           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                           placeholder="Auto-generated if empty"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${chatTheme === 'dark' ? 'bg-gray-800 border-gray-700 text-white' : 'border-gray-300'}`}
                         />
                       </div>
                       <div className="md:col-span-2">
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Description (optional)</label>
+                        <label className={`block text-xs font-medium mb-1 ${chatTheme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>Description (optional)</label>
                         <input
                           type="text"
                           value={formData.description}
                           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                           placeholder="Short summary"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${chatTheme === 'dark' ? 'bg-gray-800 border-gray-700 text-white' : 'border-gray-300'}`}
                         />
                       </div>
                     </div>
@@ -390,9 +459,9 @@ const ReportsSection = () => {
                       onKeyDown={handleComposerKeyDown}
                       rows={1}
                       placeholder="Type a message"
-                      className="w-full resize-none px-4 py-2 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      className={`w-full resize-none px-4 py-2 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${chatTheme === 'dark' ? 'bg-gray-800 border-gray-700 text-white placeholder:text-gray-400' : 'border-gray-300'}`}
                     />
-                    <p className="text-[11px] text-gray-500 mt-1">Press Enter to send • Shift+Enter for new line</p>
+                    <p className={`text-[11px] mt-1 ${chatTheme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Press Enter to send • Shift+Enter for new line</p>
                   </div>
 
                   <button
