@@ -12,6 +12,7 @@ const ActivityDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [userInfo, setUserInfo] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(null);
 
   useEffect(() => {
     const currentSessionId = localStorage.getItem('currentActivitySession');
@@ -22,14 +23,24 @@ const ActivityDashboard = () => {
       const departmentName = localStorage.getItem(sessionKey + '_department');
       const departmentEmail = localStorage.getItem(sessionKey + '_email');
       const userName = localStorage.getItem(sessionKey + '_userName');
+      const userAvatarUrl = localStorage.getItem(sessionKey + '_avatarUrl');
       
       if (departmentName && departmentEmail) {
         setUserInfo({ 
           name: departmentName, 
           email: departmentEmail,
           userName: userName,
-          sessionId: currentSessionId
+          sessionId: currentSessionId,
+          avatarUrl: userAvatarUrl
         });
+        
+        // Set avatar URL for display
+        if (userAvatarUrl) {
+          setAvatarUrl(userAvatarUrl);
+        } else {
+          // Demo avatar for testing - remove this in production
+          setAvatarUrl('https://static.vecteezy.com/system/resources/thumbnails/024/183/502/small/male-avatar-portrait-of-a-young-man-with-a-beard-illustration-of-male-character-in-modern-color-style-vector.jpg');
+        }
       }
     }
   }, []);
@@ -121,12 +132,25 @@ const ActivityDashboard = () => {
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
                 >
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                    <span className="text-white font-semibold text-sm">{getUserInitials(userInfo?.name)}</span>
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center overflow-hidden">
+                    {avatarUrl ? (
+                      <img 
+                        src={avatarUrl} 
+                        alt="User Avatar" 
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <span className="text-white font-semibold text-sm" style={{display: avatarUrl ? 'none' : 'flex'}}>
+                      {getUserInitials(userInfo?.userName || userInfo?.name)}
+                    </span>
                   </div>
                   <div className="text-right hidden sm:block">
-                    <p className="text-sm font-medium text-gray-900">{userInfo?.name}</p>
-                    <p className="text-xs text-gray-600">{userInfo?.email}</p>
+                    <p className="text-sm font-medium text-gray-900">{userInfo?.userName || userInfo?.name}</p>
+                    {/* <p className="text-xs text-gray-600">{userInfo?.email}</p> */}
                   </div>
                   <ChevronDown 
                     size={16} 
