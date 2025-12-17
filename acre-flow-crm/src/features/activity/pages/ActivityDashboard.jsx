@@ -63,7 +63,7 @@ const ActivityDashboard = () => {
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="bg-white shadow-sm border-b border-gray-200">
-          <div className="flex items-center justify-between px-6 py-4">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -72,8 +72,13 @@ const ActivityDashboard = () => {
                 {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Activity Dashboard</h1>
-                <p className="text-sm text-gray-600">Collaborate and share across departments</p>
+                <h1 className="font-bold text-gray-900 text-lg sm:text-2xl leading-tight">
+                  <span className="sm:hidden">Activity</span>
+                  <span className="hidden sm:inline">Activity Dashboard</span>
+                </h1>
+                <p className="hidden sm:block text-sm text-gray-600 truncate max-w-[52vw]">
+                  Collaborate and share across departments
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-4">

@@ -9,6 +9,7 @@ const ReportsSection = () => {
   const [loggedInEmail, setLoggedInEmail] = useState('');
   const [showComposerAdvanced, setShowComposerAdvanced] = useState(false);
   const [chatTheme, setChatTheme] = useState('light');
+  const [isMobile, setIsMobile] = useState(false);
   const allDepartments = ['IT', 'Sales', 'Developer', 'HR', 'Marketing', 'Finance', 'Operations'];
   const visibleDepartments = loggedInDept ? [loggedInDept] : ['All', ...allDepartments];
   const fileInputRef = useRef(null);
@@ -38,6 +39,14 @@ const ReportsSection = () => {
       setChatTheme(savedTheme);
     }
     fetchReports();
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 639px)');
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
   }, []);
 
   const cycleChatTheme = () => {
@@ -180,19 +189,19 @@ const ReportsSection = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">Reports</h2>
-        <button
+    <div className="space-y-2">
+      {/* <div className="flex items-center justify-between"> */}
+        {/* <h2 className="text-2xl font-bold text-gray-900">Reports</h2> */}
+        {/* <button
           onClick={() => setShowComposerAdvanced((v) => !v)}
           className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
         >
           <Plus size={20} />
           {showComposerAdvanced ? 'Hide Options' : 'Report Options'}
-        </button>
-      </div>
+        </button> */}
+      {/* </div> */}
 
-      <div className="flex items-center gap-4">
+      {/* <div className="flex items-center gap-4">
         <Filter size={20} className="text-gray-600" />
         <select
           value={filterDept}
@@ -204,7 +213,7 @@ const ReportsSection = () => {
             <option key={d} value={d}>{d}</option>
           ))}
         </select>
-      </div>
+      </div> */}
 
       {loading ? (
         <div className="text-center py-12">
@@ -418,7 +427,7 @@ const ReportsSection = () => {
                   </div>
                 )}
 
-                <div className="p-3 flex items-end gap-2">
+                <div className="p-2 sm:p-3 flex items-end gap-1.5 sm:gap-2">
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -438,7 +447,7 @@ const ReportsSection = () => {
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="p-2 rounded-full hover:bg-gray-100 text-gray-700"
+                    className={`shrink-0 p-1.5 sm:p-2 rounded-full transition-colors ${chatTheme === 'dark' ? 'hover:bg-gray-800 text-gray-200' : 'hover:bg-gray-100 text-gray-700'}`}
                     title="Attach files"
                   >
                     <Paperclip size={20} />
@@ -446,29 +455,29 @@ const ReportsSection = () => {
                   <button
                     type="button"
                     onClick={() => imageInputRef.current?.click()}
-                    className="p-2 rounded-full hover:bg-gray-100 text-gray-700"
+                    className={`shrink-0 p-1.5 sm:p-2 rounded-full transition-colors ${chatTheme === 'dark' ? 'hover:bg-gray-800 text-gray-200' : 'hover:bg-gray-100 text-gray-700'}`}
                     title="Attach images"
                   >
                     <ImageIcon size={20} />
                   </button>
 
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <textarea
                       value={formData.content}
                       onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                       onKeyDown={handleComposerKeyDown}
                       rows={1}
-                      placeholder="Type a message"
-                      className={`w-full resize-none px-4 py-2 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${chatTheme === 'dark' ? 'bg-gray-800 border-gray-700 text-white placeholder:text-gray-400' : 'border-gray-300'}`}
+                      placeholder={isMobile ? 'Message…' : 'Type a message'}
+                      className={`w-full min-w-0 resize-none px-3 sm:px-4 py-2 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${chatTheme === 'dark' ? 'bg-gray-800 border-gray-700 text-white placeholder:text-gray-400' : 'border-gray-300'}`}
                     />
-                    <p className={`text-[11px] mt-1 ${chatTheme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Press Enter to send • Shift+Enter for new line</p>
+                    {/* <p className={`text-[11px] mt-1 ${chatTheme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Press Enter to send • Shift+Enter for new line</p> */}
                   </div>
 
                   <button
                     type="button"
                     onClick={submitReport}
                     disabled={!String(formData.content || '').trim()}
-                    className="p-2 rounded-full bg-blue-600 text-white disabled:bg-gray-300 disabled:text-gray-600"
+                    className="shrink-0 p-1.5 sm:p-2 rounded-full bg-blue-600 text-white disabled:bg-gray-300 disabled:text-gray-600"
                     title="Send"
                   >
                     <Send size={20} />
@@ -477,7 +486,7 @@ const ReportsSection = () => {
                   <button
                     type="button"
                     onClick={() => setShowComposerAdvanced((v) => !v)}
-                    className="p-2 rounded-full hover:bg-gray-100 text-gray-700"
+                    className={`shrink-0 p-1.5 sm:p-2 rounded-full transition-colors ${chatTheme === 'dark' ? 'hover:bg-gray-800 text-gray-200' : 'hover:bg-gray-100 text-gray-700'}`}
                     title="More options"
                   >
                     {showComposerAdvanced ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
