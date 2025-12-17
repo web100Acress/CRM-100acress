@@ -149,8 +149,19 @@ const ReportsSection = () => {
 
   const submitReport = async () => {
     try {
-      const department = localStorage.getItem('activityDepartment');
-      const email = localStorage.getItem('activityDepartmentEmail');
+      const currentSessionId = localStorage.getItem('currentActivitySession');
+      const activeSessions = JSON.parse(localStorage.getItem('activeActivitySessions') || '[]');
+      
+      let userName = '';
+      let department = '';
+      let email = '';
+      
+      if (currentSessionId && activeSessions.includes(currentSessionId)) {
+        const sessionKey = `activity_${currentSessionId}`;
+        userName = localStorage.getItem(sessionKey + '_userName') || '';
+        department = localStorage.getItem(sessionKey + '_department') || '';
+        email = localStorage.getItem(sessionKey + '_email') || '';
+      }
 
       const trimmedContent = (formData.content || '').trim();
       if (!trimmedContent) return;
@@ -166,10 +177,10 @@ const ReportsSection = () => {
           description: finalDescription,
           content: trimmedContent,
           reportType: formData.reportType,
-          submitterName: formData.submitterName,
+          submitterName: userName,
           attachments: [...formData.files.map(f => f.name), ...formData.images.map(f => f.name)],
           department,
-          submittedBy: formData.submitterName || department,
+          submittedBy: userName,
           submittedByEmail: email
         })
       });
