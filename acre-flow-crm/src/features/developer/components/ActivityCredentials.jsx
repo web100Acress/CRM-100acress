@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Eye, EyeOff, Copy, Check, Trash2, Mail } from 'lucide-react';
+import { Plus, X, Eye, EyeOff, Copy, Check, Trash2, Mail, Edit } from 'lucide-react';
 
 const ActivityCredentials = () => {
   const [departments, setDepartments] = useState([]);
@@ -7,6 +7,13 @@ const ActivityCredentials = () => {
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(null);
   const [showPassword, setShowPassword] = useState({});
+  const [editingCred, setEditingCred] = useState(null);
+  const [editModal, setEditModal] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    email: '',
+    password: '',
+    userName: ''
+  });
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -77,6 +84,39 @@ const ActivityCredentials = () => {
     setFormData({ ...formData, password });
   };
 
+  const handleUpdateCredential = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`https://bcrm.100acress.com/api/activity/departments/${editingCred.departmentId}/credentials/${editingCred._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          email: editFormData.email,
+          password: editFormData.password,
+          userName: editFormData.userName
+        })
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setEditModal(false);
+        setEditingCred(null);
+        fetchDepartments();
+        alert('Credential updated successfully! Email sent to user.');
+      } else {
+        alert(data.message || 'Error updating credential');
+      }
+    } catch (error) {
+      console.error('Error updating credential:', error);
+      alert('Error updating credential');
+    }
+  };
+
   const departmentOptions = ['IT', 'Sales', 'Developer', 'HR', 'Marketing', 'Finance', 'Operations'];
   const colorOptions = [
     '#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4'
@@ -134,56 +174,86 @@ const ActivityCredentials = () => {
               </div>
 
               <div className="space-y-3 mb-4">
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <p className="text-xs text-gray-600 mb-1">Email</p>
-                    <p className="text-sm font-mono text-gray-900">{dept.email}</p>
+                <div className="text-sm font-semibold text-gray-700 mb-2">Department Credentials</div>
+                {dept.credentials && dept.credentials.length > 0 ? (
+                  dept.credentials.map((cred) => (
+                    <div key={cred._id} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <p className="text-xs text-gray-600">Email</p>
+                          <p className="text-sm font-mono text-gray-900">{cred.email}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => copyToClipboard(cred.email, `email-${cred._id}`)}
+                            className="p-2 hover:bg-gray-200 rounded transition-colors"
+                          >
+                            {copied === `email-${cred._id}` ? (
+                              <Check size={18} className="text-green-600" />
+                            ) : (
+                              <Copy size={18} className="text-gray-600" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => {
+                              const credWithDept = {...cred, departmentId: dept._id};
+                              setEditingCred(credWithDept);
+                              setEditFormData({
+                                email: cred.email,
+                                password: cred.password,
+                                userName: cred.userName
+                              });
+                              setEditModal(true);
+                            }}
+                            className="p-2 hover:bg-gray-200 rounded transition-colors"
+                          >
+                            <Edit size={18} className="text-gray-600" />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-gray-600">Password</p>
+                          <p className="text-sm font-mono text-gray-900">
+                            {showPassword[cred._id] ? cred.password : '•••••••'}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setShowPassword({
+                              ...showPassword,
+                              [cred._id]: !showPassword[cred._id]
+                            })}
+                            className="p-2 hover:bg-gray-200 rounded transition-colors"
+                          >
+                            {showPassword[cred._id] ? (
+                              <EyeOff size={18} className="text-gray-600" />
+                            ) : (
+                              <Eye size={18} className="text-gray-600" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => copyToClipboard(cred.password, `pass-${cred._id}`)}
+                            className="p-2 hover:bg-gray-200 rounded transition-colors"
+                          >
+                            {copied === `pass-${cred._id}` ? (
+                              <Check size={18} className="text-green-600" />
+                            ) : (
+                              <Copy size={18} className="text-gray-600" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="mt-2 text-xs text-gray-500">
+                        Username: {cred.userName || cred.email.split('@')[0]}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-4 text-gray-500 text-sm">
+                    No credentials created for this department
                   </div>
-                  <button
-                    onClick={() => copyToClipboard(dept.email, `email-${dept._id}`)}
-                    className="p-2 hover:bg-gray-200 rounded transition-colors"
-                  >
-                    {copied === `email-${dept._id}` ? (
-                      <Check size={18} className="text-green-600" />
-                    ) : (
-                      <Copy size={18} className="text-gray-600" />
-                    )}
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <p className="text-xs text-gray-600 mb-1">Password</p>
-                    <p className="text-sm font-mono text-gray-900">
-                      {showPassword[dept._id] ? dept.password : '••••••••'}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setShowPassword({
-                        ...showPassword,
-                        [dept._id]: !showPassword[dept._id]
-                      })}
-                      className="p-2 hover:bg-gray-200 rounded transition-colors"
-                    >
-                      {showPassword[dept._id] ? (
-                        <EyeOff size={18} className="text-gray-600" />
-                      ) : (
-                        <Eye size={18} className="text-gray-600" />
-                      )}
-                    </button>
-                    <button
-                      onClick={() => copyToClipboard(dept.password, `pass-${dept._id}`)}
-                      className="p-2 hover:bg-gray-200 rounded transition-colors"
-                    >
-                      {copied === `pass-${dept._id}` ? (
-                        <Check size={18} className="text-green-600" />
-                      ) : (
-                        <Copy size={18} className="text-gray-600" />
-                      )}
-                    </button>
-                  </div>
-                </div>
+                )}
               </div>
 
               <div className="flex items-center gap-2 pt-4 border-t">
@@ -219,7 +289,7 @@ const ActivityCredentials = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <div className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Department Name</label>
                 <select
@@ -274,7 +344,7 @@ const ActivityCredentials = () => {
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Department description"
-                  rows="3"
+                  rows={3}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -298,7 +368,7 @@ const ActivityCredentials = () => {
 
               <div className="flex gap-4 pt-4">
                 <button
-                  type="submit"
+                  onClick={handleSubmit}
                   className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
                 >
                   Create Department
@@ -311,7 +381,74 @@ const ActivityCredentials = () => {
                   Cancel
                 </button>
               </div>
-            </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-900">Edit Credential</h3>
+              <button
+                onClick={() => setEditModal(false)}
+                className="p-2 hover:bg-gray-200 rounded transition-colors"
+              >
+                <X size={20} className="text-gray-600" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={editFormData.email}
+                  onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                <input
+                  type="text"
+                  value={editFormData.userName}
+                  onChange={(e) => setEditFormData({ ...editFormData, userName: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <input
+                  type="password"
+                  value={editFormData.password}
+                  onChange={(e) => setEditFormData({ ...editFormData, password: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              <div className="flex gap-4">
+                <button
+                  onClick={handleUpdateCredential}
+                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  Update Credential
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditModal(false)}
+                  className="flex-1 bg-gray-200 text-gray-900 py-2 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -3,6 +3,9 @@ const router = express.Router();
 const activityController = require('../controllers/activityController');
 const authMiddleware = require('../middlewares/auth');
 
+// Update Activity Department Credential
+router.put('/departments/:departmentId/credentials/:credentialId', authMiddleware, activityController.updateActivityCredential);
+
 // Activity Department Routes
 router.post('/departments', authMiddleware, activityController.createActivityDepartment);
 router.get('/departments', activityController.getAllActivityDepartments);
