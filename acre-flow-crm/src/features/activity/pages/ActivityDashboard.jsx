@@ -13,6 +13,8 @@ const ActivityDashboard = () => {
   const [userInfo, setUserInfo] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(null);
+  const [showSessionSwitcher, setShowSessionSwitcher] = useState(false);
+  const [activeSessions, setActiveSessions] = useState([]);
 
   useEffect(() => {
     const currentSessionId = localStorage.getItem('currentActivitySession');
@@ -41,9 +43,17 @@ const ActivityDashboard = () => {
           // Demo avatar for testing - remove this in production
           setAvatarUrl('https://static.vecteezy.com/system/resources/thumbnails/024/183/502/small/male-avatar-portrait-of-a-young-man-with-a-beard-illustration-of-male-character-in-modern-color-style-vector.jpg');
         }
+        
+        // Load all active sessions
+        setActiveSessions(activeSessions);
       }
     }
   }, []);
+
+  const switchSession = (sessionId) => {
+    localStorage.setItem('currentActivitySession', sessionId);
+    window.location.reload(); // Reload to update the UI with new session
+  };
 
   const handleLogout = () => {
     const currentSessionId = localStorage.getItem('currentActivitySession');
@@ -159,7 +169,52 @@ const ActivityDashboard = () => {
                 </button>
 
                 {dropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                    {/* Session Switcher */}
+                    {activeSessions.length > 1 && (
+                      <>
+                        <div className="px-4 py-2 border-b border-gray-200">
+                          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Active Sessions</p>
+                        </div>
+                        {activeSessions.map(sessionId => {
+                          const sessionKey = `activity_${sessionId}`;
+                          const deptName = localStorage.getItem(sessionKey + '_department');
+                          const userName = localStorage.getItem(sessionKey + '_userName');
+                          const isCurrent = sessionId === localStorage.getItem('currentActivitySession');
+                          
+                          return (
+                            <button
+                              key={sessionId}
+                              onClick={() => switchSession(sessionId)}
+                              className={`w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors ${
+                                isCurrent ? 'bg-blue-50 border-l-2 border-blue-500' : ''
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                                  <span className="text-white text-xs font-semibold">
+                                    {userName ? userName.charAt(0).toUpperCase() : deptName?.charAt(0).toUpperCase()}
+                                  </span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-gray-900 truncate">
+                                    {userName || deptName}
+                                  </p>
+                                  <p className="text-xs text-gray-500 truncate">
+                                    {deptName}
+                                  </p>
+                                </div>
+                                {isCurrent && (
+                                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })}
+                        <div className="border-t border-gray-200 my-2"></div>
+                      </>
+                    )}
+                    
                     <button className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors">
                       <User size={16} className="text-gray-600" />
                       <span className="text-sm text-gray-700">Profile</span>
