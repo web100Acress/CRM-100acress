@@ -22,9 +22,25 @@ const ActivityLogin = () => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        localStorage.setItem('activityDepartment', data.data.name);
-        localStorage.setItem('activityDepartmentEmail', data.data.email);
-        localStorage.setItem('activityDepartmentId', data.data.id);
+        // Generate unique session ID
+        const sessionId = Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9);
+        const sessionKey = `activity_${sessionId}`;
+        
+        // Store session data
+        localStorage.setItem(sessionKey + '_department', data.data.name);
+        localStorage.setItem(sessionKey + '_email', data.data.email);
+        localStorage.setItem(sessionKey + '_departmentId', data.data.id);
+        localStorage.setItem(sessionKey + '_userName', data.data.userName || data.data.name);
+        
+        // Update active sessions
+        const activeSessions = JSON.parse(localStorage.getItem('activeActivitySessions') || '[]');
+        activeSessions.push(sessionId);
+        localStorage.setItem('activeActivitySessions', JSON.stringify(activeSessions));
+        
+        // Set current session
+        localStorage.setItem('currentActivitySession', sessionId);
+        localStorage.setItem('isActivityLoggedIn', 'true');
+        
         window.location.href = '/activity-dashboard';
       } else {
         setError(data.message || 'Invalid credentials');
