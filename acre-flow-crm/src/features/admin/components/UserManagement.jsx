@@ -32,6 +32,7 @@ const UserAdmin = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [userDetailsModalVisible, setUserDetailsModalVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
     // Get real-time logged-in user data
@@ -437,7 +438,7 @@ const UserAdmin = () => {
   return (
     <>
       <div className="flex h-screen bg-gray-100">
-        <AdminSidebar />
+        <AdminSidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Header */}
           <header className="bg-white shadow-sm border-b border-gray-200">
@@ -518,7 +519,7 @@ const UserAdmin = () => {
                     className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1.5 sm:p-2 text-gray-400 hover:text-gray-600 transition-colors"
                   >
                     <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 016 0zm-1-9a1 1 0 00-2 1 1 0 002 0z" clipRule="evenodd" />
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293 4.293a1 1 0 001.414 1.414l-4-4a1 1 0 00-1.414 0L4.586 8.707a1 1 0 00-1.414-1.414l4-4z" clipRule="evenodd" />
                     </svg>
                   </button>
                 )}
@@ -628,7 +629,7 @@ const UserAdmin = () => {
           </div>
 
           {/* User Table */}
-          <div className="bg-white rounded-xl shadow-2xl border-l-4 border-gradient-to-r from-red-400 to-red-600 p-6 w-full">
+          <div className="bg-white rounded-xl shadow-2xl border-l-4 border-gradient-to-r from-red-400 to-red-600 p-3 sm:p-4 w-full">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -759,28 +760,29 @@ const UserAdmin = () => {
             </div>
 
             {/* Pagination */}
-            <div className="flex justify-center mt-8 gap-2 flex-wrap">
+            <div className="flex justify-center mt-4 sm:mt-6 gap-1 sm:gap-2 flex-wrap px-2 sm:px-0">
               {(() => {
                 const totalPages = Math.ceil(filteredProjects.length / rowsPerPage) || 1;
-                const windowSize = 5; // how many pages to show around current
+                const windowSize = 3; // Show fewer pages on mobile
                 const start = Math.max(1, currentPage - Math.floor(windowSize / 2));
                 const end = Math.min(totalPages, start + windowSize - 1);
                 const pages = [];
                 for (let p = Math.max(1, end - windowSize + 1); p <= end; p++) pages.push(p);
                 return (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 sm:gap-2">
                     <button
                       onClick={() => currentPage > 1 && paginate(currentPage - 1)}
                       disabled={currentPage === 1}
-                      className={`px-4 py-2 rounded-lg font-medium border ${currentPage === 1 ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'}`}
+                      className={`px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium border text-xs sm:text-sm ${currentPage === 1 ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'}`}
                     >
-                      Previous
+                      <span className="hidden sm:inline">Previous</span>
+                      <span className="sm:hidden">‹</span>
                     </button>
                     {pages.map((p) => (
                       <button
                         key={p}
                         onClick={() => paginate(p)}
-                        className={`w-10 h-10 rounded-lg font-semibold border ${currentPage === p ? 'bg-red-500 text-white border-red-500' : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'}`}
+                        className={`w-7 h-7 sm:w-10 sm:h-10 rounded-lg font-semibold border text-xs sm:text-sm ${currentPage === p ? 'bg-red-500 text-white border-red-500' : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'}`}
                       >
                         {p}
                       </button>
@@ -788,9 +790,10 @@ const UserAdmin = () => {
                     <button
                       onClick={() => currentPage < totalPages && paginate(currentPage + 1)}
                       disabled={currentPage === totalPages}
-                      className={`px-4 py-2 rounded-lg font-medium border ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'}`}
+                      className={`px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium border text-xs sm:text-sm ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'}`}
                     >
-                      Next
+                      <span className="hidden sm:inline">Next</span>
+                      <span className="sm:hidden">›</span>
                     </button>
                   </div>
                 );
