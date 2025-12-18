@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import api from "../config/apiClient"; // For CRM backend (e.g., login)
 import api100acress from "../config/api100acressClient"; // For 100acress backend
 import AdminSidebar from "./AdminSidebar";
 import Tippy from "@tippyjs/react";
 import { Link } from "react-router-dom";
 import { MdPeople, MdSearch, MdVisibility } from "react-icons/md";
 import { Modal, message } from "antd";
+import { LogOut, ChevronDown, User, Settings as SettingsIcon } from "lucide-react";
 import "tippy.js/dist/tippy.css";
 import "tippy.js/animations/scale.css";
 
@@ -28,6 +28,46 @@ const UserAdmin = () => {
   const [userDetails, setUserDetails] = useState({ name: "", email: "", mobile: "" });
   const [loadingProperties, setLoadingProperties] = useState(false);
   const [messageApi, contextHolder] = message.useMessage();
+  const [userInfo, setUserInfo] = useState(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [userDetailsModalVisible, setUserDetailsModalVisible] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+
+  useEffect(() => {
+    // Get real-time logged-in user data
+    const userName = localStorage.getItem('userName') || localStorage.getItem('adminName') || 'Admin';
+    const userEmail = localStorage.getItem('userEmail') || localStorage.getItem('adminEmail') || 'admin@example.com';
+    const userRole = localStorage.getItem('userRole') || localStorage.getItem('adminRole') || 'admin';
+    
+    setUserInfo({ 
+      name: userName, 
+      email: userEmail,
+      role: userRole
+    });
+  }, []);
+
+  // Get user initials for avatar
+  const getUserInitials = (name) => {
+    if (!name) return 'AD';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const handleLogout = () => {
+    // Clear all user-related localStorage items
+    localStorage.removeItem('isAdminLoggedIn');
+    localStorage.removeItem('adminEmail');
+    localStorage.removeItem('adminName');
+    localStorage.removeItem('adminRole');
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('sourceSystem');
+    
+    window.location.href = '/login';
+  };
 
   // Utility function to truncate text
   const truncateText = (text, wordLimit) => {
@@ -152,6 +192,16 @@ const UserAdmin = () => {
     setSelectedUserId(null);
     setUserProperties([]);
     setUserDetails({ name: "", email: "", mobile: "" });
+  };
+
+  const handleViewUserDetails = (user) => {
+    setSelectedUser(user);
+    setUserDetailsModalVisible(true);
+  };
+
+  const handleCloseUserDetailsModal = () => {
+    setUserDetailsModalVisible(false);
+    setSelectedUser(null);
   };
 
   // Extract a reasonable "source" value from a user object
@@ -380,10 +430,65 @@ const UserAdmin = () => {
 
   return (
     <>
-      <div className="bg-gray-50 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex">
+      <div className="flex h-screen bg-gray-100">
         <AdminSidebar />
-        <div className="flex-1 p-8 transition-colors duration-300">
-        <div className="w-full space-y-4">
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Header */}
+          <header className="bg-white shadow-sm border-b border-gray-200">
+            <div className="flex items-center justify-between px-6 py-4">
+              <div className="flex items-center gap-4 flex-1">
+                <div className="flex-1 text-center lg:text-left">
+                  <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
+                    <span className="lg:hidden">User Management</span>
+                    <span className="hidden lg:inline">User Management</span>
+                  </h1>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <button 
+                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-600 rounded-full flex items-center justify-center">
+                      <span className="text-white font-semibold text-xs sm:text-sm">{getUserInitials(userInfo?.name)}</span>
+                    </div>
+                    <div className="text-right hidden sm:block">
+                      <p className="text-xs sm:text-sm font-medium text-gray-900">{userInfo?.name}</p>
+                      <p className="text-xs text-gray-600 truncate max-w-[120px]">{userInfo?.email}</p>
+                    </div>
+                    <ChevronDown size={16} className={`text-gray-600 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  {dropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-40 sm:w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                      <button className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-gray-50 transition-colors">
+                        <User size={14} sm:size={16} className="text-gray-600" />
+                        <span className="text-xs sm:text-sm text-gray-700">Profile</span>
+                      </button>
+                      <button className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-gray-50 transition-colors">
+                        <SettingsIcon size={14} sm:size={16} className="text-gray-600" />
+                        <span className="text-xs sm:text-sm text-gray-700">Settings</span>
+                      </button>
+                      <div className="border-t border-gray-200 my-2"></div>
+                      <button 
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-red-50 transition-colors text-red-600"
+                      >
+                        <LogOut size={14} sm:size={16} />
+                        <span className="text-xs sm:text-sm font-medium">Logout</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </header>
+
+          {/* Content Area */}
+          <main className="flex-1 overflow-auto">
+            <div className="p-6">
+              <div className="w-full space-y-4">
           {/* Header Controls: Search (left) and Filters (right) */}
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
             {/* Left: Search */}
@@ -486,19 +591,19 @@ const UserAdmin = () => {
                     <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Name
                     </th>
-                    <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <th className="hidden md:table-cell px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Email
                     </th>
-                    <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <th className="hidden lg:table-cell px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Mobile Number
                     </th>
-                    <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <th className="hidden lg:table-cell px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Date
                     </th>
-                    <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <th className="hidden lg:table-cell px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Role
                     </th>
-                    <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <th className="hidden lg:table-cell px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Email Verified
                     </th>
                     <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
@@ -519,7 +624,7 @@ const UserAdmin = () => {
                         <td className="px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                           {serialNumber}
                         </td>
-                        <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-800">
+                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-800 max-w-[150px] truncate">
                           <Tippy
                             content={item.name || 'No name'}
                             animation="scale"
@@ -527,24 +632,24 @@ const UserAdmin = () => {
                             placement="top"
                           >
                             <span className="cursor-help">
-                              {truncateText(item.name || 'No name', 10)}
+                              {truncateText(item.name || 'No name', 13)}
                             </span>
                           </Tippy>
                         </td>
-                        <td className="px-3 py-3 whitespace-nowrap text-sm">
+                        <td className="hidden md:table-cell px-3 py-3 whitespace-nowrap text-sm">
                           <span className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full shadow-sm">
                             {item.email}
                           </span>
                         </td>
-                        <td className="px-3 py-3 whitespace-nowrap text-sm">
+                        <td className="hidden lg:table-cell px-3 py-3 whitespace-nowrap text-sm">
                           <span className="inline-flex items-center px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full shadow-sm">
                             {item.mobile}
                           </span>
                         </td>
-                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-800">
+                        <td className="hidden lg:table-cell px-3 py-3 whitespace-nowrap text-sm text-gray-800">
                           {formatLastModified(item.createdAt)}
                         </td>
-                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-800">
+                        <td className="hidden lg:table-cell px-3 py-3 whitespace-nowrap text-sm text-gray-800">
                           <div className="flex items-center">
                             <select
                               className={`px-2 py-1 border rounded-full text-xs focus:outline-none focus:ring-2 focus:ring-red-500 ${getRoleClasses(item.role)} ${
@@ -557,7 +662,6 @@ const UserAdmin = () => {
                               onChange={(e) =>
                                 handleRoleChange(userId, e.target.value)
                               }
-                              title="Change user role"
                             >
                               {ROLE_OPTIONS.map((opt) => (
                                 <option key={opt.value} value={opt.value}>
@@ -570,44 +674,33 @@ const UserAdmin = () => {
                             )}
                           </div>
                         </td>
-                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-800">
-                          <div className="flex items-center gap-1">
+                        <td className="hidden lg:table-cell px-3 py-3 whitespace-nowrap text-sm text-gray-800">
+                          <div className="flex items-center gap-2">
                             <span
-                              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium shadow-sm ${
+                              className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${
                                 item.emailVerified
-                                  ? 'bg-emerald-100 text-emerald-700'
-                                  : 'bg-yellow-100 text-yellow-700'
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-red-100 text-red-800"
                               }`}
                             >
-                              {item.emailVerified ? 'Verified' : 'Unverified'}
+                              {item.emailVerified ? "Verified" : "Not Verified"}
                             </span>
-                            {!item.emailVerified && (
-                              <button
-                                className={`px-2 py-1 text-xs rounded-full ${verifyingEmail[userId] ? 'bg-gray-300 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'} text-white`}
-                                onClick={() => handleVerifyEmail(userId)}
-                                disabled={!!verifyingEmail[userId]}
-                                title="Mark email as verified"
-                              >
-                                {verifyingEmail[userId] ? 'Verifying...' : 'Verify'}
-                              </button>
-                            )}
+                            <button
+                              onClick={() => handleVerifyEmail(userId)}
+                              disabled={!!verifyingEmail[userId] || item.emailVerified}
+                              className="px-2 py-1 bg-blue-600 text-white text-xs rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                              {verifyingEmail[userId] ? "..." : "Verify"}
+                            </button>
                           </div>
                         </td>
                         <td className="px-3 py-3 whitespace-nowrap text-center text-sm font-medium">
-                          <Tippy
-                            content={<span>View Property</span>}
-                            animation="scale"
-                            theme="light-border"
+                          <button
+                            onClick={() => handleViewUserDetails(item)}
+                            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm w-full"
                           >
-                            <button 
-                              onClick={() => handleViewProperty(userId)}
-                              disabled={loadingProperties}
-                              className="inline-flex items-center gap-1 px-4 py-2 bg-gradient-to-r from-red-400 to-red-600 text-white rounded-full shadow-md hover:from-red-500 hover:to-red-700 transition duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              <MdVisibility className="text-lg" /> View
-                              Property
-                            </button>
-                          </Tippy>
+                            View Details
+                          </button>
                         </td>
                       </tr>
                     );
@@ -657,7 +750,7 @@ const UserAdmin = () => {
           </div>
         </div>
       </div>
-      </div>
+      </main>
 
       {/* View Property Modal */}
       <Modal
@@ -792,7 +885,126 @@ const UserAdmin = () => {
           </div>
         )}
       </Modal>
+
+      {/* User Details Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-3 bg-gradient-to-r from-blue-50 to-green-50 -m-6 p-4 rounded-t-lg">
+            <div className="p-2 bg-gradient-to-r from-blue-500 to-green-500 rounded-lg shadow-lg">
+              <MdPeople className="text-white" size={20} />
+            </div>
+            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">User Details</span>
+          </div>
+        }
+        open={userDetailsModalVisible}
+        onCancel={handleCloseUserDetailsModal}
+        footer={null}
+        width={600}
+        className="user-details-modal"
+      >
+        {selectedUser && (
+          <div className="space-y-4">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent mb-4">Personal Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</label>
+                  <p className="text-base font-medium text-gray-900">{selectedUser.name || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</label>
+                  <p className="text-base text-gray-800">{selectedUser.email || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Mobile Number</label>
+                  <p className="text-base text-gray-800">{selectedUser.mobile || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Registration Date</label>
+                  <p className="text-base text-gray-800">{formatLastModified(selectedUser.createdAt)}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent mb-4">Account Status</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Role</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <select
+                      className={`px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 ${getRoleClasses(selectedUser.role)} ${
+                        updatingRole[selectedUser._id]
+                          ? "opacity-60 cursor-not-allowed"
+                          : ""
+                      }`}
+                      disabled={!!updatingRole[selectedUser._id]}
+                      value={canonicalizeRole(selectedUser.role)}
+                      onChange={(e) =>
+                        handleRoleChange(selectedUser._id, e.target.value)
+                      }
+                    >
+                      {ROLE_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                    {updatingRole[selectedUser._id] && (
+                      <span className="text-sm text-gray-500">Updating...</span>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Email Verification</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span
+                      className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-full ${
+                        selectedUser.emailVerified
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {selectedUser.emailVerified ? "Verified" : "Not Verified"}
+                    </span>
+                    {!selectedUser.emailVerified && (
+                      <button
+                        onClick={() => handleVerifyEmail(selectedUser._id)}
+                        disabled={!!verifyingEmail[selectedUser._id]}
+                        className="px-3 py-1 bg-blue-600 text-white text-sm rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {verifyingEmail[selectedUser._id] ? "..." : "Verify Email"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={handleCloseUserDetailsModal}
+                className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  handleCloseUserDetailsModal();
+                  handleViewProperty(selectedUser._id);
+                }}
+                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                View Properties
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
       {contextHolder}
+      </div>
+    </div>
     </>
   );
 };
