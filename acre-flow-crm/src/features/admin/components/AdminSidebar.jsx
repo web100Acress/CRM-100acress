@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { BarChart3, Users, Settings, LogOut, Shield, FileText, Home, ShoppingCart, Briefcase, Phone, MapPin, CreditCard, Map, MessageSquare, Image, UserPlus, Package, Mail } from 'lucide-react';
+import { BarChart3, Users, Settings, LogOut, Shield, FileText, Home, ShoppingCart, Briefcase, Phone, MapPin, CreditCard, Map, MessageSquare, Image, UserPlus, Package, Mail, Menu, X } from 'lucide-react';
 import { hasAdminAccess, hasSalesAccess, hasBlogAccess, hasHrAccess, getUserRole } from '../../../utils/roleGuard';
 
-const AdminSidebar = ({ isOpen }) => {
+const AdminSidebar = ({ isOpen, onToggle }) => {
   // Get current user role
   const userRole = getUserRole() || localStorage.getItem('adminRole') || 'user';
   
@@ -80,6 +80,14 @@ const AdminSidebar = ({ isOpen }) => {
 
   return (
     <>
+      {/* Mobile Hamburger Menu Button */}
+      <button
+        onClick={onToggle}
+        className="lg:hidden fixed top-4 left-4 z-50 p-3 bg-red-600 text-white rounded-lg shadow-lg hover:bg-red-700 transition-colors"
+      >
+        {isOpen ? <X size={24} /> : <Menu size={24} />}
+      </button>
+
       {/* Sidebar */}
       <aside
         className={`${
@@ -158,7 +166,7 @@ const AdminSidebar = ({ isOpen }) => {
       {isOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
-          onClick={() => {}}
+          onClick={onToggle}
         ></div>
       )}
     </>
