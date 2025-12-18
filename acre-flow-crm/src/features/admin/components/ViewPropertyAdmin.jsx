@@ -451,18 +451,18 @@ const ViewPropertyAdmin = () => {
         <div className={isEmbed ? "flex-1 p-4 overflow-auto" : "flex-1 p-8 ml-0 overflow-auto"}>
           <div className="max-w-6xl mx-auto space-y-8">
             {/* Search Bar */}
-            <div className="flex justify-between items-center mb-6">
-              <div className="relative w-full max-w-lg">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 sm:mb-6">
+              <div className="relative w-full sm:max-w-lg">
                 <Tippy content={<span>Search by name, type, city</span>} animation="scale">
                   <input
                     type="text"
                     placeholder="Search properties..."
                     value={searchTerm}
                     onChange={handleSearch}
-                    className="w-full pl-10 pr-4 py-3 border rounded-full focus:ring-2 focus:ring-red-500 focus:outline-none"
+                    className="w-full pl-9 pr-3 py-2.5 sm:py-3 border rounded-full focus:ring-2 focus:ring-red-500 focus:outline-none text-sm sm:text-base"
                   />
                 </Tippy>
-                <MdSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={22} />
+                <MdSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
               </div>
              
             </div>
@@ -483,9 +483,9 @@ const ViewPropertyAdmin = () => {
 
             {/* Property Table - Only show if properties exist */}
             {viewProperty.length > 0 && (
-              <div className="bg-white p-6 rounded-xl shadow-md border-l-4 border-red-500">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold">
+              <div className="bg-white p-1 sm:p-2 rounded-xl shadow-md border-l-4 border-red-500">
+                <div className="flex justify-between items-center mb-1 sm:mb-2">
+                  <h2 className="text-base sm:text-xl font-bold">
                     Properties Table 
                     <span className="ml-2 text-sm font-normal text-gray-600">
                       ({viewProperty.length} {viewProperty.length === 1 ? 'property' : 'properties'})
@@ -493,68 +493,77 @@ const ViewPropertyAdmin = () => {
                   </h2>
                   <button 
                     onClick={() => setTableOpen(!tableOpen)} 
-                    className="p-2 hover:bg-gray-100 rounded transition-colors"
+                    className="p-1.5 sm:p-2 hover:bg-gray-100 rounded transition-colors"
                   >
-                    {tableOpen ? <MdExpandLess size={24} /> : <MdExpandMore size={24} />}
+                    {tableOpen ? <MdExpandLess size={22} /> : <MdExpandMore size={22} />}
                   </button>
                 </div>
               
                 {tableOpen && (
                   <>
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full table-auto">
+                    <div className="overflow-x-auto -mx-3 sm:mx-0">
+                      <div className="min-w-[480px] sm:min-w-0 px-3 sm:px-0">
+                        <table className="min-w-full table-fixed">
                           <thead className="bg-gray-100">
-                            <tr>
-                              <th className="px-4 py-2 text-left">#</th>
-                              <th className="px-4 py-2 text-left">Type</th>
-                              <th className="px-4 py-2 text-left">Name</th>
-                              <th className="px-4 py-2 text-left">City</th>
-                              <th className="px-4 py-2 text-center">Actions</th>
+                            <tr className="text-xs sm:text-sm">
+                              <th className="px-2 sm:px-4 py-2 text-left w-10">#</th>
+                              <th className="px-2 sm:px-4 py-2 text-left w-24">Type</th>
+                              <th className="px-2 sm:px-3 py-2 text-left w-44">Name</th>
+                              <th className="px-1 sm:px-2 py-2 text-left hidden sm:table-cell w-20">City</th>
+                              <th className="px-1 sm:px-2 py-2 text-left w-28">Actions</th>
                             </tr>
                           </thead>
-                          <tbody>
+                          <tbody className="text-xs sm:text-sm">
                             {currentRows.map((item, index) => (
                               <tr key={item._id || index} className="even:bg-gray-50 hover:bg-gray-100 transition-colors">
-                                <td className="px-4 py-2">{(currentPage - 1) * rowsPerPage + index + 1}</td>
-                                <td className="px-4 py-2">{item.propertyType || 'N/A'}</td>
-                                <td className="px-4 py-2">{item.propertyName || 'N/A'}</td>
-                                <td className="px-4 py-2">{item.city || 'N/A'}</td>
-                                <td className="px-4 py-2 text-center space-x-2">
-                                  <button 
-                                    onClick={() => handleViewProperty(item._id)}
-                                    disabled={loadingPropertyDetails}
-                                    className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                  >
-                                    <MdVisibility className="inline mr-1" /> View
-                                  </button>
-                                  <button
-                                    onClick={() => handleEditProperty(item._id)}
-                                    disabled={editingLoading}
-                                    className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                  >
-                                    <MdEdit className="inline mr-1" /> Edit
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteProperty(item._id)}
-                                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded transition-colors"
-                                  >
-                                    <MdDelete className="inline mr-1" /> Delete
-                                  </button>
+                                <td className="px-2 sm:px-4 py-2">{(currentPage - 1) * rowsPerPage + index + 1}</td>
+                                <td className="px-2 sm:px-4 py-2">{item.propertyType || 'N/A'}</td>
+                                <td className="px-2 sm:px-3 py-2 truncate" title={item.propertyName || 'N/A'}>
+                                  {item.propertyName || 'N/A'}
+                                </td>
+                                <td className="px-1 sm:px-2 py-2 hidden sm:table-cell truncate" title={item.city || 'N/A'}>{item.city || 'N/A'}</td>
+                                <td className="px-1 sm:px-2 py-2 text-left">
+                                  <div className="flex flex-col sm:flex-row items-center sm:items-center justify-center sm:justify-start gap-2 sm:gap-1">
+                                    <button 
+                                      type="button"
+                                      onClick={() => handleViewProperty(item._id)}
+                                      disabled={loadingPropertyDetails}
+                                      className="inline-flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold w-24 sm:w-auto"
+                                    >
+                                      <MdVisibility className="inline mr-1" /> View
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleEditProperty(item._id)}
+                                      disabled={editingLoading}
+                                      className="inline-flex items-center justify-center bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold w-24 sm:w-auto"
+                                    >
+                                      <MdEdit className="inline mr-1" /> Edit
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteProperty(item._id)}
+                                      className="inline-flex items-center justify-center bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded transition-colors text-xs font-semibold w-24 sm:w-auto"
+                                    >
+                                      <MdDelete className="inline mr-1" /> Delete
+                                    </button>
+                                  </div>
                                 </td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
                       </div>
+                    </div>
 
                       {/* Pagination */}
                       {Math.ceil(filteredRows.length / rowsPerPage) > 1 && (
-                        <div className="flex justify-center mt-6 flex-wrap gap-2">
+                        <div className="flex justify-center mt-4 sm:mt-6 flex-wrap gap-1.5 sm:gap-2 px-2 sm:px-0">
                           {Array.from({ length: Math.ceil(filteredRows.length / rowsPerPage) }, (_, i) => (
                             <button
                               key={i}
                               onClick={() => paginate(i + 1)}
-                              className={`px-4 py-2 rounded border transition-colors ${
+                              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded border transition-colors text-xs sm:text-sm ${
                                 currentPage === i + 1 
                                   ? 'bg-red-500 text-white border-red-500' 
                                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300 border-gray-300'
