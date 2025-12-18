@@ -526,7 +526,7 @@ const UserAdmin = () => {
               </div>
 
               {/* Right: Enhanced Filters */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 items-start w-full">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2 sm:gap-3 items-start w-full">
                 {/* Role Filter */}
                 <div className="relative w-full">
                   <select
@@ -589,7 +589,7 @@ const UserAdmin = () => {
                 </div>
 
                 {/* Date Range */}
-                <div className="col-span-full sm:col-span-2 lg:col-span-4 flex gap-1.5 sm:gap-2 items-center">
+                <div className="col-span-1 lg:col-span-2 flex gap-1.5 sm:gap-2 items-center">
                   <div className="relative flex-1">
                     <input
                       type="date"
@@ -612,10 +612,10 @@ const UserAdmin = () => {
                 </div>
 
                 {/* Export Button */}
-                <div className="col-span-full sm:col-span-2 lg:col-span-4 flex justify-center">
+                <div className="col-span-1 lg:col-span-2 flex justify-center">
                   <button
                     onClick={exportToCSV}
-                    className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-3 sm:px-4 py-1.5 sm:py-2.5 rounded-xl hover:from-emerald-600 hover:to-emerald-700 shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto text-xs sm:text-sm"
+                    className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-3 sm:px-4 py-1.5 sm:py-2.5 rounded-xl hover:from-emerald-600 hover:to-emerald-700 shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 flex items-center gap-1.5 sm:gap-2 w-full text-xs sm:text-sm"
                     title="Export filtered users to CSV"
                   >
                     <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 20 20">
