@@ -52,6 +52,12 @@ const UserAdmin = () => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
+  // Get first name only for mobile
+  const getFirstName = (name) => {
+    if (!name) return 'User';
+    return name.split(' ')[0];
+  };
+
   const handleLogout = () => {
     // Clear all user-related localStorage items
     localStorage.removeItem('isAdminLoggedIn');
@@ -439,7 +445,7 @@ const UserAdmin = () => {
               <div className="flex items-center gap-4 flex-1">
                 <div className="flex-1 text-center lg:text-left">
                   <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
-                    <span className="lg:hidden">User Management</span>
+                    <span className="lg:hidden">User</span>
                     <span className="hidden lg:inline">User Management</span>
                   </h1>
                 </div>
@@ -490,28 +496,28 @@ const UserAdmin = () => {
             <div className="p-6">
               <div className="w-full space-y-4">
           {/* Header Controls: Enhanced Search and Filters */}
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 mb-6">
-            <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-3 sm:p-4 mb-4">
+            <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 items-start lg:items-center justify-between">
               {/* Left: Enhanced Search */}
               <div className="relative w-full lg:max-w-md">
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <MdSearch className="text-gray-400" size={20} />
+                    <MdSearch className="text-gray-400" size={18} />
                   </div>
                   <input
                     type="text"
                     placeholder="Search users by name, email, or mobile..."
                     value={searchTerm}
                     onChange={handleSearch}
-                    className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 text-base bg-gray-50 hover:bg-white shadow-sm"
+                    className="w-full pl-9 pr-3 py-2 sm:py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 text-sm sm:text-base bg-gray-50 hover:bg-white shadow-sm"
                   />
                 </div>
                 {searchTerm && (
                   <button
                     onClick={() => { setSearchTerm(''); setCurrentPage(1); }}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1.5 sm:p-2 text-gray-400 hover:text-gray-600 transition-colors"
                   >
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 016 0zm-1-9a1 1 0 00-2 1 1 0 002 0z" clipRule="evenodd" />
                     </svg>
                   </button>
@@ -519,11 +525,11 @@ const UserAdmin = () => {
               </div>
 
               {/* Right: Enhanced Filters */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-start w-full">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 items-start w-full">
                 {/* Role Filter */}
                 <div className="relative w-full">
                   <select
-                    className="appearance-none bg-white border-2 border-gray-300 rounded-xl px-4 py-2.5 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 shadow-sm hover:border-gray-400 cursor-pointer"
+                    className="appearance-none bg-white border-2 border-gray-300 rounded-xl px-2 sm:px-4 py-1.5 sm:py-2.5 pr-6 sm:pr-8 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 shadow-sm hover:border-gray-400 cursor-pointer w-full"
                     value={roleFilter}
                     onChange={(e)=>{ setRoleFilter(e.target.value); setCurrentPage(1); }}
                   >
@@ -532,8 +538,8 @@ const UserAdmin = () => {
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
                     ))}
                   </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                    <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-1.5 sm:pr-2 pointer-events-none">
+                    <svg className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293 3.293a1 1 0 001.414 1.414l-4-4a1 1 0 00-1.414 0L5.586 8.707a1 1 0 00-1.414-1.414l4-4z" clipRule="evenodd" />
                     </svg>
                   </div>
@@ -542,7 +548,7 @@ const UserAdmin = () => {
                 {/* Email Verification Filter */}
                 <div className="relative w-full">
                   <select
-                    className="appearance-none bg-white border-2 border-gray-300 rounded-xl px-4 py-2.5 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 shadow-sm hover:border-gray-400 cursor-pointer w-full"
+                    className="appearance-none bg-white border-2 border-gray-300 rounded-xl px-2 sm:px-4 py-1.5 sm:py-2.5 pr-6 sm:pr-8 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 shadow-sm hover:border-gray-400 cursor-pointer w-full"
                     value={verifyFilter}
                     onChange={(e)=>{ setVerifyFilter(e.target.value); setCurrentPage(1); }}
                   >
@@ -550,8 +556,8 @@ const UserAdmin = () => {
                     <option value="verified">✅ Verified</option>
                     <option value="unverified">❌ Unverified</option>
                   </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                    <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-1.5 sm:pr-2 pointer-events-none">
+                    <svg className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293 3.293a1 1 0 001.414 1.414l-4-4a1 1 0 00-1.414 0L5.586 8.707a1 1 0 00-1.414-1.414l4-4z" clipRule="evenodd" />
                     </svg>
                   </div>
@@ -563,7 +569,7 @@ const UserAdmin = () => {
                     const options = Array.from(new Set(viewAll.map(getSourceValue))).filter(Boolean).sort();
                     return (
                       <select
-                        className="appearance-none bg-white border-2 border-gray-300 rounded-xl px-4 py-2.5 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 shadow-sm hover:border-gray-400 cursor-pointer w-full"
+                        className="appearance-none bg-white border-2 border-gray-300 rounded-xl px-2 sm:px-4 py-1.5 sm:py-2.5 pr-6 sm:pr-8 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 shadow-sm hover:border-gray-400 cursor-pointer w-full"
                         value={sourceFilter}
                         onChange={(e)=>{ setSourceFilter(e.target.value); setCurrentPage(1); }}
                       >
@@ -574,29 +580,29 @@ const UserAdmin = () => {
                       </select>
                     );
                   })()}
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                    <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-1.5 sm:pr-2 pointer-events-none">
+                    <svg className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293 3.293a1 1 0 001.414 1.414l-4-4a1 1 0 00-1.414 0L5.586 8.707a1 1 0 00-1.414-1.414l4-4z" clipRule="evenodd" />
                     </svg>
                   </div>
                 </div>
 
                 {/* Date Range */}
-                <div className="col-span-full sm:col-span-2 lg:col-span-4 flex gap-2 items-center">
+                <div className="col-span-full sm:col-span-2 lg:col-span-4 flex gap-1.5 sm:gap-2 items-center">
                   <div className="relative flex-1">
                     <input
                       type="date"
-                      className="appearance-none bg-white border-2 border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 shadow-sm hover:border-gray-400 cursor-pointer w-full"
+                      className="appearance-none bg-white border-2 border-gray-300 rounded-xl px-2 sm:px-3 py-1.5 sm:py-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 shadow-sm hover:border-gray-400 cursor-pointer w-full"
                       value={dateFrom}
                       onChange={(e)=>{ setDateFrom(e.target.value); setCurrentPage(1); }}
                       title="From date"
                     />
                   </div>
-                  <span className="text-gray-500 px-2 hidden sm:inline">to</span>
+                  <span className="text-gray-500 px-1 hidden sm:inline text-xs sm:text-sm">to</span>
                   <div className="relative flex-1">
                     <input
                       type="date"
-                      className="appearance-none bg-white border-2 border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 shadow-sm hover:border-gray-400 cursor-pointer w-full"
+                      className="appearance-none bg-white border-2 border-gray-300 rounded-xl px-2 sm:px-3 py-1.5 sm:py-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 shadow-sm hover:border-gray-400 cursor-pointer w-full"
                       value={dateTo}
                       onChange={(e)=>{ setDateTo(e.target.value); setCurrentPage(1); }}
                       title="To date"
@@ -608,10 +614,10 @@ const UserAdmin = () => {
                 <div className="col-span-full sm:col-span-2 lg:col-span-4 flex justify-center">
                   <button
                     onClick={exportToCSV}
-                    className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-4 py-2.5 rounded-xl hover:from-emerald-600 hover:to-emerald-700 shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 flex items-center gap-2 w-full sm:w-auto"
+                    className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-3 sm:px-4 py-1.5 sm:py-2.5 rounded-xl hover:from-emerald-600 hover:to-emerald-700 shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto text-xs sm:text-sm"
                     title="Export filtered users to CSV"
                   >
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H3a1 1 0 01-1-2zm3.293-7.707a1 1 0 011.414 0L10 10.586l3.293 3.293a1 1 0 001.414 1.414l-4-4a1 1 0 00-1.414 0L5.586 8.707a1 1 0 00-1.414-1.414l4-4z" clipRule="evenodd" />
                     </svg>
                     Export CSV
@@ -674,7 +680,8 @@ const UserAdmin = () => {
                             placement="top"
                           >
                             <span className="cursor-help">
-                              {truncateText(item.name || 'No name', 13)}
+                              <span className="hidden lg:inline">{truncateText(item.name || 'No name', 13)}</span>
+                              <span className="lg:hidden">{getFirstName(item.name || 'User')}</span>
                             </span>
                           </Tippy>
                         </td>
@@ -739,7 +746,7 @@ const UserAdmin = () => {
                         <td className="px-3 py-3 whitespace-nowrap text-center text-sm font-medium">
                           <button
                             onClick={() => handleViewUserDetails(item)}
-                            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm w-full"
+                            className="px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-xs sm:text-sm w-full"
                           >
                             View Details
                           </button>
