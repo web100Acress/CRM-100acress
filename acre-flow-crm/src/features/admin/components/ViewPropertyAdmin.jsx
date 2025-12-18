@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import AdminSidebar from "./AdminSidebar";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import api100acress from "../config/api100acressClient"; 
 import { message, Modal, notification } from "antd";
 import { MdSearch, MdVisibility, MdEdit, MdDelete, MdExpandMore, MdExpandLess } from "react-icons/md";
@@ -47,7 +47,17 @@ const ViewPropertyAdmin = () => {
   });
   const [editingLoading, setEditingLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams();
+
+  const isEmbed = useMemo(() => {
+    try {
+      const sp = new URLSearchParams(location.search);
+      return sp.get('embed') === '1';
+    } catch {
+      return false;
+    }
+  }, [location.search]);
 
   const filteredRows = viewProperty.filter((item) => {
     const lowerSearch = searchTerm.toLowerCase();
@@ -417,16 +427,18 @@ const ViewPropertyAdmin = () => {
       <>
         {contextHolder}
         <div className="flex bg-gray-50 min-h-screen">
-        <AdminSidebar />
-        <div className="flex-1 p-8 ml-0 overflow-auto">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
-              <p className="mt-4 text-gray-600">Loading property data...</p>
+          {!isEmbed && <AdminSidebar />}
+          <div className={isEmbed ? "flex-1 p-4 overflow-auto" : "flex-1 p-8 ml-0 overflow-auto"}>
+            <div className="max-w-6xl mx-auto">
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                </div>
+                <p className="text-gray-600">Loading properties...</p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
       </>
     );
   }
@@ -435,8 +447,8 @@ const ViewPropertyAdmin = () => {
     <>
       {contextHolder}
       <div className="flex bg-gray-50 min-h-screen">
-        <AdminSidebar />
-        <div className="flex-1 p-8 ml-0 overflow-auto">
+        {/* {!isEmbed && <AdminSidebar />} */}
+        <div className={isEmbed ? "flex-1 p-4 overflow-auto" : "flex-1 p-8 ml-0 overflow-auto"}>
           <div className="max-w-6xl mx-auto space-y-8">
             {/* Search Bar */}
             <div className="flex justify-between items-center mb-6">
@@ -455,24 +467,6 @@ const ViewPropertyAdmin = () => {
              
             </div>
 
-            {/* User Info */}
-            <div className="bg-white p-6 rounded-xl shadow-md border-l-4 border-red-500 flex justify-between items-center">
-              <div>
-                <p className="text-lg"><b>Name:</b> {userDetails.name}</p>
-                <p className="text-lg"><b>Mobile:</b> {userDetails.mobile}</p>
-                <p className="text-lg"><b>Email:</b> {userDetails.email}</p>
-              </div>
-              <button
-                onClick={handleDeleteUser}
-                disabled={deletingUser}
-                className={`px-5 py-2 ${deletingUser ? 'bg-red-300 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'} text-white rounded-full shadow transition-colors duration-200`}
-                title="Delete user (backend support may be limited)"
-              >
-                <MdDelete className="inline mr-1" /> Delete User
-              </button>
-            </div>
-
-            {/* Empty State Message - Display above table if no properties */}
             {viewProperty.length === 0 && (
               <div className="bg-white p-8 rounded-xl shadow-md border-l-4 border-red-500">
                 <div className="text-center py-8">

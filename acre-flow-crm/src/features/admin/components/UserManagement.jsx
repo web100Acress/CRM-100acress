@@ -28,6 +28,8 @@ const UserAdmin = () => {
   const [userDetails, setUserDetails] = useState({ name: "", email: "", mobile: "" });
   const [loadingProperties, setLoadingProperties] = useState(false);
   const [propertiesInDetailsOpen, setPropertiesInDetailsOpen] = useState(false);
+  const [propertyManagerOpen, setPropertyManagerOpen] = useState(false);
+  const [propertyManagerUrl, setPropertyManagerUrl] = useState('');
   const [messageApi, contextHolder] = message.useMessage();
   const [userInfo, setUserInfo] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -264,6 +266,17 @@ const UserAdmin = () => {
     setUserDetailsModalVisible(false);
     setSelectedUser(null);
     setPropertiesInDetailsOpen(false);
+  };
+
+  const openPropertyManager = (userId) => {
+    if (!userId) return;
+    setPropertyManagerUrl(`/Admin/viewproperty/${userId}?embed=1`);
+    setPropertyManagerOpen(true);
+  };
+
+  const closePropertyManager = () => {
+    setPropertyManagerOpen(false);
+    setPropertyManagerUrl('');
   };
 
   // Extract a reasonable "source" value from a user object
@@ -895,35 +908,6 @@ const UserAdmin = () => {
           </div>
         ) : (
           <div className="max-h-[70vh] overflow-y-auto">
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6 mb-6">
-              <div className="flex items-start justify-between gap-4">
-                <div className="border-l-4 border-red-500 pl-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-6">
-                    <div>
-                      <p className="text-xs font-semibold text-gray-600">Name:</p>
-                      <p className="text-sm text-gray-900 break-words">{userDetails.name || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-gray-600">Mobile:</p>
-                      <p className="text-sm text-gray-900">{userDetails.mobile || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-gray-600">Email:</p>
-                      <p className="text-sm text-gray-900 break-all">{userDetails.email || 'N/A'}</p>
-                    </div>
-                  </div>
-                </div>
-                {selectedUserId && (
-                  <button
-                    onClick={() => handleDeleteUserFromPopup(selectedUserId)}
-                    className="px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors text-sm font-medium"
-                  >
-                    Delete User
-                  </button>
-                )}
-              </div>
-            </div>
-
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm">
               <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-200">
                 <div>
@@ -936,12 +920,13 @@ const UserAdmin = () => {
                 <div className="text-center py-10 text-gray-500">
                   <p className="text-sm">No properties found for this user.</p>
                   {selectedUserId && (
-                    <Link
-                      to={`/Admin/viewproperty/${selectedUserId}`}
+                    <button
+                      onClick={() => openPropertyManager(selectedUserId)}
                       className="mt-4 inline-block px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+                      type="button"
                     >
                       Go to Property Management
-                    </Link>
+                    </button>
                   )}
                 </div>
               ) : (
@@ -966,24 +951,27 @@ const UserAdmin = () => {
                           <td className="px-4 sm:px-6 py-3">
                             <div className="flex flex-wrap gap-2">
                               {selectedUserId && (
-                                <Link
-                                  to={`/Admin/viewproperty/${selectedUserId}`}
+                                <button
+                                  type="button"
+                                  onClick={() => openPropertyManager(selectedUserId)}
                                   className="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-xs font-semibold"
                                 >
                                   View
-                                </Link>
+                                </button>
                               )}
                               {selectedUserId && (
-                                <Link
-                                  to={`/Admin/viewproperty/${selectedUserId}`}
+                                <button
+                                  type="button"
+                                  onClick={() => openPropertyManager(selectedUserId)}
                                   className="px-3 py-1.5 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 text-xs font-semibold"
                                 >
                                   Edit
-                                </Link>
+                                </button>
                               )}
                               <button
                                 onClick={() => handleDeleteProperty(property?._id)}
                                 className="px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700 text-xs font-semibold"
+                                type="button"
                               >
                                 Delete
                               </button>
@@ -1040,7 +1028,24 @@ const UserAdmin = () => {
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={handleCloseUserDetailsModal}
+                className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  openPropertyManager(selectedUser._id);
+                }}
+                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                View Properties
+              </button>
+            </div>
+
+            <div className="mt-6 bg-gray-50 rounded-lg p-4">
               <h3 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent mb-4">Account Status</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -1093,99 +1098,38 @@ const UserAdmin = () => {
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={handleCloseUserDetailsModal}
-                className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
-              >
-                Close
-              </button>
-              <button
-                onClick={() => {
-                  const nextOpen = !propertiesInDetailsOpen;
-                  setPropertiesInDetailsOpen(nextOpen);
-                  if (nextOpen) {
-                    handleViewProperty(selectedUser._id, { openModal: false });
-                  }
-                }}
-                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              >
-                {propertiesInDetailsOpen ? 'Hide Properties' : 'View Properties'}
-              </button>
-            </div>
-
-            {propertiesInDetailsOpen && (
-              <div className="mt-6">
-                {loadingProperties ? (
-                  <div className="text-center py-8">
-                    <p className="text-gray-600 text-sm">Loading properties...</p>
-                  </div>
-                ) : userProperties.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <p className="text-sm">No properties found for this user.</p>
-                    <Link
-                      to={`/Admin/viewproperty/${selectedUser._id}`}
-                      className="mt-4 inline-block px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
-                    >
-                      Go to Property Management
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
-                    <div className="px-4 py-3 border-b border-gray-200">
-                      <h3 className="text-sm font-bold text-gray-900">Properties ({userProperties.length})</h3>
-                    </div>
-                    <table className="min-w-full">
-                      <thead className="bg-gray-50">
-                        <tr className="text-left text-xs font-semibold text-gray-600">
-                          <th className="px-4 py-3">#</th>
-                          <th className="px-4 py-3">Type</th>
-                          <th className="px-4 py-3">Name</th>
-                          <th className="px-4 py-3">City</th>
-                          <th className="px-4 py-3">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {userProperties.map((property, idx) => (
-                          <tr key={property?._id || idx} className="text-sm">
-                            <td className="px-4 py-3 text-gray-700">{idx + 1}</td>
-                            <td className="px-4 py-3 text-gray-700">{property?.propertyType || 'N/A'}</td>
-                            <td className="px-4 py-3 text-gray-900 font-medium">{property?.propertyName || 'N/A'}</td>
-                            <td className="px-4 py-3 text-gray-700">{property?.city || 'N/A'}</td>
-                            <td className="px-4 py-3">
-                              <div className="flex flex-wrap gap-2">
-                                <Link
-                                  to={`/Admin/viewproperty/${selectedUser._id}`}
-                                  className="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-xs font-semibold"
-                                >
-                                  View
-                                </Link>
-                                <Link
-                                  to={`/Admin/viewproperty/${selectedUser._id}`}
-                                  className="px-3 py-1.5 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 text-xs font-semibold"
-                                >
-                                  Edit
-                                </Link>
-                                <button
-                                  onClick={() => handleDeleteProperty(property?._id)}
-                                  className="px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700 text-xs font-semibold"
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => handleDeleteUserFromPopup(selectedUser._id)}
+                  className="px-5 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-semibold"
+                >
+                  Delete User
+                </button>
               </div>
-            )}
+            </div>
           </div>
         )}
+      </Modal>
+
+      <Modal
+        open={propertyManagerOpen}
+        onCancel={closePropertyManager}
+        footer={null}
+        width={1200}
+        centered
+        styles={{ body: { padding: 0 } }}
+      >
+        <div className="w-full h-[80vh]">
+          {propertyManagerUrl ? (
+            <iframe
+              title="Property Manager"
+              src={propertyManagerUrl}
+              className="w-full h-full border-0"
+            />
+          ) : null}
+        </div>
       </Modal>
 
       {contextHolder}
