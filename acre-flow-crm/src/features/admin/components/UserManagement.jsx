@@ -27,6 +27,7 @@ const UserAdmin = () => {
   const [userProperties, setUserProperties] = useState([]);
   const [userDetails, setUserDetails] = useState({ name: "", email: "", mobile: "" });
   const [loadingProperties, setLoadingProperties] = useState(false);
+  const [propertiesInDetailsOpen, setPropertiesInDetailsOpen] = useState(false);
   const [messageApi, contextHolder] = message.useMessage();
   const [userInfo, setUserInfo] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -153,7 +154,7 @@ const UserAdmin = () => {
     fetchData();
   }, [messageApi]);
 
-  const handleViewProperty = async (userId) => {
+  const handleViewProperty = async (userId, options = {}) => {
     try {
       setLoadingProperties(true);
       setSelectedUserId(userId);
@@ -181,7 +182,9 @@ const UserAdmin = () => {
                        (Array.isArray(responseData) ? responseData : []);
       
       setUserProperties(properties);
-      setViewPropertyModalVisible(true);
+      if (options.openModal !== false) {
+        setViewPropertyModalVisible(true);
+      }
       
       if (properties.length === 0) {
         messageApi.info('No properties found for this user');
@@ -191,6 +194,57 @@ const UserAdmin = () => {
       messageApi.error(error.response?.data?.message || 'Failed to load user properties');
     } finally {
       setLoadingProperties(false);
+    }
+  };
+
+  const handleDeleteProperty = async (propertyId) => {
+    if (!propertyId) return;
+    const confirmed = window.confirm('Are you sure you want to delete this property?');
+    if (!confirmed) return;
+
+    messageApi.open({ key: 'deleteProp', type: 'loading', content: 'Deleting property...', duration: 0 });
+    try {
+      const res = await api100acress.delete(`/postPerson/propertyDelete/${propertyId}`);
+      if (res.status >= 200 && res.status < 300) {
+        messageApi.destroy('deleteProp');
+        messageApi.success('Property deleted successfully');
+        setUserProperties((prev) => prev.filter((p) => p?._id !== propertyId));
+      } else {
+        throw new Error('Delete failed');
+      }
+    } catch (err) {
+      console.error('❌ Delete property error:', err);
+      messageApi.destroy('deleteProp');
+      messageApi.error(err.response?.data?.message || 'Error deleting property');
+    }
+  };
+
+  const handleDeleteUserFromPopup = async (userId) => {
+    if (!userId) return;
+    const confirmed = window.confirm('Are you sure you want to delete this user? This action cannot be undone.');
+    if (!confirmed) return;
+
+    messageApi.open({ key: 'deleteUser', type: 'loading', content: 'Deleting user...', duration: 0 });
+    try {
+      const res = await api100acress.delete(`/postPerson/deleteUser/${userId}`, {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 15000,
+      });
+      if (res.status >= 200 && res.status < 300) {
+        messageApi.destroy('deleteUser');
+        messageApi.success('User deleted successfully');
+        setViewAll((list) => list.filter((u) => u?._id !== userId));
+        setUserDetailsModalVisible(false);
+        setSelectedUser(null);
+        setPropertiesInDetailsOpen(false);
+        handleClosePropertyModal();
+      } else {
+        throw new Error('Delete failed');
+      }
+    } catch (err) {
+      console.error('❌ Delete user error:', err);
+      messageApi.destroy('deleteUser');
+      messageApi.error(err.response?.data?.message || 'Error deleting user');
     }
   };
 
@@ -209,6 +263,7 @@ const UserAdmin = () => {
   const handleCloseUserDetailsModal = () => {
     setUserDetailsModalVisible(false);
     setSelectedUser(null);
+    setPropertiesInDetailsOpen(false);
   };
 
   // Extract a reasonable "source" value from a user object
@@ -835,105 +890,112 @@ const UserAdmin = () => {
         }}
       >
         {loadingProperties ? (
-          <div className="text-center py-16 bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl">
-            <div className="inline-block relative">
-              <div className="animate-spin rounded-full h-16 w-16 border-4 border-gradient-to-r from-blue-200 to-purple-200 border-t-transparent"></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="h-8 w-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse"></div>
-              </div>
-            </div>
-            <p className="mt-6 text-gray-700 font-medium text-lg">Loading properties...</p>
-            <p className="text-gray-500 text-sm mt-2">Please wait while we fetch the information</p>
+          <div className="text-center py-12">
+            <p className="text-gray-700 font-medium">Loading properties...</p>
           </div>
         ) : (
-          <div className="max-h-[70vh] overflow-y-auto pr-2">
-            {/* User Details */}
-            <div className="bg-gradient-to-br from-blue-50 to-purple-50 p-6 rounded-2xl mb-6 shadow-lg border border-blue-100">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl shadow-md">
-                  <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-                    <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"></div>
+          <div className="max-h-[70vh] overflow-y-auto">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6 mb-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="border-l-4 border-red-500 pl-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-6">
+                    <div>
+                      <p className="text-xs font-semibold text-gray-600">Name:</p>
+                      <p className="text-sm text-gray-900 break-words">{userDetails.name || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-gray-600">Mobile:</p>
+                      <p className="text-sm text-gray-900">{userDetails.mobile || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-gray-600">Email:</p>
+                      <p className="text-sm text-gray-900 break-all">{userDetails.email || 'N/A'}</p>
+                    </div>
                   </div>
                 </div>
-                <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">User Information</h3>
-              </div>
-              <div className="grid grid-cols-3 gap-6">
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-blue-50">
-                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</label>
-                  <p className="text-base font-medium text-gray-800 mt-1">{userDetails.name || 'N/A'}</p>
-                </div>
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-purple-50">
-                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</label>
-                  <p className="text-base font-medium text-gray-800 mt-1 break-all">{userDetails.email || 'N/A'}</p>
-                </div>
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-pink-50">
-                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Mobile</label>
-                  <p className="text-base font-medium text-gray-800 mt-1">{userDetails.mobile || 'N/A'}</p>
-                </div>
+                {selectedUserId && (
+                  <button
+                    onClick={() => handleDeleteUserFromPopup(selectedUserId)}
+                    className="px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors text-sm font-medium"
+                  >
+                    Delete User
+                  </button>
+                )}
               </div>
             </div>
 
-            {/* Properties List */}
-            {userProperties.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <p className="text-lg">No properties found for this user.</p>
-                <Link 
-                  to={`/Admin/viewproperty/${selectedUserId}`}
-                  className="mt-4 inline-block px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  Go to Property Management
-                </Link>
-              </div>
-            ) : (
-              <div>
-                <h3 className="text-lg font-semibold mb-4">
-                  Properties ({userProperties.length})
-                </h3>
-                <div className="space-y-4">
-                  {userProperties.map((property, index) => (
-                    <div 
-                      key={property._id || index} 
-                      className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-                    >
-                      <div className="grid grid-cols-4 gap-4">
-                        <div>
-                          <label className="text-sm font-semibold text-gray-600">Property Name</label>
-                          <p className="text-base font-medium">{property.propertyName || 'N/A'}</p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-semibold text-gray-600">Type</label>
-                          <p className="text-base">{property.propertyType || 'N/A'}</p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-semibold text-gray-600">City</label>
-                          <p className="text-base">{property.city || 'N/A'}</p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-semibold text-gray-600">Price</label>
-                          <p className="text-base font-semibold text-red-600">
-                            {property.price ? `₹${property.price.toLocaleString()}` : 'N/A'}
-                          </p>
-                        </div>
-                      </div>
-                      {(property.address || property.landMark) && (
-                        <div className="mt-2">
-                          <label className="text-sm font-semibold text-gray-600">Address</label>
-                          <p className="text-base">{property.address || property.landMark}</p>
-                        </div>
-                      )}
-                      <div className="mt-3 flex gap-2">
-                        <Link 
-                          to={`/Admin/viewproperty/${selectedUserId}`}
-                          className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-sm"
-                        >
-                          View Details
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm">
+              <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-200">
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">Properties Table</h3>
+                  <p className="text-xs text-gray-500">({userProperties.length} properties)</p>
                 </div>
               </div>
-            )}
+
+              {userProperties.length === 0 ? (
+                <div className="text-center py-10 text-gray-500">
+                  <p className="text-sm">No properties found for this user.</p>
+                  {selectedUserId && (
+                    <Link
+                      to={`/Admin/viewproperty/${selectedUserId}`}
+                      className="mt-4 inline-block px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+                    >
+                      Go to Property Management
+                    </Link>
+                  )}
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full">
+                    <thead className="bg-gray-50">
+                      <tr className="text-left text-xs font-semibold text-gray-600">
+                        <th className="px-4 sm:px-6 py-3">#</th>
+                        <th className="px-4 sm:px-6 py-3">Type</th>
+                        <th className="px-4 sm:px-6 py-3">Name</th>
+                        <th className="px-4 sm:px-6 py-3">City</th>
+                        <th className="px-4 sm:px-6 py-3">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {userProperties.map((property, idx) => (
+                        <tr key={property?._id || idx} className="text-sm">
+                          <td className="px-4 sm:px-6 py-3 text-gray-700">{idx + 1}</td>
+                          <td className="px-4 sm:px-6 py-3 text-gray-700">{property?.propertyType || 'N/A'}</td>
+                          <td className="px-4 sm:px-6 py-3 text-gray-900 font-medium">{property?.propertyName || 'N/A'}</td>
+                          <td className="px-4 sm:px-6 py-3 text-gray-700">{property?.city || 'N/A'}</td>
+                          <td className="px-4 sm:px-6 py-3">
+                            <div className="flex flex-wrap gap-2">
+                              {selectedUserId && (
+                                <Link
+                                  to={`/Admin/viewproperty/${selectedUserId}`}
+                                  className="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-xs font-semibold"
+                                >
+                                  View
+                                </Link>
+                              )}
+                              {selectedUserId && (
+                                <Link
+                                  to={`/Admin/viewproperty/${selectedUserId}`}
+                                  className="px-3 py-1.5 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 text-xs font-semibold"
+                                >
+                                  Edit
+                                </Link>
+                              )}
+                              <button
+                                onClick={() => handleDeleteProperty(property?._id)}
+                                className="px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700 text-xs font-semibold"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </Modal>
@@ -1042,14 +1104,86 @@ const UserAdmin = () => {
               </button>
               <button
                 onClick={() => {
-                  handleCloseUserDetailsModal();
-                  handleViewProperty(selectedUser._id);
+                  const nextOpen = !propertiesInDetailsOpen;
+                  setPropertiesInDetailsOpen(nextOpen);
+                  if (nextOpen) {
+                    handleViewProperty(selectedUser._id, { openModal: false });
+                  }
                 }}
                 className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
               >
-                View Properties
+                {propertiesInDetailsOpen ? 'Hide Properties' : 'View Properties'}
               </button>
             </div>
+
+            {propertiesInDetailsOpen && (
+              <div className="mt-6">
+                {loadingProperties ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-600 text-sm">Loading properties...</p>
+                  </div>
+                ) : userProperties.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <p className="text-sm">No properties found for this user.</p>
+                    <Link
+                      to={`/Admin/viewproperty/${selectedUser._id}`}
+                      className="mt-4 inline-block px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+                    >
+                      Go to Property Management
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+                    <div className="px-4 py-3 border-b border-gray-200">
+                      <h3 className="text-sm font-bold text-gray-900">Properties ({userProperties.length})</h3>
+                    </div>
+                    <table className="min-w-full">
+                      <thead className="bg-gray-50">
+                        <tr className="text-left text-xs font-semibold text-gray-600">
+                          <th className="px-4 py-3">#</th>
+                          <th className="px-4 py-3">Type</th>
+                          <th className="px-4 py-3">Name</th>
+                          <th className="px-4 py-3">City</th>
+                          <th className="px-4 py-3">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {userProperties.map((property, idx) => (
+                          <tr key={property?._id || idx} className="text-sm">
+                            <td className="px-4 py-3 text-gray-700">{idx + 1}</td>
+                            <td className="px-4 py-3 text-gray-700">{property?.propertyType || 'N/A'}</td>
+                            <td className="px-4 py-3 text-gray-900 font-medium">{property?.propertyName || 'N/A'}</td>
+                            <td className="px-4 py-3 text-gray-700">{property?.city || 'N/A'}</td>
+                            <td className="px-4 py-3">
+                              <div className="flex flex-wrap gap-2">
+                                <Link
+                                  to={`/Admin/viewproperty/${selectedUser._id}`}
+                                  className="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-xs font-semibold"
+                                >
+                                  View
+                                </Link>
+                                <Link
+                                  to={`/Admin/viewproperty/${selectedUser._id}`}
+                                  className="px-3 py-1.5 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 text-xs font-semibold"
+                                >
+                                  Edit
+                                </Link>
+                                <button
+                                  onClick={() => handleDeleteProperty(property?._id)}
+                                  className="px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700 text-xs font-semibold"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </Modal>
