@@ -66,6 +66,7 @@ const AdminDashboard = () => {
       {/* Sidebar */}
       <AdminSidebar 
         isOpen={sidebarOpen} 
+        onToggle={() => setSidebarOpen(!sidebarOpen)}
         activeTab={activeTab}
         onTabChange={setActiveTab}
       />
@@ -76,15 +77,9 @@ const AdminDashboard = () => {
         <header className="bg-white shadow-sm border-b border-gray-200">
           <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center gap-4">
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2 hover:bg-gray-100 rounded-lg lg:hidden"
-              >
-                {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-                <p className="text-sm text-gray-600">System administration and management</p>
+                <h1 className="text-xl lg:text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+                <p className="text-xs lg:text-sm text-gray-600">System administration and management</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
