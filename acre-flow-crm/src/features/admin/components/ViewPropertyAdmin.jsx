@@ -18,6 +18,8 @@ const ViewPropertyAdmin = () => {
   const [tableOpen, setTableOpen] = useState(true);
   const [deletingUser, setDeletingUser] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [mobileDetailsOpen, setMobileDetailsOpen] = useState(false);
+  const [mobileDetailsItem, setMobileDetailsItem] = useState(null);
   const [viewModalVisible, setViewModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState(null);
@@ -74,6 +76,16 @@ const ViewPropertyAdmin = () => {
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
     setCurrentPage(1);
+  };
+
+  const openMobileDetails = (item) => {
+    setMobileDetailsItem(item || null);
+    setMobileDetailsOpen(true);
+  };
+
+  const closeMobileDetails = () => {
+    setMobileDetailsOpen(false);
+    setMobileDetailsItem(null);
   };
 
   useEffect(() => {
@@ -446,9 +458,9 @@ const ViewPropertyAdmin = () => {
   return (
     <>
       {contextHolder}
-      <div className="flex bg-gray-50 min-h-screen">
+      <div className="flex bg-gray-50 min-h-screen overflow-x-hidden">
         {/* {!isEmbed && <AdminSidebar />} */}
-        <div className={isEmbed ? "flex-1 p-4 overflow-auto" : "flex-1 p-8 ml-0 overflow-auto"}>
+        <div className={isEmbed ? "flex-1 p-4 overflow-auto overflow-x-hidden" : "flex-1 p-8 ml-0 overflow-auto overflow-x-hidden"}>
           <div className="max-w-6xl mx-auto space-y-8">
             {/* Search Bar */}
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 sm:mb-6">
@@ -501,34 +513,41 @@ const ViewPropertyAdmin = () => {
               
                 {tableOpen && (
                   <>
-                    <div className="overflow-x-auto -mx-3 sm:mx-0">
-                      <div className="min-w-[480px] sm:min-w-0 px-3 sm:px-0">
+                    <div className="overflow-x-auto max-w-full">
+                      <div className="w-full min-w-0 px-0">
                         <table className="min-w-full table-fixed">
                           <thead className="bg-gray-100">
                             <tr className="text-xs sm:text-sm">
-                              <th className="px-2 sm:px-4 py-2 text-left w-10">#</th>
-                              <th className="px-2 sm:px-4 py-2 text-left w-24">Type</th>
-                              <th className="px-2 sm:px-3 py-2 text-left w-44">Name</th>
-                              <th className="px-1 sm:px-2 py-2 text-left hidden sm:table-cell w-20">City</th>
-                              <th className="px-1 sm:px-2 py-2 text-left w-28">Actions</th>
+                              <th className="px-2 sm:px-4 py-2 text-left w-10 hidden sm:table-cell">#</th>
+                              <th className="px-2 sm:px-4 py-2 text-left w-24 hidden sm:table-cell">Type</th>
+                              <th className="px-1 sm:px-3 py-2 text-left w-44 hidden sm:table-cell">Name</th>
+                              <th className="px-1 sm:px-2 py-2 text-left w-20 hidden sm:table-cell">City</th>
+                              <th className="px-1 sm:px-2 py-2 text-left w-24 sm:w-28">Actions</th>
                             </tr>
                           </thead>
                           <tbody className="text-xs sm:text-sm">
                             {currentRows.map((item, index) => (
                               <tr key={item._id || index} className="even:bg-gray-50 hover:bg-gray-100 transition-colors">
-                                <td className="px-2 sm:px-4 py-2">{(currentPage - 1) * rowsPerPage + index + 1}</td>
-                                <td className="px-2 sm:px-4 py-2">{item.propertyType || 'N/A'}</td>
-                                <td className="px-2 sm:px-3 py-2 truncate" title={item.propertyName || 'N/A'}>
+                                <td className="px-2 sm:px-4 py-2 hidden sm:table-cell">{(currentPage - 1) * rowsPerPage + index + 1}</td>
+                                <td className="px-2 sm:px-4 py-2 hidden sm:table-cell">{item.propertyType || 'N/A'}</td>
+                                <td className="px-1 sm:px-3 py-2 truncate hidden sm:table-cell" title={item.propertyName || 'N/A'}>
                                   {item.propertyName || 'N/A'}
                                 </td>
                                 <td className="px-1 sm:px-2 py-2 hidden sm:table-cell truncate" title={item.city || 'N/A'}>{item.city || 'N/A'}</td>
                                 <td className="px-1 sm:px-2 py-2 text-left">
-                                  <div className="flex flex-col sm:flex-row items-center sm:items-center justify-center sm:justify-start gap-2 sm:gap-1">
+                                  <div className="flex flex-col sm:flex-row items-center sm:items-center justify-center sm:justify-start gap-1.5 sm:gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => openMobileDetails(item)}
+                                      className="sm:hidden inline-flex items-center justify-center bg-gray-700 hover:bg-gray-800 text-white px-3 py-1.5 rounded transition-colors text-xs font-semibold w-20"
+                                    >
+                                      Details
+                                    </button>
                                     <button 
                                       type="button"
                                       onClick={() => handleViewProperty(item._id)}
                                       disabled={loadingPropertyDetails}
-                                      className="inline-flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold w-24 sm:w-auto"
+                                      className="inline-flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold w-20 sm:w-auto"
                                     >
                                       <MdVisibility className="inline mr-1" /> View
                                     </button>
@@ -536,14 +555,14 @@ const ViewPropertyAdmin = () => {
                                       type="button"
                                       onClick={() => handleEditProperty(item._id)}
                                       disabled={editingLoading}
-                                      className="inline-flex items-center justify-center bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold w-24 sm:w-auto"
+                                      className="inline-flex items-center justify-center bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold w-20 sm:w-auto"
                                     >
                                       <MdEdit className="inline mr-1" /> Edit
                                     </button>
                                     <button
                                       type="button"
                                       onClick={() => handleDeleteProperty(item._id)}
-                                      className="inline-flex items-center justify-center bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded transition-colors text-xs font-semibold w-24 sm:w-auto"
+                                      className="inline-flex items-center justify-center bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded transition-colors text-xs font-semibold w-20 sm:w-auto"
                                     >
                                       <MdDelete className="inline mr-1" /> Delete
                                     </button>
@@ -1109,6 +1128,68 @@ const ViewPropertyAdmin = () => {
             <p>No property details available.</p>
           </div>
         )}
+      </Modal>
+
+      <Modal
+        open={mobileDetailsOpen}
+        onCancel={closeMobileDetails}
+        footer={null}
+        centered
+        width={420}
+      >
+        <div className="space-y-4">
+          <div className="border-b border-gray-200 pb-3">
+            <h3 className="text-base font-bold text-gray-900">Property Details</h3>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3">
+            <div>
+              <p className="text-xs font-semibold text-gray-500">Type</p>
+              <p className="text-sm font-medium text-gray-900">{mobileDetailsItem?.propertyType || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-500">Name</p>
+              <p className="text-sm font-medium text-gray-900 break-words">{mobileDetailsItem?.propertyName || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-500">City</p>
+              <p className="text-sm font-medium text-gray-900">{mobileDetailsItem?.city || 'N/A'}</p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2 pt-2">
+            <button
+              type="button"
+              onClick={() => {
+                if (mobileDetailsItem?._id) handleViewProperty(mobileDetailsItem._id);
+                closeMobileDetails();
+              }}
+              className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs font-semibold"
+            >
+              <MdVisibility className="mr-1" /> View
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (mobileDetailsItem?._id) handleEditProperty(mobileDetailsItem._id);
+                closeMobileDetails();
+              }}
+              className="inline-flex items-center justify-center bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-lg text-xs font-semibold"
+            >
+              <MdEdit className="mr-1" /> Edit
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (mobileDetailsItem?._id) handleDeleteProperty(mobileDetailsItem._id);
+                closeMobileDetails();
+              }}
+              className="inline-flex items-center justify-center bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-xs font-semibold"
+            >
+              <MdDelete className="mr-1" /> Delete
+            </button>
+          </div>
+        </div>
       </Modal>
       {contextHolder}
     </>

@@ -566,9 +566,9 @@ const UserAdmin = () => {
               <div className="w-full space-y-4">
           {/* Header Controls: Enhanced Search and Filters */}
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-3 sm:p-4 mb-4">
-            <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 items-start lg:items-center justify-between">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 items-start lg:items-center">
               {/* Left: Enhanced Search */}
-              <div className="relative w-full lg:max-w-md">
+              <div className="relative w-full lg:col-span-4">
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <MdSearch className="text-gray-400" size={18} />
@@ -594,9 +594,9 @@ const UserAdmin = () => {
               </div>
 
               {/* Right: Enhanced Filters */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2 sm:gap-3 items-start w-full">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-2 sm:gap-3 items-start w-full lg:col-span-8">
                 {/* Role Filter */}
-                <div className="relative w-full">
+                <div className="relative w-full lg:col-span-2">
                   <select
                     className="appearance-none bg-white border-2 border-gray-300 rounded-xl px-2 sm:px-4 py-1.5 sm:py-2.5 pr-6 sm:pr-8 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 shadow-sm hover:border-gray-400 cursor-pointer w-full"
                     value={roleFilter}
@@ -615,7 +615,7 @@ const UserAdmin = () => {
                 </div>
 
                 {/* Email Verification Filter */}
-                <div className="relative w-full">
+                <div className="relative w-full lg:col-span-2">
                   <select
                     className="appearance-none bg-white border-2 border-gray-300 rounded-xl px-2 sm:px-4 py-1.5 sm:py-2.5 pr-6 sm:pr-8 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 shadow-sm hover:border-gray-400 cursor-pointer w-full"
                     value={verifyFilter}
@@ -633,7 +633,7 @@ const UserAdmin = () => {
                 </div>
 
                 {/* Source Filter */}
-                <div className="relative w-full">
+                <div className="relative w-full lg:col-span-2">
                   {(() => {
                     const options = Array.from(new Set(viewAll.map(getSourceValue))).filter(Boolean).sort();
                     return (
@@ -657,7 +657,7 @@ const UserAdmin = () => {
                 </div>
 
                 {/* Date Range */}
-                <div className="col-span-1 lg:col-span-2 flex gap-1.5 sm:gap-2 items-center">
+                <div className="col-span-1 lg:col-span-4 flex gap-1.5 sm:gap-2 items-center">
                   <div className="relative flex-1">
                     <input
                       type="date"
@@ -680,10 +680,10 @@ const UserAdmin = () => {
                 </div>
 
                 {/* Export Button */}
-                <div className="col-span-1 lg:col-span-2 flex justify-center">
+                <div className="col-span-1 lg:col-span-2 flex justify-center lg:justify-end">
                   <button
                     onClick={exportToCSV}
-                    className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-3 sm:px-4 py-1.5 sm:py-2.5 rounded-xl hover:from-emerald-600 hover:to-emerald-700 shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 flex items-center gap-1.5 sm:gap-2 w-full text-xs sm:text-sm"
+                    className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-3 sm:px-4 py-1.5 sm:py-2.5 rounded-xl hover:from-emerald-600 hover:to-emerald-700 shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 flex items-center gap-1.5 sm:gap-2 w-full lg:w-auto text-xs sm:text-sm"
                     title="Export filtered users to CSV"
                   >
                     <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 20 20">
