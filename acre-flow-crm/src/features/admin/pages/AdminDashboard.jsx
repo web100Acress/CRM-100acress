@@ -78,8 +78,8 @@ const AdminDashboard = () => {
           <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center gap-4">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-                <p className="text-sm text-gray-600">System administration and management</p>
+                <h1 className="text-xl lg:text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+                <p className="text-xs lg:text-sm text-gray-600">System administration and management</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
