@@ -19,6 +19,9 @@ const ProjectEnquiries = () => {
   const [messageApi, contextHolder] = message.useMessage();
   const [dayFilter, setDayFilter] = useState('');
   const [monthFilter, setMonthFilter] = useState('');
+  const [rangeStart, setRangeStart] = useState('');
+  const [rangeEnd, setRangeEnd] = useState('');
+  const [monthPanel, setMonthPanel] = useState('month'); // 'month' | 'range'
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [filterType, setFilterType] = useState('day'); // 'day' or 'month'
   const [calendarMonth, setCalendarMonth] = useState(new Date());
@@ -87,7 +90,11 @@ const ProjectEnquiries = () => {
         url += `&date=${dayFilter}`;
       }
       if (filterType === 'month' && monthFilter) {
-        url += `&month=${monthFilter}`;
+        if (rangeStart && rangeEnd) {
+          url += `&startDate=${rangeStart}&endDate=${rangeEnd}`;
+        } else {
+          url += `&month=${monthFilter}`;
+        }
       }
       
       console.log('Fetching URL:', url);
@@ -128,7 +135,7 @@ const ProjectEnquiries = () => {
       fetchData(1);
     }, 300); // Debounce search input
     return () => clearTimeout(delayDebounceFn);
-  }, [search, dayFilter, monthFilter, filterType]);
+  }, [search, dayFilter, monthFilter, rangeStart, rangeEnd, filterType]);
 
   useEffect(() => {
     fetchData(currentPage);
@@ -152,6 +159,7 @@ const ProjectEnquiries = () => {
     } else {
       setCalendarMonth(monthFilter ? (parseYMToLocalDate(monthFilter) || new Date()) : new Date());
     }
+    setMonthPanel(filterType === 'month' ? 'month' : 'month');
   }, [filterType]);
 
 
@@ -213,13 +221,45 @@ const ProjectEnquiries = () => {
       const next = formatLocalYMD(date);
       setDayFilter(next);
       setCalendarMonth(new Date(date));
+      setCalendarOpen(false);
     } else if (filterType === 'month') {
       const next = formatLocalYM(date);
       setMonthFilter(next);
+      setRangeStart('');
+      setRangeEnd('');
       setCalendarMonth(new Date(date));
+      setMonthPanel('range');
+      setCalendarOpen(true);
     }
-    setCalendarOpen(false);
     setCurrentPage(1); // Reset to first page when filter changes
+  };
+
+  const handleRangePick = (day) => {
+    if (!monthFilter) {
+      messageApi.warning('Please select a month first');
+      return;
+    }
+    const picked = formatLocalYMD(day);
+
+    // Restrict selection to currently selected month
+    const monthDate = parseYMToLocalDate(monthFilter);
+    if (monthDate && (day.getFullYear() !== monthDate.getFullYear() || day.getMonth() !== monthDate.getMonth())) {
+      return;
+    }
+
+    if (!rangeStart || (rangeStart && rangeEnd)) {
+      setRangeStart(picked);
+      setRangeEnd('');
+      return;
+    }
+
+    // Second click -> end
+    if (picked < rangeStart) {
+      setRangeEnd(rangeStart);
+      setRangeStart(picked);
+    } else {
+      setRangeEnd(picked);
+    }
   };
 
   const clearDateFilter = () => {
@@ -228,10 +268,24 @@ const ProjectEnquiries = () => {
       setCalendarMonth(new Date());
     } else {
       setMonthFilter('');
+      setRangeStart('');
+      setRangeEnd('');
       setCalendarMonth(new Date());
+      setMonthPanel('month');
     }
     setCalendarOpen(false);
     setCurrentPage(1);
+  };
+
+  const formatRangeForDisplay = (startYmd, endYmd) => {
+    const s = parseYMDToLocalDate(startYmd);
+    const e = parseYMDToLocalDate(endYmd);
+    if (!s || !e) return '';
+    const sameMonth = s.getFullYear() === e.getFullYear() && s.getMonth() === e.getMonth();
+    if (sameMonth) {
+      return `${s.toLocaleDateString('en-US', { month: 'short' })} ${pad2(s.getDate())} - ${pad2(e.getDate())}`;
+    }
+    return `${s.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} - ${e.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}`;
   };
 
   const formatDateForDisplay = (dateString) => {
@@ -398,9 +452,13 @@ const ProjectEnquiries = () => {
                   >
                     <Calendar className="w-4 h-4 text-gray-500" />
                     <span className="text-gray-700 dark:text-gray-200 text-sm">
-                      {(filterType === 'day' ? dayFilter : monthFilter)
-                        ? formatDateForDisplay(filterType === 'day' ? dayFilter : monthFilter)
-                        : 'Select Date'}
+                      {filterType === 'day'
+                        ? (dayFilter ? formatDateForDisplay(dayFilter) : 'Select Date')
+                        : (monthFilter
+                          ? (rangeStart && rangeEnd
+                            ? formatRangeForDisplay(rangeStart, rangeEnd)
+                            : formatDateForDisplay(monthFilter))
+                          : 'Select Month')}
                     </span>
                     {(filterType === 'day' ? dayFilter : monthFilter) && (
                       <button
@@ -470,26 +528,166 @@ const ProjectEnquiries = () => {
                         </div>
                       </div>
                     ) : (
-                      /* Month View */
+                      /* Month-first then Range */
                       <div>
-                        <div className="text-center mb-3 font-semibold text-gray-700 dark:text-gray-200">
-                          Select Month
-                        </div>
-                        <div className="space-y-1 max-h-60 overflow-y-auto">
-                          {generateMonthOptions().map((month, i) => (
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-1">
                             <button
-                              key={i}
-                              onClick={() => handleDateFilterChange(month)}
-                              className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
-                                (monthFilter && formatLocalYM(month) === monthFilter)
-                                  ? 'bg-blue-600 text-white'
-                                  : 'text-gray-700 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-900'
+                              onClick={() => setMonthPanel('month')}
+                              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                                monthPanel === 'month'
+                                  ? 'bg-blue-500 text-white'
+                                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
                               }`}
                             >
-                              {month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                              Month
                             </button>
-                          ))}
+                            <button
+                              onClick={() => setMonthPanel('range')}
+                              disabled={!monthFilter}
+                              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                                monthPanel === 'range'
+                                  ? 'bg-blue-500 text-white'
+                                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                              } ${!monthFilter ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                              Range
+                            </button>
+                          </div>
+                          {monthFilter && (
+                            <button
+                              onClick={() => {
+                                setRangeStart('');
+                                setRangeEnd('');
+                                setCurrentPage(1);
+                              }}
+                              className="text-xs font-semibold text-gray-500 hover:text-gray-800"
+                            >
+                              Clear Range
+                            </button>
+                          )}
                         </div>
+
+                        {monthPanel === 'month' ? (
+                          <>
+                            <div className="text-center mb-2 font-semibold text-gray-700 dark:text-gray-200">
+                              Select Month
+                            </div>
+                            <div className="space-y-1 max-h-60 overflow-y-auto">
+                              {generateMonthOptions().map((month, i) => (
+                                <button
+                                  key={i}
+                                  onClick={() => handleDateFilterChange(month)}
+                                  className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
+                                    (monthFilter && formatLocalYM(month) === monthFilter)
+                                      ? 'bg-blue-600 text-white'
+                                      : 'text-gray-700 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-900'
+                                  }`}
+                                >
+                                  {month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                                </button>
+                              ))}
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex items-center justify-between mb-2">
+                              <button
+                                onClick={() => {
+                                  if (!monthFilter) return;
+                                  const base = parseYMToLocalDate(monthFilter) || new Date();
+                                  const prev = new Date(base.getFullYear(), base.getMonth() - 1, 1);
+                                  handleDateFilterChange(prev);
+                                  setMonthPanel('range');
+                                }}
+                                className="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
+                              >
+                                <ChevronLeft className="w-4 h-4" />
+                              </button>
+                              <div className="text-center font-semibold text-gray-700 dark:text-gray-200">
+                                {(monthFilter ? (parseYMToLocalDate(monthFilter) || new Date()) : new Date()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                              </div>
+                              <button
+                                onClick={() => {
+                                  if (!monthFilter) return;
+                                  const base = parseYMToLocalDate(monthFilter) || new Date();
+                                  const next = new Date(base.getFullYear(), base.getMonth() + 1, 1);
+                                  handleDateFilterChange(next);
+                                  setMonthPanel('range');
+                                }}
+                                className="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
+                              >
+                                <ChevronRight className="w-4 h-4" />
+                              </button>
+                            </div>
+
+                            <div className="grid grid-cols-7 gap-1 text-xs mb-2">
+                              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                                <div key={i} className="text-center font-medium text-gray-500 dark:text-gray-400 p-1">
+                                  {day}
+                                </div>
+                              ))}
+                            </div>
+
+                            <div className="grid grid-cols-7 gap-1">
+                              {generateCalendarDays(parseYMToLocalDate(monthFilter) || new Date()).map((day, i) => {
+                                const ymd = day ? formatLocalYMD(day) : '';
+                                const isSelectedStart = !!day && rangeStart && ymd === rangeStart;
+                                const isSelectedEnd = !!day && rangeEnd && ymd === rangeEnd;
+                                const inRange = !!day && rangeStart && rangeEnd && ymd > rangeStart && ymd < rangeEnd;
+                                const isToday = !!day && ymd === formatLocalYMD(new Date());
+
+                                return (
+                                  <div key={i} className="aspect-square min-h-[32px]">
+                                    {day ? (
+                                      <button
+                                        onClick={() => handleRangePick(day)}
+                                        className={`w-full h-full flex items-center justify-center rounded text-sm transition-colors border dark:border-gray-600 ${
+                                          isSelectedStart || isSelectedEnd
+                                            ? 'bg-blue-600 text-white border-blue-600'
+                                            : inRange
+                                              ? 'bg-blue-100 text-blue-900 border-blue-200'
+                                              : isToday
+                                                ? 'border-blue-300 text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-900/30'
+                                                : 'border-gray-100 text-gray-700 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-900'
+                                        }`}
+                                      >
+                                        {day.getDate()}
+                                      </button>
+                                    ) : (
+                                      <div className="border border-transparent" />
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            <div className="mt-3 flex items-center justify-between">
+                              <div className="text-xs text-gray-500">
+                                {rangeStart && !rangeEnd ? 'Select end date' : (rangeStart && rangeEnd ? 'Range selected' : 'Select start date')}
+                              </div>
+                              <button
+                                onClick={() => {
+                                  if (rangeStart && rangeEnd) {
+                                    setCalendarOpen(false);
+                                    setCurrentPage(1);
+                                    fetchData(1);
+                                  } else {
+                                    messageApi.info('Select start and end date');
+                                  }
+                                }}
+                                className={`px-3 py-1 rounded text-sm font-semibold ${
+                                  (rangeStart && rangeEnd)
+                                    ? 'bg-gray-900 text-white hover:bg-gray-800'
+                                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                }`}
+                                disabled={!(rangeStart && rangeEnd)}
+                              >
+                                Apply
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>
