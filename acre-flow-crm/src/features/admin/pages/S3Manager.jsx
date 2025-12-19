@@ -17,8 +17,14 @@ import { MdCloudUpload, MdRefresh } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import AdminSidebar from "../components/AdminSidebar";
 import api100acress from "../config/api100acressClient";
+import axios from 'axios';
+import { LogOut, ChevronDown, User, Settings as SettingsIcon } from 'lucide-react';
 
 const S3Manager = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [userInfo, setUserInfo] = useState(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
   const [folders, setFolders] = useState([]);
   const [selectedFolder, setSelectedFolder] = useState('');
   const [currentPath, setCurrentPath] = useState(''); // Track current folder path
@@ -67,6 +73,41 @@ const S3Manager = () => {
   useEffect(() => {
     checkAuthentication();
   }, []);
+
+  useEffect(() => {
+    const userName = localStorage.getItem('userName') || localStorage.getItem('adminName') || 'Admin';
+    const userEmail = localStorage.getItem('userEmail') || localStorage.getItem('adminEmail') || 'admin@example.com';
+    const userRole = localStorage.getItem('userRole') || localStorage.getItem('adminRole') || 'admin';
+    setUserInfo({ name: userName, email: userEmail, role: userRole });
+  }, []);
+
+  const getUserInitials = (name) => {
+    if (!name) return 'AD';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAdminLoggedIn');
+    localStorage.removeItem('adminEmail');
+    localStorage.removeItem('adminName');
+    localStorage.removeItem('adminRole');
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('token');
+    localStorage.removeItem('sourceSystem');
+    localStorage.removeItem('originalRole');
+    localStorage.removeItem('myToken');
+    localStorage.removeItem('isDeveloperLoggedIn');
+    localStorage.removeItem('isHrFinanceLoggedIn');
+    localStorage.removeItem('isSalesHeadLoggedIn');
+    localStorage.removeItem('isHRLoggedIn');
+    localStorage.removeItem('isBlogLoggedIn');
+    localStorage.removeItem('isItLoggedIn');
+    window.location.href = '/login';
+  };
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -552,13 +593,67 @@ const S3Manager = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-gray-50 dark:bg-gray-900 dark:text-gray-100">
-      <AdminSidebar />
-      <div className="flex-1 min-w-0 p-6 ml-[80px] transition-colors duration-300">
-        <div className="max-w-full mx-auto">
+    <div className="bg-gray-50 dark:bg-gray-900 dark:text-gray-100 h-screen flex overflow-x-hidden">
+      <AdminSidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(prev => !prev)} />
+      <div className="flex-1 flex flex-col overflow-hidden transition-colors duration-300 min-w-0">
+        <header className="bg-white shadow-sm border-b border-gray-200">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-4">
+            <div className="flex-1 text-center lg:text-left">
+              <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
+                <span className="lg:hidden">S3 Manager</span>
+                <span className="hidden lg:inline">S3 Media Manager</span>
+              </h1>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <button
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  type="button"
+                >
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-600 rounded-full flex items-center justify-center">
+                    <span className="text-white font-semibold text-xs sm:text-sm">{getUserInitials(userInfo?.name)}</span>
+                  </div>
+                  <div className="text-right hidden sm:block">
+                    <p className="text-xs sm:text-sm font-medium text-gray-900">{userInfo?.name}</p>
+                    <p className="text-xs text-gray-600 truncate max-w-[120px]">{userInfo?.email}</p>
+                  </div>
+                  <ChevronDown size={16} className={`text-gray-600 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {dropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-40 sm:w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                    <button className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-gray-50 transition-colors" type="button">
+                      <User size={16} className="text-gray-600" />
+                      <span className="text-xs sm:text-sm text-gray-700">Profile</span>
+                    </button>
+                    <button className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-gray-50 transition-colors" type="button">
+                      <SettingsIcon size={16} className="text-gray-600" />
+                      <span className="text-xs sm:text-sm text-gray-700">Settings</span>
+                    </button>
+                    <div className="border-t border-gray-200 my-2"></div>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-red-50 transition-colors text-red-600"
+                      type="button"
+                    >
+                      <LogOut size={16} />
+                      <span className="text-xs sm:text-sm font-medium">Logout</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 overflow-auto">
+          <div className="p-4 sm:p-6">
+            <div className="max-w-full mx-auto">
         {/* Header */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6">
-          <div className="flex items-center justify-between">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-gradient-to-r from-green-500 to-teal-500 rounded-lg">
                 <FaAws className="text-white text-2xl" />
@@ -572,17 +667,17 @@ const S3Manager = () => {
                 </p>
               </div>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
               <button
                 onClick={() => setShowCreateFolder(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 <FaPlus />
                 New Folder
               </button>
               <button
                 onClick={handleUploadModalOpen}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
               >
                 <FaUpload />
                 Upload Images
@@ -897,7 +992,10 @@ const S3Manager = () => {
             </div>
           </div>
         </div>
-      </div>
+
+            </div>
+          </div>
+        </main>
 
       {/* Upload Modal */}
       {showUploadModal && (
