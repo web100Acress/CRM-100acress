@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminSidebar from "../components/AdminSidebar";
 import api100acress from "../config/api100acressClient";
-import { message } from "antd";
+import { message, Modal } from "antd";
 import { useNavigate } from "react-router-dom";
 import { ClipLoader } from "react-spinners";
 import { ChevronLeft, ChevronRight, Search, Menu, X, ChevronDown, User, Settings as SettingsIcon, LogOut, Calendar } from 'lucide-react';
@@ -20,6 +20,8 @@ const ProjectEnquiries = () => {
   const [dateFilter, setDateFilter] = useState('');
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [filterType, setFilterType] = useState('day'); // 'day' or 'month'
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedEnquiry, setSelectedEnquiry] = useState(null);
   const navigate = useNavigate();
   const pageSize = 10;
 
@@ -195,6 +197,11 @@ const ProjectEnquiries = () => {
             messageApi.error("Failed to delete enquiry.");
         }
     }
+  };
+
+  const handleViewDetails = (item) => {
+    setSelectedEnquiry(item);
+    setDetailsOpen(true);
   };
 
   const formatDateTime = (dt) => {
@@ -484,7 +491,7 @@ const ProjectEnquiries = () => {
               <table className="w-full">
                 <thead className="bg-gray-100 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
                   <tr>
-                    <th className="px-6 py-4 text-left">
+                    <th className="px-6 py-4 text-left hidden sm:table-cell">
                       <input
                         type="checkbox"
                         checked={selectedIds.length === paginatedData.length && paginatedData.length > 0}
@@ -492,12 +499,12 @@ const ProjectEnquiries = () => {
                         className="w-4 h-4 cursor-pointer rounded"
                       />
                     </th>
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">SR.NO</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide hidden sm:table-cell">SR.NO</th>
                     <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">NAME</th>
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">MOBILE</th>
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">PROJECT NAME</th>
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">EMAIL RECEIVED</th>
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">DATE</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide hidden sm:table-cell">MOBILE</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide hidden sm:table-cell">PROJECT NAME</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide hidden sm:table-cell">EMAIL RECEIVED</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide hidden sm:table-cell">DATE</th>
                     <th className="px-6 py-4 text-center text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">ACTIONS</th>
                   </tr>
                 </thead>
@@ -521,7 +528,7 @@ const ProjectEnquiries = () => {
                               : 'bg-gray-50 dark:bg-gray-700/50'
                         } hover:bg-blue-50 dark:hover:bg-blue-900/20`}
                       >
-                        <td className="px-6 py-4">
+                        <td className="px-6 py-4 hidden sm:table-cell">
                           <input
                             type="checkbox"
                             checked={selectedIds.includes(item._id)}
@@ -529,25 +536,35 @@ const ProjectEnquiries = () => {
                             className="w-4 h-4 cursor-pointer rounded"
                           />
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 font-medium">
+                        <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 font-medium hidden sm:table-cell">
                           {(currentPage - 1) * pageSize + index + 1}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 font-medium">{item.name}</td>
-                        <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{item.mobile}</td>
-                        <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{item.projectName}</td>
-                        <td className="px-6 py-4">
+                        <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 font-semibold">
+                          <span className="block leading-tight">{item.name}</span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 hidden sm:table-cell">{item.mobile}</td>
+                        <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 hidden sm:table-cell">{item.projectName}</td>
+                        <td className="px-6 py-4 hidden sm:table-cell">
                           <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${item.emailReceived ? 'bg-cyan-100 dark:bg-cyan-900/30 text-teal-700 dark:text-cyan-400 border border-cyan-300 dark:border-cyan-700' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-700'}`}>
                             {item.emailReceived ? 'True' : 'False'}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{formatDateTime(item.createdAt)}</td>
+                        <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 hidden sm:table-cell">{formatDateTime(item.createdAt)}</td>
                         <td className="px-6 py-4 text-center">
-                          <button
-                            onClick={() => handleDelete(item)}
-                            className="px-3 py-1 text-red-600 dark:text-red-400 border border-red-300 dark:border-red-700 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-300 text-sm font-semibold"
-                          >
-                            Delete
-                          </button>
+                          <div className="flex flex-col sm:flex-row justify-center items-stretch sm:items-center gap-2">
+                            <button
+                              onClick={() => handleViewDetails(item)}
+                              className="sm:hidden px-4 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white shadow-sm hover:bg-blue-700 transition-all duration-200"
+                            >
+                              View Details
+                            </button>
+                            <button
+                              onClick={() => handleDelete(item)}
+                              className="px-4 py-2 rounded-lg text-sm font-semibold border border-red-300 text-red-600 hover:bg-red-50 transition-all duration-200"
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -563,6 +580,56 @@ const ProjectEnquiries = () => {
                 </tbody>
               </table>
             </div>
+
+            <Modal
+              open={detailsOpen}
+              onCancel={() => setDetailsOpen(false)}
+              footer={null}
+              title="Enquiry Details"
+              centered
+              width={420}
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                  <div className="text-[11px] uppercase tracking-wide text-gray-500">Name</div>
+                  <div className="mt-1 text-sm font-semibold text-gray-900 break-words">{selectedEnquiry?.name || '-'}</div>
+                </div>
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                  <div className="text-[11px] uppercase tracking-wide text-gray-500">Mobile</div>
+                  <div className="mt-1 text-sm text-gray-900 break-words">{selectedEnquiry?.mobile || '-'}</div>
+                </div>
+                <div className="sm:col-span-2 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                  <div className="text-[11px] uppercase tracking-wide text-gray-500">Project Name</div>
+                  <div className="mt-1 text-sm text-gray-900 break-words">{selectedEnquiry?.projectName || '-'}</div>
+                </div>
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                  <div className="text-[11px] uppercase tracking-wide text-gray-500">Email Received</div>
+                  <div className="mt-1 text-sm text-gray-900">{selectedEnquiry?.emailReceived ? 'True' : 'False'}</div>
+                </div>
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                  <div className="text-[11px] uppercase tracking-wide text-gray-500">Date</div>
+                  <div className="mt-1 text-sm text-gray-900 break-words">{selectedEnquiry?.createdAt ? formatDateTime(selectedEnquiry?.createdAt) : '-'}</div>
+                </div>
+              </div>
+
+              <div className="mt-4 flex justify-end gap-2">
+                <button
+                  onClick={() => {
+                    setDetailsOpen(false);
+                    if (selectedEnquiry) handleDelete(selectedEnquiry);
+                  }}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold border border-red-300 text-red-600 hover:bg-red-50 transition-all duration-200"
+                >
+                  Delete
+                </button>
+                <button
+                  onClick={() => setDetailsOpen(false)}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 transition-all duration-200"
+                >
+                  Close
+                </button>
+              </div>
+            </Modal>
 
             {/* Pagination */}
             <div className="flex justify-center items-center gap-2">
