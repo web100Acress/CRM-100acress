@@ -2,19 +2,59 @@ import React, { useState, useEffect } from "react";
 import AdminSidebar from "../components/AdminSidebar";
 import { useParams, useNavigate } from "react-router-dom";
 import api100acress from "../config/api100acressClient";
-import { MdOutlineDeleteOutline, MdInfo, MdAttachMoney, MdDateRange, MdBarChart, MdDescription, MdStar, MdCheckCircle, MdUpdate, MdMovie, MdTitle } from "react-icons/md";
+import { MdOutlineDeleteOutline, MdInfo, MdAttachMoney, MdDateRange, MdBarChart, MdDescription, MdStar, MdCheckCircle, MdUpdate, MdMovie, MdTitle, MdArrowBack } from "react-icons/md";
 import Tippy from '@tippyjs/react';
 import 'tippy.js/dist/tippy.css';
 import 'tippy.js/animations/scale.css';
+import { LogOut, Menu, X, ChevronDown, User, Settings as SettingsIcon } from 'lucide-react';
 
 const ProjectEdit = () => {
   const { pUrl } = useParams();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [userInfo, setUserInfo] = useState(null);
   const [projectTypes, setProjectTypes] = useState([]);
   const [statusOptions, setStatusOptions] = useState([]);
   const [builderOptions, setBuilderOptions] = useState([]);
+
+  useEffect(() => {
+    // Get real-time logged-in user data
+    const userName = localStorage.getItem('userName') || localStorage.getItem('adminName') || 'Admin';
+    const userEmail = localStorage.getItem('userEmail') || localStorage.getItem('adminEmail') || 'admin@example.com';
+    const userRole = localStorage.getItem('userRole') || localStorage.getItem('adminRole') || 'admin';
+    
+    setUserInfo({ 
+      name: userName, 
+      email: userEmail,
+      role: userRole
+    });
+  }, []);
+
+  // Get user initials for avatar
+  const getUserInitials = (name) => {
+    if (!name) return 'AD';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const handleLogout = () => {
+    // Clear all user-related localStorage items
+    localStorage.removeItem('isAdminLoggedIn');
+    localStorage.removeItem('adminEmail');
+    localStorage.removeItem('adminName');
+    localStorage.removeItem('adminRole');
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('sourceSystem');
+    
+    window.location.href = '/login';
+  };
   const [values, setValues] = useState({
     thumbnailImage: "",
     otherImage: [],
@@ -520,28 +560,145 @@ const ProjectEdit = () => {
 
   if (isLoading) {
     return (
-      <div className="flex bg-gray-50 min-h-screen">
-        <AdminSidebar />
-        <div className="flex-1 p-8 ml-0 overflow-auto">
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading project data...</p>
+      <div className="flex h-screen bg-gray-100">
+        <AdminSidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <header className="bg-white shadow-sm border-b border-gray-200">
+            <div className="flex items-center justify-between px-6 py-4">
+              <div className="flex items-center gap-4 flex-1">
+                <div className="flex-1 text-center lg:text-left">
+                  <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
+                    <span className="lg:hidden">Edit Project</span>
+                    <span className="hidden lg:inline">Edit Project</span>
+                  </h1>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <button 
+                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-600 rounded-full flex items-center justify-center">
+                      <span className="text-white font-semibold text-xs sm:text-sm">{getUserInitials(userInfo?.name)}</span>
+                    </div>
+                    <div className="text-right hidden sm:block">
+                      <p className="text-xs sm:text-sm font-medium text-gray-900">{userInfo?.name}</p>
+                      <p className="text-xs text-gray-600 truncate max-w-[120px]">{userInfo?.email}</p>
+                    </div>
+                    <ChevronDown size={16} className={`text-gray-600 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  {dropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-40 sm:w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                      <button className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-gray-50 transition-colors">
+                        <User size={14} sm:size={16} className="text-gray-600" />
+                        <span className="text-xs sm:text-sm text-gray-700">Profile</span>
+                      </button>
+                      <button className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-gray-50 transition-colors">
+                        <SettingsIcon size={14} sm:size={16} className="text-gray-600" />
+                        <span className="text-xs sm:text-sm text-gray-700">Settings</span>
+                      </button>
+                      <div className="border-t border-gray-200 my-2"></div>
+                      <button 
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-red-50 transition-colors text-red-600"
+                      >
+                        <LogOut size={14} sm:size={16} />
+                        <span className="text-xs sm:text-sm font-medium">Logout</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
+          </header>
+          <main className="flex-1 overflow-auto bg-gray-50">
+            <div className="p-6">
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                  <p className="text-gray-600">Loading project data...</p>
+                </div>
+              </div>
+            </div>
+          </main>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex bg-gray-50 dark:bg-gray-900 dark:text-white min-h-screen">
-      <AdminSidebar />
-      <div className="flex-1 p-4 ml-0 overflow-auto font-sans">
-        <div className="w-full space-y-10">
-          <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-4 text-center tracking-tight">
-            Edit Project
-          </h1>
+    <div className="flex h-screen bg-gray-100">
+      <AdminSidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="bg-white shadow-sm border-b border-gray-200">
+          <div className="flex items-center justify-between px-6 py-4">
+            <div className="flex items-center gap-4 flex-1">
+              <div className="flex-1 text-center lg:text-left">
+                <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
+                  <span className="lg:hidden">Edit Project</span>
+                  <span className="hidden lg:inline">Edit Project</span>
+                </h1>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <button 
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-600 rounded-full flex items-center justify-center">
+                    <span className="text-white font-semibold text-xs sm:text-sm">{getUserInitials(userInfo?.name)}</span>
+                  </div>
+                  <div className="text-right hidden sm:block">
+                    <p className="text-xs sm:text-sm font-medium text-gray-900">{userInfo?.name}</p>
+                    <p className="text-xs text-gray-600 truncate max-w-[120px]">{userInfo?.email}</p>
+                  </div>
+                  <ChevronDown size={16} className={`text-gray-600 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {dropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-40 sm:w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                    <button className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-gray-50 transition-colors">
+                      <User size={14} sm:size={16} className="text-gray-600" />
+                      <span className="text-xs sm:text-sm text-gray-700">Profile</span>
+                    </button>
+                    <button className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-gray-50 transition-colors">
+                      <SettingsIcon size={14} sm:size={16} className="text-gray-600" />
+                      <span className="text-xs sm:text-sm text-gray-700">Settings</span>
+                    </button>
+                    <div className="border-t border-gray-200 my-2"></div>
+                    <button 
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-red-50 transition-colors text-red-600"
+                    >
+                      <LogOut size={14} sm:size={16} />
+                      <span className="text-xs sm:text-sm font-medium">Logout</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Content Area */}
+        <main className="flex-1 overflow-auto bg-gray-50">
+          <div className="p-6">
+            <div className="w-full space-y-10">
+              
+              {/* Back Button */}
+              <button
+                onClick={() => window.history.back()}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors duration-200 mb-4"
+              >
+                <MdArrowBack className="text-xl" />
+                Back
+              </button>
 
           {/* Image Upload Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -703,6 +860,8 @@ const ProjectEdit = () => {
             </div>
           </section>
         </div>
+      </div>
+        </main>
       </div>
     </div>
   );

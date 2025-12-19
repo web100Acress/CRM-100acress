@@ -4,10 +4,11 @@ import Modal from "react-modal";
 import AdminSidebar from "../components/AdminSidebar";
 import { Link, useParams } from "react-router-dom";
 import { message } from "antd";
-import { MdHome, MdAddCircle, MdTableRows, MdSearch, MdEdit, MdDelete, MdExpandMore, MdExpandLess } from "react-icons/md";
+import { MdHome, MdAddCircle, MdTableRows, MdSearch, MdEdit, MdDelete, MdExpandMore, MdExpandLess, MdArrowBack, MdVisibility } from "react-icons/md";
 import Tippy from '@tippyjs/react';
 import 'tippy.js/dist/tippy.css';
 import 'tippy.js/animations/scale.css';
+import { LogOut, Menu, X, ChevronDown, User, Settings as SettingsIcon } from 'lucide-react';
 
 // Set app element for react-modal to prevent accessibility issues
 Modal.setAppElement('#root');
@@ -34,11 +35,52 @@ const customModalStyles = {
 };
 
 const ProjectsAddBhk = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [userInfo, setUserInfo] = useState(null);
+  const [viewDetailsModalOpen, setViewDetailsModalOpen] = useState(false);
+  const [selectedBhk, setSelectedBhk] = useState(null);
   const [editFromData, setEditFromData] = useState({
     bhk_type: "",
     price: "",
     bhk_Area: ""
   });
+
+  useEffect(() => {
+    // Get real-time logged-in user data
+    const userName = localStorage.getItem('userName') || localStorage.getItem('adminName') || 'Admin';
+    const userEmail = localStorage.getItem('userEmail') || localStorage.getItem('adminEmail') || 'admin@example.com';
+    const userRole = localStorage.getItem('userRole') || localStorage.getItem('adminRole') || 'admin';
+    
+    setUserInfo({ 
+      name: userName, 
+      email: userEmail,
+      role: userRole
+    });
+  }, []);
+
+  // Get user initials for avatar
+  const getUserInitials = (name) => {
+    if (!name) return 'AD';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const handleLogout = () => {
+    // Clear all user-related localStorage items
+    localStorage.removeItem('isAdminLoggedIn');
+    localStorage.removeItem('adminEmail');
+    localStorage.removeItem('adminName');
+    localStorage.removeItem('adminRole');
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('sourceSystem');
+    
+    window.location.href = '/login';
+  };
 
   const resetData = () => {
     setEditFromData({
