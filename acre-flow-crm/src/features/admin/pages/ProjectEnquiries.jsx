@@ -28,7 +28,10 @@ const ProjectEnquiries = () => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedEnquiry, setSelectedEnquiry] = useState(null);
   const navigate = useNavigate();
-  const pageSize = 10;
+  const basePageSize = 10;
+
+  const isMonthFilterActive = filterType === 'month' && !!monthFilter;
+  const effectivePageSize = isMonthFilterActive ? 100000 : basePageSize;
 
   const pad2 = (n) => String(n).padStart(2, '0');
 
@@ -83,7 +86,8 @@ const ProjectEnquiries = () => {
   const fetchData = async (page = 1) => {
     setLoading(true);
     try {
-      let url = `/userViewAll?limit=${pageSize}&page=${page}&search=${encodeURIComponent(search)}`;
+      const effectivePage = isMonthFilterActive ? 1 : page;
+      let url = `/userViewAll?limit=${effectivePageSize}&page=${effectivePage}&search=${encodeURIComponent(search)}`;
       
       // Add date filter to API call
       if (filterType === 'day' && dayFilter) {
@@ -120,7 +124,7 @@ const ProjectEnquiries = () => {
       
       console.log('Final total being set:', finalTotal);
       setTotal(finalTotal);
-      setCurrentPage(page);
+      setCurrentPage(effectivePage);
       
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -140,6 +144,12 @@ const ProjectEnquiries = () => {
   useEffect(() => {
     fetchData(currentPage);
   }, [currentPage]);
+
+  useEffect(() => {
+    if (isMonthFilterActive && currentPage !== 1) {
+      setCurrentPage(1);
+    }
+  }, [isMonthFilterActive]);
 
   // Close calendar when clicking outside
   useEffect(() => {
@@ -163,7 +173,7 @@ const ProjectEnquiries = () => {
   }, [filterType]);
 
 
-  const totalPages = Math.ceil(total / pageSize);
+  const totalPages = Math.ceil(total / effectivePageSize);
   const paginatedData = data;
 
   const handleSelectAll = (e) => {
@@ -766,7 +776,7 @@ const ProjectEnquiries = () => {
                           />
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 font-medium hidden sm:table-cell">
-                          {(currentPage - 1) * pageSize + index + 1}
+                          {(currentPage - 1) * effectivePageSize + index + 1}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 font-semibold">
                           <span className="block leading-tight">{item.name}</span>
@@ -861,25 +871,40 @@ const ProjectEnquiries = () => {
             </Modal>
 
             {/* Pagination */}
-            <div className="flex justify-center items-center gap-2">
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                disabled={currentPage === 1 || loading}
-                className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
-              >
-                <ChevronLeft className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-              </button>
+            {!isMonthFilterActive && (
+              <div className="flex justify-center items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1 || loading}
+                  className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                >
+                  <ChevronLeft className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                </button>
 
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter(page =>
-                  page === 1 ||
-                  page === totalPages ||
-                  (page >= currentPage - 1 && page <= currentPage + 1)
-                )
-                .map((page, idx, arr) => {
-                  if (idx > 0 && page - arr[idx - 1] > 1) {
-                    return [
-                      <span key={`ellipsis-${page}`} className="px-2 text-gray-500 dark:text-gray-400">...</span>,
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(page =>
+                    page === 1 ||
+                    page === totalPages ||
+                    (page >= currentPage - 1 && page <= currentPage + 1)
+                  )
+                  .map((page, idx, arr) => {
+                    if (idx > 0 && page - arr[idx - 1] > 1) {
+                      return [
+                        <span key={`ellipsis-${page}`} className="px-2 text-gray-500 dark:text-gray-400">...</span>,
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${
+                            currentPage === page
+                              ? 'bg-red-500 text-white border border-red-500 shadow-md'
+                              : 'border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      ];
+                    }
+                    return (
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
@@ -891,31 +916,18 @@ const ProjectEnquiries = () => {
                       >
                         {page}
                       </button>
-                    ];
-                  }
-                  return (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${
-                        currentPage === page
-                          ? 'bg-red-500 text-white border border-red-500 shadow-md'
-                          : 'border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  );
-                })}
+                    );
+                  })}
 
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                disabled={currentPage === totalPages || loading}
-                className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
-              >
-                <ChevronRight className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-              </button>
-            </div>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages || loading}
+                  className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                >
+                  <ChevronRight className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                </button>
+              </div>
+            )}
           </div>
         </main>
       </div>
