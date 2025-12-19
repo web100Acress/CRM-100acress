@@ -8,6 +8,7 @@ import { MdStar, MdAddCircle, MdTableRows, MdEdit, MdDelete, MdExpandMore, MdExp
 import Tippy from '@tippyjs/react';
 import 'tippy.js/dist/tippy.css';
 import 'tippy.js/animations/scale.css';
+import { LogOut, ChevronDown, User, Settings as SettingsIcon } from 'lucide-react';
 
 // Set app element for react-modal to prevent accessibility issues
 Modal.setAppElement('#root');
@@ -24,8 +25,10 @@ const customModalStyles = {
     padding: '0px',
     border: 'none',
     boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
-    width: '450px',
-    overflow: 'hidden',
+    width: 'min(92vw, 520px)',
+    maxHeight: '90vh',
+    overflowY: 'auto',
+    overflowX: 'hidden',
   },
   overlay: {
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
@@ -34,6 +37,9 @@ const customModalStyles = {
 };
 
 const ProjectAddHighlights = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [userInfo, setUserInfo] = useState(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [viewAll, setViewAll] = useState([]);
   const [modalIsOpen, setIsOpen] = useState(false);
   const [editModalIsOpen, setEditModalIsOpen] = useState(false);
@@ -41,6 +47,33 @@ const ProjectAddHighlights = () => {
   const [modalSectionOpen, setModalSectionOpen] = useState(true);
   const [editFormOpen, setEditFormOpen] = useState(true);
   const [editingHighlightId, setEditingHighlightId] = useState(null);
+
+  useEffect(() => {
+    const userName = localStorage.getItem('userName') || localStorage.getItem('adminName') || 'Admin';
+    const userEmail = localStorage.getItem('userEmail') || localStorage.getItem('adminEmail') || 'admin@example.com';
+    const userRole = localStorage.getItem('userRole') || localStorage.getItem('adminRole') || 'admin';
+    setUserInfo({ name: userName, email: userEmail, role: userRole });
+  }, []);
+
+  const getUserInitials = (name) => {
+    if (!name) return 'AD';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAdminLoggedIn');
+    localStorage.removeItem('adminEmail');
+    localStorage.removeItem('adminName');
+    localStorage.removeItem('adminRole');
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('sourceSystem');
+    window.location.href = '/login';
+  };
 
   const [highlights, setHighlights] = useState({
     highlight_Point: "",
@@ -240,40 +273,94 @@ const ProjectAddHighlights = () => {
   };
 
   return (
-    <div className="flex bg-gray-50 dark:bg-gray-900 dark:text-white min-h-screen">
-      <AdminSidebar />
-      <div className="flex-1 p-8 ml-0 overflow-auto">
+    <div className="bg-gray-50 dark:bg-gray-900 dark:text-gray-100 h-screen flex overflow-x-hidden">
+      <AdminSidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(prev => !prev)} />
+      <div className="flex-1 flex flex-col overflow-hidden transition-colors duration-300 min-w-0">
         {contextHolder}
+        <header className="bg-white shadow-sm border-b border-gray-200">
+          <div className="flex items-center justify-between px-6 py-4">
+            <div className="flex items-center gap-4 flex-1">
+              <div className="flex-1 text-center lg:text-left">
+                <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
+                  <span className="lg:hidden">Highlights</span>
+                  <span className="hidden lg:inline">Project Highlights</span>
+                </h1>
+              </div>
+            </div>
 
-        {/* Header and Controls */}
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex items-center gap-2">
-            <MdStar className="text-3xl text-yellow-500 animate-pulse" />
-            <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Project Highlights</h1>
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <button
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  type="button"
+                >
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-600 rounded-full flex items-center justify-center">
+                    <span className="text-white font-semibold text-xs sm:text-sm">{getUserInitials(userInfo?.name)}</span>
+                  </div>
+                  <div className="text-right hidden sm:block">
+                    <p className="text-xs sm:text-sm font-medium text-gray-900">{userInfo?.name}</p>
+                    <p className="text-xs text-gray-600 truncate max-w-[120px]">{userInfo?.email}</p>
+                  </div>
+                  <ChevronDown size={16} className={`text-gray-600 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {dropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-40 sm:w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                    <button className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-gray-50 transition-colors" type="button">
+                      <User size={16} className="text-gray-600" />
+                      <span className="text-xs sm:text-sm text-gray-700">Profile</span>
+                    </button>
+                    <button className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-gray-50 transition-colors" type="button">
+                      <SettingsIcon size={16} className="text-gray-600" />
+                      <span className="text-xs sm:text-sm text-gray-700">Settings</span>
+                    </button>
+                    <div className="border-t border-gray-200 my-2"></div>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-red-50 transition-colors text-red-600"
+                      type="button"
+                    >
+                      <LogOut size={16} />
+                      <span className="text-xs sm:text-sm font-medium">Logout</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-          <Tippy content={<span>Add new highlight</span>} animation="scale" theme="light-border">
-            <button
-              onClick={openModal}
-              className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-700 text-white rounded-lg shadow-md hover:from-blue-600 hover:to-blue-800 transition duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              <MdAddCircle className="text-xl" /> Add Highlights
-            </button>
-          </Tippy>
-        </div>
+        </header>
 
-        {/* Highlights Table */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl border-l-4 border-yellow-400 mb-10">
+        <main className="flex-1 overflow-auto">
+          <div className="p-4 sm:p-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+              <div className="flex items-center gap-2">
+                <MdStar className="text-3xl text-yellow-500 animate-pulse" />
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white">Project Highlights</h2>
+              </div>
+              <Tippy content={<span>Add new highlight</span>} animation="scale" theme="light-border">
+                <button
+                  onClick={openModal}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 sm:px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-700 text-white rounded-lg shadow-md hover:from-blue-600 hover:to-blue-800 transition duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  type="button"
+                >
+                  <MdAddCircle className="text-xl" /> Add Highlights
+                </button>
+              </Tippy>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl border-l-4 border-yellow-400 mb-10">
           <div className="flex items-center gap-2 px-8 py-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-t-xl">
             <MdTableRows className="text-2xl text-yellow-500" />
             <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex-1 text-left">Highlights List</h2>
           </div>
-          <div className="overflow-x-auto p-8">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <div className="overflow-x-hidden sm:overflow-x-auto p-4 sm:p-8">
+            <table className="w-full table-fixed sm:table-auto divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-50 dark:bg-gray-900">
                 <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">S No.</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Highlight Points</th>
-                  <th scope="col" className="px-6 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Action</th>
+                  <th scope="col" className="hidden sm:table-cell px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">S No.</th>
+                  <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Highlight Points</th>
+                  <th scope="col" className="px-4 sm:px-6 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Action</th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -287,29 +374,33 @@ const ProjectAddHighlights = () => {
                           key={index}
                           className="group even:bg-gray-50 dark:even:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
                         >
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{index + 1}</td>
-                          <td className="px-6 py-4 text-sm text-gray-800 dark:text-gray-300 break-words max-w-lg">
-                            {item.highlight_Point}
+                          <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{index + 1}</td>
+                          <td className="px-4 sm:px-6 py-4 text-sm text-gray-800 dark:text-gray-300 max-w-[180px] sm:max-w-lg">
+                            <span className="block truncate whitespace-nowrap sm:whitespace-normal">
+                              {item.highlight_Point}
+                            </span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-2">
-                            <Tippy content={<span>Edit highlight</span>} animation="scale" theme="light-border">
-                              <button
-                                type="button"
-                                onClick={() => openEditModal(item)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-200 group"
-                              >
-                                <MdEdit className="text-lg group-hover:animate-bounce" /> Edit
-                              </button>
-                            </Tippy>
-                            <Tippy content={<span>Delete highlight</span>} animation="scale" theme="light-border">
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteButtonClick(id1)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition duration-200 group"
-                              >
-                                <MdDelete className="text-lg group-hover:animate-pulse" /> Delete
-                              </button>
-                            </Tippy>
+                          <td className="px-4 sm:px-6 py-4 text-center text-sm font-medium">
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+                              <Tippy content={<span>Edit highlight</span>} animation="scale" theme="light-border">
+                                <button
+                                  type="button"
+                                  onClick={() => openEditModal(item)}
+                                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1 px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-200 group"
+                                >
+                                  <MdEdit className="text-lg group-hover:animate-bounce" /> Edit
+                                </button>
+                              </Tippy>
+                              <Tippy content={<span>Delete highlight</span>} animation="scale" theme="light-border">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteButtonClick(id1)}
+                                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1 px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition duration-200 group"
+                                >
+                                  <MdDelete className="text-lg group-hover:animate-pulse" /> Delete
+                                </button>
+                              </Tippy>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -330,33 +421,32 @@ const ProjectAddHighlights = () => {
           </div>
         </div>
 
-        {/* Add Highlights Modal */}
-        <Modal
-          isOpen={modalIsOpen}
-          onRequestClose={closeModal}
-          style={customModalStyles}
-          contentLabel="Add Highlights"
-        >
-          <div className="bg-white dark:bg-gray-800 rounded-xl">
-            <button
-              className="w-full flex items-center gap-2 bg-blue-600 dark:bg-blue-700 rounded-t-xl px-6 py-4 text-center text-white focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
-              onClick={() => setModalSectionOpen((open) => !open)}
-              aria-expanded={modalSectionOpen}
-              aria-controls="modal-form-section"
-              type="button"
-              style={{ borderBottomLeftRadius: modalSectionOpen ? 0 : '0.75rem', borderBottomRightRadius: modalSectionOpen ? 0 : '0.75rem' }}
+            <Modal
+              isOpen={modalIsOpen}
+              onRequestClose={closeModal}
+              style={customModalStyles}
+              contentLabel="Add Highlights"
             >
-              <MdAddCircle className={`text-2xl transition-transform duration-300 ${modalSectionOpen ? 'rotate-0' : 'rotate-90 scale-110'}`} />
-              <h2 className="font-serif text-2xl font-semibold tracking-wide flex-1 text-left">Add Highlights</h2>
-              {modalSectionOpen ? <MdExpandLess className="text-2xl text-white transition-transform duration-300" /> : <MdExpandMore className="text-2xl text-white transition-transform duration-300" />}
-            </button>
-            <div
-              id="modal-form-section"
-              className={`transition-all duration-300 ${modalSectionOpen ? 'max-h-[1000px] opacity-100 p-8' : 'max-h-0 opacity-0 p-0'}`}
-              style={{ willChange: 'max-height, opacity, padding' }}
-              aria-hidden={!modalSectionOpen}
-            >
-              <form onSubmit={submitAddHighlight} className="space-y-5">
+              <div className="bg-white dark:bg-gray-800 rounded-xl">
+                <button
+                  className="w-full flex items-center gap-2 bg-blue-600 dark:bg-blue-700 rounded-t-xl px-6 py-4 text-center text-white focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+                  onClick={() => setModalSectionOpen((open) => !open)}
+                  aria-expanded={modalSectionOpen}
+                  aria-controls="modal-form-section"
+                  type="button"
+                  style={{ borderBottomLeftRadius: modalSectionOpen ? 0 : '0.75rem', borderBottomRightRadius: modalSectionOpen ? 0 : '0.75rem' }}
+                >
+                  <MdAddCircle className={`text-2xl transition-transform duration-300 ${modalSectionOpen ? 'rotate-0' : 'rotate-90 scale-110'}`} />
+                  <h2 className="font-serif text-xl sm:text-2xl font-semibold tracking-wide flex-1 text-left">Add Highlights</h2>
+                  {modalSectionOpen ? <MdExpandLess className="text-2xl text-white transition-transform duration-300" /> : <MdExpandMore className="text-2xl text-white transition-transform duration-300" />}
+                </button>
+                <div
+                  id="modal-form-section"
+                  className={`transition-all duration-300 ${modalSectionOpen ? 'max-h-[1000px] opacity-100 p-4 sm:p-8' : 'max-h-0 opacity-0 p-0'}`}
+                  style={{ willChange: 'max-height, opacity, padding' }}
+                  aria-hidden={!modalSectionOpen}
+                >
+                  <form onSubmit={submitAddHighlight} className="space-y-5">
                 <div>
                   <label htmlFor="highlight_Point" className="sr-only">Highlight Point</label>
                   <Tippy content={<span>Enter the highlight point (e.g., "Near Metro Station")</span>} animation="scale" theme="light-border">
@@ -380,38 +470,37 @@ const ProjectAddHighlights = () => {
                     <MdAddCircle className="text-xl group-hover:animate-bounce" /> Insert
                   </button>
                 </Tippy>
-              </form>
-            </div>
-          </div>
-        </Modal>
+                  </form>
+                </div>
+              </div>
+            </Modal>
 
-        {/* Edit Highlights Modal */}
-        <Modal
-          isOpen={editModalIsOpen}
-          onRequestClose={closeEditModal}
-          style={customModalStyles}
-          contentLabel="Edit Highlight"
-        >
-          <div className="bg-white dark:bg-gray-800 rounded-xl">
-            <button
-              className="w-full flex items-center gap-2 bg-green-600 dark:bg-green-700 rounded-t-xl px-6 py-4 text-center text-white focus:outline-none focus:ring-2 focus:ring-green-400 transition"
-              onClick={() => setEditFormOpen((open) => !open)}
-              aria-expanded={editFormOpen}
-              aria-controls="edit-form-section"
-              type="button"
-              style={{ borderBottomLeftRadius: editFormOpen ? 0 : '0.75rem', borderBottomRightRadius: editFormOpen ? 0 : '0.75rem' }}
+            <Modal
+              isOpen={editModalIsOpen}
+              onRequestClose={closeEditModal}
+              style={customModalStyles}
+              contentLabel="Edit Highlight"
             >
-              <MdEdit className={`text-2xl transition-transform duration-300 ${editFormOpen ? 'rotate-0' : 'rotate-90 scale-110'}`} />
-              <h2 className="font-serif text-2xl font-semibold tracking-wide flex-1 text-left">Edit Highlight</h2>
-              {editFormOpen ? <MdExpandLess className="text-2xl text-white transition-transform duration-300" /> : <MdExpandMore className="text-2xl text-white transition-transform duration-300" />}
-            </button>
-            <div
-              id="edit-form-section"
-              className={`transition-all duration-300 ${editFormOpen ? 'max-h-[1000px] opacity-100 p-8' : 'max-h-0 opacity-0 p-0'}`}
-              style={{ willChange: 'max-height, opacity, padding' }}
-              aria-hidden={!editFormOpen}
-            >
-              <form onSubmit={submitEditHighlight} className="space-y-5">
+              <div className="bg-white dark:bg-gray-800 rounded-xl">
+                <button
+                  className="w-full flex items-center gap-2 bg-green-600 dark:bg-green-700 rounded-t-xl px-6 py-4 text-center text-white focus:outline-none focus:ring-2 focus:ring-green-400 transition"
+                  onClick={() => setEditFormOpen((open) => !open)}
+                  aria-expanded={editFormOpen}
+                  aria-controls="edit-form-section"
+                  type="button"
+                  style={{ borderBottomLeftRadius: editFormOpen ? 0 : '0.75rem', borderBottomRightRadius: editFormOpen ? 0 : '0.75rem' }}
+                >
+                  <MdEdit className={`text-2xl transition-transform duration-300 ${editFormOpen ? 'rotate-0' : 'rotate-90 scale-110'}`} />
+                  <h2 className="font-serif text-xl sm:text-2xl font-semibold tracking-wide flex-1 text-left">Edit Highlight</h2>
+                  {editFormOpen ? <MdExpandLess className="text-2xl text-white transition-transform duration-300" /> : <MdExpandMore className="text-2xl text-white transition-transform duration-300" />}
+                </button>
+                <div
+                  id="edit-form-section"
+                  className={`transition-all duration-300 ${editFormOpen ? 'max-h-[1000px] opacity-100 p-4 sm:p-8' : 'max-h-0 opacity-0 p-0'}`}
+                  style={{ willChange: 'max-height, opacity, padding' }}
+                  aria-hidden={!editFormOpen}
+                >
+                  <form onSubmit={submitEditHighlight} className="space-y-5">
                 <div>
                   <label htmlFor="edit_highlight_Point" className="sr-only">Highlight Point</label>
                   <Tippy content={<span>Edit the highlight point</span>} animation="scale" theme="light-border">
@@ -435,10 +524,12 @@ const ProjectAddHighlights = () => {
                     <MdEdit className="text-xl group-hover:animate-bounce" /> Update
                   </button>
                 </Tippy>
-              </form>
-            </div>
+                  </form>
+                </div>
+              </div>
+            </Modal>
           </div>
-        </Modal>
+        </main>
       </div>
     </div>
   );
