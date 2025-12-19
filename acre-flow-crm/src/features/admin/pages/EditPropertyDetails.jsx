@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import AdminSidebar from "../components/AdminSidebar";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 // import api from "../config/apiClient";
 import api100acress from "../config/api100acressClient";
 import { Switch, message } from "antd";
@@ -10,8 +10,12 @@ import { MdHome, MdImage, MdInfo, MdLocationOn, MdAttachMoney, MdApartment } fro
 import Tippy from '@tippyjs/react';
 import 'tippy.js/dist/tippy.css';
 import 'tippy.js/animations/scale.css';
+import { LogOut, ChevronDown, User, Settings as SettingsIcon } from 'lucide-react';
 
 const EditPropertyDetails = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [userInfo, setUserInfo] = useState(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   
   const [values, setValues] = useState({
     propertyType: "",
@@ -40,6 +44,42 @@ const EditPropertyDetails = () => {
   const [loading, setLoading] = useState(true);
 
   const { id } = useParams();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const userName = localStorage.getItem('userName') || localStorage.getItem('adminName') || 'Admin';
+    const userEmail = localStorage.getItem('userEmail') || localStorage.getItem('adminEmail') || 'admin@example.com';
+    const userRole = localStorage.getItem('userRole') || localStorage.getItem('adminRole') || 'admin';
+    setUserInfo({ name: userName, email: userEmail, role: userRole });
+  }, []);
+
+  const getUserInitials = (name) => {
+    if (!name) return 'AD';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAdminLoggedIn');
+    localStorage.removeItem('adminEmail');
+    localStorage.removeItem('adminName');
+    localStorage.removeItem('adminRole');
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('token');
+    localStorage.removeItem('sourceSystem');
+    localStorage.removeItem('originalRole');
+    localStorage.removeItem('myToken');
+    localStorage.removeItem('isDeveloperLoggedIn');
+    localStorage.removeItem('isHrFinanceLoggedIn');
+    localStorage.removeItem('isSalesHeadLoggedIn');
+    localStorage.removeItem('isHRLoggedIn');
+    localStorage.removeItem('isBlogLoggedIn');
+    localStorage.removeItem('isItLoggedIn');
+    window.location.href = '/login';
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -183,33 +223,146 @@ const EditPropertyDetails = () => {
 
   if (loading) {
     return (
-      <div className="flex bg-gray-50 min-h-screen">
-        <AdminSidebar />
-        <div className="flex-1 p-4 ml-64 flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+      <div className="bg-gray-50 dark:bg-gray-900 dark:text-gray-100 h-screen flex overflow-x-hidden">
+        <AdminSidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(prev => !prev)} />
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+          <header className="bg-white shadow-sm border-b border-gray-200">
+            <div className="flex items-center justify-between px-4 sm:px-6 py-4">
+              <div className="flex-1 text-center lg:text-left">
+                <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
+                  <span className="lg:hidden">Property</span>
+                  <span className="hidden lg:inline">Edit Property Details</span>
+                </h1>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <button
+                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                    type="button"
+                  >
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-600 rounded-full flex items-center justify-center">
+                      <span className="text-white font-semibold text-xs sm:text-sm">{getUserInitials(userInfo?.name)}</span>
+                    </div>
+                    <div className="text-right hidden sm:block">
+                      <p className="text-xs sm:text-sm font-medium text-gray-900">{userInfo?.name}</p>
+                      <p className="text-xs text-gray-600 truncate max-w-[120px]">{userInfo?.email}</p>
+                    </div>
+                    <ChevronDown size={16} className={`text-gray-600 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {dropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-40 sm:w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                      <button className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-gray-50 transition-colors" type="button">
+                        <User size={16} className="text-gray-600" />
+                        <span className="text-xs sm:text-sm text-gray-700">Profile</span>
+                      </button>
+                      <button className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-gray-50 transition-colors" type="button">
+                        <SettingsIcon size={16} className="text-gray-600" />
+                        <span className="text-xs sm:text-sm text-gray-700">Settings</span>
+                      </button>
+                      <div className="border-t border-gray-200 my-2"></div>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-red-50 transition-colors text-red-600"
+                        type="button"
+                      >
+                        <LogOut size={16} />
+                        <span className="text-xs sm:text-sm font-medium">Logout</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-            <p className="text-gray-600">Loading property details...</p>
-          </div>
+          </header>
+
+          <main className="flex-1 overflow-auto p-4 sm:p-6 flex items-center justify-center">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              </div>
+              <p className="text-gray-600">Loading property details...</p>
+            </div>
+          </main>
         </div>
       </div>
     );
   }
 
   return (
-    <>
- 
-      {contextHolder}
-      <div className="flex bg-gray-50 min-h-screen">
-             <AdminSidebar />
-        <div className="flex-1 p-4 ml-0 overflow-auto font-sans">
-          <div className="w-full space-y-6">
-            {/* Header */}
-            <div className="flex items-center gap-2 mb-4">
-              <MdHome className="text-3xl text-blue-500 animate-pulse" />
-              <h1 className="text-3xl font-bold text-gray-800">Edit Property Details</h1>
+    <div className="bg-gray-50 dark:bg-gray-900 dark:text-gray-100 h-screen flex overflow-x-hidden font-sans">
+      <AdminSidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(prev => !prev)} />
+      <div className="flex-1 flex flex-col overflow-hidden transition-colors duration-300 min-w-0">
+        {contextHolder}
+
+        <header className="bg-white shadow-sm border-b border-gray-200">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-4">
+            <div className="flex-1 text-center lg:text-left">
+              <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
+                <span className="lg:hidden">Property</span>
+                <span className="hidden lg:inline">Edit Property Details</span>
+              </h1>
             </div>
+
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <button
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  type="button"
+                >
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-600 rounded-full flex items-center justify-center">
+                    <span className="text-white font-semibold text-xs sm:text-sm">{getUserInitials(userInfo?.name)}</span>
+                  </div>
+                  <div className="text-right hidden sm:block">
+                    <p className="text-xs sm:text-sm font-medium text-gray-900">{userInfo?.name}</p>
+                    <p className="text-xs text-gray-600 truncate max-w-[120px]">{userInfo?.email}</p>
+                  </div>
+                  <ChevronDown size={16} className={`text-gray-600 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {dropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-40 sm:w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                    <button className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-gray-50 transition-colors" type="button">
+                      <User size={16} className="text-gray-600" />
+                      <span className="text-xs sm:text-sm text-gray-700">Profile</span>
+                    </button>
+                    <button className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-gray-50 transition-colors" type="button">
+                      <SettingsIcon size={16} className="text-gray-600" />
+                      <span className="text-xs sm:text-sm text-gray-700">Settings</span>
+                    </button>
+                    <div className="border-t border-gray-200 my-2"></div>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-red-50 transition-colors text-red-600"
+                      type="button"
+                    >
+                      <LogOut size={16} />
+                      <span className="text-xs sm:text-sm font-medium">Logout</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 overflow-auto">
+          <div className="p-4 sm:p-6">
+            <div className="w-full space-y-6">
+              <div className="flex items-center gap-2 mb-4">
+                <button
+                  onClick={() => navigate(-1)}
+                  className="sm:hidden inline-flex items-center justify-center px-3 py-2 rounded-lg bg-gray-100 text-gray-800 text-sm font-semibold hover:bg-gray-200 transition-colors"
+                  type="button"
+                >
+                  Back
+                </button>
+                <MdHome className="text-3xl text-blue-500 animate-pulse" />
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">Edit Property Details</h2>
+              </div>
             {/* Verify Switch */}
             <div className="flex items-center mb-4">
               <Tippy content={<span>Toggle property verification</span>} animation="scale" theme="light-border">
@@ -393,9 +546,10 @@ const EditPropertyDetails = () => {
               </div>
             </section>
           </div>
-        </div>
+          </div>
+        </main>
       </div>
-    </>
+    </div>
   );
 };
 
