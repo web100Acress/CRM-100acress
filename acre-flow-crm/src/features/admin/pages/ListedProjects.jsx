@@ -5,7 +5,7 @@ import api100acress from "../config/api100acressClient";
 import AdminSidebar from "../components/AdminSidebar";
 import { Link } from "react-router-dom";
 import { message, Modal } from "antd"; 
-import { LogOut, ChevronDown, User, Settings as SettingsIcon } from 'lucide-react';
+import { LogOut, ChevronDown, User, Settings as SettingsIcon, ArrowLeft, Eye, Edit, Trash2, Home, Plus, Calendar, Phone, MapPin, Building } from 'lucide-react';
 
 const Projects = () => {
   const [viewAll, setViewAll] = useState([]);
@@ -33,12 +33,20 @@ const Projects = () => {
   const [messageApi, contextHolder] = message.useMessage(); // For Ant Design messages
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
+  const [mobileView, setMobileView] = useState(window.innerWidth < 768);
 
   useEffect(() => {
     const userName = localStorage.getItem('userName') || localStorage.getItem('adminName') || 'Admin';
     const userEmail = localStorage.getItem('userEmail') || localStorage.getItem('adminEmail') || 'admin@example.com';
     const userRole = localStorage.getItem('userRole') || localStorage.getItem('adminRole') || 'admin';
     setUserInfo({ name: userName, email: userEmail, role: userRole });
+    
+    // Handle window resize
+    const handleResize = () => {
+      setMobileView(window.innerWidth < 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const getUserInitials = (name) => {
@@ -696,124 +704,190 @@ const Projects = () => {
                 <button
                   className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-3 rounded-xl shadow-sm transition-colors"
                 >
-                  Add New Project ➕
+                  Add New Project 
                 </button>
               </Link>
             </div>
-
             <div className="mt-5 w-full max-w-full bg-white rounded-2xl shadow-md border border-gray-200">
-              <table className="w-full min-w-0 sm:min-w-[1000px] table-fixed sm:table-auto border-separate border-spacing-0 text-sm">
-                <thead>
-                  <tr>
-                    <th scope="col" className="sticky top-0 z-10 bg-gray-50 px-3 py-2 text-center text-xs font-bold uppercase tracking-wide text-gray-600 hidden sm:table-cell">
-                      S No.
-                    </th>
-                    <th scope="col" className="px-1 sm:px-4 py-2 text-left font-bold text-gray-600 whitespace-nowrap">
-                      Name
-                    </th>
-                    <th scope="col" className="sticky top-0 z-10 bg-gray-50 px-3 py-2 text-center text-xs font-bold uppercase tracking-wide text-gray-600 hidden sm:table-cell">
-                      Type
-                    </th>
-                    <th scope="col" className="sticky top-0 z-10 bg-gray-50 px-3 py-2 text-center text-xs font-bold uppercase tracking-wide text-gray-600 hidden sm:table-cell">
-                      City
-                    </th>
-                    <th scope="col" className="sticky top-0 z-10 bg-gray-50 px-3 py-2 text-center text-xs font-bold uppercase tracking-wide text-gray-600 hidden sm:table-cell">
-                      Address
-                    </th>
-                    <th scope="col" className="px-1 sm:px-4 py-2 text-center font-bold text-gray-600 w-24 sm:w-auto">
-                      Action
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-
+              {/* Mobile Card View */}
+              {mobileView && (
+                <div className="p-4 space-y-4">
                   {currentRows.length > 0 ? (
                     currentRows.map((item, index) => {
                       const serialNumber = indexOfFirstRow + index + 1;
                       const id = item._id;
                       const pUrl = item.project_url;
                       return (
-                        <tr
-                          key={id} // Use item._id as key for better performance and uniqueness
-                          className="hover:bg-blue-50 transition-colors"
-                        >
-                          <td className="px-3 py-2 text-center text-gray-700 border-b border-gray-100 whitespace-nowrap overflow-hidden text-ellipsis hidden sm:table-cell">
-                            {serialNumber}
-                          </td>
-                          <td className="px-1 sm:px-3 py-2 text-left font-semibold text-gray-900 border-b border-gray-100 whitespace-nowrap overflow-hidden text-ellipsis">
-                            <span className="sm:hidden">{truncateMobileName(item.projectName)}</span>
-                            <span className="hidden sm:inline">{item.projectName}</span>
-                          </td>
-                          <td className="px-3 py-2 text-center text-gray-700 border-b border-gray-100 whitespace-nowrap overflow-hidden text-ellipsis hidden sm:table-cell">
-                            {item.type}
-                          </td>
-                          <td className="px-3 py-2 text-center text-gray-700 border-b border-gray-100 whitespace-nowrap overflow-hidden text-ellipsis hidden sm:table-cell">
-                            {item.city}
-                          </td>
-                          <td className="px-3 py-2 text-center text-gray-700 border-b border-gray-100 max-w-[260px] whitespace-normal hidden sm:table-cell">
-                            {item.projectAddress}
-                          </td>
-
-                          <td className="px-1 sm:px-3 py-2 text-left sm:text-center border-b border-gray-100 w-24 sm:w-auto">
-                            <div className="flex flex-wrap justify-start sm:justify-center items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => handleViewDetails(item)}
-                              className="mr-4 sm:hidden px-3 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white shadow-sm hover:bg-blue-700 transition-all duration-200"
-                            >
-                              View Details
-                            </button>
-
-                            <Link to={`/Admin/ProjectsView/${pUrl}`}>
-                              <button
-                                type="button"
-                                className="hidden sm:inline-flex px-3 py-1.5 rounded-md text-xs font-semibold bg-green-600 text-white hover:bg-green-700 transition-colors"
-                              >
-                                View
-                              </button>
-                            </Link>
-
-                            <Link to={`/Admin/ProjectsEdit/${pUrl}`}>
-                              <button
-                                type="button"
-                                className="hidden sm:inline-flex px-3 py-1.5 rounded-md text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-                              >
-                                Edit
-                              </button>
-                            </Link>
-
-                            <Link to={`/Admin/ProjectsAddBhk/${id}`}>
-                              <button
-                                type="button"
-                                className="hidden sm:inline-flex px-3 py-1.5 rounded-md text-xs font-semibold bg-amber-400 text-gray-900 hover:bg-amber-500 transition-colors"
-                              >
-                                ADD BHK
-                              </button>
-                            </Link>
-
-                            <Link to={`/Admin/ProjectAddHighlights/${id}`}>
-                              <button
-                                type="button"
-                                className="hidden sm:inline-flex px-3 py-1.5 rounded-md text-xs font-semibold bg-orange-500 text-white hover:bg-orange-600 transition-colors"
-                              >
-                                ADD Highlights
-                              </button>
-                            </Link>
-
+                        <div key={id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+                          <div className="flex justify-between items-start mb-3">
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-gray-900 text-sm mb-1">{item.projectName}</h3>
+                              <span className="text-xs text-gray-500">#{serialNumber}</span>
                             </div>
-                          </td>
-                        </tr>
+                            <button
+                              onClick={() => handleViewDetails(item)}
+                              className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors"
+                            >
+                              <Eye size={16} />
+                            </button>
+                          </div>
+                          
+                          <div className="space-y-2 text-sm">
+                            <div className="flex items-center gap-2 text-gray-600">
+                              <Building size={14} />
+                              <span className="text-xs">{item.type || '-'}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-gray-600">
+                              <MapPin size={14} />
+                              <span className="text-xs">{item.city || '-'}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-gray-600">
+                              <Phone size={14} />
+                              <span className="text-xs">{item.mobileNumber || '-'}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex flex-wrap gap-2 mt-3">
+                            <Link to={`/Admin/ProjectsView/${pUrl}`} className="flex-1">
+                              <button className="w-full px-3 py-2 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-1">
+                                <Eye size={14} /> View
+                              </button>
+                            </Link>
+                            <Link to={`/Admin/ProjectsEdit/${pUrl}`} className="flex-1">
+                              <button className="w-full px-3 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-1">
+                                <Edit size={14} /> Edit
+                              </button>
+                            </Link>
+                            <Link to={`/Admin/ProjectsAddBhk/${id}`} className="flex-1">
+                              <button className="w-full px-3 py-2 bg-amber-400 text-gray-900 text-xs font-semibold rounded-lg hover:bg-amber-500 transition-colors flex items-center justify-center gap-1">
+                                <Plus size={14} /> BHK
+                              </button>
+                            </Link>
+                          </div>
+                        </div>
                       );
                     })
                   ) : (
-                    <tr>
-                      <td colSpan="6" className="text-center py-10 text-gray-500 italic">
-                        No projects found.
-                      </td>
-                    </tr>
+                    <div className="text-center py-8 text-gray-500">
+                      No projects found.
+                    </div>
                   )}
-                </tbody>
-              </table>
+                </div>
+              )}
+
+              {/* Desktop Table View */}
+              {!mobileView && (
+                <table className="w-full min-w-0 sm:min-w-[1000px] table-fixed sm:table-auto border-separate border-spacing-0 text-sm">
+                  <thead>
+                    <tr>
+                      <th scope="col" className="sticky top-0 z-10 bg-gray-50 px-3 py-2 text-center text-xs font-bold uppercase tracking-wide text-gray-600 hidden sm:table-cell">
+                        S No.
+                      </th>
+                      <th scope="col" className="px-1 sm:px-4 py-2 text-left font-bold text-gray-600 whitespace-nowrap">
+                        Name
+                      </th>
+                      <th scope="col" className="sticky top-0 z-10 bg-gray-50 px-3 py-2 text-center text-xs font-bold uppercase tracking-wide text-gray-600 hidden sm:table-cell">
+                        Type
+                      </th>
+                      <th scope="col" className="sticky top-0 z-10 bg-gray-50 px-3 py-2 text-center text-xs font-bold uppercase tracking-wide text-gray-600 hidden sm:table-cell">
+                        City
+                      </th>
+                      <th scope="col" className="sticky top-0 z-10 bg-gray-50 px-3 py-2 text-center text-xs font-bold uppercase tracking-wide text-gray-600 hidden sm:table-cell">
+                        Address
+                      </th>
+                      <th scope="col" className="px-1 sm:px-4 py-2 text-center font-bold text-gray-600 w-24 sm:w-auto">
+                        Action
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentRows.length > 0 ? (
+                      currentRows.map((item, index) => {
+                        const serialNumber = indexOfFirstRow + index + 1;
+                        const id = item._id;
+                        const pUrl = item.project_url;
+                        return (
+                          <tr
+                            key={id}
+                            className="hover:bg-blue-50 transition-colors"
+                          >
+                            <td className="px-3 py-2 text-center text-gray-700 border-b border-gray-100 whitespace-nowrap overflow-hidden text-ellipsis hidden sm:table-cell">
+                              {serialNumber}
+                            </td>
+                            <td className="px-1 sm:px-3 py-2 text-left font-semibold text-gray-900 border-b border-gray-100 whitespace-nowrap overflow-hidden text-ellipsis">
+                              <span className="sm:hidden">{truncateMobileName(item.projectName)}</span>
+                              <span className="hidden sm:inline">{item.projectName}</span>
+                            </td>
+                            <td className="px-3 py-2 text-center text-gray-700 border-b border-gray-100 whitespace-nowrap overflow-hidden text-ellipsis hidden sm:table-cell">
+                              {item.type}
+                            </td>
+                            <td className="px-3 py-2 text-center text-gray-700 border-b border-gray-100 whitespace-nowrap overflow-hidden text-ellipsis hidden sm:table-cell">
+                              {item.city}
+                            </td>
+                            <td className="px-3 py-2 text-center text-gray-700 border-b border-gray-100 max-w-[260px] whitespace-normal hidden sm:table-cell">
+                              {item.projectAddress}
+                            </td>
+
+                            <td className="px-1 sm:px-3 py-2 text-left sm:text-center border-b border-gray-100 w-24 sm:w-auto">
+                              <div className="flex flex-wrap justify-start sm:justify-center items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleViewDetails(item)}
+                                  className="mr-4 sm:hidden px-3 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white shadow-sm hover:bg-blue-700 transition-all duration-200"
+                                >
+                                  View Details
+                                </button>
+
+                                <Link to={`/Admin/ProjectsView/${pUrl}`}>
+                                  <button
+                                    type="button"
+                                    className="hidden sm:inline-flex px-3 py-1.5 rounded-md text-xs font-semibold bg-green-600 text-white hover:bg-green-700 transition-colors"
+                                  >
+                                    View
+                                  </button>
+                                </Link>
+
+                                <Link to={`/Admin/ProjectsEdit/${pUrl}`}>
+                                  <button
+                                    type="button"
+                                    className="hidden sm:inline-flex px-3 py-1.5 rounded-md text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                                  >
+                                    Edit
+                                  </button>
+                                </Link>
+
+                                <Link to={`/Admin/ProjectsAddBhk/${id}`}>
+                                  <button
+                                    type="button"
+                                    className="hidden sm:inline-flex px-3 py-1.5 rounded-md text-xs font-semibold bg-amber-400 text-gray-900 hover:bg-amber-500 transition-colors"
+                                  >
+                                    ADD BHK
+                                  </button>
+                                </Link>
+
+                                <Link to={`/Admin/ProjectAddHighlights/${id}`}>
+                                  <button
+                                    type="button"
+                                    className="hidden sm:inline-flex px-3 py-1.5 rounded-md text-xs font-semibold bg-orange-500 text-white hover:bg-orange-600 transition-colors"
+                                  >
+                                    ADD Highlights
+                                  </button>
+                                </Link>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan="6" className="text-center py-10 text-gray-500 italic">
+                          No projects found.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              )}
 
               <Modal
                 open={detailsOpen}
