@@ -4,13 +4,17 @@ import api100acress from "../config/api100acressClient";
 
 import AdminSidebar from "../components/AdminSidebar";
 import { Link } from "react-router-dom";
-import { message } from "antd"; 
+import { message, Modal } from "antd"; 
+import { LogOut, ChevronDown, User, Settings as SettingsIcon, ArrowLeft, Eye, Edit, Trash2, Home, Plus, Calendar, Phone, MapPin, Building } from 'lucide-react';
 
 const Projects = () => {
   const [viewAll, setViewAll] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage] = useState(100);
   const [searchTerm, setSearchTerm] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [userInfo, setUserInfo] = useState(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   // Additional filters
   const [filterType, setFilterType] = useState("");
@@ -25,23 +29,55 @@ const Projects = () => {
   const [filterYoutubeVideo, setFilterYoutubeVideo] = useState("");
   const [filterBrochure, setFilterBrochure] = useState("");
   const [filterSpecificNumber, setFilterSpecificNumber] = useState("");
-
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-
   const [messageApi, contextHolder] = message.useMessage(); // For Ant Design messages
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [mobileView, setMobileView] = useState(window.innerWidth < 768);
 
-  // Effect to inject styles into the document head
   useEffect(() => {
-    const styleSheet = document.createElement("style");
-    styleSheet.type = "text/css";
-    styleSheet.innerText = projectStyles;
-    document.head.appendChild(styleSheet);
-
-    return () => {
-      // Clean up styles on component unmount
-      document.head.removeChild(styleSheet);
+    const userName = localStorage.getItem('userName') || localStorage.getItem('adminName') || 'Admin';
+    const userEmail = localStorage.getItem('userEmail') || localStorage.getItem('adminEmail') || 'admin@example.com';
+    const userRole = localStorage.getItem('userRole') || localStorage.getItem('adminRole') || 'admin';
+    setUserInfo({ name: userName, email: userEmail, role: userRole });
+    
+    // Handle window resize
+    const handleResize = () => {
+      setMobileView(window.innerWidth < 768);
     };
-  }, []); // Run once on mount to inject styles
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const getUserInitials = (name) => {
+    if (!name) return 'AD';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAdminLoggedIn');
+    localStorage.removeItem('adminEmail');
+    localStorage.removeItem('adminName');
+    localStorage.removeItem('adminRole');
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('sourceSystem');
+    window.location.href = '/login';
+  };
+
+  const handleViewDetails = (item) => {
+    setSelectedProject(item);
+    setDetailsOpen(true);
+  };
+
+  const truncateMobileName = (name) => {
+    const s = (name ?? '').toString();
+    return s.length > 13 ? `${s.slice(0, 13)}...` : s;
+  };
 
   // Listen for project update messages from other components
   useEffect(() => {
@@ -484,754 +520,523 @@ const Projects = () => {
   };
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex">
-      <AdminSidebar />
-      <div className="flex-1 p-8 transition-colors duration-300">
+    <div className="bg-gray-50 dark:bg-gray-900 dark:text-gray-100 h-screen flex overflow-x-hidden">
+      <AdminSidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(prev => !prev)} />
+      <div className="flex-1 flex flex-col overflow-hidden transition-colors duration-300 min-w-0">
         {contextHolder} {/* Ant Design message context holder */}
-        <div className="projects-header">
-          <div className="search-container">
-            <input
-              type="text"
-              placeholder="Search projects, types, cities, builders..."
-              className="search-input"
-              value={searchTerm}
-              onChange={handleSearch}
-            />
-            <button className="search-button">
-              Search
-            </button>
-          </div>
-          {/* Filters moved next to search bar */}
-          <div className="filters-container">
-           
-            <select
-              className="filter-select"
-              value={filterType}
-              onChange={(e) => { setFilterType(e.target.value); setCurrentPage(1); }}
-            >
-              <option value="">All Types</option>
-              {typeOptions.map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-            <select
-              className="filter-select"
-              value={filterCity}
-              onChange={(e) => { setFilterCity(e.target.value); setCurrentPage(1); }}
-            >
-              <option value="">All Cities</option>
-              {cityOptions.map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-            <select
-              className="filter-select"
-              value={filterBuilder}
-              onChange={(e) => { setFilterBuilder(e.target.value); setCurrentPage(1); }}
-            >
-              <option value="">All Builders</option>
-              {builderOptions.map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-            <select
-              className="filter-select"
-              value={filterStatus}
-              onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
-            >
-              <option value="">All Statuses</option>
-              <option value="__missing__">No status</option>
-              {statusOptions.map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-            <select
-              className="filter-select"
-              value={filterState}
-              onChange={(e) => { setFilterState(e.target.value); setCurrentPage(1); }}
-            >
-              <option value="">All States</option>
-              {stateOptions.map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-              {/* <select
-                className="filter-select"
-                value={filterHasMobile}
-                onChange={(e) => { setFilterHasMobile(e.target.value); setCurrentPage(1); }}
-              >
-                <option value="">Mobile: All</option>
-                <option value="with">Mobile: With</option>
-                <option value="without">Mobile: Without</option>
-              </select> */}
-            <select
-              className="filter-select"
-              value={filterHasPayment}
-              onChange={(e) => { setFilterHasPayment(e.target.value); setCurrentPage(1); }}
-            >
-              <option value="">Payment: All</option>
-              <option value="with">Payment: With</option>
-              <option value="without">Payment: Without</option>
-            </select>
+        <header className="bg-white shadow-sm border-b border-gray-200">
+          <div className="flex items-center justify-between px-6 py-4">
+            <div className="flex items-center gap-4 flex-1">
+              <div className="flex-1 text-center lg:text-left">
+                <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
+                  <span className="lg:hidden">Projects</span>
+                  <span className="hidden lg:inline">Listed Projects</span>
+                </h1>
+              </div>
+            </div>
 
-            <select
-              className="filter-select"
-              value={filterProjectOverview}
-              onChange={(e) => { setFilterProjectOverview(e.target.value); setCurrentPage(1); }}
-            >
-              <option value="">Project Overview</option>
-              {projectOverviewOptions.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <button
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-600 rounded-full flex items-center justify-center">
+                    <span className="text-white font-semibold text-xs sm:text-sm">{getUserInitials(userInfo?.name)}</span>
+                  </div>
+                  <div className="text-right hidden sm:block">
+                    <p className="text-xs sm:text-sm font-medium text-gray-900">{userInfo?.name}</p>
+                    <p className="text-xs text-gray-600 truncate max-w-[120px]">{userInfo?.email}</p>
+                  </div>
+                  <ChevronDown size={16} className={`text-gray-600 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
 
-            <select
-              className="filter-select"
-              value={filterYoutubeVideo}
-              onChange={(e) => { setFilterYoutubeVideo(e.target.value); setCurrentPage(1); }}
-            >
-              <option value="">YouTube Video: All</option>
-              {youtubeVideoOptions.map(opt => (
-                <option key={opt.value} value={opt.value}>YouTube Video: {opt.label}</option>
-              ))}
-            </select>
-
-            <select
-              className="filter-select"
-              value={filterBrochure}
-              onChange={(e) => { setFilterBrochure(e.target.value); setCurrentPage(1); }}
-            >
-              <option value="">Brochure: All</option>
-              {brochureOptions.map(opt => (
-                <option key={opt.value} value={opt.value}>Brochure: {opt.label}</option>
-              ))}
-            </select>
-
-            <select
-              className="filter-select"
-              value={filterSpecificNumber}
-              onChange={(e) => { setFilterSpecificNumber(e.target.value); setCurrentPage(1); }}
-            >
-              <option value="">Specific Number: All</option>
-              {specificNumberOptions.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-          </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <Link to={"/admin/project-insert"}>
-              <button
-                className="add-new-project-button"
-              >
-                Add New Project ➕
-              </button>
-            </Link>
-          </div>
-        </div>
-
-        <div className="table-container">
-          <table className="projects-table">
-            <thead>
-              <tr>
-                <th scope="col" className="table-header">
-                  S No.
-                </th>
-                <th scope="col" className="table-header">
-                  Name
-                </th>
-                <th scope="col" className="table-header">
-                  Type
-                </th>
-                <th scope="col" className="table-header">
-                  City
-                </th>
-                <th scope="col" className="table-header">
-                  Address
-                </th>
-                <th scope="col" className="table-header action-header">
-                  Action
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentRows.length > 0 ? (
-                currentRows.map((item, index) => {
-                  const serialNumber = indexOfFirstRow + index + 1;
-                  const id = item._id;
-                  const pUrl = item.project_url;
-                  return (
-                    <tr
-                      key={id} // Use item._id as key for better performance and uniqueness
-                      className="table-row"
+                {dropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-40 sm:w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                    <button className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-gray-50 transition-colors">
+                      <User size={16} className="text-gray-600" />
+                      <span className="text-xs sm:text-sm text-gray-700">Profile</span>
+                    </button>
+                    <button className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-gray-50 transition-colors">
+                      <SettingsIcon size={16} className="text-gray-600" />
+                      <span className="text-xs sm:text-sm text-gray-700">Settings</span>
+                    </button>
+                    <div className="border-t border-gray-200 my-2"></div>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-red-50 transition-colors text-red-600"
                     >
-                      <td className="table-cell serial-number">
-                        {serialNumber}
-                      </td>
-                      <td className="table-cell project-name">
-                        {item.projectName}
-                      </td>
-                      <td className="table-cell">
-                        {item.type}
-                      </td>
-                      <td className="table-cell">
-                        {item.city}
-                      </td>
-                      <td className="table-cell project-address">
-                        {item.projectAddress}
-                      </td>
-
-                      <td className="table-cell action-buttons-cell">
-                        <Link to={`/Admin/ProjectsView/${pUrl}`}>
-                          <button
-                            type="button"
-                            className="action-button view-button"
-                          >
-                            View
-                          </button>
-                        </Link>
-
-                        <Link to={`/Admin/ProjectsEdit/${pUrl}`}>
-                          <button
-                            type="button"
-                            className="action-button edit-button"
-                          >
-                            Edit
-                          </button>
-                        </Link>
-
-                        <Link to={`/Admin/ProjectsAddBhk/${id}`}>
-                          <button
-                            type="button"
-                            className="action-button add-bhk-button"
-                          >
-                            ADD BHK
-                          </button>
-                        </Link>
-
-                        <Link to={`/Admin/ProjectAddHighlights/${id}`}>
-                          <button
-                            type="button"
-                            className="action-button add-highlights-button"
-                          >
-                            ADD Highlights
-                          </button>
-                        </Link>
-
-                        {/* <button
-                          onClick={() => handleDeleteUser(id)}
-                          type="button"
-                          className="action-button delete-button"
-                        >
-                          Delete
-                        </button> */}
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan="6" className="no-data-message">
-                    No projects found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-          <div className="pagination-container">
-            <button
-              onClick={() => paginate(currentPage > 1 ? currentPage - 1 : 1)}
-              className="pagination-button"
-              disabled={currentPage === 1}
-            >
-              Previous
-            </button>
-            {Array.from(
-              { length: Math.min(3, Math.ceil(filteredProjects.length / rowsPerPage)) },
-              (_, index) => {
-                // Show current page and 1 page before/after
-                const pageNumber = Math.min(
-                  Math.max(1, currentPage - 1) + index,
-                  Math.ceil(filteredProjects.length / rowsPerPage)
-                );
-                if (pageNumber > Math.ceil(filteredProjects.length / rowsPerPage)) return null;
-                return (
-                  <button
-                    key={index}
-                    onClick={() => paginate(pageNumber)}
-                    className={`pagination-button ${
-                      currentPage === pageNumber ? "pagination-active" : ""
-                    }`}
-                  >
-                    {pageNumber}
-                  </button>
-                );
-              }
-            )}
-            <button
-              onClick={() => paginate(currentPage < Math.ceil(filteredProjects.length / rowsPerPage) ? currentPage + 1 : currentPage)}
-              className="pagination-button"
-              disabled={currentPage === Math.ceil(filteredProjects.length / rowsPerPage)}
-            >
-              Next
-            </button>
+                      <LogOut size={16} />
+                      <span className="text-xs sm:text-sm font-medium">Logout</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
+        </header>
+
+        <main className="flex-1 overflow-auto">
+          <div className="p-8">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+              <div className="flex items-center bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden w-full lg:max-w-md">
+                <input
+                  type="text"
+                  placeholder="Search projects, types, cities, builders..."
+                  className="flex-1 px-4 py-2 outline-none border-b-2 border-red-500 text-gray-800"
+                  value={searchTerm}
+                  onChange={handleSearch}
+                />
+                <button className="px-4 py-2 bg-red-500 text-white font-semibold hover:bg-red-600 transition-colors">
+                  Search
+                </button>
+              </div>
+              <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 w-full">
+                <select
+                  className="w-full sm:w-40 px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm"
+                  value={filterType}
+                  onChange={(e) => { setFilterType(e.target.value); setCurrentPage(1); }}
+                >
+                  <option value="">All Types</option>
+                  {typeOptions.map(opt => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+                <select
+                  className="w-full sm:w-40 px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm"
+                  value={filterCity}
+                  onChange={(e) => { setFilterCity(e.target.value); setCurrentPage(1); }}
+                >
+                  <option value="">All Cities</option>
+                  {cityOptions.map(opt => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+                <select
+                  className="w-full sm:w-40 px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm"
+                  value={filterBuilder}
+                  onChange={(e) => { setFilterBuilder(e.target.value); setCurrentPage(1); }}
+                >
+                  <option value="">All Builders</option>
+                  {builderOptions.map(opt => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+                <select
+                  className="w-full sm:w-40 px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm"
+                  value={filterStatus}
+                  onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
+                >
+                  <option value="">All Status</option>
+                  {statusOptions.map(opt => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+                <select
+                  className="w-full sm:w-40 px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm"
+                  value={filterState}
+                  onChange={(e) => { setFilterState(e.target.value); setCurrentPage(1); }}
+                >
+                  <option value="">All States</option>
+                  {stateOptions.map(opt => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+
+                <select
+                  className="w-full sm:w-40 px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm"
+                  value={filterHasPayment}
+                  onChange={(e) => { setFilterHasPayment(e.target.value); setCurrentPage(1); }}
+                >
+                  <option value="">Payment: All</option>
+                  <option value="with">Payment: With</option>
+                  <option value="without">Payment: Without</option>
+                </select>
+
+                <select
+                  className="w-full sm:w-44 px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm"
+                  value={filterProjectOverview}
+                  onChange={(e) => { setFilterProjectOverview(e.target.value); setCurrentPage(1); }}
+                >
+                  <option value="">Project Overview</option>
+                  {projectOverviewOptions.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+
+                <select
+                  className="w-full sm:w-44 px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm"
+                  value={filterYoutubeVideo}
+                  onChange={(e) => { setFilterYoutubeVideo(e.target.value); setCurrentPage(1); }}
+                >
+                  <option value="">YouTube Video: All</option>
+                  {youtubeVideoOptions.map(opt => (
+                    <option key={opt.value} value={opt.value}>YouTube Video: {opt.label}</option>
+                  ))}
+                </select>
+
+                <select
+                  className="w-full sm:w-44 px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm"
+                  value={filterBrochure}
+                  onChange={(e) => { setFilterBrochure(e.target.value); setCurrentPage(1); }}
+                >
+                  <option value="">Brochure: All</option>
+                  {brochureOptions.map(opt => (
+                    <option key={opt.value} value={opt.value}>Brochure: {opt.label}</option>
+                  ))}
+                </select>
+
+                <select
+                  className="w-full sm:w-44 px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm"
+                  value={filterSpecificNumber}
+                  onChange={(e) => { setFilterSpecificNumber(e.target.value); setCurrentPage(1); }}
+                >
+                  <option value="">Specific Number: All</option>
+                  {specificNumberOptions.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Link to={"/admin/project-insert"}>
+                <button
+                  className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-3 rounded-xl shadow-sm transition-colors"
+                >
+                  Add New Project 
+                </button>
+              </Link>
+            </div>
+            <div className="mt-5 w-full max-w-full bg-white rounded-2xl shadow-md border border-gray-200">
+              {/* Mobile Card View */}
+              {mobileView && (
+                <div className="p-4 space-y-4">
+                  {currentRows.length > 0 ? (
+                    currentRows.map((item, index) => {
+                      const serialNumber = indexOfFirstRow + index + 1;
+                      const id = item._id;
+                      const pUrl = item.project_url;
+                      return (
+                        <div key={id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+                          <div className="flex justify-between items-start mb-3">
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-gray-900 text-sm mb-1">{item.projectName}</h3>
+                              <span className="text-xs text-gray-500">#{serialNumber}</span>
+                            </div>
+                            <button
+                              onClick={() => handleViewDetails(item)}
+                              className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors"
+                            >
+                              <Eye size={16} />
+                            </button>
+                          </div>
+                          
+                          <div className="space-y-2 text-sm">
+                            <div className="flex items-center gap-2 text-gray-600">
+                              <Building size={14} />
+                              <span className="text-xs">{item.type || '-'}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-gray-600">
+                              <MapPin size={14} />
+                              <span className="text-xs">{item.city || '-'}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-gray-600">
+                              <Phone size={14} />
+                              <span className="text-xs">{item.mobileNumber || '-'}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex flex-wrap gap-2 mt-3">
+                            <Link to={`/Admin/ProjectsView/${pUrl}`} className="flex-1">
+                              <button className="w-full px-3 py-2 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-1">
+                                <Eye size={14} /> View
+                              </button>
+                            </Link>
+                            <Link to={`/Admin/ProjectsEdit/${pUrl}`} className="flex-1">
+                              <button className="w-full px-3 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-1">
+                                <Edit size={14} /> Edit
+                              </button>
+                            </Link>
+                            <Link to={`/Admin/ProjectsAddBhk/${id}`} className="flex-1">
+                              <button className="w-full px-3 py-2 bg-amber-400 text-gray-900 text-xs font-semibold rounded-lg hover:bg-amber-500 transition-colors flex items-center justify-center gap-1">
+                                <Plus size={14} /> BHK
+                              </button>
+                            </Link>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      No projects found.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Desktop Table View */}
+              {!mobileView && (
+                <table className="w-full min-w-0 sm:min-w-[1000px] table-fixed sm:table-auto border-separate border-spacing-0 text-sm">
+                  <thead>
+                    <tr>
+                      <th scope="col" className="sticky top-0 z-10 bg-gray-50 px-3 py-2 text-center text-xs font-bold uppercase tracking-wide text-gray-600 hidden sm:table-cell">
+                        S No.
+                      </th>
+                      <th scope="col" className="px-1 sm:px-4 py-2 text-left font-bold text-gray-600 whitespace-nowrap">
+                        Name
+                      </th>
+                      <th scope="col" className="sticky top-0 z-10 bg-gray-50 px-3 py-2 text-center text-xs font-bold uppercase tracking-wide text-gray-600 hidden sm:table-cell">
+                        Type
+                      </th>
+                      <th scope="col" className="sticky top-0 z-10 bg-gray-50 px-3 py-2 text-center text-xs font-bold uppercase tracking-wide text-gray-600 hidden sm:table-cell">
+                        City
+                      </th>
+                      <th scope="col" className="sticky top-0 z-10 bg-gray-50 px-3 py-2 text-center text-xs font-bold uppercase tracking-wide text-gray-600 hidden sm:table-cell">
+                        Address
+                      </th>
+                      <th scope="col" className="px-1 sm:px-4 py-2 text-center font-bold text-gray-600 w-24 sm:w-auto">
+                        Action
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentRows.length > 0 ? (
+                      currentRows.map((item, index) => {
+                        const serialNumber = indexOfFirstRow + index + 1;
+                        const id = item._id;
+                        const pUrl = item.project_url;
+                        return (
+                          <tr
+                            key={id}
+                            className="hover:bg-blue-50 transition-colors"
+                          >
+                            <td className="px-3 py-2 text-center text-gray-700 border-b border-gray-100 whitespace-nowrap overflow-hidden text-ellipsis hidden sm:table-cell">
+                              {serialNumber}
+                            </td>
+                            <td className="px-1 sm:px-3 py-2 text-left font-semibold text-gray-900 border-b border-gray-100 whitespace-nowrap overflow-hidden text-ellipsis">
+                              <span className="sm:hidden">{truncateMobileName(item.projectName)}</span>
+                              <span className="hidden sm:inline">{item.projectName}</span>
+                            </td>
+                            <td className="px-3 py-2 text-center text-gray-700 border-b border-gray-100 whitespace-nowrap overflow-hidden text-ellipsis hidden sm:table-cell">
+                              {item.type}
+                            </td>
+                            <td className="px-3 py-2 text-center text-gray-700 border-b border-gray-100 whitespace-nowrap overflow-hidden text-ellipsis hidden sm:table-cell">
+                              {item.city}
+                            </td>
+                            <td className="px-3 py-2 text-center text-gray-700 border-b border-gray-100 max-w-[260px] whitespace-normal hidden sm:table-cell">
+                              {item.projectAddress}
+                            </td>
+
+                            <td className="px-1 sm:px-3 py-2 text-left sm:text-center border-b border-gray-100 w-24 sm:w-auto">
+                              <div className="flex flex-wrap justify-start sm:justify-center items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleViewDetails(item)}
+                                  className="mr-4 sm:hidden px-3 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white shadow-sm hover:bg-blue-700 transition-all duration-200"
+                                >
+                                  View Details
+                                </button>
+
+                                <Link to={`/Admin/ProjectsView/${pUrl}`}>
+                                  <button
+                                    type="button"
+                                    className="hidden sm:inline-flex px-3 py-1.5 rounded-md text-xs font-semibold bg-green-600 text-white hover:bg-green-700 transition-colors"
+                                  >
+                                    View
+                                  </button>
+                                </Link>
+
+                                <Link to={`/Admin/ProjectsEdit/${pUrl}`}>
+                                  <button
+                                    type="button"
+                                    className="hidden sm:inline-flex px-3 py-1.5 rounded-md text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                                  >
+                                    Edit
+                                  </button>
+                                </Link>
+
+                                <Link to={`/Admin/ProjectsAddBhk/${id}`}>
+                                  <button
+                                    type="button"
+                                    className="hidden sm:inline-flex px-3 py-1.5 rounded-md text-xs font-semibold bg-amber-400 text-gray-900 hover:bg-amber-500 transition-colors"
+                                  >
+                                    ADD BHK
+                                  </button>
+                                </Link>
+
+                                <Link to={`/Admin/ProjectAddHighlights/${id}`}>
+                                  <button
+                                    type="button"
+                                    className="hidden sm:inline-flex px-3 py-1.5 rounded-md text-xs font-semibold bg-orange-500 text-white hover:bg-orange-600 transition-colors"
+                                  >
+                                    ADD Highlights
+                                  </button>
+                                </Link>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan="6" className="text-center py-10 text-gray-500 italic">
+                          No projects found.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              )}
+
+              <Modal
+                open={detailsOpen}
+                onCancel={() => setDetailsOpen(false)}
+                footer={null}
+                title="Project Details"
+                centered
+                width={520}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                    <div className="text-[11px] uppercase tracking-wide text-gray-500">Project Name</div>
+                    <div className="mt-1 text-sm font-semibold text-gray-900 break-words">{selectedProject?.projectName || '-'}</div>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                    <div className="text-[11px] uppercase tracking-wide text-gray-500">Type</div>
+                    <div className="mt-1 text-sm text-gray-900 break-words">{selectedProject?.type || '-'}</div>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                    <div className="text-[11px] uppercase tracking-wide text-gray-500">City</div>
+                    <div className="mt-1 text-sm text-gray-900 break-words">{selectedProject?.city || '-'}</div>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                    <div className="text-[11px] uppercase tracking-wide text-gray-500">State</div>
+                    <div className="mt-1 text-sm text-gray-900 break-words">{selectedProject?.state || '-'}</div>
+                  </div>
+                  <div className="sm:col-span-2 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                    <div className="text-[11px] uppercase tracking-wide text-gray-500">Address</div>
+                    <div className="mt-1 text-sm text-gray-900 break-words">{selectedProject?.projectAddress || '-'}</div>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                    <div className="text-[11px] uppercase tracking-wide text-gray-500">Builder</div>
+                    <div className="mt-1 text-sm text-gray-900 break-words">{selectedProject?.builderName || '-'}</div>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                    <div className="text-[11px] uppercase tracking-wide text-gray-500">Status</div>
+                    <div className="mt-1 text-sm text-gray-900 break-words">{selectedProject?.project_Status || '-'}</div>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                    <div className="text-[11px] uppercase tracking-wide text-gray-500">Mobile</div>
+                    <div className="mt-1 text-sm text-gray-900 break-words">{(selectedProject?.mobileNumber ?? '').toString().trim() || '-'}</div>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                    <div className="text-[11px] uppercase tracking-wide text-gray-500">Payment Plan</div>
+                    <div className="mt-1 text-sm text-gray-900 break-words">{(selectedProject?.paymentPlan ?? '').toString().trim() || '-'}</div>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex flex-col sm:flex-row sm:justify-end gap-2">
+                  {selectedProject?.project_url && (
+                    <Link to={`/Admin/ProjectsView/${selectedProject.project_url}`}>
+                      <button
+                        type="button"
+                        onClick={() => setDetailsOpen(false)}
+                        className="w-full sm:w-auto px-4 py-2 rounded-lg text-sm font-semibold bg-green-600 text-white hover:bg-green-700 transition-all duration-200"
+                      >
+                        View
+                      </button>
+                    </Link>
+                  )}
+                  {selectedProject?.project_url && (
+                    <Link to={`/Admin/ProjectsEdit/${selectedProject.project_url}`}>
+                      <button
+                        type="button"
+                        onClick={() => setDetailsOpen(false)}
+                        className="w-full sm:w-auto px-4 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-all duration-200"
+                      >
+                        Edit
+                      </button>
+                    </Link>
+                  )}
+                  {selectedProject?._id && (
+                    <Link to={`/Admin/ProjectsAddBhk/${selectedProject._id}`}>
+                      <button
+                        type="button"
+                        onClick={() => setDetailsOpen(false)}
+                        className="w-full sm:w-auto px-4 py-2 rounded-lg text-sm font-semibold bg-amber-500 text-white hover:bg-amber-600 transition-all duration-200"
+                      >
+                        Add BHK
+                      </button>
+                    </Link>
+                  )}
+                  {selectedProject?._id && (
+                    <Link to={`/Admin/ProjectAddHighlights/${selectedProject._id}`}>
+                      <button
+                        type="button"
+                        onClick={() => setDetailsOpen(false)}
+                        className="w-full sm:w-auto px-4 py-2 rounded-lg text-sm font-semibold bg-orange-500 text-white hover:bg-orange-600 transition-all duration-200"
+                      >
+                        Add Highlights
+                      </button>
+                    </Link>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setDetailsOpen(false)}
+                    className="w-full sm:w-auto px-4 py-2 rounded-lg text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 transition-all duration-200"
+                  >
+                    Close
+                  </button>
+                </div>
+              </Modal>
+
+              <div className="flex justify-center items-center gap-3 py-6">
+                <button
+                  onClick={() => paginate(currentPage > 1 ? currentPage - 1 : 1)}
+                  className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 font-semibold hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </button>
+                {Array.from(
+                  { length: Math.min(3, Math.ceil(filteredProjects.length / rowsPerPage)) },
+                  (_, index) => {
+                    // Show current page and 1 page before/after
+                    const pageNumber = Math.min(
+                      Math.max(1, currentPage - 1) + index,
+                      Math.ceil(filteredProjects.length / rowsPerPage)
+                    );
+                    if (pageNumber > Math.ceil(filteredProjects.length / rowsPerPage)) return null;
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => paginate(pageNumber)}
+                        className={`px-4 py-2 rounded-lg border font-semibold transition-colors ${
+                          currentPage === pageNumber
+                            ? "bg-red-600 border-red-600 text-white"
+                            : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        {pageNumber}
+                      </button>
+                    );
+                  }
+                )}
+                <button
+                  onClick={() => paginate(currentPage < Math.ceil(filteredProjects.length / rowsPerPage) ? currentPage + 1 : currentPage)}
+                  className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 font-semibold hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={currentPage === Math.ceil(filteredProjects.length / rowsPerPage)}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
     </div>
   );
 };
 
 export default Projects;
-
-// --- Embedded CSS Styles ---
-const projectStyles = `
-/* Overall Layout */
-.projects-main-content {
-  flex: 1;
-  min-width: 0;
-  padding: 3rem 2rem; /* Increased padding for more spacious feel */
-  margin-left: 250px; /* Aligns with Sidebar width */
-  background: linear-gradient(135deg, #f0f2f5 0%, #e0e6ed 100%); /* Subtle gradient background */
-  min-height: 100vh;
-  box-sizing: border-box;
-  font-family: 'Poppins', sans-serif; /* A more elegant font choice */
-  color: #333d4e; /* Slightly darker, sophisticated text color */
-  transition: all 0.3s ease-in-out; /* Smooth transitions for layout changes */
-}
-
-@media (max-width: 768px) {
-  .projects-main-content {
-    margin-left: 0;
-    padding: 2rem 1rem;
-  }
-}
-
-/* Header and Controls */
-.projects-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 3rem; /* More space below header */
-  flex-wrap: nowrap; /* keep in one row on larger screens */
-  gap: 0.5rem; /* tighter gap so items fit in one row */
-}
-
-.search-container {
-  display: flex;
-  align-items: center;
-  background-color: #ffffff;
-  border-radius: 14px; /* Even softer rounded corners */
-  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.1); /* Deeper, more elegant shadow */
-  overflow: hidden;
-  max-width: 360px; /* even narrower to make room for filters */
-  flex: 0 1 320px; /* allow shrinking if needed */
-  min-width: 280px; /* avoid too small on medium screens */
-  border: 1px solid #d8e2ed; /* Subtle border for definition */
-}
-
-.search-input {
-  padding: 10px 16px; /* compact padding */
-  border: none;
-  border-bottom: 3px solid #f44336; /* Prominent red accent */
-  color: #333d4e;
-  outline: none;
-  flex-grow: 1;
-  font-size: 0.98rem; /* slightly smaller text */
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-.search-input::placeholder {
-  color: #aebacd; /* Elegant placeholder color */
-}
-
-.search-input:focus {
-  border-color: #d32f2f; /* Darker red on focus */
-  box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.2); /* Soft glow on focus */
-}
-
-.search-button {
-  background: linear-gradient(45deg, #f44336 0%, #e53935 100%); /* Red gradient */
-  color: #ffffff;
-  padding: 10px 18px; /* compact padding */
-  border: none;
-  border-radius: 0 14px 14px 0;
-  cursor: pointer;
-  font-size: 0.98rem;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(244, 67, 54, 0.4); /* Matching shadow for button */
-}
-
-.search-button:hover {
-  background: linear-gradient(45deg, #e53935 0%, #d32f2f 100%); /* Darker gradient on hover */
-  transform: translateY(-2px); /* More pronounced lift */
-  box-shadow: 0 6px 20px rgba(244, 67, 54, 0.5);
-}
-
-.filters-container {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background-color: transparent; /* merge visually with header */
-  border: none;
-  border-radius: 12px;
-  padding: 4px 2px;
-  box-shadow: none;
-  flex: 1 1 0; /* take remaining space */
-  flex-wrap: wrap; /* allow multiple rows */
-  overflow-x: visible; /* no horizontal scroll when wrapping */
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none; /* Firefox */
-}
-
-.filters-container::-webkit-scrollbar { display: none; }
-
-.filters-break {
-  flex-basis: 100%; /* force next items to start on a new line */
-  height: 0; /* no extra height */
-}
-
-.filters-container .filter-input,
-.filters-container .filter-select {
-  min-width: 90px;
-  width: 112px; /* slightly larger for better readability */
-  flex: 0 0 auto; /* prevent shrinking too small */
-  padding: 8px 10px; /* comfortable */
-  font-size: 0.9rem;
-}
-
-.filters-container .reset-filters-button {
-  white-space: nowrap;
-}
-
-/* Responsive: wrap on smaller screens */
-@media (max-width: 1100px) {
-  .projects-header {
-    flex-wrap: wrap;
-  }
-  .filters-container {
-    flex-wrap: wrap;
-    overflow-x: visible;
-    gap: 10px;
-  }
-  .filters-container .filter-input,
-  .filters-container .filter-select {
-    width: 100%;
-    max-width: 240px;
-  }
-}
-
-/* Wider screens can afford larger controls */
-@media (min-width: 1400px) {
-  .filters-container .filter-input,
-  .filters-container .filter-select {
-    width: 150px;
-  }
-  .projects-header {
-    gap: 1rem;
-  }
-}
-
-.add-new-project-button {
-  background: linear-gradient(45deg, #4CAF50 0%, #43a047 100%); /* Green gradient */
-  color: #ffffff;
-  padding: 14px 28px;
-  border-radius: 14px;
-  border: none;
-  font-weight: 600;
-  cursor: pointer;
-  font-size: 1.05rem;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
-  flex: 0 0 auto; /* keep natural size, don't stretch */
-}
-
-.add-new-project-button:hover {
-  background: linear-gradient(45deg, #43a047 0%, #388e3c 100%); /* Darker green gradient on hover */
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.5);
-}
-
-.refresh-button {
-  background: linear-gradient(45deg, #2196f3 0%, #1976d2 100%);
-  color: #ffffff;
-  padding: 10px 16px;
-  border-radius: 12px;
-  border: none;
-  font-weight: 600;
-  cursor: pointer;
-  font-size: 0.95rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.35);
-}
-
-.refresh-button:hover {
-  background: linear-gradient(45deg, #1976d2 0%, #1565c0 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(33, 150, 243, 0.45);
-}
-
-/* Table Styling */
-.table-container {
-  overflow-x-auto;
-  background-color: #ffffff;
-  border-radius: 20px; /* Even larger, softer border-radius */
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15); /* Deeper, more pronounced shadow */
-  margin-bottom: 2.5rem;
-  border: 1px solid #e0e6ed; /* Subtle border */
-}
-
-.projects-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  min-width: 1000px; /* Ensure generous width */
-  font-size: 0.85rem; /* Smaller text */
-}
-
-.table-header {
-  padding: 10px 12px; /* Reduced padding */
-  text-align: center;
-  font-size: 0.8rem; /* Smaller header font */
-  font-weight: 700;
-  color: #5c677d; /* Muted, professional header text color */
-  text-transform: uppercase;
-  letter-spacing: 0.05em; /* Reduced letter spacing */
-  background-color: #f7f9fc; /* Very light header background */
-  border-bottom: 2px solid #e8eaf1;
-  position: sticky; /* Make headers sticky for large tables */
-  top: 0;
-  z-index: 1; /* Ensure headers are above scrolling content */
-}
-
-.table-header:first-child {
-  border-top-left-radius: 20px;
-}
-
-.table-header:last-child {
-  border-top-right-radius: 20px;
-}
-
-.filter-row {
-  background-color: #fafbff;
-}
-
-.filter-cell {
-  padding: 12px 16px;
-  background-color: #ffffff;
-  border-bottom: 2px solid #e8eaf1;
-}
-
-.filter-input,
-.filter-select {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #d8e2ed;
-  border-radius: 10px;
-  outline: none;
-  font-size: 0.95rem;
-  color: #333d4e;
-  background-color: #ffffff;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.filter-input:focus,
-.filter-select:focus {
-  border-color: #b0c4de;
-  box-shadow: 0 0 0 3px rgba(176, 196, 222, 0.25);
-}
-
-.reset-filters-button {
-  padding: 10px 14px;
-  border-radius: 10px;
-  border: 1px solid #e0e6ed;
-  background: linear-gradient(45deg, #eeeeee 0%, #e2e8f0 100%);
-  color: #333d4e;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.reset-filters-button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-}
-
-.table-body .table-row:nth-child(odd) { /* Back to odd for a subtle stripe */
-  background-color: #fcfdff;
-}
-
-.table-body .table-row:hover {
-  background-color: #eaf6ff; /* More distinct hover color */
-  transition: background-color 0.3s ease, transform 0.1s ease;
-  transform: scale(1.005); /* Subtle grow on hover */
-}
-
-.table-cell {
-  padding: 8px 12px; /* Reduced padding for compact rows */
-  text-align: center;
-  font-size: 0.85rem; /* Smaller font */
-  color: #333d4e;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  border-bottom: 1px solid #e8eaf1;
-}
-
-.table-body .table-row:last-child .table-cell {
-  border-bottom: none;
-}
-
-.serial-number {
-    font-weight: 600;
-    color: #5a6a7c;
-}
-
-.project-name {
-    font-weight: 600;
-    text-align: left;
-    color: #2c3a4d;
-}
-
-.project-address {
-    max-width: 250px; /* Increased max width for address */
-    white-space: normal;
-    line-height: 1.5; /* Better line spacing for wrapped text */
-}
-
-.no-data-message {
-  text-align: center;
-  padding: 40px; /* More vertical padding */
-  color: #8898aa;
-  font-size: 1.2rem; /* Larger font */
-  font-style: italic;
-  font-weight: 500;
-  background-color: #fefefe;
-  border-radius: 0 0 20px 20px; /* Rounded bottom corners */
-}
-
-/* Action Buttons within Table */
-.action-buttons-cell {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 6px; /* Reduced space between buttons */
-  flex-wrap: wrap;
-  padding: 6px 8px; /* Reduced padding for button cell */
-}
-
-.action-button {
-  padding: 6px 10px; /* Smaller padding for individual buttons */
-  border-radius: 6px; /* Smaller rounded corners */
-  border: none;
-  font-weight: 500;
-  font-size: 0.75rem; /* Smaller button font */
-  cursor: pointer;
-  transition: all 0.25s ease;
-  white-space: nowrap;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1); /* Smaller shadow */
-}
-
-.action-button:hover {
-  transform: translateY(-2px); /* More pronounced lift */
-  box-shadow: 0 5px 15px rgba(0,0,0,0.18);
-}
-
-/* Specific button colors with subtle gradients */
-.view-button {
-  background: linear-gradient(45deg, #28a745 0%, #218838 100%);
-  color: white;
-}
-.view-button:hover {
-  background: linear-gradient(45deg, #218838 0%, #1e7e34 100%);
-}
-
-.edit-button {
-  background: linear-gradient(45deg, #007bff 0%, #0069d9 100%);
-  color: white;
-}
-.edit-button:hover {
-  background: linear-gradient(45deg, #0069d9 0%, #0056b3 100%);
-}
-
-.add-bhk-button {
-  background: linear-gradient(45deg, #ffc107 0%, #e0a800 100%);
-  color: #444; /* Darker text for contrast */
-}
-.add-bhk-button:hover {
-  background: linear-gradient(45deg, #e0a800 0%, #cc9000 100%);
-}
-
-.add-highlights-button {
-  background: linear-gradient(45deg, #fd7e14 0%, #e66a00 100%);
-  color: white;
-}
-.add-highlights-button:hover {
-  background: linear-gradient(45deg, #e66a00 0%, #cb5c00 100%);
-}
-
-.delete-button {
-  background: linear-gradient(45deg, #dc3545 0%, #c82333 100%);
-  color: white;
-}
-.delete-button:hover {
-  background: linear-gradient(45deg, #c82333 0%, #bd2130 100%);
-}
-
-/* Pagination */
-.pagination-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0.9rem; /* Increased gap */
-  margin-top: 2.5rem; /* More space above pagination */
-  padding-bottom: 3.5rem; /* More space at the bottom */
-}
-
-.pagination-button {
-  padding: 13px 20px; /* More padding */
-  border-radius: 12px; /* Softer corners */
-  border: 1px solid #dcdcdc;
-  background-color: #ffffff;
-  color: #6c7a89;
-  font-size: 1rem; /* Slightly larger font */
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.08); /* Subtle shadow */
-}
-
-.pagination-button:hover:not(:disabled) {
-  background-color: #f2f7fc; /* Very light hover */
-  border-color: #b0b8c0;
-  color: #333d4e;
-  transform: translateY(-2px); /* More pronounced lift */
-  box-shadow: 0 5px 15px rgba(0,0,0,0.12);
-}
-
-.pagination-active {
-  background: linear-gradient(45deg, #f44336 0%, #d32f2f 100%); /* Red gradient for active page */
-  color: #ffffff;
-  border-color: #f44336;
-  font-weight: 700;
-  box-shadow: 0 4px 15px rgba(244, 67, 54, 0.4);
-}
-
-.pagination-active:hover {
-  background: linear-gradient(45deg, #d32f2f 0%, #c62828 100%); /* Darker red on hover for active */
-  border-color: #d32f2f;
-  color: #ffffff;
-}
-
-.pagination-disabled {
-  background-color: #f8f8f8; /* Lighter disabled background */
-  color: #c0c0c0; /* Lighter disabled text */
-  cursor: not-allowed;
-  opacity: 0.8;
-  border-color: #e0e0e0;
-  box-shadow: none;
-}
-`;

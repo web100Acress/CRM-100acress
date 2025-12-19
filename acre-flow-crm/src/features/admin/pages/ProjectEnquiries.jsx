@@ -17,13 +17,52 @@ const ProjectEnquiries = () => {
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
   const [messageApi, contextHolder] = message.useMessage();
-  const [dateFilter, setDateFilter] = useState('');
+  const [dayFilter, setDayFilter] = useState('');
+  const [monthFilter, setMonthFilter] = useState('');
+  const [rangeStart, setRangeStart] = useState('');
+  const [rangeEnd, setRangeEnd] = useState('');
+  const [monthPanel, setMonthPanel] = useState('month'); // 'month' | 'range'
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [filterType, setFilterType] = useState('day'); // 'day' or 'month'
+  const [calendarMonth, setCalendarMonth] = useState(new Date());
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedEnquiry, setSelectedEnquiry] = useState(null);
   const navigate = useNavigate();
-  const pageSize = 10;
+  const basePageSize = 10;
+
+  const isMonthFilterActive = filterType === 'month' && !!monthFilter;
+  const effectivePageSize = isMonthFilterActive ? 100000 : basePageSize;
+
+  const pad2 = (n) => String(n).padStart(2, '0');
+
+  const formatLocalYMD = (date) => {
+    const d = new Date(date);
+    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  };
+
+  const formatLocalYM = (date) => {
+    const d = new Date(date);
+    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
+  };
+
+  const parseYMDToLocalDate = (ymd) => {
+    if (!ymd) return null;
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd);
+    if (!match) return null;
+    const y = Number(match[1]);
+    const m = Number(match[2]);
+    const d = Number(match[3]);
+    return new Date(y, m - 1, d);
+  };
+
+  const parseYMToLocalDate = (ym) => {
+    if (!ym) return null;
+    const match = /^(\d{4})-(\d{2})$/.exec(ym);
+    if (!match) return null;
+    const y = Number(match[1]);
+    const m = Number(match[2]);
+    return new Date(y, m - 1, 1);
+  };
 
   useEffect(() => {
     const adminName = localStorage.getItem('adminName') || 'Admin';
@@ -47,63 +86,29 @@ const ProjectEnquiries = () => {
   const fetchData = async (page = 1) => {
     setLoading(true);
     try {
-      let url = `/userViewAll?limit=${pageSize}&page=${page}&search=${encodeURIComponent(search)}`;
+      const effectivePage = isMonthFilterActive ? 1 : page;
+      let url = `/userViewAll?limit=${effectivePageSize}&page=${effectivePage}&search=${encodeURIComponent(search)}`;
       
       // Add date filter to API call
-      if (dateFilter) {
-        if (filterType === 'day') {
-          url += `&date=${dateFilter}`;
-        } else if (filterType === 'month') {
-          url += `&month=${dateFilter}`;
+      if (filterType === 'day' && dayFilter) {
+        url += `&date=${dayFilter}`;
+      }
+      if (filterType === 'month' && monthFilter) {
+        if (rangeStart && rangeEnd) {
+          url += `&startDate=${rangeStart}&endDate=${rangeEnd}`;
+        } else {
+          url += `&month=${monthFilter}`;
         }
       }
       
       console.log('Fetching URL:', url);
-      console.log('Date filter:', dateFilter, 'Filter type:', filterType);
+      console.log('Date filter:', filterType === 'day' ? dayFilter : monthFilter, 'Filter type:', filterType);
       
       const response = await api100acress.get(url);
       const payload = response.data;
       console.log('API Response:', payload);
       
       let rows = payload?.data || payload?.users || (Array.isArray(payload) ? payload : []);
-      
-      // If date filter is applied and API doesn't support it, filter on frontend
-      if (dateFilter && filterType === 'month') {
-        const filterYear = new Date(dateFilter).getFullYear();
-        const filterMonth = new Date(dateFilter).getMonth();
-        
-        console.log('Frontend month filtering - Year:', filterYear, 'Month:', filterMonth);
-        
-        rows = rows.filter((row) => {
-          try {
-            const rowDate = new Date(row.createdAt || row.date || row.submittedAt);
-            return rowDate.getFullYear() === filterYear && rowDate.getMonth() === filterMonth;
-          } catch (e) {
-            console.warn('Error parsing date for row:', row);
-            return false;
-          }
-        });
-        
-        console.log('Rows after frontend month filter:', rows.length);
-      }
-      
-      if (dateFilter && filterType === 'day') {
-        const filterDate = new Date(dateFilter).toDateString();
-        
-        console.log('Frontend day filtering - Date:', filterDate);
-        
-        rows = rows.filter((row) => {
-          try {
-            const rowDate = new Date(row.createdAt || row.date || row.submittedAt);
-            return rowDate.toDateString() === filterDate;
-          } catch (e) {
-            console.warn('Error parsing date for row:', row);
-            return false;
-          }
-        });
-        
-        console.log('Rows after frontend day filter:', rows.length);
-      }
       
       const filteredRows = rows.filter((r) => !(/footer\s*instant\s*call/i.test((r?.projectName || '').trim())));
       
@@ -113,28 +118,14 @@ const ProjectEnquiries = () => {
       
       setData(filteredRows);
       
-      // For filtered data, use filteredRows length
+      // Prefer backend total for pagination. Fallback to current rows length if missing.
       const apiTotal = payload?.total || payload?.data?.[0]?.totalCount || 0;
-      const finalTotal = dateFilter ? filteredRows.length : (apiTotal > 0 ? apiTotal : filteredRows.length);
+      const finalTotal = apiTotal > 0 ? apiTotal : filteredRows.length;
       
       console.log('Final total being set:', finalTotal);
       setTotal(finalTotal);
-      setCurrentPage(page);
+      setCurrentPage(effectivePage);
       
-      // Log available months for debugging
-      if (dateFilter && filterType === 'month') {
-        const availableMonths = {};
-        (payload?.data || payload?.users || (Array.isArray(payload) ? payload : [])).forEach(row => {
-          try {
-            const rowDate = new Date(row.createdAt || row.date || row.submittedAt);
-            const monthYear = rowDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-            availableMonths[monthYear] = (availableMonths[monthYear] || 0) + 1;
-          } catch (e) {
-            // Skip invalid dates
-          }
-        });
-        console.log('Available months with data:', availableMonths);
-      }
     } catch (error) {
       console.error("Error fetching data:", error);
       messageApi.error("Error fetching data. Please try again.");
@@ -148,11 +139,17 @@ const ProjectEnquiries = () => {
       fetchData(1);
     }, 300); // Debounce search input
     return () => clearTimeout(delayDebounceFn);
-  }, [search, dateFilter, filterType]);
+  }, [search, dayFilter, monthFilter, rangeStart, rangeEnd, filterType]);
 
   useEffect(() => {
     fetchData(currentPage);
   }, [currentPage]);
+
+  useEffect(() => {
+    if (isMonthFilterActive && currentPage !== 1) {
+      setCurrentPage(1);
+    }
+  }, [isMonthFilterActive]);
 
   // Close calendar when clicking outside
   useEffect(() => {
@@ -166,8 +163,17 @@ const ProjectEnquiries = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [calendarOpen]);
 
+  useEffect(() => {
+    if (filterType === 'day') {
+      setCalendarMonth(dayFilter ? (parseYMDToLocalDate(dayFilter) || new Date()) : new Date());
+    } else {
+      setCalendarMonth(monthFilter ? (parseYMToLocalDate(monthFilter) || new Date()) : new Date());
+    }
+    setMonthPanel(filterType === 'month' ? 'month' : 'month');
+  }, [filterType]);
 
-  const totalPages = Math.ceil(total / pageSize);
+
+  const totalPages = Math.ceil(total / effectivePageSize);
   const paginatedData = data;
 
   const handleSelectAll = (e) => {
@@ -222,27 +228,81 @@ const ProjectEnquiries = () => {
 
   const handleDateFilterChange = (date) => {
     if (filterType === 'day') {
-      // Format as YYYY-MM-DD for API
-      const formattedDate = new Date(date).toISOString().split('T')[0];
-      setDateFilter(formattedDate);
+      const next = formatLocalYMD(date);
+      setDayFilter(next);
+      setCalendarMonth(new Date(date));
+      setCalendarOpen(false);
     } else if (filterType === 'month') {
-      // Format as YYYY-MM for API
-      const formattedMonth = new Date(date).toISOString().slice(0, 7);
-      setDateFilter(formattedMonth);
+      const next = formatLocalYM(date);
+      setMonthFilter(next);
+      setRangeStart('');
+      setRangeEnd('');
+      setCalendarMonth(new Date(date));
+      setMonthPanel('range');
+      setCalendarOpen(true);
     }
-    setCalendarOpen(false);
     setCurrentPage(1); // Reset to first page when filter changes
   };
 
+  const handleRangePick = (day) => {
+    if (!monthFilter) {
+      messageApi.warning('Please select a month first');
+      return;
+    }
+    const picked = formatLocalYMD(day);
+
+    // Restrict selection to currently selected month
+    const monthDate = parseYMToLocalDate(monthFilter);
+    if (monthDate && (day.getFullYear() !== monthDate.getFullYear() || day.getMonth() !== monthDate.getMonth())) {
+      return;
+    }
+
+    if (!rangeStart || (rangeStart && rangeEnd)) {
+      setRangeStart(picked);
+      setRangeEnd('');
+      return;
+    }
+
+    // Second click -> end
+    if (picked < rangeStart) {
+      setRangeEnd(rangeStart);
+      setRangeStart(picked);
+    } else {
+      setRangeEnd(picked);
+    }
+  };
+
   const clearDateFilter = () => {
-    setDateFilter('');
+    if (filterType === 'day') {
+      setDayFilter('');
+      setCalendarMonth(new Date());
+    } else {
+      setMonthFilter('');
+      setRangeStart('');
+      setRangeEnd('');
+      setCalendarMonth(new Date());
+      setMonthPanel('month');
+    }
     setCalendarOpen(false);
     setCurrentPage(1);
   };
 
+  const formatRangeForDisplay = (startYmd, endYmd) => {
+    const s = parseYMDToLocalDate(startYmd);
+    const e = parseYMDToLocalDate(endYmd);
+    if (!s || !e) return '';
+    const sameMonth = s.getFullYear() === e.getFullYear() && s.getMonth() === e.getMonth();
+    if (sameMonth) {
+      return `${s.toLocaleDateString('en-US', { month: 'short' })} ${pad2(s.getDate())} - ${pad2(e.getDate())}`;
+    }
+    return `${s.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} - ${e.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}`;
+  };
+
   const formatDateForDisplay = (dateString) => {
     if (!dateString) return '';
-    const date = new Date(dateString);
+    const date = filterType === 'day'
+      ? (parseYMDToLocalDate(dateString) || new Date(dateString))
+      : (parseYMToLocalDate(dateString) || new Date(dateString));
     if (filterType === 'month') {
       return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
     }
@@ -250,7 +310,7 @@ const ProjectEnquiries = () => {
   };
 
   const generateCalendarDays = (selectedDate = null) => {
-    const dateToUse = selectedDate ? new Date(selectedDate) : new Date();
+    const dateToUse = typeof selectedDate === 'string' ? (parseYMDToLocalDate(selectedDate) || new Date()) : (selectedDate ? new Date(selectedDate) : new Date());
     const currentMonth = dateToUse.getMonth();
     const currentYear = dateToUse.getFullYear();
     const firstDay = new Date(currentYear, currentMonth, 1);
@@ -388,14 +448,29 @@ const ProjectEnquiries = () => {
 
                   {/* Calendar Button */}
                   <button
-                    onClick={() => setCalendarOpen(!calendarOpen)}
+                    onClick={() => {
+                      if (!calendarOpen) {
+                        if (filterType === 'day') {
+                          setCalendarMonth(dayFilter ? (parseYMDToLocalDate(dayFilter) || new Date()) : new Date());
+                        } else {
+                          setCalendarMonth(monthFilter ? (parseYMToLocalDate(monthFilter) || new Date()) : new Date());
+                        }
+                      }
+                      setCalendarOpen(!calendarOpen);
+                    }}
                     className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                   >
                     <Calendar className="w-4 h-4 text-gray-500" />
                     <span className="text-gray-700 dark:text-gray-200 text-sm">
-                      {dateFilter ? formatDateForDisplay(dateFilter) : 'Select Date'}
+                      {filterType === 'day'
+                        ? (dayFilter ? formatDateForDisplay(dayFilter) : 'Select Date')
+                        : (monthFilter
+                          ? (rangeStart && rangeEnd
+                            ? formatRangeForDisplay(rangeStart, rangeEnd)
+                            : formatDateForDisplay(monthFilter))
+                          : 'Select Month')}
                     </span>
-                    {dateFilter && (
+                    {(filterType === 'day' ? dayFilter : monthFilter) && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -415,8 +490,22 @@ const ProjectEnquiries = () => {
                     {filterType === 'day' ? (
                       /* Day View Calendar */
                       <div>
-                        <div className="text-center mb-3 font-semibold text-gray-700 dark:text-gray-200">
-                          {(dateFilter ? new Date(dateFilter) : new Date()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                        <div className="flex items-center justify-between mb-3">
+                          <button
+                            onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1))}
+                            className="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                          </button>
+                          <div className="text-center font-semibold text-gray-700 dark:text-gray-200">
+                            {calendarMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                          </div>
+                          <button
+                            onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1))}
+                            className="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
                         </div>
                         <div className="grid grid-cols-7 gap-1 text-xs mb-2">
                           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
@@ -426,12 +515,18 @@ const ProjectEnquiries = () => {
                           ))}
                         </div>
                         <div className="grid grid-cols-7 gap-1">
-                          {generateCalendarDays(dateFilter).map((day, i) => (
+                          {generateCalendarDays(calendarMonth).map((day, i) => (
                             <div key={i} className="aspect-square min-h-[32px]">
                               {day ? (
                                 <button
                                   onClick={() => handleDateFilterChange(day)}
-                                  className="w-full h-full flex items-center justify-center rounded hover:bg-blue-100 dark:hover:bg-blue-900 text-sm text-gray-700 dark:text-gray-200 transition-colors border border-gray-100 dark:border-gray-600"
+                                  className={`w-full h-full flex items-center justify-center rounded text-sm transition-colors border dark:border-gray-600 ${
+                                    (dayFilter && formatLocalYMD(day) === dayFilter)
+                                      ? 'bg-blue-600 text-white border-blue-600'
+                                      : (formatLocalYMD(day) === formatLocalYMD(new Date()))
+                                        ? 'border-blue-300 text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-900/30'
+                                        : 'border-gray-100 text-gray-700 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-900'
+                                  }`}
                                 >
                                   {day.getDate()}
                                 </button>
@@ -443,22 +538,166 @@ const ProjectEnquiries = () => {
                         </div>
                       </div>
                     ) : (
-                      /* Month View */
+                      /* Month-first then Range */
                       <div>
-                        <div className="text-center mb-3 font-semibold text-gray-700 dark:text-gray-200">
-                          Select Month
-                        </div>
-                        <div className="space-y-1 max-h-60 overflow-y-auto">
-                          {generateMonthOptions().map((month, i) => (
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-1">
                             <button
-                              key={i}
-                              onClick={() => handleDateFilterChange(month)}
-                              className="w-full text-left px-3 py-2 rounded hover:bg-blue-100 dark:hover:bg-blue-900 text-sm text-gray-700 dark:text-gray-200 transition-colors"
+                              onClick={() => setMonthPanel('month')}
+                              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                                monthPanel === 'month'
+                                  ? 'bg-blue-500 text-white'
+                                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                              }`}
                             >
-                              {month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                              Month
                             </button>
-                          ))}
+                            <button
+                              onClick={() => setMonthPanel('range')}
+                              disabled={!monthFilter}
+                              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                                monthPanel === 'range'
+                                  ? 'bg-blue-500 text-white'
+                                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                              } ${!monthFilter ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                              Range
+                            </button>
+                          </div>
+                          {monthFilter && (
+                            <button
+                              onClick={() => {
+                                setRangeStart('');
+                                setRangeEnd('');
+                                setCurrentPage(1);
+                              }}
+                              className="text-xs font-semibold text-gray-500 hover:text-gray-800"
+                            >
+                              Clear Range
+                            </button>
+                          )}
                         </div>
+
+                        {monthPanel === 'month' ? (
+                          <>
+                            <div className="text-center mb-2 font-semibold text-gray-700 dark:text-gray-200">
+                              Select Month
+                            </div>
+                            <div className="space-y-1 max-h-60 overflow-y-auto">
+                              {generateMonthOptions().map((month, i) => (
+                                <button
+                                  key={i}
+                                  onClick={() => handleDateFilterChange(month)}
+                                  className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
+                                    (monthFilter && formatLocalYM(month) === monthFilter)
+                                      ? 'bg-blue-600 text-white'
+                                      : 'text-gray-700 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-900'
+                                  }`}
+                                >
+                                  {month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                                </button>
+                              ))}
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex items-center justify-between mb-2">
+                              <button
+                                onClick={() => {
+                                  if (!monthFilter) return;
+                                  const base = parseYMToLocalDate(monthFilter) || new Date();
+                                  const prev = new Date(base.getFullYear(), base.getMonth() - 1, 1);
+                                  handleDateFilterChange(prev);
+                                  setMonthPanel('range');
+                                }}
+                                className="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
+                              >
+                                <ChevronLeft className="w-4 h-4" />
+                              </button>
+                              <div className="text-center font-semibold text-gray-700 dark:text-gray-200">
+                                {(monthFilter ? (parseYMToLocalDate(monthFilter) || new Date()) : new Date()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                              </div>
+                              <button
+                                onClick={() => {
+                                  if (!monthFilter) return;
+                                  const base = parseYMToLocalDate(monthFilter) || new Date();
+                                  const next = new Date(base.getFullYear(), base.getMonth() + 1, 1);
+                                  handleDateFilterChange(next);
+                                  setMonthPanel('range');
+                                }}
+                                className="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
+                              >
+                                <ChevronRight className="w-4 h-4" />
+                              </button>
+                            </div>
+
+                            <div className="grid grid-cols-7 gap-1 text-xs mb-2">
+                              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                                <div key={i} className="text-center font-medium text-gray-500 dark:text-gray-400 p-1">
+                                  {day}
+                                </div>
+                              ))}
+                            </div>
+
+                            <div className="grid grid-cols-7 gap-1">
+                              {generateCalendarDays(parseYMToLocalDate(monthFilter) || new Date()).map((day, i) => {
+                                const ymd = day ? formatLocalYMD(day) : '';
+                                const isSelectedStart = !!day && rangeStart && ymd === rangeStart;
+                                const isSelectedEnd = !!day && rangeEnd && ymd === rangeEnd;
+                                const inRange = !!day && rangeStart && rangeEnd && ymd > rangeStart && ymd < rangeEnd;
+                                const isToday = !!day && ymd === formatLocalYMD(new Date());
+
+                                return (
+                                  <div key={i} className="aspect-square min-h-[32px]">
+                                    {day ? (
+                                      <button
+                                        onClick={() => handleRangePick(day)}
+                                        className={`w-full h-full flex items-center justify-center rounded text-sm transition-colors border dark:border-gray-600 ${
+                                          isSelectedStart || isSelectedEnd
+                                            ? 'bg-blue-600 text-white border-blue-600'
+                                            : inRange
+                                              ? 'bg-blue-100 text-blue-900 border-blue-200'
+                                              : isToday
+                                                ? 'border-blue-300 text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-900/30'
+                                                : 'border-gray-100 text-gray-700 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-900'
+                                        }`}
+                                      >
+                                        {day.getDate()}
+                                      </button>
+                                    ) : (
+                                      <div className="border border-transparent" />
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            <div className="mt-3 flex items-center justify-between">
+                              <div className="text-xs text-gray-500">
+                                {rangeStart && !rangeEnd ? 'Select end date' : (rangeStart && rangeEnd ? 'Range selected' : 'Select start date')}
+                              </div>
+                              <button
+                                onClick={() => {
+                                  if (rangeStart && rangeEnd) {
+                                    setCalendarOpen(false);
+                                    setCurrentPage(1);
+                                    fetchData(1);
+                                  } else {
+                                    messageApi.info('Select start and end date');
+                                  }
+                                }}
+                                className={`px-3 py-1 rounded text-sm font-semibold ${
+                                  (rangeStart && rangeEnd)
+                                    ? 'bg-gray-900 text-white hover:bg-gray-800'
+                                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                }`}
+                                disabled={!(rangeStart && rangeEnd)}
+                              >
+                                Apply
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>
@@ -537,7 +776,7 @@ const ProjectEnquiries = () => {
                           />
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 font-medium hidden sm:table-cell">
-                          {(currentPage - 1) * pageSize + index + 1}
+                          {(currentPage - 1) * effectivePageSize + index + 1}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 font-semibold">
                           <span className="block leading-tight">{item.name}</span>
@@ -632,25 +871,40 @@ const ProjectEnquiries = () => {
             </Modal>
 
             {/* Pagination */}
-            <div className="flex justify-center items-center gap-2">
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                disabled={currentPage === 1 || loading}
-                className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
-              >
-                <ChevronLeft className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-              </button>
+            {!isMonthFilterActive && (
+              <div className="flex justify-center items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1 || loading}
+                  className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                >
+                  <ChevronLeft className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                </button>
 
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter(page =>
-                  page === 1 ||
-                  page === totalPages ||
-                  (page >= currentPage - 1 && page <= currentPage + 1)
-                )
-                .map((page, idx, arr) => {
-                  if (idx > 0 && page - arr[idx - 1] > 1) {
-                    return [
-                      <span key={`ellipsis-${page}`} className="px-2 text-gray-500 dark:text-gray-400">...</span>,
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(page =>
+                    page === 1 ||
+                    page === totalPages ||
+                    (page >= currentPage - 1 && page <= currentPage + 1)
+                  )
+                  .map((page, idx, arr) => {
+                    if (idx > 0 && page - arr[idx - 1] > 1) {
+                      return [
+                        <span key={`ellipsis-${page}`} className="px-2 text-gray-500 dark:text-gray-400">...</span>,
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${
+                            currentPage === page
+                              ? 'bg-red-500 text-white border border-red-500 shadow-md'
+                              : 'border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      ];
+                    }
+                    return (
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
@@ -662,31 +916,18 @@ const ProjectEnquiries = () => {
                       >
                         {page}
                       </button>
-                    ];
-                  }
-                  return (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${
-                        currentPage === page
-                          ? 'bg-red-500 text-white border border-red-500 shadow-md'
-                          : 'border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  );
-                })}
+                    );
+                  })}
 
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                disabled={currentPage === totalPages || loading}
-                className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
-              >
-                <ChevronRight className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-              </button>
-            </div>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages || loading}
+                  className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                >
+                  <ChevronRight className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                </button>
+              </div>
+            )}
           </div>
         </main>
       </div>
