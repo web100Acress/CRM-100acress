@@ -462,6 +462,22 @@ exports.checkEmailExists = async (req, res) => {
     
     console.log('Checking if email exists in Activity departments:', email);
 
+    // Check if user is admin - skip department check for admin users
+    const User = require('../models/userModel');
+    const adminUser = await User.findOne({ email, role: 'admin' });
+    
+    if (adminUser) {
+      console.log('Admin user found, skipping department check');
+      return res.status(200).json({
+        success: true,
+        exists: false, // Admin doesn't need department
+        isAdmin: true,
+        debug: {
+          message: 'Admin user - department check skipped'
+        }
+      });
+    }
+
     // First, let's see all departments and their credentials for debugging
     const allDepartments = await ActivityDepartment.find({});
     console.log('All departments in database:', allDepartments.length);
@@ -484,6 +500,7 @@ exports.checkEmailExists = async (req, res) => {
     res.status(200).json({
       success: true,
       exists: !!department,
+      isAdmin: false,
       debug: {
         totalDepartments: allDepartments.length,
         departmentName: department ? department.name : null
