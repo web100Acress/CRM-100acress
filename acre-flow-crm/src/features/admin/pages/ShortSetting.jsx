@@ -1,9 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 // import { parseYouTubeVideoId } from "../config/siteSettings";
 import AdminSidebar from "../components/AdminSidebar";
 import api100acress from "../config/api100acressClient";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { LogOut, ChevronDown, User, Settings as SettingsIcon } from "lucide-react";
+import { MdVideoLibrary, MdArrowBack } from "react-icons/md";
 
 // Helper function to parse YouTube video ID from URL or return the ID if it's already an ID
 const parseYouTubeVideoId = (input) => {
@@ -33,6 +36,10 @@ const parseYouTubeVideoId = (input) => {
 };
 
 const ShortsSettings = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [userInfo, setUserInfo] = useState(null);
+  const navigate = useNavigate();
   const [input, setInput] = useState("");
   const [savedId, setSavedId] = useState("");
   const [savedList, setSavedList] = useState([]);
@@ -41,6 +48,42 @@ const ShortsSettings = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const channel = typeof window !== 'undefined' && 'BroadcastChannel' in window ? new BroadcastChannel('shorts-settings') : null;
+
+  // User info effect
+  useEffect(() => {
+    const userName = localStorage.getItem('userName') || localStorage.getItem('adminName') || 'Admin';
+    const userEmail = localStorage.getItem('userEmail') || localStorage.getItem('adminEmail') || 'admin@example.com';
+    const userRole = localStorage.getItem('userRole') || localStorage.getItem('adminRole') || 'admin';
+    setUserInfo({ name: userName, email: userEmail, role: userRole });
+  }, []);
+
+  const getUserInitials = (name) => {
+    if (!name) return 'AD';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAdminLoggedIn');
+    localStorage.removeItem('adminEmail');
+    localStorage.removeItem('adminName');
+    localStorage.removeItem('adminRole');
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('token');
+    localStorage.removeItem('sourceSystem');
+    localStorage.removeItem('originalRole');
+    localStorage.removeItem('myToken');
+    localStorage.removeItem('isDeveloperLoggedIn');
+    localStorage.removeItem('isHrFinanceLoggedIn');
+    localStorage.removeItem('isSalesHeadLoggedIn');
+    localStorage.removeItem('isHRLoggedIn');
+    localStorage.removeItem('isBlogLoggedIn');
+    localStorage.removeItem('isItLoggedIn');
+    window.location.href = '/login';
+  };
 
   useEffect(() => {
     // Load from backend only
@@ -182,39 +225,83 @@ const ShortsSettings = () => {
     setSavedList([]);
     setInput("");
     setPreviewKey((k) => k + 1);
-    
-    if (channel) {
-      try { channel.postMessage({ type: 'shorts-update', value: '' }); } catch (_) {}
-    }
   };
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex">
-      {/* Sidebar layout */}
-      <AdminSidebar />
-      
-      <div className="ml-0 p-16 lg:p-8" style={{ width: '100%' }}>
-        {/* Enhanced Header Section */}
-        <div className="mb-8">
-          <div className="flex items-center mb-4">
-            <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r from-red-500 to-pink-500 rounded-xl mr-4">
-              <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-              </svg>
+  <div className="bg-gray-50 dark:bg-gray-900 dark:text-gray-100 h-screen flex overflow-x-hidden">
+    <AdminSidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(prev => !prev)} />
+    <div className="flex-1 flex flex-col overflow-hidden transition-colors duration-300 min-w-0">
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4">
+          <div className="flex items-center gap-3 flex-1">
+            {/* Desktop Header */}
+            <div className="hidden sm:flex items-center gap-3 justify-center w-full">
+              <div className="bg-gradient-to-br from-red-500 to-pink-500 p-3 rounded-xl shadow-lg">
+                <MdVideoLibrary className="text-2xl text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl lg:text-2xl font-bold text-gray-900">YouTube Shorts Settings</h1>
+                <p className="text-sm text-gray-600">Manage homepage floating shorts video</p>
+              </div>
             </div>
             
-            <div>
-              <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-900 via-red-600 to-pink-600 bg-clip-text text-transparent">
-                YouTube Shorts Settings
-              </h1>
-              <p className="text-gray-600 mt-1 text-lg">
-                Manage your homepage floating shorts video
-              </p>
+            {/* Mobile Header */}
+            <div className="sm:hidden flex items-center gap-2 justify-center w-full">
+              <div className="bg-gradient-to-br from-red-500 to-pink-500 p-2 rounded-lg shadow">
+                <MdVideoLibrary className="text-lg text-white" />
+              </div>
+              <div>
+                <h1 className="text-lg font-bold text-gray-900">Shorts Settings</h1>
+                <p className="text-xs text-gray-600">Manage videos</p>
+              </div>
             </div>
           </div>
           
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <button
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                type="button"
+              >
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center shadow-md">
+                  <span className="text-white font-semibold text-xs sm:text-sm">{getUserInitials(userInfo?.name)}</span>
+                </div>
+                <div className="text-right hidden sm:block">
+                  <p className="text-xs sm:text-sm font-medium text-gray-900">{userInfo?.name}</p>
+                  <p className="text-xs text-gray-600 truncate max-w-[120px]">{userInfo?.email}</p>
+                </div>
+                <ChevronDown size={16} className={`text-gray-600 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {dropdownOpen && (
+                <div className="absolute right-0 mt-2 w-40 sm:w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                  <button className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-gray-50 transition-colors" type="button">
+                    <User size={16} className="text-gray-600" />
+                    <span className="text-xs sm:text-sm text-gray-700">Profile</span>
+                  </button>
+                  <button className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-gray-50 transition-colors" type="button">
+                    <SettingsIcon size={16} className="text-gray-600" />
+                    <span className="text-xs sm:text-sm text-gray-700">Settings</span>
+                  </button>
+                  <div className="border-t border-gray-200 my-2"></div>
+                  <button
+                    onClick={() => navigate(-1)}
+                    className="inline-flex items-center px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors shadow-sm hover:shadow-md"
+                  >
+                    <MdArrowBack className="text-lg" />
+                    <span className="ml-2 text-sm font-medium">Back</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="flex-1 overflow-auto">
+        <div className="p-4 sm:p-6 lg:p-8">
           {/* Status Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
               <div className="flex items-center">
                 <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
@@ -251,135 +338,136 @@ const ShortsSettings = () => {
               <div className="flex items-center">
                 <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
                   <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Format</p>
-                  <p className="text-sm font-semibold text-gray-900">YouTube Shorts</p>
+                  <p className="text-sm font-medium text-gray-500">Next Rotation</p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {formatMs(rotationInfo.msToNext)}
+                  </p>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Settings Panel */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 lg:p-8">
-              <div className="mb-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">Video Configuration</h2>
-                <p className="text-gray-600 text-sm leading-relaxed">
-                  Paste multiple YouTube Shorts or Video URLs/IDs (comma or one per line). The homepage floating shorts will rotate across them automatically every 3 hours.
-                </p>
-              </div>
-
-              {isLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
-                  <span className="ml-3 text-gray-600">Loading current settings...</span>
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Settings Panel */}
+            <div className="lg:col-span-2">
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 lg:p-8">
+                <div className="mb-6">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-2">Video Configuration</h2>
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    Paste multiple YouTube Shorts or Video URLs/IDs (comma or one per line). The homepage floating shorts will rotate across them automatically every 3 hours.
+                  </p>
                 </div>
-              ) : (
-                <form onSubmit={onSave} className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
-                      YouTube URLs or Video IDs (multiple)
-                    </label>
-                    
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                        </svg>
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+                    <span className="ml-3 text-gray-600">Loading current settings...</span>
+                  </div>
+                ) : (
+                  <form onSubmit={onSave} className="space-y-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-3">
+                        YouTube URLs or Video IDs (multiple)
+                      </label>
+                      
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                          <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                          </svg>
+                        </div>
+                        
+                        <textarea
+                          rows={6}
+                          value={input}
+                          onChange={(e) => setInput(e.target.value)}
+                          placeholder={"Enter up to 10 videos, e.g.\nhttps://youtube.com/shorts/XXXXXXXXXXX\nhttps://youtu.be/YYYYYYYYYYY\nZzzZZzZzzzzZ"}
+                          className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-xl focus:border-red-500 focus:ring-2 focus:ring-red-100 transition-all duration-200 text-sm bg-gray-50 focus:bg-white"
+                        />
+                        
+                        {input && (
+                          <div className="absolute top-2 right-3 text-xs text-gray-500 bg-white/80 px-2 py-1 rounded">
+                            {parsedList.length} detected
+                          </div>
+                        )}
                       </div>
                       
-                      <textarea
-                        rows={6}
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        placeholder={"Enter up to 10 videos, e.g.\nhttps://youtube.com/shorts/XXXXXXXXXXX\nhttps://youtu.be/YYYYYYYYYYY\nZzzZZzZzzzzZ"}
-                        className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-xl focus:border-red-500 focus:ring-2 focus:ring-red-100 transition-all duration-200 text-sm bg-gray-50 focus:bg-white"
-                      />
+                      {firstParsed && (
+                        <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                          <div className="flex items-center">
+                            <svg className="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span className="text-sm text-green-700">
+                              First valid video: <span className="font-mono font-medium">{firstParsed}</span>
+                            </span>
+                          </div>
+                        </div>
+                      )}
                       
-                      {input && (
-                        <div className="absolute top-2 right-3 text-xs text-gray-500 bg-white/80 px-2 py-1 rounded">
-                          {parsedList.length} detected
+                      {input && !parsedList.length && (
+                        <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-200">
+                          <div className="flex items-center">
+                            <svg className="w-4 h-4 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span className="text-sm text-red-700">
+                              Invalid YouTube URLs or IDs
+                            </span>
+                          </div>
                         </div>
                       )}
                     </div>
-                    
-                    {firstParsed && (
-                      <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
-                        <div className="flex items-center">
-                          <svg className="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          <span className="text-sm text-green-700">
-                            First valid video: <span className="font-mono font-medium">{firstParsed}</span>
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {input && !parsedList.length && (
-                      <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-200">
-                        <div className="flex items-center">
-                          <svg className="w-4 h-4 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <span className="text-sm text-red-700">
-                            Invalid YouTube URLs or IDs
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
 
-                  <div className="flex gap-4 pt-2">
-                    <button 
-                      type="submit" 
-                      disabled={!parsedList.length || isSaving}
-                      className="flex-1 group relative inline-flex items-center justify-center px-6 py-4 text-sm font-semibold text-white bg-gradient-to-r from-red-600 to-pink-600 rounded-xl hover:from-red-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl"
-                    >
-                      {isSaving ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
-                          </svg>
-                          Save Changes
-                        </>
-                      )}
-                    </button>
-                    
-                    <button 
-                      type="button" 
-                      onClick={onClear}
-                      disabled={isClearing}
-                      className="px-6 py-4 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02]"
-                    >
-                      {isClearing ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400 mr-2"></div>
-                          Clearing...
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a 1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                          Clear
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </form>
-              )}
+                    <div className="flex gap-4 pt-2">
+                      <button 
+                        type="submit" 
+                        disabled={!parsedList.length || isSaving}
+                        className="flex-1 group relative inline-flex items-center justify-center px-6 py-4 text-sm font-semibold text-white bg-gradient-to-r from-red-600 to-pink-600 rounded-xl hover:from-red-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl"
+                      >
+                        {isSaving ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
+                            </svg>
+                            Save Changes
+                          </>
+                        )}
+                      </button>
+                      
+                      <button 
+                        type="button" 
+                        onClick={onClear}
+                        disabled={isClearing}
+                        className="px-6 py-4 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02]"
+                      >
+                        {isClearing ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400 mr-2"></div>
+                            Clearing...
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a 1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            Clear
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
             </div>
           </div>
 
@@ -491,9 +579,10 @@ const ShortsSettings = () => {
             </div>
           </div>
         </div>
-      </div>
+      </main>
       
     </div>
+  </div>
   );
 };
 
