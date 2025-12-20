@@ -224,7 +224,12 @@ const Login = () => {
 
       if (checkResponse.ok) {
         const checkData = await checkResponse.json();
-        if (checkData.success && checkData.exists) {
+        
+        // Check if user is admin - skip department login
+        if (checkData.success && checkData.isAdmin) {
+          console.log("Admin user detected, skipping department login");
+          // Continue to normal CRM login flow
+        } else if (checkData.success && checkData.exists) {
           // Email exists in Activity departments, try login
           const activityResponse = await fetch("https://bcrm.100acress.com/api/activity/departments/login", {
             method: "POST",
