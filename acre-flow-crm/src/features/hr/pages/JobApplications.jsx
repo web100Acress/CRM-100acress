@@ -29,6 +29,7 @@ const JobApplications = ({ id: propId, inModal = false }) => {
     try {
       const res = await api100acress.get(`/career/opening/${openingId}/applications`);
       const list = res?.data?.data || [];
+      console.log("Applications data:", list); // Debug log
       setApps(Array.isArray(list) ? list : []);
     } catch (e) {
       setError(e?.response?.data?.message || e.message || "Failed to load applications");
@@ -174,11 +175,22 @@ const JobApplications = ({ id: propId, inModal = false }) => {
         );
       })
       .sort((a, b) => {
-        if (a.matchScore && b.matchScore) {
-          return b.matchScore - a.matchScore;
+        if (a.status === 'approved' && b.status !== 'approved') return -1;
+        if (b.status === 'approved' && a.status !== 'approved') return 1;
+
+        const aHasFollowUps = a.followUps && a.followUps.length > 0;
+        const bHasFollowUps = b.followUps && b.followUps.length > 0;
+        if (aHasFollowUps && !bHasFollowUps) return -1;
+        if (bHasFollowUps && !aHasFollowUps) return 1;
+
+        if (a.matchScore != null && b.matchScore != null) {
+          if (a.matchScore !== b.matchScore) {
+            return b.matchScore - a.matchScore;
+          }
         }
-        if (a.matchScore) return -1;
-        if (b.matchScore) return 1;
+        if (a.matchScore != null) return -1;
+        if (b.matchScore != null) return 1;
+
         return new Date(b.createdAt) - new Date(a.createdAt);
       });
   }, [apps, searchTerm]);
@@ -367,12 +379,25 @@ const JobApplications = ({ id: propId, inModal = false }) => {
                             <span className="text-gray-400 text-xs">{a.status}</span>
                           ) : (
                             <div className="flex justify-end gap-1">
+                              {/* FOLLOW UP BUTTON WITH COUNT BADGE */}
                               <button
-                                className="px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition text-xs"
-                                onClick={() => openFollowUpModal(a)}
+                                className={`relative px-2 py-1 rounded transition text-xs flex items-center gap-1.5 ${
+                                  (a.followUps && a.followUps.length > 0) || (a.comments && a.comments.length > 0)
+                                    ? 'bg-red-600 text-white hover:bg-red-700'
+                                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                                }`}
+                                onClick={() => {
+                                  console.log("Button clicked for app:", a.name, "followUps:", a.followUps, "comments:", a.comments);
+                                  openFollowUpModal(a);
+                                }}
                                 title="Send Follow-up"
                               >
                                 <FaComments />
+                                {(a.followUps && a.followUps.length > 0) || (a.comments && a.comments.length > 0) ? (
+                                  <span className="flex items-center justify-center min-w-[16px] h-4 px-1 bg-white text-red-600 text-[10px] font-bold rounded-full border border-red-600">
+                                    {a.followUps ? a.followUps.length : a.comments.length}
+                                  </span>
+                                ) : null}
                               </button>
                               <button
                                 className="px-2 py-1 rounded bg-green-600 text-white hover:bg-green-700 transition text-xs"
@@ -437,34 +462,45 @@ const JobApplications = ({ id: propId, inModal = false }) => {
                         )}
                       </div>
                       {a.coverLetter && (
-                        <button
-                          onClick={() => openCoverLetterModal(a)}
-                          className="text-blue-600 hover:underline font-medium"
-                        >
-                          View Cover Letter
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => openCoverLetterModal(a)}
+                            className="text-blue-600 hover:underline font-medium"
+                          >
+                            View Cover Letter
+                          </button>
+                        </div>
                       )}
                     </div>
 
-                    <div className="flex gap-2">
+                          <div className="flex gap-2">
                       {a.status === "approved" || a.status === "rejected" ? (
                         <span className="text-gray-400 text-xs w-full text-center">{a.status}</span>
                       ) : (
                         <>
                           <button
-                            className="flex-1 px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition text-xs flex items-center justify-center gap-1"
+                            className={`relative flex-1 px-2 py-1.5 rounded transition text-xs flex items-center justify-center gap-1.5 ${
+                              (a.followUps && a.followUps.length > 0) || (a.comments && a.comments.length > 0)
+                                ? 'bg-red-600 text-white hover:bg-red-700'
+                                : 'bg-blue-600 text-white hover:bg-blue-700'
+                            }`}
                             onClick={() => openFollowUpModal(a)}
                           >
                             <FaComments /> Follow-up
+                            {(a.followUps && a.followUps.length > 0) || (a.comments && a.comments.length > 0) ? (
+                              <span className="bg-white text-red-600 text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center border border-red-600 px-1">
+                                {a.followUps ? a.followUps.length : a.comments.length}
+                              </span>
+                            ) : null}
                           </button>
                           <button
-                            className="flex-1 px-2 py-1 rounded bg-green-600 text-white hover:bg-green-700 transition text-xs"
+                            className="flex-1 px-2 py-1.5 rounded bg-green-600 text-white hover:bg-green-700 transition text-xs"
                             onClick={() => approve(a._id)}
                           >
                             Approve
                           </button>
                           <button
-                            className="flex-1 px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700 transition text-xs"
+                            className="flex-1 px-2 py-1.5 rounded bg-red-600 text-white hover:bg-red-700 transition text-xs"
                             onClick={() => reject(a._id)}
                           >
                             Reject
@@ -483,7 +519,7 @@ const JobApplications = ({ id: propId, inModal = false }) => {
       {/* Cover Letter Modal */}
       {modalOpen && selectedApp && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-96 overflow-auto">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-auto">
             <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 flex items-center justify-between">
               <div>
                 <h2 className="font-bold text-lg">{selectedApp.name}</h2>
@@ -522,7 +558,7 @@ const JobApplications = ({ id: propId, inModal = false }) => {
                 <FaTimes size={20} />
               </button>
             </div>
-            <div className="p-6 max-h-96 overflow-y-auto">
+            <div className="p-6 max-h-[70vh] overflow-y-auto">
               {/* Previous Follow-ups */}
               {followUps.length > 0 && (
                 <div className="mb-6 pb-6 border-b border-gray-200">
@@ -542,7 +578,7 @@ const JobApplications = ({ id: propId, inModal = false }) => {
                             Delete
                           </button>
                         </div>
-                        <p className="text-sm text-gray-700 whitespace-pre-wrap">{fu.notes}</p>
+                        <p className="text-sm text-gray-700 whitespace-pre-wrap">{fu.notes || fu.message}</p>
                       </div>
                     ))}
                   </div>
