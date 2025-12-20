@@ -19,15 +19,55 @@ import {
   MdClose,
   MdRefresh
 } from 'react-icons/md';
+import { ChevronDown, User, Settings as SettingsIcon, LogOut } from 'lucide-react';
 
 const UnifiedBannerManagement = () => {
   const dispatch = useDispatch();
   const { allBanners = [], loading: bannerLoading } = useSelector(state => state?.banner || {});
   const { allSmallBanners = [], loading: smallBannerLoading } = useSelector(state => state?.smallBanner || {});
   
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('hero'); // 'hero' or 'small'
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [editingBanner, setEditingBanner] = useState(null);
+  const [userInfo, setUserInfo] = useState(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    // Get real-time logged-in user data
+    const userName = localStorage.getItem('userName') || localStorage.getItem('adminName') || 'Admin';
+    const userEmail = localStorage.getItem('userEmail') || localStorage.getItem('adminEmail') || 'admin@example.com';
+    const userRole = localStorage.getItem('userRole') || localStorage.getItem('adminRole') || 'admin';
+    
+    setUserInfo({ 
+      name: userName, 
+      email: userEmail,
+      role: userRole
+    });
+  }, []);
+
+  // Get user initials for avatar
+  const getUserInitials = (name) => {
+    if (!name) return 'AD';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const handleLogout = () => {
+    // Clear all user-related localStorage items
+    localStorage.removeItem('isAdminLoggedIn');
+    localStorage.removeItem('adminEmail');
+    localStorage.removeItem('adminName');
+    localStorage.removeItem('adminRole');
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('sourceSystem');
+    
+    window.location.href = '/login';
+  };
   const [bannerData, setBannerData] = useState({
     title: '',
     subtitle: '',
@@ -322,50 +362,119 @@ const UnifiedBannerManagement = () => {
   };
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex">
-      <AdminSidebar />
-      <div className="flex-1 p-8 ml-0 transition-colors duration-300">
-        {/* Header */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <MdImage className="text-2xl text-blue-600" />
-              <div>
-                <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-                  Unified Banner Management
-                </h1>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Manage both hero section and small banners
-                </p>
+    <div className="bg-gray-50 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex overflow-x-hidden">
+      <AdminSidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
+      <div className="flex-1 flex flex-col overflow-hidden transition-colors duration-300 min-w-0">
+        {/* Admin Dashboard Header */}
+        <header className="bg-white shadow-sm border-b border-gray-200">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-4">
+            <div className="flex items-center gap-4 flex-1">
+              {/* Mobile Header */}
+              <div className="flex items-center gap-2 sm:hidden w-full">
+                <div className="bg-blue-100 p-2 rounded-lg shadow">
+                  <MdImage className="text-lg text-blue-600" />
+                </div>
+                <div className="flex-1 text-center">
+                  <h1 className="text-lg font-bold text-gray-900">Banner</h1>
+                  <p className="text-xs text-gray-600">Manage banners</p>
+                </div>
+              </div>
+              
+              {/* Desktop Header */}
+              <div className="hidden sm:flex items-center gap-3">
+                <div className="bg-blue-100 p-3 rounded-xl shadow-lg">
+                  <MdImage className="text-2xl text-blue-600" />
+                </div>
+                <div>
+                  <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
+                    Banner Management
+                  </h1>
+                  <p className="text-sm text-gray-600">
+                    Manage both hero section and small banners
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  if (activeTab === 'hero') {
-                    dispatch(fetchAllBanners());
-                  } else {
-                    dispatch(fetchAllSmallBanners());
-                  }
-                }}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-              >
-                <MdRefresh className="text-lg" />
-                Refresh
-              </button>
+            
+            <div className="flex items-center gap-2 sm:gap-4">
+              {/* Action Button */}
               <button
                 onClick={() => setShowUploadForm(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm font-medium"
               >
-                <MdAdd className="text-lg" />
-                Add Banner
+                <MdAdd className="text-sm sm:text-base" />
+                <span className="hidden sm:inline">Add Banner</span>
+                <span className="sm:hidden">Add</span>
               </button>
+
+              {/* User Profile Dropdown */}
+              <div className="relative">
+                <button 
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-600 rounded-full flex items-center justify-center">
+                    <span className="text-white font-semibold text-xs sm:text-sm">{getUserInitials(userInfo?.name)}</span>
+                  </div>
+                  <div className="text-right hidden sm:block">
+                    <p className="text-xs sm:text-sm font-medium text-gray-900">{userInfo?.name}</p>
+                    <p className="text-xs text-gray-600 truncate max-w-[120px]">{userInfo?.email}</p>
+                  </div>
+                  <ChevronDown size={16} className={`text-gray-600 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {dropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-40 sm:w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                    <button className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-gray-50 transition-colors">
+                      <User size={14} sm:size={16} className="text-gray-600" />
+                      <span className="text-xs sm:text-sm text-gray-700">Profile</span>
+                    </button>
+                    <button className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-gray-50 transition-colors">
+                      <SettingsIcon size={14} sm:size={16} className="text-gray-600" />
+                      <span className="text-xs sm:text-sm text-gray-700">Settings</span>
+                    </button>
+                    <div className="border-t border-gray-200 my-2"></div>
+                    <button 
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 hover:bg-red-50 transition-colors text-red-600"
+                    >
+                      <LogOut size={14} sm:size={16} />
+                      <span className="text-xs sm:text-sm font-medium">Logout</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
+        </header>
 
+        {/* Action Bar Below Header */}
+        <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-600">
+              Showing {currentBanners.length} {activeTab === 'hero' ? 'hero' : 'small'} banner{currentBanners.length !== 1 ? 's' : ''}
+            </div>
+            <button
+              onClick={() => {
+                if (activeTab === 'hero') {
+                  dispatch(fetchAllBanners());
+                } else {
+                  dispatch(fetchAllSmallBanners());
+                }
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm font-medium"
+            >
+              <MdRefresh className="text-base" />
+              Refresh
+            </button>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
           {/* Tab Navigation */}
-          <div className="mt-6">
-            <div className="flex space-x-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+          <div className="mb-6">
+            <div className="flex flex-col sm:flex-row gap-2 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
               <button
                 onClick={() => setActiveTab('hero')}
                 className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
@@ -374,7 +483,8 @@ const UnifiedBannerManagement = () => {
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
-                Hero Section Banners
+                <span className="hidden sm:inline">Hero Section Banners</span>
+                <span className="sm:hidden">Hero Banners</span>
               </button>
               <button
                 onClick={() => setActiveTab('small')}
@@ -384,11 +494,11 @@ const UnifiedBannerManagement = () => {
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
-                Small Banners
+                <span className="hidden sm:inline">Small Banners</span>
+                <span className="sm:hidden">Small Banners</span>
               </button>
             </div>
           </div>
-        </div>
 
         {/* Banner List */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
@@ -415,133 +525,221 @@ const UnifiedBannerManagement = () => {
               </button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 dark:bg-gray-700">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Banner
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Title
-                    </th>
-                    {activeTab === 'small' && (
+            <div className="p-4 space-y-4">
+              {/* Desktop Table View */}
+              <div className="hidden lg:block overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Size
+                        Banner
                       </th>
-                    )}
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Order
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {(currentBanners || []).map((banner) => (
-                    <tr key={banner._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="h-12 w-20 flex-shrink-0">
-                            <img
-                              className="h-12 w-20 rounded-lg object-cover"
-                              src={
-                                activeTab === 'hero' 
-                                  ? banner.image?.cdn_url || banner.image?.url || '/Images/placeholder-banner.jpg'
-                                  : banner.desktopImage?.cdn_url || banner.desktopImage?.url || '/Images/placeholder-banner.jpg'
-                              }
-                              alt={banner.title}
-                            />
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                          {banner.title}
-                        </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {banner.subtitle}
-                        </div>
-                      </td>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Title
+                      </th>
                       {activeTab === 'small' && (
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Size
+                        </th>
+                      )}
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Order
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {(currentBanners || []).map((banner) => (
+                      <tr key={banner._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            {banner.size}
+                          <div className="flex items-center">
+                            <div className="h-12 w-20 flex-shrink-0">
+                              <img
+                                className="h-12 w-20 rounded-lg object-cover"
+                                src={
+                                  activeTab === 'hero' 
+                                    ? banner.image?.cdn_url || banner.image?.url || '/Images/placeholder-banner.jpg'
+                                    : banner.desktopImage?.cdn_url || banner.desktopImage?.url || '/Images/placeholder-banner.jpg'
+                                }
+                                alt={banner.title}
+                              />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {banner.title}
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            {banner.subtitle}
+                          </div>
+                        </td>
+                        {activeTab === 'small' && (
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              {banner.size}
+                            </span>
+                          </td>
+                        )}
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            banner.isActive 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {banner.isActive ? 'Active' : 'Inactive'}
                           </span>
                         </td>
-                      )}
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          banner.isActive 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {banner.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                        {banner.order}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleToggleStatus(banner._id, banner.isActive)}
-                            className={`p-2 rounded-lg transition-colors ${
-                              banner.isActive 
-                                ? 'text-red-600 hover:bg-red-100' 
-                                : 'text-green-600 hover:bg-green-100'
-                            }`}
-                            title={banner.isActive ? 'Deactivate' : 'Activate'}
-                          >
-                            {banner.isActive ? <MdVisibilityOff /> : <MdVisibility />}
-                          </button>
-                          <button
-                            onClick={() => handleEdit(banner)}
-                            className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                            title="Edit"
-                          >
-                            <MdEdit />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(banner._id)}
-                            className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-                            title="Delete"
-                          >
-                            <MdDelete />
-                          </button>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                          {banner.order}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleToggleStatus(banner._id, banner.isActive)}
+                              className={`p-2 rounded-lg transition-colors ${
+                                banner.isActive 
+                                  ? 'text-red-600 hover:bg-red-100' 
+                                  : 'text-green-600 hover:bg-green-100'
+                              }`}
+                              title={banner.isActive ? 'Deactivate' : 'Activate'}
+                            >
+                              {banner.isActive ? <MdVisibilityOff /> : <MdVisibility />}
+                            </button>
+                            <button
+                              onClick={() => handleEdit(banner)}
+                              className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                              title="Edit"
+                            >
+                              <MdEdit />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(banner._id)}
+                              className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                              title="Delete"
+                            >
+                              <MdDelete />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="lg:hidden space-y-4">
+                {(currentBanners || []).map((banner) => (
+                  <div key={banner._id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div className="p-4">
+                      <div className="flex gap-4">
+                        {/* Banner Image */}
+                        <div className="flex-shrink-0">
+                          <img
+                            className="h-16 w-24 rounded-lg object-cover"
+                            src={
+                              activeTab === 'hero' 
+                                ? banner.image?.cdn_url || banner.image?.url || '/Images/placeholder-banner.jpg'
+                                : banner.desktopImage?.cdn_url || banner.desktopImage?.url || '/Images/placeholder-banner.jpg'
+                            }
+                            alt={banner.title}
+                          />
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        
+                        {/* Banner Info */}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                            {banner.title}
+                          </h3>
+                          {banner.subtitle && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-1">
+                              {banner.subtitle}
+                            </p>
+                          )}
+                          
+                          <div className="flex flex-wrap items-center gap-2 mt-2">
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              banner.isActive 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {banner.isActive ? 'Active' : 'Inactive'}
+                            </span>
+                            
+                            {activeTab === 'small' && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {banner.size}
+                              </span>
+                            )}
+                            
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              Order: {banner.order}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Action Buttons */}
+                      <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <button
+                          onClick={() => handleToggleStatus(banner._id, banner.isActive)}
+                          className={`p-2 rounded-lg transition-colors ${
+                            banner.isActive 
+                              ? 'text-red-600 hover:bg-red-100' 
+                              : 'text-green-600 hover:bg-green-100'
+                          }`}
+                          title={banner.isActive ? 'Deactivate' : 'Activate'}
+                        >
+                          {banner.isActive ? <MdVisibilityOff /> : <MdVisibility />}
+                        </button>
+                        <button
+                          onClick={() => handleEdit(banner)}
+                          className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                          title="Edit"
+                        >
+                          <MdEdit />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(banner._id)}
+                          className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                          title="Delete"
+                        >
+                          <MdDelete />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
 
         {/* Upload Form Modal */}
         {showUploadForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[95vh] overflow-y-auto">
+              <div className="p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">
                     {editingBanner ? 'Edit' : 'Add'} {activeTab === 'hero' ? 'Hero' : 'Small'} Banner
                   </h2>
                   <button
                     onClick={resetForm}
-                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   >
                     <MdClose className="text-xl" />
                   </button>
                 </div>
 
-                <form onSubmit={(e) => { e.preventDefault(); handleUpload(); }} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <form onSubmit={(e) => { e.preventDefault(); handleUpload(); }} className="space-y-4 sm:space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Title *
@@ -550,7 +748,7 @@ const UnifiedBannerManagement = () => {
                         type="text"
                         value={bannerData.title}
                         onChange={handleTitleChange}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-gray-100"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-gray-100 text-sm"
                         required
                       />
                     </div>
@@ -562,12 +760,12 @@ const UnifiedBannerManagement = () => {
                         type="text"
                         value={bannerData.subtitle}
                         onChange={(e) => setBannerData(prev => ({ ...prev, subtitle: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-gray-100"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-gray-100 text-sm"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Slug *
@@ -576,7 +774,7 @@ const UnifiedBannerManagement = () => {
                         type="text"
                         value={bannerData.slug}
                         onChange={(e) => setBannerData(prev => ({ ...prev, slug: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-gray-100"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-gray-100 text-sm"
                         required
                       />
                     </div>
@@ -773,31 +971,31 @@ const UnifiedBannerManagement = () => {
                     )}
                   </div>
 
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                     <label className="flex items-center">
                       <input
                         type="checkbox"
                         checked={bannerData.isActive}
                         onChange={(e) => setBannerData(prev => ({ ...prev, isActive: e.target.checked }))}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
                       />
                       <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Active</span>
                     </label>
                   </div>
 
-                  <div className="flex justify-end gap-3 pt-4">
+                  <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                     <button
                       type="button"
                       onClick={resetForm}
-                      className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                      className="w-full sm:w-auto px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
                     >
-                      <MdSave className="text-lg" />
+                      <MdSave className="text-base" />
                       {editingBanner ? 'Update' : 'Upload'} Banner
                     </button>
                   </div>
@@ -806,6 +1004,7 @@ const UnifiedBannerManagement = () => {
             </div>
           </div>
         )}
+        </main>
       </div>
     </div>
   );
