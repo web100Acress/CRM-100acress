@@ -216,7 +216,7 @@ const Login = () => {
     // Try Activity Hub Department Login - check if email exists in Activity departments
     try {
       // First check if this email exists in any Activity department
-      const checkResponse = await fetch("https://bcrm.100acress.com/api/activity/departments/check-email", {
+      const checkResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/activity/departments/check-email`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: credentials.email }),
@@ -231,7 +231,7 @@ const Login = () => {
           // Continue to normal CRM login flow
         } else if (checkData.success && checkData.exists) {
           // Email exists in Activity departments, try login
-          const activityResponse = await fetch("https://bcrm.100acress.com/api/activity/departments/login", {
+          const activityResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/activity/departments/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(credentials),
@@ -345,7 +345,7 @@ const Login = () => {
         
         if (acressResponse.ok && acressData.token) {
           // 100acress login successful, now verify with CRM backend
-          const verifyResponse = await fetch("https://bcrm.100acress.com/api/auth/verify-100acress-token", {
+          const verifyResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/verify-100acress-token`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token: acressData.token }),
@@ -401,7 +401,7 @@ const Login = () => {
     setForgotStatus("");
     try {
       const res = await fetch(
-        "https://bcrm.100acress.com/api/auth/request-password-reset",
+        `${import.meta.env.VITE_API_BASE_URL}/api/auth/request-password-reset`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

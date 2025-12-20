@@ -191,15 +191,7 @@ const JobPosting = () => {
               />
             </div>
           </div>
-
-          <div className="flex-1 text-center">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 mb-2 tracking-tight">
-              JOB POSTING
-            </h1>
-            <div className="w-24 sm:w-32 h-1 bg-gradient-to-r from-blue-600 to-purple-600 mx-auto rounded-full"></div>
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+         <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
             {/* <button
               onClick={exportToCsv}
               className="flex-1 sm:flex-none bg-gray-800 text-white font-semibold py-2 px-3 sm:px-4 rounded-md hover:bg-gray-700 transition duration-300 flex items-center justify-center space-x-2 text-xs sm:text-sm"

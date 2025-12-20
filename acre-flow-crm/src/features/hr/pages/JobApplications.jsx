@@ -174,11 +174,26 @@ const JobApplications = ({ id: propId, inModal = false }) => {
         );
       })
       .sort((a, b) => {
-        if (a.matchScore && b.matchScore) {
-          return b.matchScore - a.matchScore;
+        // 1. Prioritize 'approved' status
+        if (a.status === 'approved' && b.status !== 'approved') return -1;
+        if (b.status === 'approved' && a.status !== 'approved') return 1;
+
+        // 2. Prioritize applications with follow-ups (within the same status group)
+        const aHasFollowUps = a.followUps && a.followUps.length > 0;
+        const bHasFollowUps = b.followUps && b.followUps.length > 0;
+        if (aHasFollowUps && !bHasFollowUps) return -1;
+        if (bHasFollowUps && !aHasFollowUps) return 1;
+
+        // 3. Then sort by matchScore (descending)
+        if (a.matchScore != null && b.matchScore != null) {
+          if (a.matchScore !== b.matchScore) {
+            return b.matchScore - a.matchScore;
+          }
         }
-        if (a.matchScore) return -1;
-        if (b.matchScore) return 1;
+        if (a.matchScore != null) return -1;
+        if (b.matchScore != null) return 1;
+
+        // 4. Finally, sort by creation date (descending)
         return new Date(b.createdAt) - new Date(a.createdAt);
       });
   }, [apps, searchTerm]);
@@ -368,11 +383,16 @@ const JobApplications = ({ id: propId, inModal = false }) => {
                           ) : (
                             <div className="flex justify-end gap-1">
                               <button
-                                className="px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition text-xs"
+                                className="px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition text-xs flex items-center gap-1"
                                 onClick={() => openFollowUpModal(a)}
                                 title="Send Follow-up"
                               >
                                 <FaComments />
+                                {a.followUps && a.followUps.length > 0 && (
+                                  <span className="bg-white text-blue-600 text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                                    {a.followUps.length}
+                                  </span>
+                                )}
                               </button>
                               <button
                                 className="px-2 py-1 rounded bg-green-600 text-white hover:bg-green-700 transition text-xs"
@@ -437,12 +457,14 @@ const JobApplications = ({ id: propId, inModal = false }) => {
                         )}
                       </div>
                       {a.coverLetter && (
-                        <button
-                          onClick={() => openCoverLetterModal(a)}
-                          className="text-blue-600 hover:underline font-medium"
-                        >
-                          View Cover Letter
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => openCoverLetterModal(a)}
+                            className="text-blue-600 hover:underline font-medium"
+                          >
+                            View Cover Letter
+                          </button>
+                        </div>
                       )}
                     </div>
 
@@ -456,6 +478,11 @@ const JobApplications = ({ id: propId, inModal = false }) => {
                             onClick={() => openFollowUpModal(a)}
                           >
                             <FaComments /> Follow-up
+                            {a.followUps && a.followUps.length > 0 && (
+                              <span className="bg-white text-blue-600 text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                                {a.followUps.length}
+                              </span>
+                            )}
                           </button>
                           <button
                             className="flex-1 px-2 py-1 rounded bg-green-600 text-white hover:bg-green-700 transition text-xs"

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LogOut, Menu, X, Users, BarChart3, Calendar, FileText, Award, ChevronDown, User, Settings } from 'lucide-react';
-import api100acress from '../../admin/config/api100acressClient';
+import apiCrm from '../config/apiCrm';
 import HRSidebar from '../components/HRSidebar';
 import HROverview from '../components/HROverview';
 import Attendance from '../components/Attendance';
@@ -16,21 +16,29 @@ const HRDashboard = () => {
   const [userInfo, setUserInfo] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  useEffect(() => {
-    // Use localStorage data directly since HR users don't have API permissions
-    const hrName = localStorage.getItem('hrName');
-    const hrEmail = localStorage.getItem('hrEmail');
-    
-    if (hrName && hrEmail) {
-      setUserInfo({ name: hrName, email: hrEmail });
-    } else {
-      console.log('HR user data not found in localStorage');
-      setUserInfo(null);
-    }
+    useEffect(() => {
+    const fetchUserInfo = async () => {
+      const userId = localStorage.getItem('userId');
+      if (userId) {
+        try {
+          const response = await apiCrm.get(`/api/users/${userId}`);
+          if (response.data.success) {
+            setUserInfo(response.data.data);
+          } else {
+            console.error('Failed to fetch user info:', response.data.message);
+            setUserInfo(null);
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+          setUserInfo(null);
+        }
+      }
+    };
 
-    // Check screen size and set sidebar accordingly
+    fetchUserInfo();
+
     const checkScreenSize = () => {
-      if (window.innerWidth >= 1024) { // lg breakpoint
+      if (window.innerWidth >= 1024) {
         setSidebarOpen(true);
       } else {
         setSidebarOpen(false);
@@ -39,7 +47,7 @@ const HRDashboard = () => {
 
     checkScreenSize();
     window.addEventListener('resize', checkScreenSize);
-    
+
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
@@ -94,23 +102,28 @@ const HRDashboard = () => {
         <header className="bg-white shadow-sm border-b border-gray-200">
           <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center gap-4">
-              <button
+                            <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2 hover:bg-gray-100 rounded-lg lg:hidden"
+                className="p-2 bg-red-600 text-white hover:bg-red-700 rounded-full transition-all duration-300 lg:hidden"
               >
-                {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+                <span className="sr-only">Toggle sidebar</span>
+                {sidebarOpen ? (
+                  <X size={24} className="transform rotate-90 transition-transform duration-300" />
+                ) : (
+                  <Menu size={24} className="transition-transform duration-300" />
+                )}
               </button>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">HR Dashboard</h1>
-                <p className="text-sm text-gray-600">Manage employees and company resources</p>
+                {/* <p className="text-sm text-gray-600">Manage employees and company resources</p> */}
               </div>
             </div>
             <div className="flex items-center gap-4">
               {/* User Profile Dropdown */}
               <div className="relative">
-                <button
+                                <button
                   onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="flex items-center gap-3 pl-2 pr-3 py-2 rounded-full hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
                 >
                   {/* User Avatar */}
                   <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">

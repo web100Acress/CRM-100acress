@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FaSearch, FaUsers, FaCheckCircle, FaTimesCircle, FaEye } from "react-icons/fa";
 import api100acress from "../../admin/config/api100acressClient";
 
-const ItDashboard = () => {
+const HRAllUsers = () => {
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -137,8 +137,8 @@ const ItDashboard = () => {
   };
 
   return (
-    <div className="flex bg-gray-100 min-h-screen">
-      <div className="flex-1 p-3 sm:p-4 lg:p-6 ml-0 md:-ml-4">
+        <div className="bg-gray-100 min-h-screen overflow-x-hidden">
+            <div className="flex-1 p-3 sm:p-4 lg:p-6 overflow-x-auto">
         <div className="w-full">
           {/* Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
@@ -488,4 +488,4 @@ const ItDashboard = () => {
   );
 };
 
-export default ItDashboard; 
+export default HRAllUsers; 
