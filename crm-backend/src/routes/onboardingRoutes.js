@@ -3,6 +3,10 @@ const router = express.Router();
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const multer = require('multer');
+
+// Configure multer for file uploads
+const upload = multer({ dest: 'uploads/' });
 
 // File-based token storage for persistence
 const TOKENS_FILE = path.join(__dirname, '../data/uploadTokens.json');
@@ -130,11 +134,17 @@ router.get('/verify-upload-token/:token', (req, res) => {
 });
 
 // Upload documents
-router.post('/upload-documents/:token', (req, res) => {
+router.post('/upload-documents/:token', upload.any(), (req, res) => {
   try {
     const { token } = req.params;
     
+    console.log('=== DOCUMENT UPLOAD DEBUG ===');
+    console.log('Received token:', token);
+    console.log('Available tokens:', Array.from(uploadTokens.keys()));
+    console.log('Token exists in storage:', uploadTokens.has(token));
+    
     if (!uploadTokens.has(token)) {
+      console.log('Token not found in storage');
       return res.status(400).json({
         success: false,
         message: 'Invalid or expired token'
@@ -156,6 +166,14 @@ router.post('/upload-documents/:token', (req, res) => {
     // In production, you would handle actual file uploads here
     console.log('Documents uploaded for candidate:', candidateInfo.candidateName);
     console.log('Request body:', req.body);
+    console.log('Uploaded files:', req.files);
+    console.log('Number of files:', req.files?.length || 0);
+    
+    if (req.files && req.files.length > 0) {
+      req.files.forEach((file, index) => {
+        console.log(`File ${index + 1}:`, file.originalname, file.size, 'bytes');
+      });
+    }
     
     // Clean up token after successful upload
     uploadTokens.delete(token);
