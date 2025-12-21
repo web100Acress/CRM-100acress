@@ -369,9 +369,9 @@ const Onboarding = () => {
   // ==================== Main Render ====================
 
   return (
-    <div className="flex bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
-      <div className="flex-1 p-6 md:p-8 lg:p-10 ml-0 md:ml-6">
-        <div className="w-full mx-auto">
+    <div className="flex bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen overflow-x-hidden">
+      <div className="flex-1 p-4 sm:p-6 md:p-8 lg:p-10 ml-0">
+        <div className="w-full mx-auto max-w-7xl overflow-x-hidden">
           <Header />
           <StatsCards stats={stats} />
           <FilterTabs filterStatus={filterStatus} setFilterStatus={setFilterStatus} stats={stats} />
@@ -394,118 +394,120 @@ const Onboarding = () => {
 
       {/* Wizard Modal */}
       <Modal open={wizardOpen} onClose={closeWizard}>
-        <div className="px-6 py-5 border-b bg-gray-50 relative">
-          <button onClick={closeWizard} className="absolute top-4 right-4 p-1 rounded-full hover:bg-gray-200 transition-colors">
-            <X size={20} className="text-gray-500" />
+        <div className="px-4 sm:px-6 py-4 sm:py-5 border-b bg-gray-50 relative">
+          <button onClick={closeWizard} className="absolute top-3 sm:top-4 right-3 sm:right-4 p-1.5 sm:p-1 rounded-full hover:bg-gray-200 transition-colors">
+            <X size={window.innerWidth < 640 ? 18 : 20} className="text-gray-500" />
           </button>
-          <h3 className="text-lg font-semibold text-gray-900 pr-8">{activeItem?.candidateName}</h3>
-          <div className="mt-3">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 pr-8 sm:pr-8 truncate">{activeItem?.candidateName}</h3>
+          <div className="mt-2 sm:mt-3">
             {activeItem && wizardMode === WIZARD_MODES.MANAGE && (
               <StageProgress stages={activeItem.stages} currentIndex={currentStep} status={activeItem.status} />
             )}
           </div>
         </div>
-        <div className="p-6 max-h-[70vh] overflow-auto">
+        <div className="p-4 sm:p-6 max-h-[60vh] sm:max-h-[70vh] overflow-auto">
           {activeItem ? renderStageForm() : <div className="text-center py-8">Loading...</div>}
         </div>
-        <div className="px-6 py-4 bg-gray-50 border-t flex items-center justify-between">
-          <button
-            onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
-            disabled={currentStep === 0 || wizardMode === WIZARD_MODES.VIEW}
-            className="px-4 py-2 rounded-md bg-white border border-gray-200 text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Back
-          </button>
-          <div className="space-x-2">
-            {wizardMode === WIZARD_MODES.VIEW && (
-              <>
-                <button onClick={() => openCompletedSteps(activeItem)} className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700">
-                  Completed Steps
-                </button>
-                {activeItem && activeItem.status !== 'completed' && (
-                  <button onClick={() => openWizard(activeItem, WIZARD_MODES.MANAGE)} className="px-4 py-2 rounded-md bg-purple-600 text-white hover:bg-purple-700">
-                    Proceed to Manage
+        <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 border-t">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <button
+              onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+              disabled={currentStep === 0 || wizardMode === WIZARD_MODES.VIEW}
+              className="w-full sm:w-auto px-4 py-2 rounded-md bg-white border border-gray-200 text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Back
+            </button>
+            <div className="flex flex-wrap gap-2 justify-center sm:justify-end">
+              {wizardMode === WIZARD_MODES.VIEW && (
+                <>
+                  <button onClick={() => openCompletedSteps(activeItem)} className="w-full sm:w-auto px-3 sm:px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 text-sm sm:text-base">
+                    Completed Steps
                   </button>
-                )}
-                <button onClick={closeWizard} className="px-4 py-2 rounded-md bg-gray-600 text-white hover:bg-gray-700">
+                  {activeItem && activeItem.status !== 'completed' && (
+                    <button onClick={() => openWizard(activeItem, WIZARD_MODES.MANAGE)} className="w-full sm:w-auto px-3 sm:px-4 py-2 rounded-md bg-purple-600 text-white hover:bg-purple-700 text-sm sm:text-base">
+                      Proceed to Manage
+                    </button>
+                  )}
+                  <button onClick={closeWizard} className="w-full sm:w-auto px-3 sm:px-4 py-2 rounded-md bg-gray-600 text-white hover:bg-gray-700 text-sm sm:text-base">
+                    Close
+                  </button>
+                </>
+              )}
+              {wizardMode === WIZARD_MODES.MANAGE && (
+                <>
+                  {activeItem && activeItem.status !== 'completed' && activeItem.stages && activeItem.stages[currentStep] !== 'success' && (
+                    <>
+                      {(activeItem.stages[currentStep] === 'interview1' || activeItem.stages[currentStep] === 'hrDiscussion') && (
+                        <button onClick={submitInviteFromWizard} className="w-full sm:w-auto px-3 sm:px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 text-sm sm:text-base">Send Invite</button>
+                      )}
+                      {activeItem.stages[currentStep] === 'documentation' && (
+                        <>
+                          <button onClick={() => sendDocsInvite(activeItem._id)} className="w-full sm:w-auto px-3 sm:px-4 py-2 rounded-md bg-purple-600 text-white hover:bg-purple-700 text-sm sm:text-base">Invite to Candidate</button>
+                          <button onClick={() => sendUploadLink(activeItem._id)} className="w-full sm:w-auto px-3 sm:px-4 py-2 rounded-md bg-orange-600 text-white hover:bg-orange-700 text-sm sm:text-base">Open Upload Form</button>
+                          <button onClick={submitDocsFromWizard} className="w-full sm:w-auto px-3 sm:px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 text-sm sm:text-base">Submit Documents</button>
+                        </>
+                      )}
+                      <button onClick={submitCompleteFromWizard} className="w-full sm:w-auto px-3 sm:px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 text-sm sm:text-base">Mark Done</button>
+                      <button onClick={submitRejectFromWizard} className="w-full sm:w-auto px-3 sm:px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 text-sm sm:text-base">Reject</button>
+                      <button onClick={submitResetFromWizard} className="w-full sm:w-auto px-3 sm:px-4 py-2 rounded-md bg-amber-600 text-white hover:bg-amber-700 text-sm sm:text-base">Reset to Stage</button>
+                    </>
+                  )}
+                  {activeItem && activeItem.status === 'completed' && activeItem.stages && currentStep === activeItem.stages.length - 1 ? (
+                    <button onClick={closeWizard} className="w-full sm:w-auto px-3 sm:px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 text-sm sm:text-base">Complete Onboarding</button>
+                  ) : (
+                    activeItem && activeItem.stages && (
+                      <button
+                        onClick={() => setCurrentStep(Math.min(activeItem.stages.length - 1, currentStep + 1))}
+                        disabled={currentStep === activeItem.stages.length - 1}
+                        className="w-full sm:w-auto px-3 sm:px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+                      >
+                        Next
+                      </button>
+                    )
+                  )}
+                </>
+              )}
+              {wizardMode === WIZARD_MODES.COMPLETED && (
+                <button onClick={closeWizard} className="w-full sm:w-auto px-3 sm:px-4 py-2 rounded-md bg-gray-600 text-white hover:bg-gray-700 text-sm sm:text-base">
                   Close
                 </button>
-              </>
-            )}
-            {wizardMode === WIZARD_MODES.MANAGE && (
-              <>
-                {activeItem && activeItem.status !== 'completed' && activeItem.stages && activeItem.stages[currentStep] !== 'success' && (
-                  <>
-                    {(activeItem.stages[currentStep] === 'interview1' || activeItem.stages[currentStep] === 'hrDiscussion') && (
-                      <button onClick={submitInviteFromWizard} className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700">Send Invite</button>
-                    )}
-                    {activeItem.stages[currentStep] === 'documentation' && (
-                      <>
-                        <button onClick={() => sendDocsInvite(activeItem._id)} className="px-4 py-2 rounded-md bg-purple-600 text-white hover:bg-purple-700">Invite to Candidate</button>
-                        <button onClick={() => sendUploadLink(activeItem._id)} className="px-4 py-2 rounded-md bg-orange-600 text-white hover:bg-orange-700">Open Upload Form</button>
-                        <button onClick={submitDocsFromWizard} className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700">Submit Documents</button>
-                      </>
-                    )}
-                    <button onClick={submitCompleteFromWizard} className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700">Mark Done</button>
-                    <button onClick={submitRejectFromWizard} className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700">Reject</button>
-                    <button onClick={submitResetFromWizard} className="px-4 py-2 rounded-md bg-amber-600 text-white hover:bg-amber-700">Reset to Stage</button>
-                  </>
-                )}
-                {activeItem && activeItem.status === 'completed' && activeItem.stages && currentStep === activeItem.stages.length - 1 ? (
-                  <button onClick={closeWizard} className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700">Complete Onboarding</button>
-                ) : (
-                  activeItem && activeItem.stages && (
-                    <button
-                      onClick={() => setCurrentStep(Math.min(activeItem.stages.length - 1, currentStep + 1))}
-                      disabled={currentStep === activeItem.stages.length - 1}
-                      className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Next
-                    </button>
-                  )
-                )}
-              </>
-            )}
-            {wizardMode === WIZARD_MODES.COMPLETED && (
-              <button onClick={closeWizard} className="px-4 py-2 rounded-md bg-gray-600 text-white hover:bg-gray-700">
-                Close
-              </button>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </Modal>
 
       {/* Documents Modal */}
       <Modal open={documentsOpen} onClose={closeDocumentsModal}>
-        <div className="px-6 py-5 border-b bg-gray-50 relative">
-          <button onClick={closeDocumentsModal} className="absolute top-4 right-4 p-1 rounded-full hover:bg-gray-200 transition-colors">
-            <X size={20} className="text-gray-500" />
+        <div className="px-4 sm:px-6 py-4 sm:py-5 border-b bg-gray-50 relative">
+          <button onClick={closeDocumentsModal} className="absolute top-3 sm:top-4 right-3 sm:right-4 p-1.5 sm:p-1 rounded-full hover:bg-gray-200 transition-colors">
+            <X size={window.innerWidth < 640 ? 18 : 20} className="text-gray-500" />
           </button>
-          <h3 className="text-lg font-semibold text-gray-900 pr-8">{documentsItem?.candidateName} - Documents</h3>
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 pr-8 sm:pr-8 truncate">{documentsItem?.candidateName} - Documents</h3>
         </div>
-        <div className="p-6 max-h-[70vh] overflow-auto">
+        <div className="p-4 sm:p-6 max-h-[60vh] sm:max-h-[70vh] overflow-auto">
           {documentsItem ? (
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {documentsItem.documents && documentsItem.documents.length > 0 ? (
                   documentsItem.documents.map((doc, index) => (
-                    <div key={index} className="border rounded-lg p-4 bg-gray-50">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-gray-900 capitalize">{doc.docType}</span>
-                        <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                    <div key={index} className="border rounded-lg p-3 sm:p-4 bg-gray-50">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                        <span className="font-medium text-gray-900 capitalize text-sm sm:text-base">{doc.docType}</span>
+                        <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 text-sm font-medium text-center sm:text-left">
                           View Document
                         </a>
                       </div>
-                      <p className="text-sm text-gray-600 truncate">{doc.url}</p>
+                      <p className="text-xs sm:text-sm text-gray-600 break-all">{doc.url}</p>
                     </div>
                   ))
                 ) : (
                   <div className="col-span-full text-center py-8">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <FileText className="text-gray-400" size={32} />
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <FileText className="text-gray-400" size={window.innerWidth < 640 ? 24 : 32} />
                     </div>
-                    <p className="text-gray-500 text-lg font-medium">No documents uploaded yet</p>
-                    <p className="text-gray-400 text-sm mt-1">Documents will appear here once uploaded by the candidate</p>
+                    <p className="text-gray-500 text-base sm:text-lg font-medium">No documents uploaded yet</p>
+                    <p className="text-gray-400 text-xs sm:text-sm mt-1">Documents will appear here once uploaded by the candidate</p>
                   </div>
                 )}
               </div>
@@ -514,8 +516,8 @@ const Onboarding = () => {
             <div className="text-center py-8">Loading...</div>
           )}
         </div>
-        <div className="px-6 py-4 bg-gray-50 border-t flex justify-end">
-          <button onClick={closeDocumentsModal} className="px-4 py-2 rounded-md bg-gray-600 text-white hover:bg-gray-700">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 border-t flex justify-end">
+          <button onClick={closeDocumentsModal} className="w-full sm:w-auto px-4 py-2 rounded-md bg-gray-600 text-white hover:bg-gray-700">
             Close
           </button>
         </div>
