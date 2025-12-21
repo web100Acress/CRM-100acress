@@ -25,7 +25,7 @@ const CandidateDocumentUpload = () => {
   React.useEffect(() => {
     const verifyToken = async () => {
       try {
-        const response = await fetch(`/api/onboarding/verify-upload-token/${token}`);
+        const response = await fetch(`/api/hr-onboarding/verify-upload-token/${token}`);
         const data = await response.json();
         
         if (data.success) {
@@ -79,7 +79,7 @@ const CandidateDocumentUpload = () => {
         }
       });
 
-      const response = await fetch(`/api/onboarding/upload-documents/${token}`, {
+      const response = await fetch(`/api/hr-onboarding/upload-documents/${token}`, {
         method: 'POST',
         body: formDataToSend
       });
