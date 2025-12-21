@@ -4,7 +4,7 @@
 
 import React, { useState } from "react";
 import { toast } from 'react-hot-toast';
-import { X, FileText, CheckCircle, Circle, Clock } from "lucide-react";
+import { X, FileText, CheckCircle, Circle, Clock, UserPlus } from "lucide-react";
 
 // Import hooks
 import { useOnboarding } from "./hooks/useOnboarding";
@@ -44,6 +44,19 @@ const Onboarding = () => {
   // Documents Modal States
   const [documentsOpen, setDocumentsOpen] = useState(false);
   const [documentsItem, setDocumentsItem] = useState(null);
+
+  // Add Employee Modal States
+  const [addEmployeeOpen, setAddEmployeeOpen] = useState(false);
+  const [employeeForm, setEmployeeForm] = useState({
+    candidateName: '',
+    candidateEmail: '',
+    phone: '',
+    position: '',
+    department: '',
+    joiningDate: '',
+    notes: ''
+  });
+  const [creatingEmployee, setCreatingEmployee] = useState(false);
 
   // Form State
   const [form, setForm] = useState({
@@ -162,6 +175,66 @@ const Onboarding = () => {
   const closeDocumentsModal = () => {
     setDocumentsOpen(false);
     setDocumentsItem(null);
+  };
+
+  // ==================== Add Employee Functions ====================
+
+  const openAddEmployeeModal = () => {
+    setEmployeeForm({
+      candidateName: '',
+      candidateEmail: '',
+      phone: '',
+      position: '',
+      department: '',
+      joiningDate: '',
+      notes: ''
+    });
+    setAddEmployeeOpen(true);
+  };
+
+  const closeAddEmployeeModal = () => {
+    setAddEmployeeOpen(false);
+    setEmployeeForm({
+      candidateName: '',
+      candidateEmail: '',
+      phone: '',
+      position: '',
+      department: '',
+      joiningDate: '',
+      notes: ''
+    });
+  };
+
+  const handleCreateEmployee = async () => {
+    if (!employeeForm.candidateName || !employeeForm.candidateEmail) {
+      alert('Please fill in candidate name and email');
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(employeeForm.candidateEmail)) {
+      alert('Please enter a valid email address');
+      return;
+    }
+
+    setCreatingEmployee(true);
+    try {
+      const newEmployee = await onboardingService.createManual(employeeForm);
+      toast?.success ? toast.success('Employee added successfully!') : alert('Employee added successfully!');
+      closeAddEmployeeModal();
+      fetchList(); // Refresh the list
+      
+      // Automatically open wizard for step-by-step onboarding
+      setTimeout(() => {
+        openWizard(newEmployee, WIZARD_MODES.MANAGE);
+      }, 500);
+    } catch (e) {
+      console.error('Error creating employee:', e);
+      alert(e?.response?.data?.message || 'Failed to add employee');
+    } finally {
+      setCreatingEmployee(false);
+    }
   };
 
   // ==================== Form Submission Functions ====================
@@ -400,7 +473,7 @@ const Onboarding = () => {
     <div className="flex bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen overflow-x-hidden">
       <div className="flex-1 p-4 sm:p-6 md:p-8 lg:p-10 ml-0">
         <div className="w-full mx-auto max-w-7xl overflow-x-hidden">
-          <Header />
+          <Header onAddEmployee={openAddEmployeeModal} />
           <StatsCards stats={stats} />
           <FilterTabs filterStatus={filterStatus} setFilterStatus={setFilterStatus} stats={stats} />
 
@@ -547,6 +620,151 @@ const Onboarding = () => {
         <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 border-t flex justify-end">
           <button onClick={closeDocumentsModal} className="w-full sm:w-auto px-4 py-2 rounded-md bg-gray-600 text-white hover:bg-gray-700">
             Close
+          </button>
+        </div>
+      </Modal>
+
+      {/* Add Employee Modal */}
+      <Modal open={addEmployeeOpen} onClose={closeAddEmployeeModal}>
+        <div className="px-4 sm:px-6 py-4 sm:py-5 border-b bg-gray-50 relative">
+          <button onClick={closeAddEmployeeModal} className="absolute top-3 sm:top-4 right-3 sm:right-4 p-1.5 sm:p-1 rounded-full hover:bg-gray-200 transition-colors">
+            <X size={window.innerWidth < 640 ? 18 : 20} className="text-gray-500" />
+          </button>
+          <div className="flex items-center gap-3 pr-8">
+            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+              <UserPlus className="text-white" size={20} />
+            </div>
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">Add New Employee</h3>
+          </div>
+          <p className="text-sm text-gray-600 mt-2">Fill in the details to start step-by-step onboarding</p>
+        </div>
+        <div className="p-4 sm:p-6 max-h-[70vh] overflow-auto">
+          <div className="space-y-4">
+            {/* Candidate Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Full Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={employeeForm.candidateName}
+                onChange={(e) => setEmployeeForm({ ...employeeForm, candidateName: e.target.value })}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter employee full name"
+                required
+              />
+            </div>
+
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="email"
+                value={employeeForm.candidateEmail}
+                onChange={(e) => setEmployeeForm({ ...employeeForm, candidateEmail: e.target.value })}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="employee@example.com"
+                required
+              />
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                value={employeeForm.phone}
+                onChange={(e) => setEmployeeForm({ ...employeeForm, phone: e.target.value })}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="+91 1234567890"
+              />
+            </div>
+
+            {/* Position */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Position / Job Title
+              </label>
+              <input
+                type="text"
+                value={employeeForm.position}
+                onChange={(e) => setEmployeeForm({ ...employeeForm, position: e.target.value })}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g., Software Developer"
+              />
+            </div>
+
+            {/* Department */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Department
+              </label>
+              <input
+                type="text"
+                value={employeeForm.department}
+                onChange={(e) => setEmployeeForm({ ...employeeForm, department: e.target.value })}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g., IT, HR, Sales"
+              />
+            </div>
+
+            {/* Joining Date */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Expected Joining Date
+              </label>
+              <input
+                type="date"
+                value={employeeForm.joiningDate}
+                onChange={(e) => setEmployeeForm({ ...employeeForm, joiningDate: e.target.value })}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                min={new Date().toISOString().split('T')[0]}
+              />
+            </div>
+
+            {/* Notes */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Additional Notes
+              </label>
+              <textarea
+                value={employeeForm.notes}
+                onChange={(e) => setEmployeeForm({ ...employeeForm, notes: e.target.value })}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows={3}
+                placeholder="Any additional information about the employee..."
+              />
+            </div>
+          </div>
+        </div>
+        <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 border-t flex justify-end gap-3">
+          <button
+            onClick={closeAddEmployeeModal}
+            className="px-4 py-2 rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+            disabled={creatingEmployee}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleCreateEmployee}
+            disabled={creatingEmployee || !employeeForm.candidateName || !employeeForm.candidateEmail}
+            className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {creatingEmployee ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Creating...
+              </>
+            ) : (
+              <>
+                <UserPlus size={18} />
+                Create & Start Onboarding
+              </>
+            )}
           </button>
         </div>
       </Modal>

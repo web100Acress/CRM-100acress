@@ -59,4 +59,9 @@ export const onboardingService = {
   reset: async (id, stage, reason) => {
     return await api100acress.post(`/api/hr/onboarding/${id}/reset`, { stage, reason });
   },
+
+  createManual: async (employeeData) => {
+    const res = await api100acress.post(`/api/hr/onboarding/create`, employeeData);
+    return res?.data?.data;
+  },
 };
