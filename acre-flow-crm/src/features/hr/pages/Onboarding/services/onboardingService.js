@@ -43,7 +43,7 @@ export const onboardingService = {
   },
 
   docsComplete: async (id, body) => {
-    return await api100acress.post(`/career/onboarding/${id}/docs-complete`, body);
+    return await api100acress.post(`/api/hr/onboarding/${id}/docs-complete`, body);
   },
 
   docsSubmit: async (id, formData) => {
