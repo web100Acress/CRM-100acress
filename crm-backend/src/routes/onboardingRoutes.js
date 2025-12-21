@@ -11,9 +11,16 @@ router.post('/internal/generate-link/:onboardingId', (req, res) => {
     const { onboardingId } = req.params;
     const { expiresInHours = 48 } = req.body;
     
+    console.log('=== TOKEN GENERATION DEBUG ===');
+    console.log('Onboarding ID:', onboardingId);
+    console.log('Expires in hours:', expiresInHours);
+    
     // Generate unique token
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + (expiresInHours * 60 * 60 * 1000));
+    
+    console.log('Generated token:', token);
+    console.log('Expires at:', expiresAt);
     
     // Store token with candidate info (mock data for now)
     const candidateInfo = {
@@ -25,6 +32,8 @@ router.post('/internal/generate-link/:onboardingId', (req, res) => {
     };
     
     uploadTokens.set(token, candidateInfo);
+    console.log('Token stored successfully');
+    console.log('Total tokens in storage:', uploadTokens.size);
     
     res.json({
       success: true,
@@ -47,7 +56,13 @@ router.get('/verify-upload-token/:token', (req, res) => {
   try {
     const { token } = req.params;
     
+    console.log('=== TOKEN VERIFICATION DEBUG ===');
+    console.log('Received token:', token);
+    console.log('Available tokens:', Array.from(uploadTokens.keys()));
+    console.log('Token exists in storage:', uploadTokens.has(token));
+    
     if (!uploadTokens.has(token)) {
+      console.log('Token not found in storage');
       return res.status(400).json({
         success: false,
         message: 'Invalid or expired token'
@@ -55,9 +70,11 @@ router.get('/verify-upload-token/:token', (req, res) => {
     }
     
     const candidateInfo = uploadTokens.get(token);
+    console.log('Candidate info:', candidateInfo);
     
     // Check if token is expired
     if (new Date() > new Date(candidateInfo.expiresAt)) {
+      console.log('Token expired');
       uploadTokens.delete(token);
       return res.status(400).json({
         success: false,
@@ -65,6 +82,7 @@ router.get('/verify-upload-token/:token', (req, res) => {
       });
     }
     
+    console.log('Token verification successful');
     res.json({
       success: true,
       data: candidateInfo
