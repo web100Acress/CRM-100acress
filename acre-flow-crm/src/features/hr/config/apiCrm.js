@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://crm-backend.100acress.com';
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://bcrm.100acress.com';
 
 const apiCrm = axios.create({
   baseURL,
