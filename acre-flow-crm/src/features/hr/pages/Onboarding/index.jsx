@@ -263,14 +263,18 @@ const Onboarding = () => {
 
   const sendDocsInvite = async (id) => {
     try {
-      const uploadLink = await onboardingService.generateUploadLink(id);
-      if (!uploadLink) {
+      const uploadData = await onboardingService.generateUploadLink(id);
+      if (!uploadData) {
         alert('Failed to generate upload link');
         return;
       }
-      const content = prompt("Message to candidate (optional)", "Please upload your documents for verification.");
-      await onboardingService.sendDocsInvite(id, uploadLink, content);
-      alert('Documentation invite sent');
+      
+      // Construct the frontend upload URL using the token
+      const frontendUrl = `${window.location.origin}/upload-documents/${uploadData.token}`;
+      
+      const content = prompt("Message to candidate (optional)", "Please upload your documents for verification using the link below.");
+      await onboardingService.sendDocsInvite(id, frontendUrl, content);
+      alert('Documentation invite sent successfully!');
       fetchList();
     } catch (e) {
       alert(e?.response?.data?.message || 'Failed to send docs invite');
@@ -279,13 +283,19 @@ const Onboarding = () => {
 
   const sendUploadLink = async (onboardingId) => {
     try {
-      const link = await onboardingService.generateUploadLink(onboardingId);
-      if (link) {
-        try { await navigator.clipboard.writeText(link); } catch {}
-        toast?.success ? toast.success('Upload link copied to clipboard') : alert('Link: ' + link);
-        window.open(link, '_blank');
+      const uploadData = await onboardingService.generateUploadLink(onboardingId);
+      if (uploadData && uploadData.token) {
+        // Construct the frontend upload URL using the token
+        const frontendUrl = `${window.location.origin}/upload-documents/${uploadData.token}`;
+        
+        try { 
+          await navigator.clipboard.writeText(frontendUrl); 
+          toast?.success ? toast.success('Upload link copied to clipboard') : alert('Link copied to clipboard!');
+        } catch {}
+        
+        window.open(frontendUrl, '_blank');
       } else {
-        alert('Link sent to candidate email.');
+        alert('Failed to generate upload link');
       }
     } catch (e) {
       alert(e?.response?.data?.message || 'Failed to send link');
@@ -295,6 +305,7 @@ const Onboarding = () => {
   // ==================== Render Stage Form ====================
 
   const renderStageForm = () => {
+    // ... (rest of the code remains the same)
     if (!activeItem) return null;
     const stage = activeItem.stages[currentStep];
 
