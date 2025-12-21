@@ -32,7 +32,13 @@ export const onboardingService = {
 
   generateUploadLink: async (onboardingId) => {
     const res = await api100acress.post(`/career/generate-upload-link`, { onboardingId, expiresInHours: 48 });
-    return res?.data?.data?.uploadLink;
+    // Return both token and uploadLink for flexibility
+    return {
+      token: res?.data?.data?.token,
+      uploadLink: res?.data?.data?.uploadLink,
+      expiresAt: res?.data?.data?.expiresAt,
+      candidateInfo: res?.data?.data?.candidateInfo
+    };
   },
 
   docsComplete: async (id, body) => {
