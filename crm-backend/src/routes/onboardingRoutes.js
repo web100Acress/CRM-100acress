@@ -1,9 +1,40 @@
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 
-// Mock storage for upload tokens (in production, use Redis or database)
-const uploadTokens = new Map();
+// File-based token storage for persistence
+const TOKENS_FILE = path.join(__dirname, '../data/uploadTokens.json');
+
+// Helper functions for token storage
+const loadTokens = () => {
+  try {
+    if (fs.existsSync(TOKENS_FILE)) {
+      const data = fs.readFileSync(TOKENS_FILE, 'utf8');
+      return new Map(JSON.parse(data));
+    }
+  } catch (error) {
+    console.log('No existing tokens file, starting fresh');
+  }
+  return new Map();
+};
+
+const saveTokens = (tokens) => {
+  try {
+    const data = JSON.stringify(Array.from(tokens.entries()));
+    const dir = path.dirname(TOKENS_FILE);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(TOKENS_FILE, data);
+  } catch (error) {
+    console.error('Error saving tokens:', error);
+  }
+};
+
+// Load existing tokens
+let uploadTokens = loadTokens();
 
 // Generate upload link token
 router.post('/internal/generate-link/:onboardingId', (req, res) => {
@@ -32,6 +63,7 @@ router.post('/internal/generate-link/:onboardingId', (req, res) => {
     };
     
     uploadTokens.set(token, candidateInfo);
+    saveTokens(uploadTokens);
     console.log('Token stored successfully');
     console.log('Total tokens in storage:', uploadTokens.size);
     
@@ -76,6 +108,7 @@ router.get('/verify-upload-token/:token', (req, res) => {
     if (new Date() > new Date(candidateInfo.expiresAt)) {
       console.log('Token expired');
       uploadTokens.delete(token);
+      saveTokens(uploadTokens);
       return res.status(400).json({
         success: false,
         message: 'Token expired'
@@ -126,6 +159,7 @@ router.post('/upload-documents/:token', (req, res) => {
     
     // Clean up token after successful upload
     uploadTokens.delete(token);
+    saveTokens(uploadTokens);
     
     res.json({
       success: true,
@@ -162,6 +196,44 @@ router.post('/:id/docs-invite', (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to send documentation invite'
+    });
+  }
+});
+
+// Test endpoint to verify token generation
+router.get('/test-token', (req, res) => {
+  try {
+    const testOnboardingId = 'test-123';
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + (48 * 60 * 60 * 1000));
+    
+    const candidateInfo = {
+      candidateName: 'Test Candidate',
+      position: 'Software Developer',
+      department: 'IT',
+      onboardingId: testOnboardingId,
+      expiresAt
+    };
+    
+    uploadTokens.set(token, candidateInfo);
+    saveTokens(uploadTokens);
+    
+    const uploadLink = `https://crm.100acress.com/upload-documents/${token}`;
+    
+    res.json({
+      success: true,
+      message: 'Test token generated successfully',
+      data: {
+        token,
+        uploadLink,
+        expiresAt
+      }
+    });
+  } catch (error) {
+    console.error('Error generating test token:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate test token'
     });
   }
 });
