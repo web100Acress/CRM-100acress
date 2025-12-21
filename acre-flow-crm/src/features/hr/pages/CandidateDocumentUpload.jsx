@@ -23,9 +23,13 @@ const CandidateDocumentUpload = () => {
 
   // Verify token and get candidate info
   React.useEffect(() => {
+    console.log('=== FRONTEND TOKEN DEBUG ===');
+    console.log('Extracted token:', token);
+    console.log('Current URL:', window.location.href);
+    
     const verifyToken = async () => {
       try {
-        const response = await fetch(`https://bcrm.100acress.com/api/hr-onboarding/verify-upload-token/${token}`);
+        const response = await fetch(`https://api.100acress.com/career/verify-upload-token/${token}`);
         const data = await response.json();
         
         if (data.success) {
@@ -79,7 +83,7 @@ const CandidateDocumentUpload = () => {
         }
       });
 
-      const response = await fetch(`https://bcrm.100acress.com/api/hr-onboarding/upload-documents/${token}`, {
+      const response = await fetch(`https://api.100acress.com/career/upload-documents/${token}`, {
         method: 'POST',
         body: formDataToSend
       });
@@ -351,6 +355,112 @@ const CandidateDocumentUpload = () => {
               </button>
             </div>
           </form>
+        </div>
+
+        {/* Candidate Information */}
+        <div className="bg-white shadow-lg rounded-lg p-6 sm:p-8 mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Onboarding Details</h2>
+          
+          {candidateInfo ? (
+            <div className="space-y-6">
+              {/* Personal Information */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Personal Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-sm font-medium text-gray-500">Name:</span>
+                    <p className="text-gray-900">{candidateInfo.candidateName}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-gray-500">Position:</span>
+                    <p className="text-gray-900">{candidateInfo.position}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Job Details */}
+              {candidateInfo.jobDetails && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Job Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Department:</span>
+                      <p className="text-gray-900">{candidateInfo.jobDetails.department}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Employment Type:</span>
+                      <p className="text-gray-900">{candidateInfo.jobDetails.employmentType}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Location:</span>
+                      <p className="text-gray-900">{candidateInfo.jobDetails.location}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Reporting Manager:</span>
+                      <p className="text-gray-900">{candidateInfo.jobDetails.reportingManager}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Joining Date:</span>
+                      <p className="text-gray-900">{candidateInfo.jobDetails.joiningDate}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Work Schedule:</span>
+                      <p className="text-gray-900">{candidateInfo.jobDetails.workSchedule}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Probation Period:</span>
+                      <p className="text-gray-900">{candidateInfo.jobDetails.probationPeriod}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Salary:</span>
+                      <p className="text-gray-900">{candidateInfo.jobDetails.salary}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Responsibilities */}
+              {candidateInfo.jobDetails?.responsibilities && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Key Responsibilities</h3>
+                  <ul className="list-disc list-inside space-y-2">
+                    {candidateInfo.jobDetails.responsibilities.map((responsibility, index) => (
+                      <li key={index} className="text-gray-700">{responsibility}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Requirements */}
+              {candidateInfo.jobDetails?.requirements && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Requirements</h3>
+                  <ul className="list-disc list-inside space-y-2">
+                    {candidateInfo.jobDetails.requirements.map((requirement, index) => (
+                      <li key={index} className="text-gray-700">{requirement}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Benefits */}
+              {candidateInfo.jobDetails?.benefits && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Benefits</h3>
+                  <ul className="list-disc list-inside space-y-2">
+                    {candidateInfo.jobDetails.benefits.map((benefit, index) => (
+                      <li key={index} className="text-gray-700">{benefit}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-2 text-gray-600">Loading your information...</p>
+            </div>
+          )}
         </div>
 
         {/* Instructions */}
