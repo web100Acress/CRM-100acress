@@ -27,6 +27,7 @@ import JobApplications from "@/features/hr/pages/JobApplications";
 import LeaveManagement from "@/features/hr/pages/LeaveManagement";
 import Onboarding from "@/features/hr/pages/Onboarding";
 import Offboarding from "@/features/hr/pages/Offboarding";
+import CandidateDocumentUpload from "@/features/hr/pages/CandidateDocumentUpload";
 import BlogDashboard from "@/features/blog/pages/BlogDashboard";
 import AdminDashboard from "@/features/admin/pages/AdminDashboard";
 import AdminUserManagement from "@/features/admin/components/UserManagement";
@@ -302,6 +303,7 @@ const App = () => {
             <Route path="/hr/leave-management" element={<LeaveManagement />} />
             <Route path="/hr/onboarding" element={<Onboarding />} />
             <Route path="/hr/offboarding" element={<Offboarding />} />
+            <Route path="/upload-documents/:token" element={<CandidateDocumentUpload />} />
             <Route path="/blog-dashboard" element={<BlogDashboard />} />
             <Route path="/blog-users" element={<BlogUser />} />
             <Route path="/all-blogs" element={<AllBlogs />} />
