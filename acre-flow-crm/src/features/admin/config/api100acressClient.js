@@ -16,35 +16,38 @@ const api100acress = axios.create({
 
 api100acress.interceptors.request.use(
   async (config) => {
-    // Try to get 100acress token first
-    let token = localStorage.getItem('myToken');
+    // Try multiple token sources in order of preference
+    let token = null;
     
-    // If no 100acress token, try to get it or use CRM token as fallback
+    // 1. Check for CRM token first (most common)
+    token = localStorage.getItem('token');
+    
+    // 2. If no CRM token, check for 100acress token
     if (!token) {
-      const crmToken = localStorage.getItem('token');
-      const userEmail = localStorage.getItem('userEmail') || localStorage.getItem('adminEmail');
-      const userPassword = localStorage.getItem('userPassword'); // Note: Password shouldn't be stored
-      const userRole = localStorage.getItem('userRole') || localStorage.getItem('adminRole');
-      const sourceSystem = localStorage.getItem('sourceSystem');
+      token = localStorage.getItem('myToken');
+    }
+    
+    // 3. Clean up token (remove quotes if present)
+    if (token) {
+      token = token.replace(/^["']|["']$/g, '').trim();
       
-      // If user is admin, hr, or super-admin and logged in via CRM, try to get 100acress token
-      if (crmToken && (userRole === 'admin' || userRole === 'Admin' || userRole === 'hr' || userRole === 'HR' || userRole === 'super-admin')) {
-        // Since we can't store password, try using CRM token
-        // If 100acress backend uses same JWT_SECRET, CRM token should work
-        token = crmToken;
-      } else if (crmToken) {
-        // Fallback: Use CRM token (might work if same JWT secret)
-        token = crmToken;
+      // Only add if token is not empty after cleaning
+      if (token && token !== 'null' && token !== 'undefined') {
+        config.headers.Authorization = `Bearer ${token}`;
+      } else {
+        console.warn('Token found but invalid:', localStorage.getItem('token') || localStorage.getItem('myToken'));
+        token = null;
       }
     }
     
-    if (token) {
-      // Remove quotes if present
-      const cleanToken = token.replace(/"/g, '');
-      config.headers.Authorization = `Bearer ${cleanToken}`;
-    } else {
-      console.warn('No token available for 100acress API call. Request will likely fail.');
-      // Don't block the request, let the backend handle it
+    // Log warning if no token (for debugging)
+    if (!token) {
+      console.warn('⚠️ No token available for 100acress API call:', {
+        url: config.url,
+        hasToken: !!localStorage.getItem('token'),
+        hasMyToken: !!localStorage.getItem('myToken'),
+        userRole: localStorage.getItem('userRole') || localStorage.getItem('adminRole')
+      });
     }
     
     return config;

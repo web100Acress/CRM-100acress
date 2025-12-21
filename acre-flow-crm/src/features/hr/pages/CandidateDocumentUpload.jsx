@@ -16,35 +16,51 @@ const CandidateDocumentUpload = () => {
     joiningDate: ''
   });
   
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start with true to show loading
+  const [verifying, setVerifying] = useState(true); // Separate state for token verification
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [candidateInfo, setCandidateInfo] = useState(null);
 
-  // Verify token and get candidate info
+  // Verify token and get candidate info - ONLY works with valid token from email
   React.useEffect(() => {
+    // If no token in URL, show error immediately
+    if (!token || token.trim() === '') {
+      setError('Invalid upload link. This page can only be accessed via the link sent to your email.');
+      setVerifying(false);
+      setLoading(false);
+      return;
+    }
+
     console.log('=== FRONTEND TOKEN DEBUG ===');
     console.log('Extracted token:', token);
     console.log('Current URL:', window.location.href);
     
     const verifyToken = async () => {
+      setVerifying(true);
+      setLoading(true);
+      setError('');
+      
       try {
         const response = await fetch(`https://api.100acress.com/career/verify-upload-token/${token}`);
         const data = await response.json();
         
-        if (data.success) {
+        if (data.success && data.data) {
           setCandidateInfo(data.data);
+          setError('');
         } else {
-          setError('Invalid or expired upload link. Please contact HR.');
+          setError(data.message || 'Invalid or expired upload link. Please use the link sent to your email or contact HR for a new link.');
         }
       } catch (err) {
-        setError('Failed to verify upload link. Please try again.');
+        console.error('Token verification error:', err);
+        setError('Failed to verify upload link. Please ensure you are using the link sent to your email. If the problem persists, contact HR.');
+      } finally {
+        setVerifying(false);
+        setLoading(false);
       }
     };
 
-    if (token) {
-      verifyToken();
-    }
+    verifyToken();
   }, [token]);
 
   const handleFileChange = (field, file) => {
@@ -102,14 +118,35 @@ const CandidateDocumentUpload = () => {
     }
   };
 
+  // Show loading state while verifying token
+  if (verifying || loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Verifying Upload Link</h2>
+          <p className="text-gray-600">Please wait while we verify your secure upload link...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error if token is invalid or missing
   if (error && !candidateInfo) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6 text-center">
           <AlertCircle className="mx-auto text-red-500 mb-4" size={48} />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Invalid Link</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h2>
           <p className="text-gray-600 mb-4">{error}</p>
-          <p className="text-sm text-gray-500">Please contact HR for a new upload link.</p>
+          <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-sm text-yellow-800 font-medium mb-2">⚠️ Important:</p>
+            <p className="text-sm text-yellow-700">
+              This page can only be accessed through the secure link sent to your email. 
+              Please check your email inbox for the upload link.
+            </p>
+          </div>
+          <p className="text-sm text-gray-500 mt-4">If you need a new link, please contact HR.</p>
         </div>
       </div>
     );
@@ -149,9 +186,15 @@ const CandidateDocumentUpload = () => {
           <p className="text-gray-600">
             {candidateInfo ? 
               `Hello ${candidateInfo.candidateName}, please upload your required documents for onboarding.` :
-              'Loading your information...'
+              'Please wait...'
             }
           </p>
+          {candidateInfo && (
+            <div className="mt-4 inline-flex items-center px-4 py-2 bg-green-50 border border-green-200 rounded-lg">
+              <CheckCircle className="text-green-600 mr-2" size={20} />
+              <span className="text-sm text-green-800 font-medium">Secure link verified ✓</span>
+            </div>
+          )}
         </div>
 
         {/* Upload Form */}
