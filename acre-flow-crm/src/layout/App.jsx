@@ -184,7 +184,21 @@ const App = () => {
             <Route
               path="/"
               element={
-                <Navigate to="/login" replace />
+                isLoggedIn ? (
+                  userRole === "super-admin" ? (
+                    <Navigate to="/super-admin-dashboard" replace />
+                  ) : userRole === "head-admin" ? (
+                    <Navigate to="/head-admin-dashboard" replace />
+                  ) : userRole === "team-leader" ? (
+                    <Navigate to="/team-leader-dashboard" replace />
+                  ) : userRole === "developer" ? (
+                    <Navigate to="/developer-dashboard" replace />
+                  ) : (
+                    <Navigate to="/leads" replace />
+                  )
+                ) : (
+                  <Navigate to="/login" replace />
+                )
               }
             />
             <Route
