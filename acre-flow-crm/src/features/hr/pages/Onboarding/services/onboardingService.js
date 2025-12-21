@@ -23,7 +23,8 @@ export const onboardingService = {
   },
 
   sendDocsInvite: async (id, uploadLink, content) => {
-    return await api100acress.post(`/api/hr/onboarding/${id}/docs-invite`, { uploadLink, content });
+    const res = await api100acress.post(`/api/hr/onboarding/${id}/docs-invite`, { uploadLink, content });
+    return res; // Return full response so frontend can check for warnings
   },
 
   recordDocument: async (id, docType, url) => {

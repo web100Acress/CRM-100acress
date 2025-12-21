@@ -264,7 +264,7 @@ const Onboarding = () => {
   const sendDocsInvite = async (id) => {
     try {
       const uploadData = await onboardingService.generateUploadLink(id);
-      if (!uploadData) {
+      if (!uploadData || !uploadData.token) {
         alert('Failed to generate upload link');
         return;
       }
@@ -273,10 +273,27 @@ const Onboarding = () => {
       const frontendUrl = `${window.location.origin}/upload-documents/${uploadData.token}`;
       
       const content = prompt("Message to candidate (optional)", "Please upload your documents for verification using the link below.");
-      await onboardingService.sendDocsInvite(id, frontendUrl, content);
-      alert('Documentation invite sent successfully!');
+      const response = await onboardingService.sendDocsInvite(id, frontendUrl, content);
+      
+      // Check if email sending failed
+      if (response?.data?.warning) {
+        // Show warning and provide link to copy
+        const message = `${response.data.warning}\n\nUpload Link:\n${response.data.uploadLink}\n\nPlease share this link manually with the candidate.`;
+        if (confirm(message + '\n\nClick OK to copy the link to clipboard.')) {
+          try {
+            await navigator.clipboard.writeText(response.data.uploadLink);
+            toast?.success ? toast.success('Link copied to clipboard!') : alert('Link copied to clipboard!');
+          } catch (err) {
+            // Fallback if clipboard API fails
+            prompt('Copy this link:', response.data.uploadLink);
+          }
+        }
+      } else {
+        toast?.success ? toast.success('Documentation invite sent successfully!') : alert('Documentation invite sent successfully!');
+      }
       fetchList();
     } catch (e) {
+      console.error('Error sending docs invite:', e);
       alert(e?.response?.data?.message || 'Failed to send docs invite');
     }
   };
