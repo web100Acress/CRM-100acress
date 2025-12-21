@@ -47,9 +47,9 @@ export const onboardingService = {
   },
 
   docsSubmit: async (id, formData) => {
-    return await api100acress.post(`/api/hr/onboarding/${id}/docs-submit`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    // This endpoint is no longer needed - document upload is handled via token-based flow
+    // Use generateUploadLink and upload to /career/upload-documents/:token instead
+    throw new Error('docsSubmit is deprecated. Use generateUploadLink and token-based upload flow.');
   },
 
   rejectStage: async (id, stage, reason) => {
