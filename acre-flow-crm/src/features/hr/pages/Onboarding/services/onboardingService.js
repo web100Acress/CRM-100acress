@@ -27,16 +27,16 @@ export const onboardingService = {
   },
 
   recordDocument: async (id, docType, url) => {
-    return await api100acress.post(`/api/hr/onboarding/${id}/docs`, { docType, url });
+    return await api100acress.post(`/career/onboarding/${id}/docs`, { docType, url });
   },
 
   generateUploadLink: async (onboardingId) => {
-    const res = await api100acress.post(`/api/hr-onboarding/internal/generate-link/${onboardingId}`, { expiresInHours: 48 });
-    return res?.data?.link;
+    const res = await api100acress.post(`/career/generate-upload-link`, { onboardingId, expiresInHours: 48 });
+    return res?.data?.data?.uploadLink;
   },
 
   docsComplete: async (id, body) => {
-    return await api100acress.post(`/api/hr/onboarding/${id}/docs-complete`, body);
+    return await api100acress.post(`/career/onboarding/${id}/docs-complete`, body);
   },
 
   docsSubmit: async (id, formData) => {
