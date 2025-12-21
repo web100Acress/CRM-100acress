@@ -291,18 +291,39 @@ const Onboarding = () => {
   const submitDocsFromWizard = async () => {
     try {
       if (!activeItem) return;
+      
+      // Use the new token-based upload flow
+      const uploadData = await onboardingService.generateUploadLink(activeItem._id);
+      if (!uploadData || !uploadData.token) {
+        alert('Failed to generate upload link');
+        return;
+      }
+      
+      // Create FormData for the new endpoint
       const formData = new FormData();
-      if (form.panFile) formData.append('pan', form.panFile);
-      if (form.aadhaarFile) formData.append('aadhaar', form.aadhaarFile);
-      if (form.photoFile) formData.append('photo', form.photoFile);
-      if (form.marksheetFile) formData.append('marksheet', form.marksheetFile);
-      if (form.otherFile1) formData.append('other1', form.otherFile1);
-      if (form.otherFile2) formData.append('other2', form.otherFile2);
+      if (form.panFile) formData.append('panFile', form.panFile);
+      if (form.aadhaarFile) formData.append('aadhaarFile', form.aadhaarFile);
+      if (form.photoFile) formData.append('photoFile', form.photoFile);
+      if (form.marksheetFile) formData.append('marksheetFile', form.marksheetFile);
+      if (form.otherFile1) formData.append('otherFile1', form.otherFile1);
+      if (form.otherFile2) formData.append('otherFile2', form.otherFile2);
       if (form.joiningDate) formData.append('joiningDate', form.joiningDate);
-      await onboardingService.docsSubmit(activeItem._id, formData);
-      fetchList();
-      alert('Documents uploaded successfully!');
+      
+      // Upload to 100 backend using token
+      const response = await fetch(`https://api.100acress.com/career/upload-documents/${uploadData.token}`, {
+        method: 'POST',
+        body: formData
+      });
+      
+      const result = await response.json();
+      if (result.success) {
+        fetchList();
+        alert('Documents uploaded successfully!');
+      } else {
+        alert(result.message || 'Failed to upload documents');
+      }
     } catch (e) {
+      console.error('Error uploading documents:', e);
       alert(e?.response?.data?.message || 'Failed to upload documents');
     }
   };
