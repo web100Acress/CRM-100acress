@@ -26,7 +26,10 @@ const allowedOrigins = [
   'https://api.100acress.com',
   'http://localhost:5001',
   'http://localhost:3500',
+  'https://crm.100acress.com',
+    'https://bcrm.100acress.com',
   'https://crm.100acress.com'
+  
 ];
 
 // ✅ Apply CORS globally for Express
