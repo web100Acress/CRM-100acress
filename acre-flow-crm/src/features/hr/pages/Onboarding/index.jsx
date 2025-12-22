@@ -22,6 +22,7 @@ import { Header } from "./components/Header";
 import { StatsCards } from "./components/StatsCards";
 import { FilterTabs } from "./components/FilterTabs";
 import { CandidatesList } from "./components/CandidatesList";
+import { FullDetailsModal } from "./components/FullDetailsModal";
 
 // Import forms
 import { Interview1Form } from "./components/forms/Interview1Form";
@@ -44,6 +45,10 @@ const Onboarding = () => {
   // Documents Modal States
   const [documentsOpen, setDocumentsOpen] = useState(false);
   const [documentsItem, setDocumentsItem] = useState(null);
+
+  // Full Details Modal States
+  const [fullDetailsOpen, setFullDetailsOpen] = useState(false);
+  const [fullDetailsItem, setFullDetailsItem] = useState(null);
 
   // Add Employee Modal States
   const [addEmployeeOpen, setAddEmployeeOpen] = useState(false);
@@ -235,6 +240,18 @@ const Onboarding = () => {
     } finally {
       setCreatingEmployee(false);
     }
+  };
+
+  // ==================== Full Details Modal Functions ====================
+
+  const openFullDetailsModal = (candidate) => {
+    setFullDetailsItem(candidate);
+    setFullDetailsOpen(true);
+  };
+
+  const closeFullDetailsModal = () => {
+    setFullDetailsOpen(false);
+    setFullDetailsItem(null);
   };
 
   // ==================== Delete Function ====================
@@ -533,6 +550,7 @@ const Onboarding = () => {
             onViewDetails={openWizard}
             onViewDocuments={openDocumentsModal}
             onDelete={handleDeleteOnboarding}
+            onViewFullDetails={openFullDetailsModal}
           />
         </div>
       </div>
@@ -812,6 +830,12 @@ const Onboarding = () => {
           </button>
         </div>
       </Modal>
+
+      {/* Full Details Modal */}
+      <FullDetailsModal 
+        candidate={fullDetailsItem}
+        onClose={closeFullDetailsModal}
+      />
     </div>
   );
 };
