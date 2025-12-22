@@ -1984,7 +1984,7 @@ const BlogWriteModal = () => {
         {/* Load fonts */}
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Roboto:wght@300;400;700&family=Poppins:wght@300;400;600;700&family=Montserrat:wght@300;400;600;700&family=Lato:wght@300;400;700&family=Open+Sans:wght@300;400;700&family=Raleway:wght@300;400;700&family=Nunito:wght@300;400;700&family=Merriweather:wght@300;400;700&family=Playfair+Display:wght@400;700&family=Source+Sans+3:wght@300;400;700&family=Ubuntu:wght@300;400;700&family=Work+Sans:wght@300;400;700&family=Rubik:wght@300;400;700&family=Mulish:wght@300;400;700&family=Josefin+Sans:wght@300;400;700&family=Quicksand:wght@300;400;700&family=DM+Sans:wght@300;400;700&family=PT+Serif:wght@400;700&family=Arimo:wght@400;700&display=swap" />
         {/* Header */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border border-gray-100">
+        {/* <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border border-gray-100">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
@@ -2017,7 +2017,7 @@ const BlogWriteModal = () => {
               <X className="w-6 h-6" />
             </button>
           </div>
-        </div>
+        </div> */}
 
         {/* Cropper Modal */}
         {showCropper && (

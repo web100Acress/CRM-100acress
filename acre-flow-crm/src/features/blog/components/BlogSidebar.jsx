@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Edit3, Eye, BarChart3, Settings, LogOut, Users, FileText as DocumentIcon } from 'lucide-react';
+import { FileText, Edit3, Eye, BarChart3, Settings, LogOut, Users, FileText as DocumentIcon, X } from 'lucide-react';
 
-const BlogSidebar = ({ isOpen, activeTab, onTabChange }) => {
+const BlogSidebar = ({ isOpen, activeTab, onTabChange, onClose }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -91,8 +91,18 @@ const BlogSidebar = ({ isOpen, activeTab, onTabChange }) => {
                 </p>
               </div>
             </div>
-            {/* Real-time status indicator */}
-            <div className={`w-3 h-3 rounded-full ${isLoggedIn ? 'bg-green-400' : 'bg-red-400'} animate-pulse`}></div>
+            
+            {/* Close Button - Only show on mobile */}
+            <button
+              onClick={onClose}
+              className="lg:hidden p-2 bg-orange-700 hover:bg-orange-600 text-white rounded-lg transition-colors"
+              title="Close sidebar"
+            >
+              <X size={20} />
+            </button>
+            
+            {/* Real-time status indicator - Only show on desktop */}
+            <div className={`hidden lg:block w-3 h-3 rounded-full ${isLoggedIn ? 'bg-green-400' : 'bg-red-400'} animate-pulse`}></div>
           </div>
 
           {/* User Info Card */}
