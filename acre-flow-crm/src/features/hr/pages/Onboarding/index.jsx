@@ -237,6 +237,28 @@ const Onboarding = () => {
     }
   };
 
+  // ==================== Delete Function ====================
+
+  const handleDeleteOnboarding = async (candidate) => {
+    // Show confirmation dialog
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${candidate.candidateName} (${candidate.candidateEmail})?\n\nThis action cannot be undone.`
+    );
+    
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await onboardingService.deleteOnboarding(candidate._id);
+      toast?.success ? toast.success('Onboarding entry deleted successfully!') : alert('Onboarding entry deleted successfully!');
+      fetchList(); // Refresh the list
+    } catch (e) {
+      console.error('Error deleting onboarding:', e);
+      alert(e?.response?.data?.message || 'Failed to delete onboarding entry');
+    }
+  };
+
   // ==================== Form Submission Functions ====================
 
   const submitInviteFromWizard = async () => {
@@ -510,6 +532,7 @@ const Onboarding = () => {
             filterStatus={filterStatus}
             onViewDetails={openWizard}
             onViewDocuments={openDocumentsModal}
+            onDelete={handleDeleteOnboarding}
           />
         </div>
       </div>
