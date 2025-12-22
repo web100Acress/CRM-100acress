@@ -249,11 +249,12 @@ export const FullDetailsModal = ({ candidate, onClose }) => {
               )}
 
               {/* History */}
-              {candidate.history && candidate.history.length > 0 && (
+              {(candidate.history || candidate.stageData) && (
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Activity History</h3>
                   <div className="space-y-3">
-                    {candidate.history.map((item, index) => (
+                    {/* Show history from history array if available */}
+                    {candidate.history && candidate.history.length > 0 && candidate.history.map((item, index) => (
                       <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                         <Clock size={16} className="text-gray-500 mt-1" />
                         <div className="flex-1">
@@ -263,6 +264,38 @@ export const FullDetailsModal = ({ candidate, onClose }) => {
                         </div>
                       </div>
                     ))}
+                    
+                    {/* Show stage completion info from stageData if history not available */}
+                    {(!candidate.history || candidate.history.length === 0) && candidate.stages && candidate.stages.map((stage, index) => {
+                      const stageData = candidate.stageData?.[stage];
+                      if (!stageData || !stageData.completedAt) return null;
+                      
+                      return (
+                        <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                          <CheckCircle size={16} className="text-green-500 mt-1" />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-700">{getStageLabel(stage)}</p>
+                            <p className="text-sm text-gray-600 mt-1">
+                              {stage === 'interview1' && 'Auto-created on approval'}
+                              {stage === 'hrDiscussion' && 'Auto-advanced after completion'}
+                              {stage === 'documentation' && 'Auto-advanced after completion'}
+                              {stage === 'success' && 'Onboarding completed successfully'}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">{formatDate(stageData.completedAt)}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    
+                    {/* Show creation info */}
+                    <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+                      <User size={16} className="text-blue-500 mt-1" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-700">Onboarding Started</p>
+                        <p className="text-sm text-gray-600 mt-1">Candidate added to onboarding process</p>
+                        <p className="text-xs text-gray-400 mt-1">{formatDate(candidate.createdAt)}</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
