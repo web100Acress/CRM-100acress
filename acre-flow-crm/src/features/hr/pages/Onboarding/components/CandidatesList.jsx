@@ -1,9 +1,9 @@
 // ============================================
 
 import React from "react";
-import { Mail, User } from "lucide-react";
+import { Mail, User, Trash2 } from "lucide-react";
 
-export const CandidatesList = ({ filteredList, loading, filterStatus, onViewDetails, onViewDocuments }) => {
+export const CandidatesList = ({ filteredList, loading, filterStatus, onViewDetails, onViewDocuments, onDelete, onViewFullDetails }) => {
   if (loading) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 sm:p-12 text-center">
@@ -41,10 +41,20 @@ export const CandidatesList = ({ filteredList, loading, filterStatus, onViewDeta
               </div>
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <button onClick={() => onViewDetails(it, 'view')} className="w-full sm:w-auto px-3 sm:px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors font-medium text-sm sm:text-base">
-                  View Details
+                  View Status
                 </button>
                 <button onClick={() => onViewDocuments(it)} className="w-full sm:w-auto px-3 sm:px-4 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-700 transition-colors font-medium text-sm sm:text-base">
                   View Documents
+                </button>
+                <button onClick={() => onViewFullDetails(it)} className="w-full sm:w-auto px-3 sm:px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition-colors font-medium text-sm sm:text-base">
+                  View Details
+                </button>
+                <button 
+                  onClick={() => onDelete(it)} 
+                  className="w-full sm:w-auto px-3 sm:px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors font-medium text-sm sm:text-base flex items-center justify-center gap-2"
+                >
+                  <Trash2 size={14} />
+                  <span>Delete</span>
                 </button>
               </div>
             </div>

@@ -64,4 +64,9 @@ export const onboardingService = {
     const res = await api100acress.post(`/api/hr/onboarding/create`, employeeData);
     return res?.data?.data;
   },
+
+  deleteOnboarding: async (id) => {
+    const res = await api100acress.delete(`/api/hr/onboarding/${id}`);
+    return res?.data;
+  },
 };

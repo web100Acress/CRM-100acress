@@ -22,6 +22,7 @@ import { Header } from "./components/Header";
 import { StatsCards } from "./components/StatsCards";
 import { FilterTabs } from "./components/FilterTabs";
 import { CandidatesList } from "./components/CandidatesList";
+import { FullDetailsModal } from "./components/FullDetailsModal";
 
 // Import forms
 import { Interview1Form } from "./components/forms/Interview1Form";
@@ -44,6 +45,10 @@ const Onboarding = () => {
   // Documents Modal States
   const [documentsOpen, setDocumentsOpen] = useState(false);
   const [documentsItem, setDocumentsItem] = useState(null);
+
+  // Full Details Modal States
+  const [fullDetailsOpen, setFullDetailsOpen] = useState(false);
+  const [fullDetailsItem, setFullDetailsItem] = useState(null);
 
   // Add Employee Modal States
   const [addEmployeeOpen, setAddEmployeeOpen] = useState(false);
@@ -234,6 +239,40 @@ const Onboarding = () => {
       alert(e?.response?.data?.message || 'Failed to add employee');
     } finally {
       setCreatingEmployee(false);
+    }
+  };
+
+  // ==================== Full Details Modal Functions ====================
+
+  const openFullDetailsModal = (candidate) => {
+    setFullDetailsItem(candidate);
+    setFullDetailsOpen(true);
+  };
+
+  const closeFullDetailsModal = () => {
+    setFullDetailsOpen(false);
+    setFullDetailsItem(null);
+  };
+
+  // ==================== Delete Function ====================
+
+  const handleDeleteOnboarding = async (candidate) => {
+    // Show confirmation dialog
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${candidate.candidateName} (${candidate.candidateEmail})?\n\nThis action cannot be undone.`
+    );
+    
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await onboardingService.deleteOnboarding(candidate._id);
+      toast?.success ? toast.success('Onboarding entry deleted successfully!') : alert('Onboarding entry deleted successfully!');
+      fetchList(); // Refresh the list
+    } catch (e) {
+      console.error('Error deleting onboarding:', e);
+      alert(e?.response?.data?.message || 'Failed to delete onboarding entry');
     }
   };
 
@@ -510,6 +549,8 @@ const Onboarding = () => {
             filterStatus={filterStatus}
             onViewDetails={openWizard}
             onViewDocuments={openDocumentsModal}
+            onDelete={handleDeleteOnboarding}
+            onViewFullDetails={openFullDetailsModal}
           />
         </div>
       </div>
@@ -789,6 +830,12 @@ const Onboarding = () => {
           </button>
         </div>
       </Modal>
+
+      {/* Full Details Modal */}
+      <FullDetailsModal 
+        candidate={fullDetailsItem}
+        onClose={closeFullDetailsModal}
+      />
     </div>
   );
 };
