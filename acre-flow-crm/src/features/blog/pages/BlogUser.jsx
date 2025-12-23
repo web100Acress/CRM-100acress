@@ -381,101 +381,125 @@ const BlogUser = () => {
 
   return (
     <>
-      <div className="flex-1 p-8 transition-colors duration-300">
+      <div className="flex-1 p-4 sm:p-6 lg:p-8 transition-colors duration-300">
         <div className="w-full space-y-4">
-          {/* Header Controls: Search (left) and Filters (right) */}
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
-            {/* Left: Search */}
-            <div className="relative w-full md:max-w-md">
-              <Tippy content={<span>Search by name, email or mobile</span>} animation="scale" theme="light-border">
-                <input
-                  type="text"
-                  placeholder="Search by name..."
-                  value={searchTerm}
-                  onChange={handleSearch}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-red-500 transition duration-200 shadow-sm text-base"
-                />
-              </Tippy>
-              <MdSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={22} />
+          {/* Header Controls: Search and Filters */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            {/* Search Bar */}
+            <div className="mb-4">
+              <div className="relative w-full">
+                <Tippy content={<span>Search by name, email or mobile</span>} animation="scale" theme="light-border">
+                  <input
+                    type="text"
+                    placeholder="Search by name, email or mobile..."
+                    value={searchTerm}
+                    onChange={handleSearch}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 transition duration-200 shadow-sm text-base"
+                  />
+                </Tippy>
+                <MdSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+              </div>
             </div>
 
-            {/* Right: Filters */}
-            <div className="flex items-center gap-3 flex-wrap md:flex-nowrap">
-              {/* Role filter */}
-              <select
-                className="px-3 py-2 border rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                value={roleFilter}
-                onChange={(e)=>{ setRoleFilter(e.target.value); setCurrentPage(1); }}
-                title="Filter by role"
-              >
-                <option value="all">All Roles</option>
-                {ROLE_OPTIONS.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
+            {/* Filters - Mobile First */}
+            <div className="space-y-3">
+              {/* Filter Title */}
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-gray-700">Filters</h3>
+                <button
+                  onClick={() => {
+                    setRoleFilter('all');
+                    setVerifyFilter('all');
+                    setSourceFilter('all');
+                    setDateFrom('');
+                    setDateTo('');
+                    setCurrentPage(1);
+                  }}
+                  className="text-xs text-red-600 hover:text-red-700 font-medium"
+                >
+                  Clear All
+                </button>
+              </div>
 
-              {/* Verified filter */}
-              <select
-                className="px-3 py-2 border rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                value={verifyFilter}
-                onChange={(e)=>{ setVerifyFilter(e.target.value); setCurrentPage(1); }}
-                title="Filter by email verification"
-              >
-                <option value="all">All</option>
-                <option value="verified">Verified</option>
-                <option value="unverified">Unverified</option>
-              </select>
+              {/* Filter Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2">
+                {/* Role filter */}
+                <select
+                  className="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 w-full"
+                  value={roleFilter}
+                  onChange={(e)=>{ setRoleFilter(e.target.value); setCurrentPage(1); }}
+                  title="Filter by role"
+                >
+                  <option value="all">All Roles</option>
+                  {ROLE_OPTIONS.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
 
-              {/* Source filter */}
-              {(() => {
-                const options = Array.from(new Set(viewAll.map(getSourceValue))).filter(Boolean).sort();
-                return (
-                  <select
-                    className="px-3 py-2 border rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                    value={sourceFilter}
-                    onChange={(e)=>{ setSourceFilter(e.target.value); setCurrentPage(1); }}
-                    title="Filter by source"
-                  >
-                    <option value="all">All Sources</option>
-                    {options.map((opt) => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
-                );
-              })()}
+                {/* Verified filter */}
+                <select
+                  className="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 w-full"
+                  value={verifyFilter}
+                  onChange={(e)=>{ setVerifyFilter(e.target.value); setCurrentPage(1); }}
+                  title="Filter by email verification"
+                >
+                  <option value="all">All</option>
+                  <option value="verified">Verified</option>
+                  <option value="unverified">Unverified</option>
+                </select>
 
-              {/* Date From */}
-              <input
-                type="date"
-                className="px-3 py-2 border rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                value={dateFrom}
-                onChange={(e)=>{ setDateFrom(e.target.value); setCurrentPage(1); }}
-                title="Registered from date"
-              />
+                {/* Source filter */}
+                {(() => {
+                  const options = Array.from(new Set(viewAll.map(getSourceValue))).filter(Boolean).sort();
+                  return (
+                    <select
+                      className="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 w-full"
+                      value={sourceFilter}
+                      onChange={(e)=>{ setSourceFilter(e.target.value); setCurrentPage(1); }}
+                      title="Filter by source"
+                    >
+                      <option value="all">All Sources</option>
+                      {options.map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  );
+                })()}
 
-              {/* Date To */}
-              <input
-                type="date"
-                className="px-3 py-2 border rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                value={dateTo}
-                onChange={(e)=>{ setDateTo(e.target.value); setCurrentPage(1); }}
-                title="Registered to date"
-              />
+                {/* Date From */}
+                <input
+                  type="date"
+                  className="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 w-full"
+                  value={dateFrom}
+                  onChange={(e)=>{ setDateFrom(e.target.value); setCurrentPage(1); }}
+                  title="Registered from date"
+                />
 
-              {/* Export CSV */}
-              <button
-                onClick={exportToCSV}
-                className="px-4 py-2 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 shadow"
-                title="Export filtered users to CSV"
-              >
-                Export CSV
-              </button>
+                {/* Date To */}
+                <input
+                  type="date"
+                  className="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 w-full"
+                  value={dateTo}
+                  onChange={(e)=>{ setDateTo(e.target.value); setCurrentPage(1); }}
+                  title="Registered to date"
+                />
+
+                {/* Export CSV */}
+                <button
+                  onClick={exportToCSV}
+                  className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow text-sm font-medium w-full"
+                  title="Export filtered users to CSV"
+                >
+                  Export CSV
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* User Table */}
-          <div className="bg-white rounded-xl shadow-2xl border-l-4 border-gradient-to-r from-red-400 to-red-600 p-6 w-full">
-            <div className="overflow-x-auto">
+          {/* User Table - Desktop View */}
+          <div className="bg-white rounded-xl shadow-2xl border-l-4 border-gradient-to-r from-red-400 to-red-600 p-4 sm:p-6 w-full">
+            {/* Desktop Table */}
+            <div className="hidden lg:block overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
@@ -489,7 +513,7 @@ const BlogUser = () => {
                       Email
                     </th>
                     <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Mobile Number
+                      Mobile
                     </th>
                     <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Date
@@ -500,9 +524,9 @@ const BlogUser = () => {
                     <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Email Verified
                     </th>
-                    <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    {/* <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Action
-                    </th>
+                    </th> */}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -592,7 +616,7 @@ const BlogUser = () => {
                             )}
                           </div>
                         </td>
-                        <td className="px-3 py-3 whitespace-nowrap text-center text-sm font-medium">
+                        {/* <td className="px-3 py-3 whitespace-nowrap text-center text-sm font-medium">
                           <Tippy
                             content={<span>View Property</span>}
                             animation="scale"
@@ -607,7 +631,7 @@ const BlogUser = () => {
                               Property
                             </button>
                           </Tippy>
-                        </td>
+                        </td> */}
                       </tr>
                     );
                   })}
@@ -615,43 +639,158 @@ const BlogUser = () => {
               </table>
             </div>
 
-            {/* Pagination */}
-            <div className="flex justify-center mt-8 gap-2 flex-wrap">
-              {(() => {
-                const totalPages = Math.ceil(filteredProjects.length / rowsPerPage) || 1;
-                const windowSize = 5; // how many pages to show around current
-                const start = Math.max(1, currentPage - Math.floor(windowSize / 2));
-                const end = Math.min(totalPages, start + windowSize - 1);
-                const pages = [];
-                for (let p = Math.max(1, end - windowSize + 1); p <= end; p++) pages.push(p);
+            {/* Mobile Card View */}
+            <div className="lg:hidden space-y-3">
+              {currentRows.map((item, index) => {
+                const serialNumber = indexOfFirstRow + index + 1;
+                const userId = item._id;
+                const meta = getRoleMeta(item.role);
                 return (
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => currentPage > 1 && paginate(currentPage - 1)}
-                      disabled={currentPage === 1}
-                      className={`px-4 py-2 rounded-lg font-medium border ${currentPage === 1 ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'}`}
-                    >
-                      Previous
-                    </button>
-                    {pages.map((p) => (
-                      <button
-                        key={p}
-                        onClick={() => paginate(p)}
-                        className={`w-10 h-10 rounded-lg font-semibold border ${currentPage === p ? 'bg-red-500 text-white border-red-500' : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'}`}
-                      >
-                        {p}
-                      </button>
-                    ))}
-                    <button
-                      onClick={() => currentPage < totalPages && paginate(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                      className={`px-4 py-2 rounded-lg font-medium border ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'}`}
-                    >
-                      Next
-                    </button>
+                  <div key={userId} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-semibold text-gray-500">#{serialNumber}</span>
+                        <h3 className="font-medium text-gray-900">{item.name || 'No name'}</h3>
+                      </div>
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium shadow-sm ${
+                        item.emailVerified
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : 'bg-yellow-100 text-yellow-700'
+                      }`}>
+                        {item.emailVerified ? 'Verified' : 'Unverified'}
+                      </span>
+                    </div>
+
+                    {/* Contact Info */}
+                    <div className="space-y-2 mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500 w-16">Email:</span>
+                        <span className="text-sm text-gray-800 truncate">{item.email}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500 w-16">Mobile:</span>
+                        <span className="text-sm text-gray-800">{item.mobile}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500 w-16">Date:</span>
+                        <span className="text-sm text-gray-800">{formatLastModified(item.createdAt)}</span>
+                      </div>
+                    </div>
+
+                    {/* Role and Actions */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500">Role:</span>
+                        <select
+                          className={`px-2 py-1 border rounded-full text-xs focus:outline-none focus:ring-2 focus:ring-red-500 ${getRoleClasses(item.role)} ${
+                            updatingRole[userId]
+                              ? "opacity-60 cursor-not-allowed"
+                              : ""
+                          }`}
+                          disabled={!!updatingRole[userId]}
+                          value={canonicalizeRole(item.role)}
+                          onChange={(e) =>
+                            handleRoleChange(userId, e.target.value)
+                          }
+                          title="Change user role"
+                        >
+                          {ROLE_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                        {updatingRole[userId] && (
+                          <span className="text-xs text-gray-500">Saving...</span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {!item.emailVerified && (
+                          <button
+                            className={`px-3 py-1 text-xs rounded-full ${verifyingEmail[userId] ? 'bg-gray-300 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'} text-white`}
+                            onClick={() => handleVerifyEmail(userId)}
+                            disabled={!!verifyingEmail[userId]}
+                            title="Mark email as verified"
+                          >
+                            {verifyingEmail[userId] ? 'Verifying...' : 'Verify'}
+                          </button>
+                        )}
+                        {/* <button 
+                          onClick={() => handleViewProperty(userId)}
+                          disabled={loadingProperties}
+                          className="inline-flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-red-400 to-red-600 text-white rounded-full shadow-md hover:from-red-500 hover:to-red-700 transition duration-200 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <MdVisibility className="text-sm" /> View
+                        </button> */}
+                      </div>
+                    </div>
                   </div>
                 );
-              })()}
+              })}
+            </div>
+
+            {/* Pagination - Mobile Friendly */}
+            <div className="flex flex-col sm:flex-row items-center justify-between mt-6 gap-4">
+              {/* Results count */}
+              <div className="text-sm text-gray-600 text-center sm:text-left">
+                Showing {indexOfFirstRow + 1} to {Math.min(indexOfLastRow, filteredProjects.length)} of {filteredProjects.length} results
+              </div>
+              
+              {/* Pagination controls */}
+              <div className="flex items-center gap-2 flex-wrap justify-center">
+                {(() => {
+                  const totalPages = Math.ceil(filteredProjects.length / rowsPerPage) || 1;
+                  const windowSize = 3; // Smaller window for mobile
+                  const start = Math.max(1, currentPage - Math.floor(windowSize / 2));
+                  const end = Math.min(totalPages, start + windowSize - 1);
+                  const pages = [];
+                  for (let p = Math.max(1, end - windowSize + 1); p <= end; p++) pages.push(p);
+                  return (
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      <button
+                        onClick={() => currentPage > 1 && paginate(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className={`px-3 py-1 sm:px-4 sm:py-2 rounded-lg font-medium border text-xs sm:text-sm ${
+                          currentPage === 1 
+                            ? 'bg-gray-100 text-gray-400 border-gray-200' 
+                            : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
+                        }`}
+                      >
+                        Previous
+                      </button>
+                      
+                      {/* Page numbers */}
+                      {pages.map((p) => (
+                        <button
+                          key={p}
+                          onClick={() => paginate(p)}
+                          className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg font-semibold border text-xs sm:text-sm ${
+                            currentPage === p 
+                              ? 'bg-red-500 text-white border-red-500' 
+                              : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      ))}
+                      
+                      <button
+                        onClick={() => currentPage < totalPages && paginate(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className={`px-3 py-1 sm:px-4 sm:py-2 rounded-lg font-medium border text-xs sm:text-sm ${
+                          currentPage === totalPages 
+                            ? 'bg-gray-100 text-gray-400 border-gray-200' 
+                            : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
+                        }`}
+                      >
+                        Next
+                      </button>
+                    </div>
+                  );
+                })()}
+              </div>
             </div>
           </div>
         </div>
