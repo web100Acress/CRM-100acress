@@ -1,5 +1,6 @@
 {
   "include": ["src"],
+  "exclude": ["src/layout/sidebar.tsx", "src/layout/Sidebar.tsx"],
   "compilerOptions": {
     "baseUrl": ".",
     "jsx": "react-jsx",
