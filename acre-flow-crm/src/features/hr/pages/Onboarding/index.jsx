@@ -32,6 +32,11 @@ import { DocumentationForm } from "./components/forms/DocumentationForm";
 // Import modals
 // (DocumentsModal and StageDetailsModal would be separate files)
 
+const DEFAULT_INTERVIEW_INSTRUCTIONS = `Please be available 10 minutes before the scheduled time.
+Keep a stable internet connection (for online interviews).
+Keep your resume and government ID handy.
+If you face any issue, reply to this email and we will assist you.`;
+
 const Onboarding = () => {
   const { list, filteredList, stats, loading, error, filterStatus, setFilterStatus, fetchList } = useOnboarding();
 
@@ -114,7 +119,7 @@ const Onboarding = () => {
       location: '',
       start: '',
       end: '',
-      message: '',
+      message: DEFAULT_INTERVIEW_INSTRUCTIONS,
       tasksRaw: '',
       panUrl: '', aadhaarUrl: '', photoUrl: '', marksheetUrl: '', other1: '', other2: '',
       joiningDate: it.joiningDate || '',
@@ -130,7 +135,7 @@ const Onboarding = () => {
       formData.location = stageInvite.location || '';
       formData.start = stageInvite.scheduledAt ? new Date(stageInvite.scheduledAt).toISOString().slice(0, 16) : '';
       formData.end = stageInvite.endsAt ? new Date(stageInvite.endsAt).toISOString().slice(0, 16) : '';
-      formData.message = stageInvite.content || '';
+      formData.message = stageInvite.content || DEFAULT_INTERVIEW_INSTRUCTIONS;
       formData.tasksRaw = stageInvite.tasks ? stageInvite.tasks.map(t => t.title).join('\n') : '';
     }
 
