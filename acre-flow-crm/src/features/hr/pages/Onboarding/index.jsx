@@ -37,6 +37,10 @@ Keep a stable internet connection (for online interviews).
 Keep your resume and government ID handy.
 If you face any issue, reply to this email and we will assist you.`;
 
+const DEFAULT_INTERVIEW_LOCATION = 'ILD Trade Center, 806 Near Malibu Town Sector 47, Gurugram 122018, Sohna Road';
+const DEFAULT_INTERVIEW_START_TIME = '11:30';
+const DEFAULT_INTERVIEW_END_TIME = '13:00';
+
 const Onboarding = () => {
   const { list, filteredList, stats, loading, error, filterStatus, setFilterStatus, fetchList } = useOnboarding();
 
@@ -116,7 +120,7 @@ const Onboarding = () => {
       stage: currentStage,
       mode: 'online',
       meetingLink: '',
-      location: '',
+      location: DEFAULT_INTERVIEW_LOCATION,
       start: '',
       end: '',
       message: DEFAULT_INTERVIEW_INSTRUCTIONS,
@@ -132,9 +136,20 @@ const Onboarding = () => {
       const stageInvite = it.stageData[currentStage].invite;
       formData.mode = stageInvite.type || 'online';
       formData.meetingLink = stageInvite.meetingLink || '';
-      formData.location = stageInvite.location || '';
+      formData.location = stageInvite.location || DEFAULT_INTERVIEW_LOCATION;
       formData.start = stageInvite.scheduledAt ? new Date(stageInvite.scheduledAt).toISOString().slice(0, 16) : '';
       formData.end = stageInvite.endsAt ? new Date(stageInvite.endsAt).toISOString().slice(0, 16) : '';
+
+      // Set default times if empty
+      if (!formData.start && !formData.end) {
+        const today = new Date();
+        const startDate = new Date(today);
+        startDate.setHours(11, 30, 0, 0);
+        const endDate = new Date(today);
+        endDate.setHours(13, 0, 0, 0);
+        formData.start = startDate.toISOString().slice(0, 16);
+        formData.end = endDate.toISOString().slice(0, 16);
+      }
       formData.message = stageInvite.content || DEFAULT_INTERVIEW_INSTRUCTIONS;
       formData.tasksRaw = stageInvite.tasks ? stageInvite.tasks.map(t => t.title).join('\n') : '';
     }
