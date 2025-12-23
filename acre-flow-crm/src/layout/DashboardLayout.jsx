@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { Menu, Bell, Search } from "lucide-react";
-import Sidebar from "./Sidebar";
+import Sidebar from "./Sidebar.jsx";
 import '@/styles/DashboardLayout.css'
 
 const DashboardLayout = ({ children, userRole = "employee" }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isInstallable, setIsInstallable] = useState(false);
 
   const userName =
     typeof window !== "undefined" ? localStorage.getItem("userName") : "";
@@ -20,6 +22,35 @@ const DashboardLayout = ({ children, userRole = "employee" }) => {
       case "employee": return "Employee";
       default: return "User";
     }
+  };
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (event) => {
+      event.preventDefault();
+      setDeferredPrompt(event);
+      setIsInstallable(true);
+    };
+
+    const handleAppInstalled = () => {
+      setDeferredPrompt(null);
+      setIsInstallable(false);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleAppInstalled);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", handleAppInstalled);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    setDeferredPrompt(null);
+    setIsInstallable(false);
   };
 
   useEffect(() => {
@@ -90,6 +121,11 @@ const DashboardLayout = ({ children, userRole = "employee" }) => {
                 className="search-input"
               />
             </div>
+            {isInstallable && (
+              <button onClick={handleInstallClick} className="install-button">
+                Install
+              </button>
+            )}
             <button className="notification-button">
               <Bell className="bell-icon" />
               <span className="notification-dot"></span>
