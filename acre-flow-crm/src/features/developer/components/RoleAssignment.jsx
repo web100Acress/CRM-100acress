@@ -21,6 +21,8 @@ const RoleAssignment = () => {
     allowedModules: [],
     permissions: [],
   });
+  const [accessPreset, setAccessPreset] = useState('custom');
+  const [editAccessPreset, setEditAccessPreset] = useState('custom');
   const [loading, setLoading] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -125,6 +127,28 @@ const RoleAssignment = () => {
       { id: 'crm_admin', label: 'CRM Admin' },
       { id: 'super-admin', label: 'Super Admin' },
     ],
+  };
+
+  const applyAccessPreset = (preset, setState, currentState) => {
+    const nextPreset = preset || 'custom';
+    if (nextPreset === 'mixed') {
+      const mods = ['Admin', 'HR', 'Blog'];
+      setState({
+        ...currentState,
+        allowedModules: mods,
+        permissions: getDefaultPermissionsForModules(mods),
+      });
+      return;
+    }
+    if (nextPreset === 'all') {
+      const mods = MODULE_OPTIONS.map((x) => x.id);
+      setState({
+        ...currentState,
+        allowedModules: mods,
+        permissions: getDefaultPermissionsForModules(mods),
+      });
+      return;
+    }
   };
 
   const handleAddAssignment = async (e) => {
@@ -410,8 +434,8 @@ const RoleAssignment = () => {
                   ...formData,
                   department: dept,
                   role: '',
-                  allowedModules: defaultModules,
-                  permissions: getDefaultPermissionsForModules(defaultModules),
+                  allowedModules: accessPreset === 'custom' ? defaultModules : formData.allowedModules,
+                  permissions: accessPreset === 'custom' ? getDefaultPermissionsForModules(defaultModules) : formData.permissions,
                 });
               }}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -423,6 +447,20 @@ const RoleAssignment = () => {
                   {dept.label}
                 </option>
               ))}
+            </select>
+            <select
+              value={accessPreset}
+              onChange={(e) => {
+                const preset = e.target.value;
+                setAccessPreset(preset);
+                if (preset === 'custom') return;
+                applyAccessPreset(preset, setFormData, formData);
+              }}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            >
+              <option value="custom">Custom Access</option>
+              <option value="mixed">Mixed (Admin + HR + Blog)</option>
+              <option value="all">All Modules</option>
             </select>
             <div className="md:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
@@ -686,6 +724,23 @@ const RoleAssignment = () => {
                                         {role.label}
                                       </option>
                                     ))}
+                                </select>
+                              </div>
+                              <div className="sm:col-span-2">
+                                <label className="block text-xs font-semibold text-gray-700 mb-1">Access Preset</label>
+                                <select
+                                  value={editAccessPreset}
+                                  onChange={(e) => {
+                                    const preset = e.target.value;
+                                    setEditAccessPreset(preset);
+                                    if (preset === 'custom') return;
+                                    applyAccessPreset(preset, setEditFormData, editFormData);
+                                  }}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                  <option value="custom">Custom Access</option>
+                                  <option value="mixed">Mixed (Admin + HR + Blog)</option>
+                                  <option value="all">All Modules</option>
                                 </select>
                               </div>
                             </div>
