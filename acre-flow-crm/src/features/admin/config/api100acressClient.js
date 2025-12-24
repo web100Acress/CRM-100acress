@@ -1,14 +1,13 @@
 import axios from 'axios';
 
-// Use CRM proxy endpoint instead of direct 100acress API
 const baseURL =
-  import.meta.env?.VITE_CRM_API_BASE_URL ||
+  import.meta.env?.VITE_100ACRESS_API_BASE_URL ||
   (window.location.hostname === 'localhost'
-    ? 'http://localhost:5001'
-    : 'https://bcrm.100acress.com');
+    ? 'http://localhost:3500'
+    : 'https://api.100acress.com');
 
 const api100acress = axios.create({
-  baseURL, // This client now uses CRM proxy for 100acress Backend
+  baseURL, // This client is for 100acress Backend (port 3500) for user data etc.
   headers: {
     'Content-Type': 'application/json',
   },
