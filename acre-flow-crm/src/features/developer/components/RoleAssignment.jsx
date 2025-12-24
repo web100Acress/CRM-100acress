@@ -129,6 +129,12 @@ const RoleAssignment = () => {
 
   const handleAddAssignment = async (e) => {
     e.preventDefault();
+
+    if (!formData.department || !formData.role) {
+      setMessage('❌ Please select both Department and Role before assigning.');
+      return;
+    }
+
     setLoading(true);
     setMessage('');
 
@@ -311,11 +317,6 @@ const RoleAssignment = () => {
     fetchAssignments();
   };
 
-  const handleFormSubmit = (e) => {
-    e.preventDefault();
-    handleAddAssignment(e);
-  };
-
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
@@ -370,7 +371,7 @@ const RoleAssignment = () => {
       {showForm && (
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-bold text-gray-900 mb-4">Assign New Role</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form onSubmit={handleAddAssignment} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
               type="email"
               placeholder="Email Address"
@@ -389,7 +390,6 @@ const RoleAssignment = () => {
             />
             <select
               value={formData.department}
-
               onChange={(e) => {
                 const dept = e.target.value;
                 const defaultModules = getDefaultModulesForDepartment(dept);
@@ -404,7 +404,6 @@ const RoleAssignment = () => {
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               required
             >
-
               <option value="">Select Department</option>
               {departments.map((dept) => (
                 <option key={dept.id} value={dept.id}>
@@ -517,7 +516,7 @@ const RoleAssignment = () => {
             </select>
             <div className="md:col-span-2 flex gap-2">
               <button
-                onClick={handleFormSubmit}
+                type="submit"
                 disabled={loading}
                 className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
@@ -525,6 +524,7 @@ const RoleAssignment = () => {
               </button>
 
               <button
+                type="button"
                 onClick={() => setShowForm(false)}
                 disabled={loading}
                 className="flex-1 px-4 py-2 bg-gray-300 text-gray-900 rounded-lg hover:bg-gray-400 transition disabled:bg-gray-200 disabled:cursor-not-allowed"
@@ -532,7 +532,7 @@ const RoleAssignment = () => {
                 Cancel
               </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
 
