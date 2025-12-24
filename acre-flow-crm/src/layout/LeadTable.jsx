@@ -905,7 +905,7 @@ const LeadTable = ({ userRole }) => {
         open={!!chainModalLead}
         onOpenChange={() => setChainModalLead(null)}
       >
-        <DialogContent className="lead-chain-dialog-content">
+        <DialogContent className="lead-chain-dialog-content w-full max-w-lg sm:max-w-2xl mx-3 sm:mx-auto px-3 sm:px-6 py-4">
           <DialogHeader>
             <DialogTitle className="lead-chain-dialog-title">
               Assignment Chain for {chainModalLead?.name}

@@ -19,7 +19,7 @@
       box-shadow: 0 10px 40px rgba(0,0,0,0.15);
       padding: 20px;
       width: 100%;
-      max-width: 400px;
+      max-width: 520px;
       max-height: 85vh;
       overflow-y: auto;
       position: relative;
@@ -84,7 +84,7 @@
     .form-row .form-group {
       flex: 1;
     }
-    @media (max-width: 320px) {
+    @media (max-width: 520px) {
       .form-row {
         flex-direction: column;
         gap: 16px;
