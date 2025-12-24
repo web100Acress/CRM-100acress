@@ -2,7 +2,8 @@
   // All API endpoint URLs are defined here for easy maintenance
 
   // const BASE_URL = 'http://localhost:5001';
-  const BASE_URL = 'https://bcrm.100acress.com/';
+  // Use live backend without trailing slash to avoid double slashes in paths
+  const BASE_URL = 'https://bcrm.100acress.com';
 
   export const ENDPOINTS = {
     // Auth endpoints
@@ -30,15 +31,15 @@
 
     // Leads endpoints
     LEADS: {
-      LIST: `${BASE_URL}/leads`,
-      CREATE: `${BASE_URL}/leads`,
-      GET_BY_ID: (id) => `${BASE_URL}/leads/${id}`,
-      UPDATE: (id) => `${BASE_URL}/leads/${id}`,
-      DELETE: (id) => `${BASE_URL}/leads/${id}`,
-      ASSIGN: (id) => `${BASE_URL}/leads/${id}/assign`,
-      FOLLOW_UPS: (id) => `${BASE_URL}/leads/${id}/followups`,
-      ADD_FOLLOW_UP: (id) => `${BASE_URL}/leads/${id}/followups`,
-      ASSIGNABLE_USERS: `${BASE_URL}/leads/assignable-users`,
+      LIST: `${BASE_URL}/api/leads`,
+      CREATE: `${BASE_URL}/api/leads`,
+      GET_BY_ID: (id) => `${BASE_URL}/api/leads/${id}`,
+      UPDATE: (id) => `${BASE_URL}/api/leads/${id}`,
+      DELETE: (id) => `${BASE_URL}/api/leads/${id}`,
+      ASSIGN: (id) => `${BASE_URL}/api/leads/${id}/assign`,
+      FOLLOW_UPS: (id) => `${BASE_URL}/api/leads/${id}/followups`,
+      ADD_FOLLOW_UP: (id) => `${BASE_URL}/api/leads/${id}/followups`,
+      ASSIGNABLE_USERS: `${BASE_URL}/api/leads/assignable-users`,
     },
 
     // Tickets endpoints

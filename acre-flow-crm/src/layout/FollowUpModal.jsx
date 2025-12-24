@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { X, Send } from "lucide-react";
 import ReactDOM from "react-dom";
-import '@/styles/FollowUpModal.css'
+import { ENDPOINTS } from "@/api/endpoints";
 
 const FollowUpModal = ({ lead, onClose, userRole }) => {
   const userName = localStorage.getItem('userName') || '';
@@ -38,7 +38,7 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
         place: formData.place,
         relatedTo: formData.relatedTo,
       };
-      const res = await fetch(`http://localhost:5001/api/leads/${lead._id}/followups`, {
+      const res = await fetch(ENDPOINTS.LEADS.ADD_FOLLOW_UP(lead._id), {
         method: "POST",
 
 
@@ -65,27 +65,37 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
   return ReactDOM.createPortal(
     <>
       {/* Backdrop */}
-      <div className="modal-backdrop"></div>
+      <div className="fixed inset-0 bg-black/40 z-40" />
 
       {/* Modal Container */}
-      <div className="modal-container">
-        <div className="modal-box">
-          <button className="modal-close" onClick={onClose}>
-            <X className="icon" />
+      <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="relative w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl bg-white shadow-2xl mx-4 p-6">
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition"
+          >
+            <X className="h-4 w-4" />
           </button>
 
-          <h2 className="modal-title">Follow-up</h2>
+          <h2 className="mb-6 text-center text-2xl font-semibold text-blue-700">Follow-up</h2>
 
-          <form onSubmit={handleSubmit} className="form">
-            {error && <div className="form-error">{error}</div>}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {error && (
+              <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {error}
+              </div>
+            )}
 
-            <div className="form-group">
-              <label htmlFor="comment">Comment</label>
+            <div className="flex flex-col gap-2">
+              <label htmlFor="comment" className="text-sm font-medium text-gray-700">
+                Comment
+              </label>
               <textarea
                 id="comment"
                 name="comment"
                 rows="3"
-                className="form-textarea"
+                className="min-h-[90px] w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:bg-gray-100"
                 value={formData.comment}
                 onChange={handleChange}
                 required
@@ -94,26 +104,30 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
               />
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="date">Date</label>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="flex flex-col gap-2">
+                <label htmlFor="date" className="text-sm font-medium text-gray-700">
+                  Date
+                </label>
                 <input
                   type="date"
                   id="date"
                   name="date"
-                  className="form-input"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
                   value={formData.date}
                   onChange={handleChange}
                   required
                 />
               </div>
-              <div className="form-group">
-                <label htmlFor="time">Time</label>
+              <div className="flex flex-col gap-2">
+                <label htmlFor="time" className="text-sm font-medium text-gray-700">
+                  Time
+                </label>
                 <input
                   type="time"
                   id="time"
                   name="time"
-                  className="form-input"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
                   value={formData.time}
                   onChange={handleChange}
                   required
@@ -121,13 +135,15 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
               </div>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="place">Meeting Place</label>
+            <div className="flex flex-col gap-2">
+              <label htmlFor="place" className="text-sm font-medium text-gray-700">
+                Meeting Place
+              </label>
               <input
                 type="text"
                 id="place"
                 name="place"
-                className="form-input"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
                 value={formData.place}
                 onChange={handleChange}
                 placeholder="e.g., Online Meeting, Client Office"
@@ -136,17 +152,19 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
 
             <button
               type="submit"
-              className="submit-btn"
               disabled={loading}
+              className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
             >
               {loading ? (
                 <>
-                  <span className="spinner"><Send className="icon" /></span>
+                  <span className="inline-block animate-spin">
+                    <Send className="h-4 w-4" />
+                  </span>
                   Submitting...
                 </>
               ) : (
                 <>
-                  <Send className="icon" />
+                  <Send className="h-4 w-4" />
                   Add Follow-up
                 </>
               )}
@@ -154,9 +172,6 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
           </form>
         </div>
       </div>
-
-      {/* CSS Styles */}
-      
     </>,
     document.body
   );
