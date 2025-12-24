@@ -415,7 +415,30 @@ const RoleAssignment = () => {
               <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-sm font-semibold text-gray-900">Module Access</p>
-                  <span className="text-xs text-gray-500">Select modules</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const allModules = MODULE_OPTIONS.map((x) => x.id);
+                        setFormData({
+                          ...formData,
+                          allowedModules: allModules,
+                          permissions: getDefaultPermissionsForModules(allModules),
+                        });
+                      }}
+                      className="text-xs font-medium text-blue-700 hover:text-blue-800"
+                    >
+                      Select All
+                    </button>
+                    <span className="text-xs text-gray-300">|</span>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, allowedModules: [], permissions: [] })}
+                      className="text-xs font-medium text-gray-600 hover:text-gray-800"
+                    >
+                      Clear
+                    </button>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   {MODULE_OPTIONS.map((m) => {
@@ -459,7 +482,32 @@ const RoleAssignment = () => {
               <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-sm font-semibold text-gray-900">Allowed Sidebar Options</p>
-                  <span className="text-xs text-gray-500">Select pages</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const allowed = normalizeModules(formData.allowedModules);
+                        const allPerms = getPermissionsForSelectedModules(allowed).map((p) => p.id);
+                        setFormData({
+                          ...formData,
+                          permissions: Array.from(new Set(allPerms)),
+                        });
+                      }}
+                      className="text-xs font-medium text-blue-700 hover:text-blue-800"
+                      disabled={normalizeModules(formData.allowedModules).length === 0}
+                    >
+                      Select All
+                    </button>
+                    <span className="text-xs text-gray-300">|</span>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, permissions: [] })}
+                      className="text-xs font-medium text-gray-600 hover:text-gray-800"
+                      disabled={formData.permissions.length === 0}
+                    >
+                      Clear
+                    </button>
+                  </div>
                 </div>
                 <div className="max-h-56 overflow-auto pr-1">
                   <div className="grid grid-cols-1 gap-2">
@@ -633,7 +681,30 @@ const RoleAssignment = () => {
                               <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                                 <div className="flex items-center justify-between mb-3">
                                   <p className="text-sm font-semibold text-gray-900">Module Access</p>
-                                  <span className="text-xs text-gray-500">Select modules</span>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const allModules = MODULE_OPTIONS.map((x) => x.id);
+                                        setEditFormData({
+                                          ...editFormData,
+                                          allowedModules: allModules,
+                                          permissions: getDefaultPermissionsForModules(allModules),
+                                        });
+                                      }}
+                                      className="text-xs font-medium text-blue-700 hover:text-blue-800"
+                                    >
+                                      Select All
+                                    </button>
+                                    <span className="text-xs text-gray-300">|</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditFormData({ ...editFormData, allowedModules: [], permissions: [] })}
+                                      className="text-xs font-medium text-gray-600 hover:text-gray-800"
+                                    >
+                                      Clear
+                                    </button>
+                                  </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-3">
                                   {MODULE_OPTIONS.map((m) => {
@@ -652,17 +723,17 @@ const RoleAssignment = () => {
                                           className="h-4 w-4"
                                           checked={checked}
                                           onChange={(e) => {
-                                            const next = e.target.checked
+                                            const nextModules = e.target.checked
                                               ? [...editFormData.allowedModules, m.id]
                                               : editFormData.allowedModules.filter((x) => x !== m.id);
-                                            const allowedSet = new Set(normalizeModules(next));
+                                            const allowedSet = new Set(normalizeModules(nextModules));
                                             const nextPermissions = editFormData.permissions.filter((p) => {
                                               const meta = PERMISSION_OPTIONS.find((x) => x.id === p);
                                               return meta ? allowedSet.has(meta.module) : true;
                                             });
                                             setEditFormData({
                                               ...editFormData,
-                                              allowedModules: next,
+                                              allowedModules: nextModules,
                                               permissions: nextPermissions,
                                             });
                                           }}
@@ -677,7 +748,32 @@ const RoleAssignment = () => {
                               <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                                 <div className="flex items-center justify-between mb-3">
                                   <p className="text-sm font-semibold text-gray-900">Allowed Sidebar Options</p>
-                                  <span className="text-xs text-gray-500">Select pages</span>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const allowed = normalizeModules(editFormData.allowedModules);
+                                        const allPerms = getPermissionsForSelectedModules(allowed).map((p) => p.id);
+                                        setEditFormData({
+                                          ...editFormData,
+                                          permissions: Array.from(new Set(allPerms)),
+                                        });
+                                      }}
+                                      className="text-xs font-medium text-blue-700 hover:text-blue-800"
+                                      disabled={normalizeModules(editFormData.allowedModules).length === 0}
+                                    >
+                                      Select All
+                                    </button>
+                                    <span className="text-xs text-gray-300">|</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditFormData({ ...editFormData, permissions: [] })}
+                                      className="text-xs font-medium text-gray-600 hover:text-gray-800"
+                                      disabled={editFormData.permissions.length === 0}
+                                    >
+                                      Clear
+                                    </button>
+                                  </div>
                                 </div>
                                 <div className="max-h-56 overflow-auto pr-1">
                                   <div className="grid grid-cols-1 gap-2">
