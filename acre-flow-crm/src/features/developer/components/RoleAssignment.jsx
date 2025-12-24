@@ -310,6 +310,12 @@ const RoleAssignment = () => {
     return getDepartmentColor(deptId);
   };
 
+  const getRoleDisplay = (role, allowedModules) => {
+    const mods = normalizeModules(allowedModules);
+    if (mods.length > 1) return 'CUSTOM ACCESS';
+    return (role || '').replace(/_/g, ' ').toUpperCase();
+  };
+
   useEffect(() => {
     fetchAssignments();
   }, []);
@@ -897,7 +903,7 @@ const RoleAssignment = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <p className="text-gray-900 font-medium">{assignment.role.replace(/_/g, ' ').toUpperCase()}</p>
+                          <p className="text-gray-900 font-medium">{getRoleDisplay(assignment.role, assignment.allowedModules)}</p>
                           {Array.isArray(assignment.allowedModules) && assignment.allowedModules.length > 0 && (
                             <div className="mt-1 flex flex-wrap gap-1">
                               {assignment.allowedModules.slice(0, 4).map((m) => (
@@ -996,7 +1002,7 @@ const RoleAssignment = () => {
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-600">Role</p>
-                <p className="text-gray-900 font-medium">{viewingAssignment.role.replace(/_/g, ' ').toUpperCase()}</p>
+                <p className="text-gray-900 font-medium">{getRoleDisplay(viewingAssignment.role, viewingAssignment.allowedModules)}</p>
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-600">Modules</p>
