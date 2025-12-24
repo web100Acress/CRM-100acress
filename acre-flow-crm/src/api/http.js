@@ -22,14 +22,7 @@ httpClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
-      // Basic token validation - check if it's not empty or malformed
-      if (token.trim() && token !== 'null' && token !== 'undefined') {
-        config.headers.Authorization = `Bearer ${token}`;
-      } else {
-        // Remove invalid token
-        localStorage.removeItem('token');
-        localStorage.removeItem('isLoggedIn');
-      }
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -44,75 +37,17 @@ httpClient.interceptors.response.use(
     // Return the response data directly for convenience
     return response.data;
   },
-  async (error) => {
+  (error) => {
     // Handle common error scenarios
     if (error.response) {
       const { status, data } = error.response;
       
-      // Handle authentication errors - be more intelligent about when to logout
+      // Handle authentication errors
       if (status === 401) {
-        // Check if this is an auth endpoint - don't auto-logout from these
-        const isAuthEndpoint = error.config?.url?.includes('/login') || 
-                             error.config?.url?.includes('/auth') ||
-                             error.config?.url?.includes('/register');
-        
-        // Check if error message indicates token expiration vs other auth issues
-        const errorMessage = data?.message || '';
-        const isTokenExpired = errorMessage.toLowerCase().includes('expired') || 
-                              errorMessage.toLowerCase().includes('token expired');
-        const isTokenNotFound = errorMessage.toLowerCase().includes('not found') || 
-                               errorMessage.toLowerCase().includes('no token') ||
-                               errorMessage.toLowerCase().includes('token not provided');
-        
-        // For token not found errors, try to refresh token once before failing
-        if (!isAuthEndpoint && isTokenNotFound && !error.config.__isRetry) {
-          error.config.__isRetry = true;
-          
-          // Try to get a fresh token by checking if user has valid session
-          const user = localStorage.getItem('user');
-          const isLoggedIn = localStorage.getItem('isLoggedIn');
-          
-          // If user exists and is logged in, try to continue with current token
-          if (user && isLoggedIn === 'true') {
-            // The session exists but token is missing - try to get a new token
-            // This could be from a refresh endpoint or by re-authenticating silently
-            try {
-              // For now, let's try to continue with a basic auth header or clear the error
-              const token = localStorage.getItem('token');
-              if (token && token.trim() && token !== 'null' && token !== 'undefined') {
-                error.config.headers.Authorization = `Bearer ${token}`;
-                return httpClient(error.config);
-              }
-            } catch (retryError) {
-              // Retry failed, proceed with normal error handling
-            }
-          }
-        }
-        
-        // Only clear token and redirect if it's clearly an auth issue and not an auth endpoint
-        if (!isAuthEndpoint && (isTokenExpired || (isTokenNotFound && error.config.__isRetry))) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('isLoggedIn');
-          localStorage.removeItem('user');
-          localStorage.removeItem('role');
-          localStorage.removeItem('refreshToken');
-          
-          // Use current domain for production compatibility
-          const currentPath = window.location.pathname;
-          if (currentPath !== '/login') {
-            window.location.href = '/login';
-          }
-          
-          return Promise.reject(new Error('Your session has expired. Please login again.'));
-        }
-        
-        // For other 401 errors, return a more user-friendly message that doesn't immediately suggest login
-        return Promise.reject({
-          isAuthError: true,
-          requiresAuth: true,
-          message: 'Unable to authenticate. Please check your connection and try again.',
-          shouldRetry: !isAuthEndpoint && isTokenNotFound && !error.config.__isRetry
-        });
+        localStorage.removeItem('token');
+        localStorage.removeItem('isLoggedIn');
+        window.location.href = '/login';
+        return Promise.reject(new Error('Authentication failed. Please login again.'));
       }
       
       // Handle forbidden errors

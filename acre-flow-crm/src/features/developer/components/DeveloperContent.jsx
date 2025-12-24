@@ -600,8 +600,7 @@
           return;
         }
         try {
-          // Use CRM proxy endpoint instead of direct 100acress API
-          const response = await fetch("https://bcrm.100acress.com/users/external/100acress-users", {
+          const response = await fetch("https://api.100acress.com/userViewAll?limit=2000", {
             headers: {
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
@@ -623,8 +622,7 @@
 
       const downloadExelFile = async () => {
         try {
-          // Use CRM proxy endpoint for download as well
-          const response = await fetch("https://bcrm.100acress.com/users/external/100acress-users/download", {
+          const response = await fetch("https://api.100acress.com/userViewAll/dowloadData", {
             headers: {
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
