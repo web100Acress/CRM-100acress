@@ -88,15 +88,22 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
     ]
   };
 
+  // Build module-based navigation only for roles that should see cross-module items
   const moduleNav = [];
-  if (isFullAccess || hasModule('Sales')) moduleNav.push(...navigationItems.sales);
-  if (isFullAccess || hasModule('HR')) moduleNav.push(...navigationItems.hr);
-  if (isFullAccess || hasModule('Blog')) moduleNav.push(...navigationItems.blog);
-  if (isFullAccess || hasModule('Admin')) moduleNav.push(...navigationItems.admin);
+  if (userRole !== 'team-leader' && userRole !== 'employee') {
+    if (isFullAccess || hasModule('Sales')) moduleNav.push(...navigationItems.sales);
+    if (isFullAccess || hasModule('HR')) moduleNav.push(...navigationItems.hr);
+    if (isFullAccess || hasModule('Blog')) moduleNav.push(...navigationItems.blog);
+    if (isFullAccess || hasModule('Admin')) moduleNav.push(...navigationItems.admin);
+  }
 
   const filteredModuleNav = moduleNav.filter((it) => !it.permission || hasPermission(it.permission));
 
-  const navItems = filteredModuleNav.length > 0 ? filteredModuleNav : (navigationItems[userRole] || navigationItems['employee']);
+  // For team-leader and employee, always use role-specific navigation
+  const navItems =
+    userRole === 'team-leader' || userRole === 'employee'
+      ? (navigationItems[userRole] || navigationItems['employee'])
+      : (filteredModuleNav.length > 0 ? filteredModuleNav : (navigationItems[userRole] || navigationItems['employee']));
 
   const getRoleDisplayName = (role) => {
     switch (role) {
