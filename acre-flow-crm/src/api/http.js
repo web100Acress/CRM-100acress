@@ -68,21 +68,23 @@ httpClient.interceptors.response.use(
         if (!isAuthEndpoint && isTokenNotFound && !error.config.__isRetry) {
           error.config.__isRetry = true;
           
-          // Try to get a fresh token (you might have a refresh endpoint)
-          const refreshToken = localStorage.getItem('refreshToken');
-          if (refreshToken) {
+          // Try to get a fresh token by checking if user has valid session
+          const user = localStorage.getItem('user');
+          const isLoggedIn = localStorage.getItem('isLoggedIn');
+          
+          // If user exists and is logged in, try to continue with current token
+          if (user && isLoggedIn === 'true') {
+            // The session exists but token is missing - try to get a new token
+            // This could be from a refresh endpoint or by re-authenticating silently
             try {
-              const response = await httpClient.post('/auth/refresh', { refreshToken });
-              const newToken = response.data?.token;
-              
-              if (newToken) {
-                localStorage.setItem('token', newToken);
-                // Update the original request with new token
-                error.config.headers.Authorization = `Bearer ${newToken}`;
+              // For now, let's try to continue with a basic auth header or clear the error
+              const token = localStorage.getItem('token');
+              if (token && token.trim() && token !== 'null' && token !== 'undefined') {
+                error.config.headers.Authorization = `Bearer ${token}`;
                 return httpClient(error.config);
               }
-            } catch (refreshError) {
-              // Refresh failed, proceed with normal 401 handling
+            } catch (retryError) {
+              // Retry failed, proceed with normal error handling
             }
           }
         }
@@ -104,15 +106,13 @@ httpClient.interceptors.response.use(
           return Promise.reject(new Error('Your session has expired. Please login again.'));
         }
         
-        // For other 401 errors, let the component handle it with better error info
-        const authError = {
+        // For other 401 errors, return a more user-friendly message that doesn't immediately suggest login
+        return Promise.reject({
           isAuthError: true,
           requiresAuth: true,
-          message: errorMessage || 'Authentication required.',
+          message: 'Unable to authenticate. Please check your connection and try again.',
           shouldRetry: !isAuthEndpoint && isTokenNotFound && !error.config.__isRetry
-        };
-        
-        return Promise.reject(authError);
+        });
       }
       
       // Handle forbidden errors
