@@ -135,6 +135,8 @@ const RoleAssignment = () => {
       const mods = ['Admin', 'HR', 'Blog'];
       setState({
         ...currentState,
+        department: currentState.department || 'admin',
+        role: currentState.role || 'admin',
         allowedModules: mods,
         permissions: getDefaultPermissionsForModules(mods),
       });
@@ -144,6 +146,8 @@ const RoleAssignment = () => {
       const mods = MODULE_OPTIONS.map((x) => x.id);
       setState({
         ...currentState,
+        department: currentState.department || 'admin',
+        role: currentState.role || 'admin',
         allowedModules: mods,
         permissions: getDefaultPermissionsForModules(mods),
       });
@@ -445,7 +449,8 @@ const RoleAssignment = () => {
                 });
               }}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              required
+              required={accessPreset === 'custom'}
+              disabled={accessPreset !== 'custom'}
             >
               <option value="">Select Department</option>
               {departments.map((dept) => (
@@ -477,8 +482,11 @@ const RoleAssignment = () => {
                       type="button"
                       onClick={() => {
                         const allModules = MODULE_OPTIONS.map((x) => x.id);
+                        setAccessPreset('all');
                         setFormData({
                           ...formData,
+                          department: formData.department || 'admin',
+                          role: formData.role || 'admin',
                           allowedModules: allModules,
                           permissions: getDefaultPermissionsForModules(allModules),
                         });
@@ -608,8 +616,8 @@ const RoleAssignment = () => {
               value={formData.role}
               onChange={(e) => setFormData({ ...formData, role: e.target.value })}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              required
-              disabled={!formData.department}
+              required={accessPreset === 'custom'}
+              disabled={accessPreset !== 'custom' || !formData.department}
             >
               <option value="">Select Role</option>
               {formData.department &&
@@ -708,6 +716,7 @@ const RoleAssignment = () => {
                                   value={editFormData.department}
                                   onChange={(e) => setEditFormData({ ...editFormData, department: e.target.value, role: '' })}
                                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  disabled={editAccessPreset !== 'custom'}
                                 >
                                   {departments.map((dept) => (
                                     <option key={dept.id} value={dept.id}>
@@ -722,6 +731,7 @@ const RoleAssignment = () => {
                                   value={editFormData.role}
                                   onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
                                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  disabled={editAccessPreset !== 'custom'}
                                 >
                                   <option value="">Select Role</option>
                                   {editFormData.department &&
@@ -760,8 +770,11 @@ const RoleAssignment = () => {
                                       type="button"
                                       onClick={() => {
                                         const allModules = MODULE_OPTIONS.map((x) => x.id);
+                                        setEditAccessPreset('all');
                                         setEditFormData({
                                           ...editFormData,
+                                          department: editFormData.department || 'admin',
+                                          role: editFormData.role || 'admin',
                                           allowedModules: allModules,
                                           permissions: getDefaultPermissionsForModules(allModules),
                                         });
