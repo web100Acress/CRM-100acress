@@ -32,7 +32,9 @@ const JobPosting = () => {
 
   const fetchJobOpenings = async () => {
     try {
-      const res = await api100acress.get("/career/opening/ViewAll");
+      const res = await api100acress.get("/career/opening/ViewAll", {
+        params: { page: 1, limit: 100, includeManualOnboarding: 1 },
+      });
       const list = res?.data?.data || [];
       setJobList(list);
       loadApplicantsSummary(list);
