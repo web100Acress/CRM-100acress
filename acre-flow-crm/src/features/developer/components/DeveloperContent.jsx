@@ -1223,14 +1223,19 @@
         <>
           <div className="developer-console">
             <div className="console-header">
+              <div className="console-heading">
+                <div>
+                  <h1 className="console-title">Developer Console</h1>
+                  <p className="console-subtitle">Manage roles, employees, and system tools in one place</p>
+                </div>
+              </div>
               {/* Hamburger for mobile */}
               <button
                 className="hamburger-btn"
                 onClick={() => setSidebarOpen(true)}
-                style={{ display: 'none' }}
                 aria-label="Open navigation menu"
               >
-                <Menu size={28} />
+                <Menu size={22} />
               </button>
             </div>
 
@@ -1238,18 +1243,14 @@
               {/* Sidebar/Nav Panel */}
               <div
                 className={`nav-panel${sidebarOpen ? ' open' : ''}`}
-                style={{
-                  display: sidebarOpen ? 'block' : '',
-                }}
               >
                 {/* Close button for mobile */}
                 <button
                   className="close-sidebar-btn"
                   onClick={() => setSidebarOpen(false)}
-                  style={{ display: 'none' }}
                   aria-label="Close navigation menu"
                 >
-                  <X size={28} />
+                  <X size={20} />
                 </button>
                 <CardContent className="nav-content">
                   <nav className="nav-menu">
