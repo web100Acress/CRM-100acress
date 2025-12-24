@@ -412,7 +412,7 @@ const LeadTable = ({ userRole }) => {
           onClick={exportToCSV}
           disabled={isExporting || filteredLeads.length === 0}
           variant="outline"
-          className="lead-export-button"
+          className="lead-export-button text-white"
         >
           <Download className="lead-export-icon" />
           {isExporting ? "Exporting..." : "Export to CSV"}
