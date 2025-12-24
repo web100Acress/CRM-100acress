@@ -29,34 +29,8 @@ const Login = () => {
 
   const navigate = null; // Remove navigate for demo
 
-  // Helper function to redirect based on allowed modules first, then role as fallback
-  const redirectBasedOnRole = (role, allowedModulesFromBackend) => {
-    const mods = Array.isArray(allowedModulesFromBackend)
-      ? allowedModulesFromBackend
-      : [];
-
-    // If backend has explicit module access configured, use that to choose dashboard.
-    // Priority order: HR -> Sales -> Blog -> Admin
-    if (mods.length > 0) {
-      if (mods.includes("HR")) {
-        window.location.href = "/hr-dashboard";
-        return;
-      }
-      if (mods.includes("Sales")) {
-        window.location.href = "/sales-head-dashboard";
-        return;
-      }
-      if (mods.includes("Blog")) {
-        window.location.href = "/blog-dashboard";
-        return;
-      }
-      if (mods.includes("Admin")) {
-        window.location.href = "/admin-dashboard";
-        return;
-      }
-    }
-
-    // Fallback: original role-based redirects
+  // Helper function to redirect based on role
+  const redirectBasedOnRole = (role) => {
     const normalizedRole = (role || '').toLowerCase().trim();
 
     switch (normalizedRole) {
@@ -365,8 +339,8 @@ const Login = () => {
           }
         }
 
-        // Redirect based on allowed modules (if configured) or role as fallback
-        redirectBasedOnRole(crmData.user.role, crmData.user.allowedModules);
+        // Redirect based on role
+        redirectBasedOnRole(crmData.user.role);
         return;
       }
 
@@ -413,8 +387,8 @@ const Login = () => {
             localStorage.removeItem("isHRLoggedIn");
             localStorage.removeItem("isBlogLoggedIn");
 
-            // Redirect based on allowed modules (if configured) or mapped role as fallback
-            redirectBasedOnRole(verifyData.user.role, verifyData.user.allowedModules);
+            // Redirect based on mapped role
+            redirectBasedOnRole(verifyData.user.role);
             return;
           } else {
             setError(verifyData.message || "Failed to verify 100acress account with CRM");
