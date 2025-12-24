@@ -178,7 +178,18 @@ const App = () => {
   const isFullAccess = userRole === 'super-admin' || userRole === 'developer' || userRole === 'admin';
   const hasModule = (m) => isFullAccess || allowedModules.length === 0 || allowedModules.includes(m);
   const hasPermission = (p) => isFullAccess || permissions.length === 0 || permissions.includes(p);
+
+  // Decide which dashboard to open first when user has mixed module access
+  // Preference order (if present in allowedModules): HR -> Sales -> Blog -> Admin
   const pickDefaultModuleRoute = () => {
+    const mods = Array.isArray(allowedModules) ? allowedModules : [];
+
+    if (mods.includes('HR')) return '/hr-dashboard';
+    if (mods.includes('Sales')) return '/sales-head-dashboard';
+    if (mods.includes('Blog')) return '/blog-dashboard';
+    if (mods.includes('Admin')) return '/admin-dashboard';
+
+    // Fallback to previous behaviour when no explicit modules are set
     if (hasModule('Admin')) return '/admin-dashboard';
     if (hasModule('HR')) return '/hr-dashboard';
     if (hasModule('Sales')) return '/sales-head-dashboard';
