@@ -301,6 +301,18 @@ const Login = () => {
         localStorage.removeItem("isDeveloperLoggedIn");
         localStorage.removeItem("isHrFinanceLoggedIn");
 
+        if (Array.isArray(crmData.user.allowedModules)) {
+          localStorage.setItem("allowedModules", JSON.stringify(crmData.user.allowedModules));
+        } else {
+          localStorage.removeItem("allowedModules");
+        }
+
+        if (Array.isArray(crmData.user.permissions)) {
+          localStorage.setItem("permissions", JSON.stringify(crmData.user.permissions));
+        } else {
+          localStorage.removeItem("permissions");
+        }
+
         // Store department if available
         if (crmData.user.department) {
           localStorage.setItem("userDepartment", crmData.user.department);

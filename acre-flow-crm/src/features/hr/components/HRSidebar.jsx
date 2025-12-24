@@ -6,15 +6,28 @@ const HRSidebar = ({ isOpen, activeTab, onTabChange, onClose }) => {
   const [userInfo, setUserInfo] = useState(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  const permissions = (() => {
+    try {
+      const raw = localStorage.getItem('permissions');
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  })();
+  const hasPermission = (p) => permissions.length === 0 || permissions.includes(p);
+
   const menuItems = [
-    { id: 'overview', label: 'Overview', icon: BarChart3 },
+    { id: 'overview', label: 'Overview', icon: BarChart3, permission: 'hr.dashboard' },
     // { id: 'attendance', label: 'Attendance', icon: Calendar },
-    { id: 'all-users', label: 'Users', icon: Users2 },
-    { id: 'all-jobs', label: 'Jobs', icon: Briefcase },
-    { id: 'onboarding', label: 'Onboarding', icon: Users },
-    { id: 'offboarding', label: 'Offboarding', icon: User },
-    { id: 'leave-management', label: 'Leave', icon: Plane }
+    { id: 'all-users', label: 'Users', icon: Users2, permission: 'hr.all_users' },
+    { id: 'all-jobs', label: 'Jobs', icon: Briefcase, permission: 'hr.all_jobs' },
+    { id: 'onboarding', label: 'Onboarding', icon: Users, permission: 'hr.onboarding' },
+    { id: 'offboarding', label: 'Offboarding', icon: User, permission: 'hr.offboarding' },
+    { id: 'leave-management', label: 'Leave', icon: Plane, permission: 'hr.leave_management' }
   ];
+
+  const filteredMenuItems = menuItems.filter((it) => !it.permission || hasPermission(it.permission));
 
   // Check real-time authentication status
   useEffect(() => {
@@ -128,7 +141,7 @@ const HRSidebar = ({ isOpen, activeTab, onTabChange, onClose }) => {
 
           {/* Menu Items */}
           <nav className="space-y-2">
-            {menuItems.map((item) => {
+            {filteredMenuItems.map((item) => {
               const Icon = item.icon;
               return (
                 <button

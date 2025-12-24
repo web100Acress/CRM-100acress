@@ -6,13 +6,26 @@ const BlogSidebar = ({ isOpen, activeTab, onTabChange, onClose }) => {
   const [userInfo, setUserInfo] = useState(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  const permissions = (() => {
+    try {
+      const raw = localStorage.getItem('permissions');
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  })();
+  const hasPermission = (p) => permissions.length === 0 || permissions.includes(p);
+
   const menuItems = [
-    { id: 'overview', label: 'Overview', icon: BarChart3 },
-    { id: 'manage', label: 'Add Blog', icon: FileText },
-    { id: 'manageBlog', label: 'Manage Blog', icon: Settings },
-    { id: 'all-blogs', label: 'All Blogs', icon: DocumentIcon },
-    { id: 'blog-users', label: 'Blog Users', icon: Users }
+    { id: 'overview', label: 'Overview', icon: BarChart3, permission: 'blog.dashboard' },
+    { id: 'manage', label: 'Add Blog', icon: FileText, permission: 'blog.add_blog' },
+    { id: 'manageBlog', label: 'Manage Blog', icon: Settings, permission: 'blog.manage_blog' },
+    { id: 'all-blogs', label: 'All Blogs', icon: DocumentIcon, permission: 'blog.all_blogs' },
+    { id: 'blog-users', label: 'Blog Users', icon: Users, permission: 'blog.users' }
   ];
+
+  const filteredMenuItems = menuItems.filter((it) => !it.permission || hasPermission(it.permission));
 
   // Check real-time authentication status
   useEffect(() => {
@@ -127,7 +140,7 @@ const BlogSidebar = ({ isOpen, activeTab, onTabChange, onClose }) => {
 
           {/* Menu Items */}
           <nav className="space-y-2">
-            {menuItems.map((item) => {
+            {filteredMenuItems.map((item) => {
               const Icon = item.icon;
               return (
                 <button

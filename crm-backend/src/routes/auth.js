@@ -53,6 +53,9 @@
           name: user.name,
           email: user.email,
           role: user.role,
+          department: user.department,
+          allowedModules: user.allowedModules || [],
+          permissions: user.permissions || [],
           status: user.status,
           lastLogin: user.lastLogin
         }

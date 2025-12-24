@@ -12,14 +12,93 @@ const RoleAssignment = () => {
     password: '',
     department: '',
     role: '',
+    allowedModules: [],
+    permissions: [],
   });
   const [editFormData, setEditFormData] = useState({
     department: '',
     role: '',
+    allowedModules: [],
+    permissions: [],
   });
   const [loading, setLoading] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
   const [message, setMessage] = useState('');
+
+  const MODULE_OPTIONS = [
+    { id: 'Admin', label: 'Admin' },
+    { id: 'HR', label: 'HR' },
+    { id: 'Blog', label: 'Blog' },
+    { id: 'Sales', label: 'Sales' },
+  ];
+
+  const normalizeModules = (value) => {
+    if (!Array.isArray(value)) return [];
+    return value.filter(Boolean);
+  };
+
+  const normalizePermissions = (value) => {
+    if (!Array.isArray(value)) return [];
+    return value.filter(Boolean);
+  };
+
+  const PERMISSION_OPTIONS = [
+    { module: 'Sales', id: 'sales.dashboard', label: 'Sales Dashboard' },
+    { module: 'Sales', id: 'sales.leads', label: 'Leads' },
+
+    { module: 'HR', id: 'hr.dashboard', label: 'HR Dashboard' },
+    { module: 'HR', id: 'hr.all_users', label: 'All Users' },
+    { module: 'HR', id: 'hr.all_jobs', label: 'All Jobs' },
+    { module: 'HR', id: 'hr.leave_management', label: 'Leave Management' },
+    { module: 'HR', id: 'hr.onboarding', label: 'Onboarding' },
+    { module: 'HR', id: 'hr.offboarding', label: 'Offboarding' },
+
+    { module: 'Blog', id: 'blog.dashboard', label: 'Blog Dashboard' },
+    { module: 'Blog', id: 'blog.all_blogs', label: 'All Blogs' },
+    { module: 'Blog', id: 'blog.users', label: 'Blog Users' },
+    { module: 'Blog', id: 'blog.add_blog', label: 'Add Blog' },
+    { module: 'Blog', id: 'blog.manage_blog', label: 'Manage Blog' },
+
+    { module: 'Admin', id: 'admin.dashboard', label: 'Admin Dashboard' },
+    { module: 'Admin', id: 'admin.register_user', label: 'Register User' },
+    { module: 'Admin', id: 'admin.project_enquiries', label: 'Project Enquiries' },
+    { module: 'Admin', id: 'admin.listed_projects', label: 'Listed Projects' },
+    { module: 'Admin', id: 'admin.listed_properties', label: 'Listed Properties' },
+    { module: 'Admin', id: 'admin.project_order_management', label: 'Project Order Management' },
+    { module: 'Admin', id: 'admin.project_order_manager', label: 'Project Order Manager' },
+    { module: 'Admin', id: 'admin.resale_enquiries', label: 'Resale Enquiries' },
+    { module: 'Admin', id: 'admin.s3_manager', label: 'S3 Manager' },
+    { module: 'Admin', id: 'admin.contact_cards', label: 'Contact Cards' },
+    { module: 'Admin', id: 'admin.sitemap_manager', label: 'Sitemap Manager' },
+    { module: 'Admin', id: 'admin.blog_post', label: 'Blog Post' },
+    { module: 'Admin', id: 'admin.banner_management', label: 'Banner Management' },
+    { module: 'Admin', id: 'admin.short_setting', label: 'Short setting' },
+  ];
+
+  const getDefaultPermissionsForModules = (mods) => {
+    const allowed = new Set(normalizeModules(mods));
+    return PERMISSION_OPTIONS.filter((p) => allowed.has(p.module)).map((p) => p.id);
+  };
+
+  const getDefaultModulesForDepartment = (dept) => {
+    switch (dept) {
+      case 'admin':
+        return ['Admin'];
+      case 'hr':
+        return ['HR'];
+      case 'blog':
+        return ['Blog'];
+      case 'sales':
+        return ['Sales'];
+      default:
+        return [];
+    }
+  };
+
+  const getPermissionsForSelectedModules = (mods) => {
+    const allowed = new Set(normalizeModules(mods));
+    return PERMISSION_OPTIONS.filter((p) => allowed.has(p.module));
+  };
 
   const departments = [
     { id: 'sales', label: 'Sales', icon: DollarSign, color: 'bg-blue-500' },
@@ -43,7 +122,8 @@ const RoleAssignment = () => {
     ],
     admin: [
       { id: 'admin', label: 'Admin' },
-      { id: 'super_admin', label: 'Super Admin' },
+      { id: 'crm_admin', label: 'CRM Admin' },
+      { id: 'super-admin', label: 'Super Admin' },
     ],
   };
 
@@ -63,6 +143,8 @@ const RoleAssignment = () => {
           password: formData.password,
           department: formData.department,
           role: formData.role,
+          allowedModules: normalizeModules(formData.allowedModules),
+          permissions: normalizePermissions(formData.permissions),
           name: formData.email.split('@')[0],
         }),
       });
@@ -70,7 +152,7 @@ const RoleAssignment = () => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        setFormData({ email: '', password: '', department: '', role: '' });
+        setFormData({ email: '', password: '', department: '', role: '', allowedModules: [], permissions: [] });
         setShowForm(false);
         setMessage('✅ User created and assigned successfully!');
         setTimeout(() => setMessage(''), 3000);
@@ -90,6 +172,8 @@ const RoleAssignment = () => {
     setEditFormData({
       department: assignment.department,
       role: assignment.role,
+      allowedModules: normalizeModules(assignment.allowedModules),
+      permissions: normalizePermissions(assignment.permissions),
     });
   };
 
@@ -108,12 +192,28 @@ const RoleAssignment = () => {
         body: JSON.stringify({
           department: editFormData.department,
           role: editFormData.role,
+          permissions: normalizePermissions(editFormData.permissions),
         }),
       });
 
       const data = await response.json();
 
       if (response.ok && data.success) {
+        try {
+          const token2 = localStorage.getItem('token');
+          await fetch(`https://bcrm.100acress.com/api/users/${assignmentId}/modules`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token2}`,
+            },
+            body: JSON.stringify({
+              allowedModules: normalizeModules(editFormData.allowedModules),
+            }),
+          });
+        } catch (e) {
+          // ignore
+        }
         setMessage('✅ User role and department updated successfully!');
         setEditingAssignment(null);
         setTimeout(() => setMessage(''), 3000);
@@ -130,7 +230,7 @@ const RoleAssignment = () => {
 
   const handleEditCancel = () => {
     setEditingAssignment(null);
-    setEditFormData({ department: '', role: '' });
+    setEditFormData({ department: '', role: '', allowedModules: [], permissions: [] });
   };
 
   const handleDelete = async (id) => {
@@ -194,6 +294,8 @@ const RoleAssignment = () => {
             email: user.email,
             department: user.department,
             role: user.role,
+            allowedModules: normalizeModules(user.allowedModules),
+            permissions: normalizePermissions(user.permissions),
             assignedDate: user.createdAt ? new Date(user.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
           }));
         setAssignments(mappedAssignments);
@@ -287,10 +389,22 @@ const RoleAssignment = () => {
             />
             <select
               value={formData.department}
-              onChange={(e) => setFormData({ ...formData, department: e.target.value, role: '' })}
+
+              onChange={(e) => {
+                const dept = e.target.value;
+                const defaultModules = getDefaultModulesForDepartment(dept);
+                setFormData({
+                  ...formData,
+                  department: dept,
+                  role: '',
+                  allowedModules: defaultModules,
+                  permissions: getDefaultPermissionsForModules(defaultModules),
+                });
+              }}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               required
             >
+
               <option value="">Select Department</option>
               {departments.map((dept) => (
                 <option key={dept.id} value={dept.id}>
@@ -298,6 +412,94 @@ const RoleAssignment = () => {
                 </option>
               ))}
             </select>
+            <div className="md:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-semibold text-gray-900">Module Access</p>
+                  <span className="text-xs text-gray-500">Select modules</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {MODULE_OPTIONS.map((m) => {
+                    const checked = formData.allowedModules.includes(m.id);
+                    return (
+                      <label
+                        key={m.id}
+                        className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm cursor-pointer transition ${
+                          checked
+                            ? 'bg-green-50 border-green-300 text-green-800'
+                            : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4"
+                          checked={checked}
+                          onChange={(e) => {
+                            const nextModules = e.target.checked
+                              ? [...formData.allowedModules, m.id]
+                              : formData.allowedModules.filter((x) => x !== m.id);
+                            const allowedSet = new Set(normalizeModules(nextModules));
+                            const nextPermissions = formData.permissions.filter((p) => {
+                              const meta = PERMISSION_OPTIONS.find((x) => x.id === p);
+                              return meta ? allowedSet.has(meta.module) : true;
+                            });
+                            setFormData({
+                              ...formData,
+                              allowedModules: nextModules,
+                              permissions: nextPermissions,
+                            });
+                          }}
+                        />
+                        <span className="font-medium">{m.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-semibold text-gray-900">Allowed Sidebar Options</p>
+                  <span className="text-xs text-gray-500">Select pages</span>
+                </div>
+                <div className="max-h-56 overflow-auto pr-1">
+                  <div className="grid grid-cols-1 gap-2">
+                    {getPermissionsForSelectedModules(formData.allowedModules).map((p) => {
+                      const checked = formData.permissions.includes(p.id);
+                      return (
+                        <label
+                          key={p.id}
+                          className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm cursor-pointer transition ${
+                            checked
+                              ? 'bg-blue-50 border-blue-300 text-blue-800'
+                              : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4"
+                            checked={checked}
+                            onChange={(e) => {
+                              const next = e.target.checked
+                                ? [...formData.permissions, p.id]
+                                : formData.permissions.filter((x) => x !== p.id);
+                              setFormData({ ...formData, permissions: next });
+                            }}
+                          />
+                          <span className="font-medium">{p.module}</span>
+                          <span className="text-gray-500">/</span>
+                          <span className="truncate">{p.label}</span>
+                        </label>
+                      );
+                    })}
+                    {getPermissionsForSelectedModules(formData.allowedModules).length === 0 && (
+                      <p className="text-xs text-gray-500">Select a module to configure options</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <select
               value={formData.role}
               onChange={(e) => setFormData({ ...formData, role: e.target.value })}
@@ -321,6 +523,7 @@ const RoleAssignment = () => {
               >
                 {loading ? 'Creating User...' : 'Assign Role'}
               </button>
+
               <button
                 onClick={() => setShowForm(false)}
                 disabled={loading}
@@ -398,6 +601,56 @@ const RoleAssignment = () => {
                                 </option>
                               ))}
                           </select>
+
+                          <div className="mt-2 grid grid-cols-2 gap-2">
+                            {MODULE_OPTIONS.map((m) => {
+                              const checked = editFormData.allowedModules.includes(m.id);
+                              return (
+                                <label key={m.id} className="flex items-center gap-2 text-xs text-gray-700">
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={(e) => {
+                                      const next = e.target.checked
+                                        ? [...editFormData.allowedModules, m.id]
+                                        : editFormData.allowedModules.filter((x) => x !== m.id);
+                                      const allowedSet = new Set(normalizeModules(next));
+                                      const nextPermissions = editFormData.permissions.filter((p) => {
+                                        const meta = PERMISSION_OPTIONS.find((x) => x.id === p);
+                                        return meta ? allowedSet.has(meta.module) : true;
+                                      });
+                                      setEditFormData({ ...editFormData, allowedModules: next, permissions: nextPermissions });
+                                    }}
+                                  />
+                                  {m.label}
+                                </label>
+                              );
+                            })}
+                          </div>
+
+                          <div className="mt-3">
+                            <p className="text-xs font-semibold text-gray-700 mb-1">Allowed Options</p>
+                            <div className="grid grid-cols-1 gap-1">
+                              {getPermissionsForSelectedModules(editFormData.allowedModules).map((p) => {
+                                const checked = editFormData.permissions.includes(p.id);
+                                return (
+                                  <label key={p.id} className="flex items-center gap-2 text-xs text-gray-700">
+                                    <input
+                                      type="checkbox"
+                                      checked={checked}
+                                      onChange={(e) => {
+                                        const next = e.target.checked
+                                          ? [...editFormData.permissions, p.id]
+                                          : editFormData.permissions.filter((x) => x !== p.id);
+                                        setEditFormData({ ...editFormData, permissions: next });
+                                      }}
+                                    />
+                                    {p.module}: {p.label}
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
                         </td>
                         <td className="px-6 py-4">
                           <p className="text-gray-600">{assignment.assignedDate}</p>
@@ -436,6 +689,20 @@ const RoleAssignment = () => {
                         </td>
                         <td className="px-6 py-4">
                           <p className="text-gray-900 font-medium">{assignment.role.replace(/_/g, ' ').toUpperCase()}</p>
+                          {Array.isArray(assignment.allowedModules) && assignment.allowedModules.length > 0 && (
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {assignment.allowedModules.slice(0, 4).map((m) => (
+                                <span key={m} className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded-full text-xs">
+                                  {m}
+                                </span>
+                              ))}
+                              {assignment.allowedModules.length > 4 && (
+                                <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded-full text-xs">
+                                  +{assignment.allowedModules.length - 4}
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </td>
                         <td className="px-6 py-4">
                           <p className="text-gray-600">{assignment.assignedDate}</p>
@@ -521,6 +788,20 @@ const RoleAssignment = () => {
               <div>
                 <p className="text-sm font-semibold text-gray-600">Role</p>
                 <p className="text-gray-900 font-medium">{viewingAssignment.role.replace(/_/g, ' ').toUpperCase()}</p>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-600">Modules</p>
+                {Array.isArray(viewingAssignment.allowedModules) && viewingAssignment.allowedModules.length > 0 ? (
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {viewingAssignment.allowedModules.map((m) => (
+                      <span key={m} className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded-full text-xs">
+                        {m}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-sm">—</p>
+                )}
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-600">Assigned Date</p>

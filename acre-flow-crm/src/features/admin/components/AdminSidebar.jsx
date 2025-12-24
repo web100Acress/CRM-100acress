@@ -6,27 +6,41 @@ import { hasAdminAccess, hasSalesAccess, hasBlogAccess, hasHrAccess, getUserRole
 const AdminSidebar = ({ isOpen, onToggle }) => {
   // Get current user role
   const userRole = getUserRole() || localStorage.getItem('adminRole') || 'user';
+
+  const permissions = (() => {
+    try {
+      const raw = localStorage.getItem('permissions');
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  })();
+  const hasPermission = (p) => permissions.length === 0 || permissions.includes(p);
   
   // All available menu items with their required roles
   const allMenuItems = [
-    { id: 'overview', label: 'Overview', icon: BarChart3, roles: ['admin', 'sales_head', 'hr_manager', 'blog_manager'] },
-    { id: 'register-user', label: 'Register User', icon: UserPlus, roles: ['admin', 'crm_admin'] },
-    { id: 'project-enquiries', label: 'Project Enquiries', icon: FileText, roles: ['admin', 'crm_admin'] },
-    { id: 'listed-projects', label: 'Listed Projects', icon: Home, roles: ['admin', 'sales_head'] },
-    { id: 'project-order-management', label: 'Project Order Management', icon: Package, roles: ['admin'] },
-    { id: 'project-order-manager', label: 'Project Order Manager', icon: Package, roles: ['admin', 'sales_head'] },
-    { id: 'resale-enquiries', label: 'Resale Enquiries', icon: Phone, roles: ['admin', 'sales_head'] },
-    { id: 'listed-properties', label: 'Listed Properties', icon: Home, roles: ['admin', 'sales_head'] },
-    { id: 'S3-manager', label: 'S3 Manager', icon: MapPin, roles: ['admin'] },
-    { id: 'contact Cards', label: 'Contact Cards', icon: Mail, roles: ['admin'] },
-    { id: 'sitemap-manager', label: 'Sitemap Manager', icon: Map, roles: ['admin'] },
-    { id: 'blog-post', label: 'Blog Post', icon: MessageSquare, roles: ['admin', 'blog_manager'] },
-    { id: 'banner-management', label: 'Banner Management', icon: Image, roles: ['admin', 'blog_manager'] },
-    { id: 'short-setting', label: 'Short setting', icon: Settings, roles: ['admin'] },
+    { id: 'overview', label: 'Overview', icon: BarChart3, roles: ['admin', 'sales_head', 'hr_manager', 'blog_manager'], permission: 'admin.dashboard' },
+    { id: 'register-user', label: 'Register User', icon: UserPlus, roles: ['admin', 'crm_admin'], permission: 'admin.register_user' },
+    { id: 'project-enquiries', label: 'Project Enquiries', icon: FileText, roles: ['admin', 'crm_admin'], permission: 'admin.project_enquiries' },
+    { id: 'listed-projects', label: 'Listed Projects', icon: Home, roles: ['admin', 'sales_head'], permission: 'admin.listed_projects' },
+    { id: 'project-order-management', label: 'Project Order Management', icon: Package, roles: ['admin'], permission: 'admin.project_order_management' },
+    { id: 'project-order-manager', label: 'Project Order Manager', icon: Package, roles: ['admin', 'sales_head'], permission: 'admin.project_order_manager' },
+    { id: 'resale-enquiries', label: 'Resale Enquiries', icon: Phone, roles: ['admin', 'sales_head'], permission: 'admin.resale_enquiries' },
+    { id: 'listed-properties', label: 'Listed Properties', icon: Home, roles: ['admin', 'sales_head'], permission: 'admin.listed_properties' },
+    { id: 'S3-manager', label: 'S3 Manager', icon: MapPin, roles: ['admin'], permission: 'admin.s3_manager' },
+    { id: 'contact Cards', label: 'Contact Cards', icon: Mail, roles: ['admin'], permission: 'admin.contact_cards' },
+    { id: 'sitemap-manager', label: 'Sitemap Manager', icon: Map, roles: ['admin'], permission: 'admin.sitemap_manager' },
+    { id: 'blog-post', label: 'Blog Post', icon: MessageSquare, roles: ['admin', 'blog_manager'], permission: 'admin.blog_post' },
+    { id: 'banner-management', label: 'Banner Management', icon: Image, roles: ['admin', 'blog_manager'], permission: 'admin.banner_management' },
+    { id: 'short-setting', label: 'Short setting', icon: Settings, roles: ['admin'], permission: 'admin.short_setting' },
   ];
 
   // Filter menu items based on user role
   const menuItems = allMenuItems.filter(item => {
+    if (item.permission && !hasPermission(item.permission)) {
+      return false;
+    }
     // Admin has access to everything
     if (hasAdminAccess(userRole)) {
       return true;
