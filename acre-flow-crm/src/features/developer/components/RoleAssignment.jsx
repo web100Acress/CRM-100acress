@@ -567,113 +567,158 @@ const RoleAssignment = () => {
                 assignments.map((assignment) => (
                   <tr key={assignment.id} className="hover:bg-gray-50 transition">
                     {editingAssignment === assignment.id ? (
-                      <>
-                        <td className="px-6 py-4">
-                          <p className="font-medium text-gray-900">{assignment.name}</p>
-                        </td>
-                        <td className="px-6 py-4">
-                          <p className="text-gray-600">{assignment.email}</p>
-                        </td>
-                        <td className="px-6 py-4">
-                          <select
-                            value={editFormData.department}
-                            onChange={(e) => setEditFormData({ ...editFormData, department: e.target.value, role: '' })}
-                            className="px-3 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            {departments.map((dept) => (
-                              <option key={dept.id} value={dept.id}>
-                                {dept.label}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="px-6 py-4">
-                          <select
-                            value={editFormData.role}
-                            onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
-                            className="px-3 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value="">Select Role</option>
-                            {editFormData.department &&
-                              rolesByDepartment[editFormData.department]?.map((role) => (
-                                <option key={role.id} value={role.id}>
-                                  {role.label}
-                                </option>
-                              ))}
-                          </select>
-
-                          <div className="mt-2 grid grid-cols-2 gap-2">
-                            {MODULE_OPTIONS.map((m) => {
-                              const checked = editFormData.allowedModules.includes(m.id);
-                              return (
-                                <label key={m.id} className="flex items-center gap-2 text-xs text-gray-700">
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={(e) => {
-                                      const next = e.target.checked
-                                        ? [...editFormData.allowedModules, m.id]
-                                        : editFormData.allowedModules.filter((x) => x !== m.id);
-                                      const allowedSet = new Set(normalizeModules(next));
-                                      const nextPermissions = editFormData.permissions.filter((p) => {
-                                        const meta = PERMISSION_OPTIONS.find((x) => x.id === p);
-                                        return meta ? allowedSet.has(meta.module) : true;
-                                      });
-                                      setEditFormData({ ...editFormData, allowedModules: next, permissions: nextPermissions });
-                                    }}
-                                  />
-                                  {m.label}
-                                </label>
-                              );
-                            })}
-                          </div>
-
-                          <div className="mt-3">
-                            <p className="text-xs font-semibold text-gray-700 mb-1">Allowed Options</p>
-                            <div className="grid grid-cols-1 gap-1">
-                              {getPermissionsForSelectedModules(editFormData.allowedModules).map((p) => {
-                                const checked = editFormData.permissions.includes(p.id);
-                                return (
-                                  <label key={p.id} className="flex items-center gap-2 text-xs text-gray-700">
-                                    <input
-                                      type="checkbox"
-                                      checked={checked}
-                                      onChange={(e) => {
-                                        const next = e.target.checked
-                                          ? [...editFormData.permissions, p.id]
-                                          : editFormData.permissions.filter((x) => x !== p.id);
-                                        setEditFormData({ ...editFormData, permissions: next });
-                                      }}
-                                    />
-                                    {p.module}: {p.label}
-                                  </label>
-                                );
-                              })}
+                      <td colSpan="6" className="px-6 py-4">
+                        <div className="bg-white border border-gray-200 rounded-lg p-4">
+                          <div className="flex items-start justify-between gap-4">
+                            <div>
+                              <p className="font-semibold text-gray-900">{assignment.name}</p>
+                              <p className="text-sm text-gray-600">{assignment.email}</p>
+                              <p className="text-xs text-gray-500 mt-1">Assigned: {assignment.assignedDate}</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleEditSave(assignment.id)}
+                                disabled={editLoading}
+                                className="inline-flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                              >
+                                <Save size={16} />
+                                Save
+                              </button>
+                              <button
+                                onClick={handleEditCancel}
+                                disabled={editLoading}
+                                className="inline-flex items-center gap-2 px-3 py-2 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 transition disabled:bg-gray-100 disabled:cursor-not-allowed"
+                              >
+                                <X size={16} />
+                                Cancel
+                              </button>
                             </div>
                           </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <p className="text-gray-600">{assignment.assignedDate}</p>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleEditSave(assignment.id)}
-                              disabled={editLoading}
-                              className="p-2 hover:bg-green-100 rounded-lg transition disabled:bg-gray-100"
-                            >
-                              <Save size={18} className="text-green-600" />
-                            </button>
-                            <button
-                              onClick={handleEditCancel}
-                              disabled={editLoading}
-                              className="p-2 hover:bg-red-100 rounded-lg transition disabled:bg-gray-100"
-                            >
-                              <X size={18} className="text-red-600" />
-                            </button>
+
+                          <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-xs font-semibold text-gray-700 mb-1">Department</label>
+                                <select
+                                  value={editFormData.department}
+                                  onChange={(e) => setEditFormData({ ...editFormData, department: e.target.value, role: '' })}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                  {departments.map((dept) => (
+                                    <option key={dept.id} value={dept.id}>
+                                      {dept.label}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block text-xs font-semibold text-gray-700 mb-1">Role</label>
+                                <select
+                                  value={editFormData.role}
+                                  onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                  <option value="">Select Role</option>
+                                  {editFormData.department &&
+                                    rolesByDepartment[editFormData.department]?.map((role) => (
+                                      <option key={role.id} value={role.id}>
+                                        {role.label}
+                                      </option>
+                                    ))}
+                                </select>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                              <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                                <div className="flex items-center justify-between mb-3">
+                                  <p className="text-sm font-semibold text-gray-900">Module Access</p>
+                                  <span className="text-xs text-gray-500">Select modules</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                  {MODULE_OPTIONS.map((m) => {
+                                    const checked = editFormData.allowedModules.includes(m.id);
+                                    return (
+                                      <label
+                                        key={m.id}
+                                        className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm cursor-pointer transition ${
+                                          checked
+                                            ? 'bg-green-50 border-green-300 text-green-800'
+                                            : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                                        }`}
+                                      >
+                                        <input
+                                          type="checkbox"
+                                          className="h-4 w-4"
+                                          checked={checked}
+                                          onChange={(e) => {
+                                            const next = e.target.checked
+                                              ? [...editFormData.allowedModules, m.id]
+                                              : editFormData.allowedModules.filter((x) => x !== m.id);
+                                            const allowedSet = new Set(normalizeModules(next));
+                                            const nextPermissions = editFormData.permissions.filter((p) => {
+                                              const meta = PERMISSION_OPTIONS.find((x) => x.id === p);
+                                              return meta ? allowedSet.has(meta.module) : true;
+                                            });
+                                            setEditFormData({
+                                              ...editFormData,
+                                              allowedModules: next,
+                                              permissions: nextPermissions,
+                                            });
+                                          }}
+                                        />
+                                        <span className="font-medium">{m.label}</span>
+                                      </label>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+
+                              <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                                <div className="flex items-center justify-between mb-3">
+                                  <p className="text-sm font-semibold text-gray-900">Allowed Sidebar Options</p>
+                                  <span className="text-xs text-gray-500">Select pages</span>
+                                </div>
+                                <div className="max-h-56 overflow-auto pr-1">
+                                  <div className="grid grid-cols-1 gap-2">
+                                    {getPermissionsForSelectedModules(editFormData.allowedModules).map((p) => {
+                                      const checked = editFormData.permissions.includes(p.id);
+                                      return (
+                                        <label
+                                          key={p.id}
+                                          className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm cursor-pointer transition ${
+                                            checked
+                                              ? 'bg-blue-50 border-blue-300 text-blue-800'
+                                              : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                                          }`}
+                                        >
+                                          <input
+                                            type="checkbox"
+                                            className="h-4 w-4"
+                                            checked={checked}
+                                            onChange={(e) => {
+                                              const next = e.target.checked
+                                                ? [...editFormData.permissions, p.id]
+                                                : editFormData.permissions.filter((x) => x !== p.id);
+                                              setEditFormData({ ...editFormData, permissions: next });
+                                            }}
+                                          />
+                                          <span className="font-medium">{p.module}</span>
+                                          <span className="text-gray-500">/</span>
+                                          <span className="truncate">{p.label}</span>
+                                        </label>
+                                      );
+                                    })}
+                                    {getPermissionsForSelectedModules(editFormData.allowedModules).length === 0 && (
+                                      <p className="text-xs text-gray-500">Select a module to configure options</p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                        </td>
-                      </>
+                        </div>
+                      </td>
                     ) : (
                       <>
                         <td className="px-6 py-4">
