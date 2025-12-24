@@ -1,5 +1,3 @@
-// Dashboard slice for Redux Toolkit
-// Manages dashboard state
 
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { dashboardApi } from '@/features/dashboard/api/dashboardApi';
