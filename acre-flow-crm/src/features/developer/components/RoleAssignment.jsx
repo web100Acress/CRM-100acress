@@ -158,7 +158,11 @@ const RoleAssignment = () => {
   const handleAddAssignment = async (e) => {
     e.preventDefault();
 
-    if (!formData.department || !formData.role) {
+    const isPresetMode = accessPreset !== 'custom';
+    const departmentToSend = isPresetMode ? (formData.department || 'admin') : formData.department;
+    const roleToSend = isPresetMode ? (formData.role || 'admin') : formData.role;
+
+    if (!departmentToSend || !roleToSend) {
       setMessage('❌ Please select both Department and Role before assigning.');
       return;
     }
@@ -175,8 +179,8 @@ const RoleAssignment = () => {
         body: JSON.stringify({
           email: formData.email,
           password: formData.password,
-          department: formData.department,
-          role: formData.role,
+          department: departmentToSend,
+          role: roleToSend,
           allowedModules: normalizeModules(formData.allowedModules),
           permissions: normalizePermissions(formData.permissions),
           name: formData.email.split('@')[0],
@@ -418,7 +422,7 @@ const RoleAssignment = () => {
       {showForm && (
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-bold text-gray-900 mb-4">Assign New Role</h3>
-          <form onSubmit={handleAddAssignment} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form noValidate onSubmit={handleAddAssignment} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
               type="email"
               placeholder="Email Address"
