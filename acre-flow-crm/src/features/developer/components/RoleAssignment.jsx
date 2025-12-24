@@ -372,7 +372,7 @@ const RoleAssignment = () => {
     <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Role Assignment</h1>
+        {/* <h1 className="text-3xl font-bold text-gray-900">Role Assignment</h1> */}
         <div className="flex gap-2">
           <button
             onClick={handleRefresh}
