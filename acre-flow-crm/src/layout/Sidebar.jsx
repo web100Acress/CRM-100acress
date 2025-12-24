@@ -99,9 +99,9 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
 
   const filteredModuleNav = moduleNav.filter((it) => !it.permission || hasPermission(it.permission));
 
-  // For team-leader and employee, always use role-specific navigation
+  // For team-leader, employee, and super-admin, always use role-specific navigation
   const navItems =
-    userRole === 'team-leader' || userRole === 'employee'
+    userRole === 'team-leader' || userRole === 'employee' || userRole === 'super-admin'
       ? (navigationItems[userRole] || navigationItems['employee'])
       : (filteredModuleNav.length > 0 ? filteredModuleNav : (navigationItems[userRole] || navigationItems['employee']));
 
