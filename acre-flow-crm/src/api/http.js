@@ -42,12 +42,28 @@ httpClient.interceptors.response.use(
     if (error.response) {
       const { status, data } = error.response;
       
-      // Handle authentication errors
+      // Handle authentication errors - be more intelligent about when to logout
       if (status === 401) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('isLoggedIn');
-        window.location.href = '/login';
-        return Promise.reject(new Error('Authentication failed. Please login again.'));
+        // Check if this is an auth endpoint - don't auto-logout from these
+        const isAuthEndpoint = error.config?.url?.includes('/login') || 
+                             error.config?.url?.includes('/auth') ||
+                             error.config?.url?.includes('/register');
+        
+        // Check if error message indicates token expiration vs other auth issues
+        const errorMessage = data?.message || '';
+        const isTokenExpired = errorMessage.toLowerCase().includes('expired') || 
+                              errorMessage.toLowerCase().includes('token expired');
+        
+        // Only clear token and redirect if it's clearly an expiration issue and not an auth endpoint
+        if (!isAuthEndpoint && isTokenExpired) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('isLoggedIn');
+          window.location.href = '/login';
+          return Promise.reject(new Error('Your session has expired. Please login again.'));
+        }
+        
+        // For other 401 errors, let the component handle it
+        return Promise.reject(new Error(errorMessage || 'Authentication required.'));
       }
       
       // Handle forbidden errors
