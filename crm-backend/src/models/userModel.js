@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema({
     department: String,
     reportingTo: String,
     permissions: [String],
+    allowedModules: { type: [String], default: [] },
     status: { type: String, enum: ['active', 'inactive'], default: 'active' },
     lastLogin: { type: Date },
     createdAt: { type: Date, default: Date.now },

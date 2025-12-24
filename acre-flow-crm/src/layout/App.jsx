@@ -155,6 +155,37 @@ const App = () => {
     };
   }, [isLoggedIn]);
 
+  const allowedModules = (() => {
+    try {
+      const raw = localStorage.getItem('allowedModules');
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  })();
+
+  const permissions = (() => {
+    try {
+      const raw = localStorage.getItem('permissions');
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  })();
+
+  const isFullAccess = userRole === 'super-admin' || userRole === 'developer' || userRole === 'admin';
+  const hasModule = (m) => isFullAccess || allowedModules.length === 0 || allowedModules.includes(m);
+  const hasPermission = (p) => isFullAccess || permissions.length === 0 || permissions.includes(p);
+  const pickDefaultModuleRoute = () => {
+    if (hasModule('Admin')) return '/admin-dashboard';
+    if (hasModule('HR')) return '/hr-dashboard';
+    if (hasModule('Sales')) return '/sales-head-dashboard';
+    if (hasModule('Blog')) return '/blog-dashboard';
+    return '/leads';
+  };
+
 
 
   if (isLoading) {
@@ -195,7 +226,7 @@ const App = () => {
                   ) : userRole === "developer" ? (
                     <Navigate to="/developer-dashboard" replace />
                   ) : (
-                    <Navigate to="/leads" replace />
+                    <Navigate to={pickDefaultModuleRoute()} replace />
                   )
                 ) : (
                   <Navigate to="/login" replace />
@@ -294,46 +325,51 @@ const App = () => {
                 )
               }
             />
-            <Route path="/it-infrastructure" element={<ItInfrastructure />} />
-            <Route path="/sales-head-dashboard" element={<SalesHeadDashboard />} />
-            <Route path="/hr-dashboard" element={<HRDashboard />} />
-            <Route path="/hr-all-users" element={<HRAllUsers />} />
-            <Route path="/hr-all-jobs" element={<HRAllJobs />} />
-            <Route path="/hr/job-applications/:id" element={<JobApplications />} />
-            <Route path="/hr/leave-management" element={<LeaveManagement />} />
-            <Route path="/hr/onboarding" element={<Onboarding />} />
-            <Route path="/hr/offboarding" element={<Offboarding />} />
+            <Route path="/it-infrastructure" element={isLoggedIn ? <ItInfrastructure /> : <Navigate to="/login" replace />} />
+
+            <Route path="/sales-head-dashboard" element={isLoggedIn && hasModule('Sales') && hasPermission('sales.dashboard') ? <SalesHeadDashboard /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+
+            <Route path="/hr-dashboard" element={isLoggedIn && hasModule('HR') && hasPermission('hr.dashboard') ? <HRDashboard /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/hr-all-users" element={isLoggedIn && hasModule('HR') && hasPermission('hr.all_users') ? <HRAllUsers /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/hr-all-jobs" element={isLoggedIn && hasModule('HR') && hasPermission('hr.all_jobs') ? <HRAllJobs /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/hr/job-applications/:id" element={isLoggedIn && hasModule('HR') && hasPermission('hr.all_jobs') ? <JobApplications /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/hr/leave-management" element={isLoggedIn && hasModule('HR') && hasPermission('hr.leave_management') ? <LeaveManagement /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/hr/onboarding" element={isLoggedIn && hasModule('HR') && hasPermission('hr.onboarding') ? <Onboarding /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/hr/offboarding" element={isLoggedIn && hasModule('HR') && hasPermission('hr.offboarding') ? <Offboarding /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
             <Route path="/upload-documents/:token" element={<CandidateDocumentUpload />} />
-            <Route path="/blog-dashboard" element={<BlogDashboard />} />
-            <Route path="/blog-users" element={<BlogUser />} />
-            <Route path="/all-blogs" element={<AllBlogs />} />
-            <Route path="/admin-dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/register-user" element={<AdminUserManagement />} />
-            <Route path="/Admin/viewproperty/:id" element={<ViewPropertyAdmin />} />
-            <Route path="/admin/view-property/:id" element={<ViewPropertyAdmin />} />
-            <Route path="/Admin/ProjectsView/:pUrl" element={<ProjectView />} />
-            <Route path="/Admin/ProjectsEdit/:pUrl" element={<ProjectEdit />} />
-            <Route path="/Admin/ProjectsAddBhk/:id" element={<ProjectsAddBhk />} />
-            <Route path="/Admin/ProjectAddHighlights/:id" element={<ProjectAddHighlights />} />
+            <Route path="/blog-dashboard" element={isLoggedIn && hasModule('Blog') && hasPermission('blog.dashboard') ? <BlogDashboard /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/blog-management" element={isLoggedIn && hasModule('Blog') && hasPermission('blog.add_blog') ? <ManageBlog /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/manage-blog" element={isLoggedIn && hasModule('Blog') && hasPermission('blog.manage_blog') ? <ManageBlog /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/blog-users" element={isLoggedIn && hasModule('Blog') && hasPermission('blog.users') ? <BlogUser /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/all-blogs" element={isLoggedIn && hasModule('Blog') && hasPermission('blog.all_blogs') ? <AllBlogs /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+
+            <Route path="/admin-dashboard" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.dashboard') ? <AdminDashboard /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/admin/register-user" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.register_user') ? <AdminUserManagement /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/Admin/viewproperty/:id" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.dashboard') ? <ViewPropertyAdmin /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/admin/view-property/:id" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.dashboard') ? <ViewPropertyAdmin /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/Admin/ProjectsView/:pUrl" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.listed_projects') ? <ProjectView /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/Admin/ProjectsEdit/:pUrl" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.listed_projects') ? <ProjectEdit /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/Admin/ProjectsAddBhk/:id" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.listed_projects') ? <ProjectsAddBhk /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/Admin/ProjectAddHighlights/:id" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.listed_projects') ? <ProjectAddHighlights /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
             {/* New Admin Routes */}
-            <Route path="/admin/project-enquiries" element={<ProjectEnquiries />} />
-            <Route path="/admin/listed-projects" element={<ListedProjects />} />
-            <Route path="/admin/project-insert" element={<InsertProject />} />
-            <Route path="/admin/project-order-manager" element={<ProjectOrderManager />} />
-            <Route path="/admin/project-order-management" element={<ProjectOrderManagement />} />
-            <Route path="/admin/resale-enquiries" element={<ResaleEnquiries />} />
-            <Route path="/admin/listed-properties" element={<ListedProperties />} />
-            <Route path="/Admin/viewproperty/viewdetails/:id" element={<ViewPropertyDetails />} />
-            <Route path="/Admin/viewproperty/editdetails/:id" element={<EditPropertyDetails />} />
-            <Route path="/admin/s3-manager" element={<S3Manager />} />
-            <Route path="/admin/contact-cards" element={<ContactCards />} />
-            <Route path="/admin/sitemap-manager" element={<SitemapManager />} />
-            <Route path="/admin/blog-post" element={<BlogPost />} />
-            <Route path="/Admin/blog/view/:id" element={<BlogViewAdmin />} />
-            <Route path="/Admin/blog/edit/:id" element={<BlogEdit />} />
-            <Route path="/admin/banner-management" element={<BannerManagement />} />
-            <Route path="/admin/short-setting" element={<ShortSetting />} />
-            <Route path="/admin/back-to-top" element={<BackToTopButton />} />
+            <Route path="/admin/project-enquiries" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.project_enquiries') ? <ProjectEnquiries /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/admin/listed-projects" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.listed_projects') ? <ListedProjects /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/admin/project-insert" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.listed_projects') ? <InsertProject /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/admin/project-order-manager" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.project_order_manager') ? <ProjectOrderManager /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/admin/project-order-management" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.project_order_management') ? <ProjectOrderManagement /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/admin/resale-enquiries" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.resale_enquiries') ? <ResaleEnquiries /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/admin/listed-properties" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.listed_properties') ? <ListedProperties /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/Admin/viewproperty/viewdetails/:id" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.listed_properties') ? <ViewPropertyDetails /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/Admin/viewproperty/editdetails/:id" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.listed_properties') ? <EditPropertyDetails /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/admin/s3-manager" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.s3_manager') ? <S3Manager /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/admin/contact-cards" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.contact_cards') ? <ContactCards /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/admin/sitemap-manager" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.sitemap_manager') ? <SitemapManager /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/admin/blog-post" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.blog_post') ? <BlogPost /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/Admin/blog/view/:id" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.dashboard') ? <BlogViewAdmin /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/Admin/blog/edit/:id" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.dashboard') ? <BlogEdit /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/admin/banner-management" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.banner_management') ? <BannerManagement /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/admin/short-setting" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.short_setting') ? <ShortSetting /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/admin/back-to-top" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.dashboard') ? <BackToTopButton /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
             
             {/* Activity Routes */}
             <Route path="/activity-dashboard" element={<ActivityDashboard />} />

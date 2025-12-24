@@ -60,10 +60,35 @@ exports.createUser = async (req, res, next) => {
   }
 };
 
+exports.updateUserModules = async (req, res, next) => {
+  try {
+    const { allowedModules } = req.body || {};
+
+    if (!Array.isArray(allowedModules)) {
+      return res.status(400).json({ success: false, message: 'allowedModules must be an array' });
+    }
+
+    const user = await userService.updateUser(req.params.id, { allowedModules });
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    return res.json({ success: true, data: user });
+  } catch (err) {
+    next(err);
+  }
+};
+
 exports.getUsers = async (req, res, next) => {
   try {
     const users = await userService.getUsers();
     res.json({ success: true, data: users });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.getMe = async (req, res, next) => {
+  try {
+    res.json({ success: true, data: req.user });
   } catch (err) {
     next(err);
   }
