@@ -273,6 +273,19 @@ const RoleAssignment = () => {
     return dept?.label || deptId;
   };
 
+  const getDepartmentDisplay = (deptId, allowedModules) => {
+    const mods = normalizeModules(allowedModules);
+    if (mods.length > 1) return `Mixed: ${mods.join(', ')}`;
+    if (mods.length === 1) return mods[0];
+    return getDepartmentLabel(deptId);
+  };
+
+  const getDepartmentDisplayColor = (deptId, allowedModules) => {
+    const mods = normalizeModules(allowedModules);
+    if (mods.length > 1) return 'bg-slate-700';
+    return getDepartmentColor(deptId);
+  };
+
   useEffect(() => {
     fetchAssignments();
   }, []);
@@ -414,7 +427,7 @@ const RoleAssignment = () => {
             <div className="md:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-sm font-semibold text-gray-900">Module Access</p>
+                  <p className="text-sm font-semibold text-gray-700">Module Access</p>
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
@@ -824,8 +837,8 @@ const RoleAssignment = () => {
                           <p className="text-gray-600">{assignment.email}</p>
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`px-3 py-1 ${getDepartmentColor(assignment.department)} text-white rounded-full text-sm font-medium`}>
-                            {getDepartmentLabel(assignment.department)}
+                          <span className={`px-3 py-1 ${getDepartmentDisplayColor(assignment.department, assignment.allowedModules)} text-white rounded-full text-sm font-medium`}>
+                            {getDepartmentDisplay(assignment.department, assignment.allowedModules)}
                           </span>
                         </td>
                         <td className="px-6 py-4">
@@ -922,8 +935,8 @@ const RoleAssignment = () => {
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-600">Department</p>
-                <span className={`inline-block px-3 py-1 ${getDepartmentColor(viewingAssignment.department)} text-white rounded-full text-sm font-medium mt-1`}>
-                  {getDepartmentLabel(viewingAssignment.department)}
+                <span className={`inline-block px-3 py-1 ${getDepartmentDisplayColor(viewingAssignment.department, viewingAssignment.allowedModules)} text-white rounded-full text-sm font-medium mt-1`}>
+                  {getDepartmentDisplay(viewingAssignment.department, viewingAssignment.allowedModules)}
                 </span>
               </div>
               <div>
