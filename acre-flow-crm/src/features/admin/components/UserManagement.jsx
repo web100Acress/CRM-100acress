@@ -1022,6 +1022,14 @@ const UserAdmin = () => {
                             >
                               Follow-up
                             </button>
+                            {getTelHref(item.mobile) ? (
+                              <a
+                                href={getTelHref(item.mobile)}
+                                className="px-3 py-1.5 sm:px-3 sm:py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-xs sm:text-xs w-full sm:w-auto"
+                              >
+                                Call
+                              </a>
+                            ) : null}
                           </div>
                         </td>
                       </tr>
