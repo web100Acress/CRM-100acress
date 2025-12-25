@@ -309,8 +309,14 @@ const UserAdmin = () => {
   // Helpers for date sorting
   const getTimestampFromId = (id) => {
     if (!id) return 0;
-    const hex = id.toString().substring(0, 8);
-    return parseInt(hex, 16) * 1000; // Convert to milliseconds
+    try {
+      // MongoDB ObjectId contains timestamp in first 4 bytes (8 hex chars)
+      const hex = id.toString().substring(0, 8);
+      return parseInt(hex, 16) * 1000; // Convert seconds to milliseconds
+    } catch (error) {
+      console.error('Error parsing ObjectId timestamp:', error);
+      return 0;
+    }
   };
 
   const getCreatedAtMs = (item) => {
@@ -374,16 +380,28 @@ const UserAdmin = () => {
     // Date range filter (inclusive)
     .filter((item) => {
       if (!dateFrom && !dateTo) return true;
+      
       const created = getCreatedAtMs(item);
-      if (dateFrom) {
-        const fromMs = new Date(dateFrom + 'T00:00:00').getTime();
-        if (created < fromMs) return false;
+      if (!created) return false; // Skip if no valid date
+      
+      try {
+        if (dateFrom) {
+          const fromDate = new Date(dateFrom + 'T00:00:00');
+          if (isNaN(fromDate.getTime())) return false; // Invalid from date
+          if (created < fromDate.getTime()) return false;
+        }
+        
+        if (dateTo) {
+          const toDate = new Date(dateTo + 'T23:59:59');
+          if (isNaN(toDate.getTime())) return false; // Invalid to date
+          if (created > toDate.getTime()) return false;
+        }
+        
+        return true;
+      } catch (error) {
+        console.error('Date filtering error:', error);
+        return false;
       }
-      if (dateTo) {
-        const toMs = new Date(dateTo + 'T23:59:59').getTime();
-        if (created > toMs) return false;
-      }
-      return true;
     })
     .filter((item) => {
       if (roleFilter === 'all') return true;
