@@ -46,6 +46,7 @@ const UserAdmin = () => {
   const [followupSaving, setFollowupSaving] = useState(false);
   const [followupLoading, setFollowupLoading] = useState(false);
   const [sessionFollowups, setSessionFollowups] = useState([]); // current session list only
+  const [editingFollowupId, setEditingFollowupId] = useState(null);
 
   useEffect(() => {
     // Get real-time logged-in user data
@@ -530,6 +531,7 @@ const UserAdmin = () => {
     setFollowupUser(null);
     setFollowupSaving(false);
     setSessionFollowups([]);
+    setEditingFollowupId(null);
   };
 
   const handleFollowupChange = (e) => {
@@ -560,11 +562,41 @@ const UserAdmin = () => {
     try {
       await api100acress.delete(`/postPerson/followups/${followupId}`);
       setSessionFollowups((prev) => prev.filter((f) => f?._id !== followupId));
+      if (editingFollowupId === followupId) {
+        setEditingFollowupId(null);
+        setFollowupForm({
+          discussionWith: followupUser?.name || '',
+          status: '',
+          notes: '',
+          nextFollowupDate: '',
+        });
+      }
       messageApi.success('Follow-up deleted');
     } catch (err) {
       console.error('❌ Failed to delete follow-up', err);
       messageApi.error('Failed to delete follow-up');
     }
+  };
+
+  const startEditFollowup = (f) => {
+    if (!f?._id) return;
+    setEditingFollowupId(f._id);
+    setFollowupForm({
+      discussionWith: f.discussionWith || '',
+      status: f.status || '',
+      notes: f.notes || '',
+      nextFollowupDate: f.nextFollowupDate || '',
+    });
+  };
+
+  const cancelEditFollowup = () => {
+    setEditingFollowupId(null);
+    setFollowupForm({
+      discussionWith: followupUser?.name || '',
+      status: '',
+      notes: '',
+      nextFollowupDate: '',
+    });
   };
 
   const handleSaveFollowup = async () => {
@@ -578,20 +610,32 @@ const UserAdmin = () => {
         nextFollowupDate: followupForm.nextFollowupDate,
       };
 
-      const res = await api100acress.post(`/postPerson/followups/${followupUser._id}`, payload);
-      const saved = res?.data?.data;
-
-      if (saved) {
-        setSessionFollowups((prev) => [saved, ...prev]);
+      if (editingFollowupId) {
+        const res = await api100acress.put(`/postPerson/followups/${editingFollowupId}`, payload);
+        const updated = res?.data?.data;
+        if (updated) {
+          setSessionFollowups((prev) => prev.map((x) => (x?._id === editingFollowupId ? updated : x)));
+        }
+        messageApi.success('Follow-up updated');
+        setEditingFollowupId(null);
       } else {
-        // fallback (shouldn't happen) so UI still updates
-        setSessionFollowups((prev) => [
-          {
-            ...payload,
-            createdAt: new Date().toISOString(),
-          },
-          ...prev,
-        ]);
+        const res = await api100acress.post(`/postPerson/followups/${followupUser._id}`, payload);
+        const saved = res?.data?.data;
+
+        if (saved) {
+          setSessionFollowups((prev) => [saved, ...prev]);
+        } else {
+          // fallback (shouldn't happen) so UI still updates
+          setSessionFollowups((prev) => [
+            {
+              ...payload,
+              createdAt: new Date().toISOString(),
+            },
+            ...prev,
+          ]);
+        }
+
+        messageApi.success('Follow-up saved. You can add another one.');
       }
 
       // Clear form for next follow-up but keep modal open
@@ -601,12 +645,10 @@ const UserAdmin = () => {
         notes: '',
         nextFollowupDate: '',
       });
-
-      messageApi.success('Follow-up saved. You can add another one.');
       setFollowupSaving(false);
     } catch (err) {
       console.error('❌ Failed to save follow-up', err);
-      messageApi.error('Failed to save follow-up');
+      messageApi.error(editingFollowupId ? 'Failed to update follow-up' : 'Failed to save follow-up');
     
       setFollowupSaving(false);
     }
@@ -1231,7 +1273,14 @@ const UserAdmin = () => {
                       )}
 
                       {f?._id && (
-                        <div className="flex justify-end pt-1">
+                        <div className="flex justify-end gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => startEditFollowup(f)}
+                            className="px-2 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-[11px] font-semibold"
+                          >
+                            Edit
+                          </button>
                           <button
                             type="button"
                             onClick={() => handleDeleteFollowup(f._id)}
@@ -1255,13 +1304,22 @@ const UserAdmin = () => {
               >
                 Cancel
               </button>
+              {editingFollowupId && (
+                <button
+                  onClick={cancelEditFollowup}
+                  className="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium"
+                  type="button"
+                >
+                  Cancel Edit
+                </button>
+              )}
               <button
                 onClick={handleSaveFollowup}
                 disabled={followupSaving}
                 className="px-6 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
                 type="button"
               >
-                {followupSaving ? 'Saving...' : 'Apply Follow-up'}
+                {followupSaving ? 'Saving...' : (editingFollowupId ? 'Update Follow-up' : 'Apply Follow-up')}
               </button>
             </div>
           </div>
