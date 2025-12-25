@@ -1238,60 +1238,81 @@ const UserAdmin = () => {
               </div>
             </div>
 
-            {sessionFollowups.length > 0 && (
+            {followupLoading ? (
+              <div className="flex justify-center items-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
+                <span className="ml-3 text-gray-600 text-sm">Loading follow-ups...</span>
+              </div>
+            ) : sessionFollowups.length > 0 ? (
               <div className="bg-white border border-gray-200 rounded-lg p-3">
                 <h4 className="text-sm font-semibold text-gray-800 mb-2">
-                  Aaj ke follow-ups (is session)
+                  Previous Follow-ups
                 </h4>
-                <div className="max-h-40 overflow-y-auto space-y-2 text-xs">
+                <div className="max-h-48 overflow-y-auto space-y-2 text-xs">
                   {sessionFollowups.map((f, idx) => (
                     <div
                       key={f?._id || idx}
-                      className="border border-gray-200 rounded-md p-2 bg-gray-50 flex flex-col gap-1"
+                      className="border border-gray-200 rounded-md p-3 bg-gradient-to-r from-gray-50 to-white hover:shadow-sm transition-shadow"
                     >
-                      <div className="flex justify-between">
-                        <span className="font-semibold">#{idx + 1} - {f.status || 'No status'}</span>
-                        <span className="text-[10px] text-gray-500">
-                          {f.createdAt ? new Date(f.createdAt).toLocaleString() : ''}
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex-1">
+                          <span className="font-semibold text-gray-900">#{idx + 1}</span>
+                          <span className="ml-2 px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full text-[10px] font-medium">
+                            {f.status || 'No status'}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-gray-500 whitespace-nowrap">
+                          {f.createdAt ? new Date(f.createdAt).toLocaleDateString() : ''}
                         </span>
                       </div>
-                      <div>
-                        <span className="font-medium">With:</span>{' '}
-                        <span>{f.discussionWith || '-'}</span>
-                      </div>
-                      {f.nextFollowupDate && (
+                      <div className="space-y-1">
                         <div>
-                          <span className="font-medium">Next date:</span>{' '}
-                          <span>{f.nextFollowupDate}</span>
+                          <span className="font-medium text-gray-700">With:</span>{' '}
+                          <span className="text-gray-900">{f.discussionWith || '-'}</span>
                         </div>
-                      )}
-                      {f.notes && (
-                        <div className="text-gray-700">
-                          <span className="font-medium">Notes:</span>{' '}
-                          <span>{f.notes}</span>
-                        </div>
-                      )}
+                        {f.nextFollowupDate && (
+                          <div>
+                            <span className="font-medium text-gray-700">Next date:</span>{' '}
+                            <span className="text-gray-900">{f.nextFollowupDate}</span>
+                          </div>
+                        )}
+                        {f.notes && (
+                          <div className="text-gray-700">
+                            <span className="font-medium text-gray-700">Notes:</span>{' '}
+                            <span className="text-gray-600">{f.notes}</span>
+                          </div>
+                        )}
+                      </div>
 
                       {f?._id && (
-                        <div className="flex justify-end gap-2 pt-1">
+                        <div className="flex justify-end gap-2 pt-2 mt-2 border-t border-gray-100">
                           <button
                             type="button"
                             onClick={() => startEditFollowup(f)}
-                            className="px-2 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-[11px] font-semibold"
+                            className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-[11px] font-medium transition-colors flex items-center gap-1"
                           >
+                            <MdEdit size={10} />
                             Edit
                           </button>
                           <button
                             type="button"
                             onClick={() => handleDeleteFollowup(f._id)}
-                            className="px-2 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 text-[11px] font-semibold"
+                            className="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 text-[11px] font-medium transition-colors flex items-center gap-1"
                           >
+                            <MdDelete size={10} />
                             Delete
                           </button>
                         </div>
                       )}
                     </div>
                   ))}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+                <div className="text-gray-400 text-sm">
+                  <MdPeople size={24} className="mx-auto mb-2" />
+                  No follow-ups yet. Add your first follow-up above!
                 </div>
               </div>
             )}
