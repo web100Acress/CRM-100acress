@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import api100acress from "../config/api100acressClient"; // For 100acress backend
 import AdminSidebar from "./AdminSidebar";
 import Tippy from "@tippyjs/react";
-import { Link } from "react-router-dom";
 import { MdPeople, MdSearch, MdVisibility } from "react-icons/md";
 import { Modal, message } from "antd";
 import { LogOut, ChevronDown, User, Settings as SettingsIcon } from "lucide-react";
@@ -36,6 +35,17 @@ const UserAdmin = () => {
   const [userDetailsModalVisible, setUserDetailsModalVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [followupModalVisible, setFollowupModalVisible] = useState(false);
+  const [followupUser, setFollowupUser] = useState(null);
+  const [followupForm, setFollowupForm] = useState({
+    discussionWith: '',
+    status: '',
+    notes: '',
+    nextFollowupDate: '',
+  });
+  const [followupSaving, setFollowupSaving] = useState(false);
+  const [followupLoading, setFollowupLoading] = useState(false);
+  const [sessionFollowups, setSessionFollowups] = useState([]); // current session list only
 
   useEffect(() => {
     // Get real-time logged-in user data
@@ -503,6 +513,105 @@ const UserAdmin = () => {
     }
   };
 
+  const openFollowupModal = (user) => {
+    if (!user) return;
+    setFollowupUser(user);
+    setSessionFollowups([]); // will be replaced with DB follow-ups
+    setFollowupForm((prev) => ({
+      ...prev,
+      discussionWith: user.name || prev.discussionWith || '',
+    }));
+    setFollowupModalVisible(true);
+    loadUserFollowups(user._id);
+  };
+
+  const closeFollowupModal = () => {
+    setFollowupModalVisible(false);
+    setFollowupUser(null);
+    setFollowupSaving(false);
+    setSessionFollowups([]);
+  };
+
+  const handleFollowupChange = (e) => {
+    const { name, value } = e.target;
+    setFollowupForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const loadUserFollowups = async (userId) => {
+    if (!userId) return;
+    setFollowupLoading(true);
+    try {
+      const res = await api100acress.get(`/postPerson/followups/${userId}`);
+      const list = Array.isArray(res?.data?.data) ? res.data.data : [];
+      setSessionFollowups(list);
+    } catch (err) {
+      console.error('❌ Failed to fetch follow-ups', err);
+      setSessionFollowups([]);
+    } finally {
+      setFollowupLoading(false);
+    }
+  };
+
+  const handleDeleteFollowup = async (followupId) => {
+    if (!followupId) return;
+    try {
+      await api100acress.delete(`/postPerson/followups/${followupId}`);
+      setSessionFollowups((prev) => prev.filter((f) => f?._id !== followupId));
+      messageApi.success('Follow-up deleted');
+    } catch (err) {
+      console.error('❌ Failed to delete follow-up', err);
+      messageApi.error('Failed to delete follow-up');
+    }
+  };
+
+  const handleSaveFollowup = async () => {
+    if (!followupUser) return;
+    setFollowupSaving(true);
+    try {
+      const payload = {
+        discussionWith: followupForm.discussionWith,
+        status: followupForm.status,
+        notes: followupForm.notes,
+        nextFollowupDate: followupForm.nextFollowupDate,
+      };
+
+      const res = await api100acress.post(`/postPerson/followups/${followupUser._id}`, payload);
+      const saved = res?.data?.data;
+
+      if (saved) {
+        setSessionFollowups((prev) => [saved, ...prev]);
+      } else {
+        // fallback (shouldn't happen) so UI still updates
+        setSessionFollowups((prev) => [
+          {
+            ...payload,
+            createdAt: new Date().toISOString(),
+          },
+          ...prev,
+        ]);
+      }
+
+      // Clear form for next follow-up but keep modal open
+      setFollowupForm({
+        discussionWith: followupUser.name || '',
+        status: '',
+        notes: '',
+        nextFollowupDate: '',
+      });
+
+      messageApi.success('Follow-up saved. You can add another one.');
+      setFollowupSaving(false);
+    } catch (err) {
+      console.error('❌ Failed to save follow-up', err);
+      messageApi.error('Failed to save follow-up');
+    
+      setFollowupSaving(false);
+    }
+  };
+
   return (
     <>
       <div className="flex h-screen bg-gray-100">
@@ -813,12 +922,20 @@ const UserAdmin = () => {
                           </div>
                         </td>
                         <td className="px-3 py-3 whitespace-nowrap text-center text-sm font-medium">
-                          <button
-                            onClick={() => handleViewUserDetails(item)}
-                            className="px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-xs sm:text-sm w-full"
-                          >
-                            View Details
-                          </button>
+                          <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                            <button
+                              onClick={() => handleViewUserDetails(item)}
+                              className="px-3 py-1.5 sm:px-3 sm:py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-xs sm:text-xs w-full sm:w-auto"
+                            >
+                              View Details
+                            </button>
+                            <button
+                              onClick={() => openFollowupModal(item)}
+                              className="px-3 py-1.5 sm:px-3 sm:py-1.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-xs sm:text-xs w-full sm:w-auto"
+                            >
+                              Follow-up
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -983,6 +1100,169 @@ const UserAdmin = () => {
                   </table>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Follow-up Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-3 bg-gradient-to-r from-amber-50 to-orange-50 -m-6 p-4 rounded-t-lg">
+            <div className="p-2 bg-gradient-to-r from-amber-500 to-orange-500 rounded-lg shadow-lg">
+              <MdPeople className="text-white" size={20} />
+            </div>
+            <span className="text-2xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+              Follow-up Details
+            </span>
+          </div>
+        }
+        open={followupModalVisible}
+        onCancel={closeFollowupModal}
+        footer={null}
+        width={600}
+        className="followup-modal"
+      >
+        {followupUser && (
+          <div className="space-y-4">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">
+                Kis se kya baat chal rahi hai
+              </h3>
+              <p className="text-xs text-gray-500 mb-4">
+                User: <span className="font-semibold">{followupUser.name || 'N/A'}</span> ({followupUser.email || 'N/A'})
+              </p>
+              <div className="grid grid-cols-1 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    Kisse baat ho rahi hai (Discussion With)
+                  </label>
+                  <input
+                    type="text"
+                    name="discussionWith"
+                    value={followupForm.discussionWith}
+                    onChange={handleFollowupChange}
+                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    placeholder="Jaise: Owner, Agent, Buyer, etc."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    Follow-up Status
+                  </label>
+                  <select
+                    name="status"
+                    value={followupForm.status}
+                    onChange={handleFollowupChange}
+                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  >
+                    <option value="">Select status</option>
+                    <option value="interested">Interested</option>
+                    <option value="not_interested">Not Interested</option>
+                    <option value="thinking">Soch mein hai</option>
+                    <option value="site_visit_done">Site Visit Done</option>
+                    <option value="site_visit_planned">Site Visit Planned</option>
+                    <option value="deal_done">Deal Done</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    Next Follow-up Date
+                  </label>
+                  <input
+                    type="date"
+                    name="nextFollowupDate"
+                    value={followupForm.nextFollowupDate}
+                    onChange={handleFollowupChange}
+                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    Notes (Kya baat hui)
+                  </label>
+                  <textarea
+                    name="notes"
+                    value={followupForm.notes}
+                    onChange={handleFollowupChange}
+                    rows={4}
+                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none"
+                    placeholder="Short summary likho: kya baat hui, next step kya hai, etc."
+                  />
+                </div>
+              </div>
+            </div>
+
+            {sessionFollowups.length > 0 && (
+              <div className="bg-white border border-gray-200 rounded-lg p-3">
+                <h4 className="text-sm font-semibold text-gray-800 mb-2">
+                  Aaj ke follow-ups (is session)
+                </h4>
+                <div className="max-h-40 overflow-y-auto space-y-2 text-xs">
+                  {sessionFollowups.map((f, idx) => (
+                    <div
+                      key={f?._id || idx}
+                      className="border border-gray-200 rounded-md p-2 bg-gray-50 flex flex-col gap-1"
+                    >
+                      <div className="flex justify-between">
+                        <span className="font-semibold">#{idx + 1} - {f.status || 'No status'}</span>
+                        <span className="text-[10px] text-gray-500">
+                          {f.createdAt ? new Date(f.createdAt).toLocaleString() : ''}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="font-medium">With:</span>{' '}
+                        <span>{f.discussionWith || '-'}</span>
+                      </div>
+                      {f.nextFollowupDate && (
+                        <div>
+                          <span className="font-medium">Next date:</span>{' '}
+                          <span>{f.nextFollowupDate}</span>
+                        </div>
+                      )}
+                      {f.notes && (
+                        <div className="text-gray-700">
+                          <span className="font-medium">Notes:</span>{' '}
+                          <span>{f.notes}</span>
+                        </div>
+                      )}
+
+                      {f?._id && (
+                        <div className="flex justify-end pt-1">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteFollowup(f._id)}
+                            className="px-2 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 text-[11px] font-semibold"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 mt-4">
+              <button
+                onClick={closeFollowupModal}
+                className="px-5 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm font-medium"
+                type="button"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveFollowup}
+                disabled={followupSaving}
+                className="px-6 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
+                type="button"
+              >
+                {followupSaving ? 'Saving...' : 'Apply Follow-up'}
+              </button>
             </div>
           </div>
         )}
