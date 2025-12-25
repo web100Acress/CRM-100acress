@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import api100acress from "../config/api100acressClient"; // For 100acress backend
 import AdminSidebar from "./AdminSidebar";
 import Tippy from "@tippyjs/react";
-import { MdPeople, MdSearch, MdVisibility } from "react-icons/md";
+import { MdPeople, MdSearch, MdVisibility, MdEdit, MdDelete } from "react-icons/md";
 import { Modal, message } from "antd";
 import { LogOut, ChevronDown, User, Settings as SettingsIcon } from "lucide-react";
 import "tippy.js/dist/tippy.css";
