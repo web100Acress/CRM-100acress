@@ -4,6 +4,8 @@ const http = require('http');
 const cors = require('cors');
 const socketio = require('socket.io');
 
+console.log('ENV CHECK MONGO_URI at startup:', process.env.MONGO_URI || '[UNDEFINED]');
+
 const app = require('./app'); // app.js = express instance
 const connectDB = require('./config/db'); // MongoDB connection
 const { port } = require('./config/config');
