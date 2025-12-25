@@ -98,6 +98,23 @@ const UserAdmin = () => {
     return words.slice(0, wordLimit).join(' ') + '...';
   };
 
+  const normalizePhoneNumber = (value) => {
+    if (value === null || value === undefined) return '';
+    const raw = String(value).trim();
+    if (!raw) return '';
+    const cleaned = raw.replace(/[^\d+]/g, '');
+    if (cleaned.startsWith('+')) {
+      return '+' + cleaned.slice(1).replace(/\D/g, '');
+    }
+    return cleaned.replace(/\D/g, '');
+  };
+
+  const getTelHref = (mobile) => {
+    const phone = normalizePhoneNumber(mobile);
+    if (!phone) return null;
+    return `tel:${phone}`;
+  };
+
   // Available roles
   const ROLE_OPTIONS = [
     { label: "User", value: "user" },
@@ -929,9 +946,19 @@ const UserAdmin = () => {
                           </span>
                         </td>
                         <td className="hidden lg:table-cell px-3 py-3 whitespace-nowrap text-sm">
-                          <span className="inline-flex items-center px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full shadow-sm">
-                            {item.mobile}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full shadow-sm">
+                              {item.mobile || 'N/A'}
+                            </span>
+                            {getTelHref(item.mobile) ? (
+                              <a
+                                href={getTelHref(item.mobile)}
+                                className="px-2 py-1 bg-emerald-600 text-white text-xs rounded-full hover:bg-emerald-700 transition-colors"
+                              >
+                                Call
+                              </a>
+                            ) : null}
+                          </div>
                         </td>
                         <td className="hidden lg:table-cell px-3 py-3 whitespace-nowrap text-sm text-gray-800">
                           {formatLastModified(item.createdAt)}
@@ -1396,7 +1423,17 @@ const UserAdmin = () => {
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Mobile Number</label>
-                  <p className="text-base text-gray-800">{selectedUser.mobile || 'N/A'}</p>
+                  <div className="flex items-center gap-3">
+                    <p className="text-base text-gray-800">{selectedUser.mobile || 'N/A'}</p>
+                    {getTelHref(selectedUser.mobile) ? (
+                      <a
+                        href={getTelHref(selectedUser.mobile)}
+                        className="px-3 py-1 bg-emerald-600 text-white text-sm rounded-full hover:bg-emerald-700 transition-colors"
+                      >
+                        Call
+                      </a>
+                    ) : null}
+                  </div>
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Registration Date</label>
