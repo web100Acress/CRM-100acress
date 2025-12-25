@@ -27,7 +27,8 @@ const Dashboard = ({ userRole = 'employee' }) => {
   const getDashboardTitle = () => {
     switch (userRole) {
       case 'head-admin':
-        return '';
+      case 'head':
+        return 'Head Dashboard';
       case 'team-leader':
         return 'Team Leader Dashboard';
       case 'employee':
@@ -40,7 +41,8 @@ const Dashboard = ({ userRole = 'employee' }) => {
   const getDashboardDescription = () => {
     switch (userRole) {
       case 'head-admin':
-        return '';
+      case 'head':
+        return 'Manage your teams and track performance';
       case 'team-leader':
         return 'Lead your team and track performance';
       case 'employee':
@@ -54,10 +56,10 @@ const Dashboard = ({ userRole = 'employee' }) => {
   return (
     <DashboardLayout userRole={userRole}>
       <div className="space-y-6">
-        {/* <div>
+        <div>
           <h1 className="text-2xl font-bold text-gray-900">{getDashboardTitle()}</h1>
           <p className="text-gray-600">{getDashboardDescription()}</p>
-        </div> */}
+        </div>
 
         <DashboardStats userRole={userRole} />
 

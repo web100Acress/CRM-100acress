@@ -25,6 +25,7 @@ body {
   min-height: 0;
   margin: 20px;
   min-height: calc(100vh - 40px); /* Adjust for margin */
+  max-height: calc(100vh - 40px);
 }
 
 /* Filter Bar Section */
@@ -32,8 +33,10 @@ body {
   position: sticky;
   top: 0;
   z-index: 10;
-  background-color: #f4f7f6; /* Match body background for smooth scroll */
+  background-color: #fff; /* Match wrapper background */
   padding-bottom: 15px; /* Space below the filter bar */
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 20px;
 }
 
 .user-management-filter-bar {
@@ -179,7 +182,36 @@ body {
 }
 
 /* User Table Container */
+/* Scrollable Data Section */
+.user-management-data-section {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  padding: 0 4px; /* Small padding for scroll bar */
+}
+
+.user-management-data-section::-webkit-scrollbar {
+  width: 6px;
+}
+
+.user-management-data-section::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.user-management-data-section::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.user-management-data-section::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
 .user-management-table-container {
+  display: flex;
+  flex-direction: column;
   flex: 1;
   overflow-x: auto; /* Allows horizontal scrolling for desktop table */
   overflow-y: hidden;
@@ -190,9 +222,6 @@ body {
   border: 1px solid #e5e7eb;
 }
 
-.user-management-table-info {
-  /* This div seems to be a placeholder and might not need styles unless content is added */
-}
 
 .user-management-no-users-message {
   text-align: center;
@@ -758,5 +787,283 @@ body {
     padding-bottom: 0;
     margin-top: 10px;
     border-bottom: none;
+  }
+}
+
+/* Mobile View Styles */
+.mobile-view {
+  display: none;
+}
+
+.user-management-mobile-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  padding: 16px;
+  transition: all 0.2s ease;
+}
+
+.user-management-mobile-card:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transform: translateY(-1px);
+}
+
+.user-management-mobile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-management-mobile-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.user-management-mobile-info strong {
+  font-size: 16px;
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.user-management-view-button {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+
+.user-management-view-button:hover {
+  background: #2563eb;
+}
+
+/* View Modal Styles */
+.user-management-view-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.user-management-view-modal {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.user-management-view-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.user-management-view-modal-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.user-management-view-modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: background 0.2s ease;
+}
+
+.user-management-view-modal-close:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.user-management-view-modal-content {
+  padding: 20px;
+}
+
+.user-management-view-section {
+  margin-bottom: 24px;
+}
+
+.user-management-view-section:last-child {
+  margin-bottom: 0;
+}
+
+.user-management-view-section h4 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 8px;
+}
+
+.user-management-view-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.user-management-view-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: #f9fafb;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+.user-management-view-label {
+  font-weight: 500;
+  color: #6b7280;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.user-management-view-value {
+  color: #1f2937;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.user-management-view-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.user-management-view-row:last-child {
+  border-bottom: none;
+}
+
+.user-management-view-modal-actions {
+  display: flex;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+  flex-wrap: wrap;
+}
+
+.user-management-view-modal-actions .user-management-action-button {
+  flex: 1;
+  min-width: 120px;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .desktop-view {
+    display: none;
+  }
+  
+  .mobile-view {
+    display: block;
+  }
+  
+  .user-management-main-wrapper {
+    padding: 16px;
+    margin: 10px;
+    min-height: calc(100vh - 20px);
+    max-height: calc(100vh - 20px);
+  }
+  
+  .user-management-filter-sticky {
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+  }
+  
+  .user-management-filter-bar {
+    padding: 12px 16px;
+    gap: 10px;
+  }
+  
+  .user-management-data-section {
+    padding: 0 2px;
+  }
+  
+  .user-management-view-modal-overlay {
+    padding: 10px;
+  }
+  
+  .user-management-view-modal {
+    max-height: 95vh;
+  }
+  
+  .user-management-view-modal-header,
+  .user-management-view-modal-content {
+    padding: 16px;
+  }
+  
+  .user-management-view-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .user-management-view-item {
+    padding: 6px;
+  }
+  
+  .user-management-view-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .user-management-view-label {
+    min-width: auto;
+  }
+  
+  .user-management-view-value {
+    text-align: left;
+  }
+  
+  .user-management-view-modal-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .user-management-view-modal-actions .user-management-action-button {
+    min-width: auto;
+    flex: 1;
+    font-size: 12px;
+    padding: 8px 12px;
   }
 }

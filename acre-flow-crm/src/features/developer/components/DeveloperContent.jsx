@@ -43,7 +43,9 @@
     import { Button } from '@/layout/button';
     import { useToast } from '@/hooks/use-toast';
     import { useNavigate } from 'react-router-dom';
-    import DeveloperChat from './DeveloperChat'; // Import the chat component (to be created)
+    import DeveloperChat from './DeveloperChat';
+    import RoleAssignment from './RoleAssignment';
+    import ActivityCredentials from './ActivityCredentials';
 
     const DeveloperContent = ({ userRole }) => {
       const [activeTab, setActiveTab] = useState('overview');
@@ -86,18 +88,10 @@
 
       const tabs = [
         { id: 'overview', label: 'System Overview', icon: Monitor },
-        { id: 'access-control', label: 'Access Control', icon: Users },
-        // { id: 'database', label: 'Database', icon: Database },
-        // { id: 'api', label: 'API Management', icon: Server },
-        // { id: 'security', label: 'Security', icon: Shield },
-        // { id: 'logs', label: 'System Logs', icon: FileText },
+        { id: 'role-assignment', label: 'Role Assignment', icon: Users },
         { id: 'create-employee', label: 'Create Employee', icon: UserPlus },
-        { id: 'project-enquiries', label: 'Project Enquiries', icon: BarChart3 },
-        { id: 'registered-users', label: 'Registered Users', icon: Users },
-        // { id: 'performance', label: 'Performance', icon: Activity },
-        // { id: 'deployment', label: 'Deployment', icon: GitBranch },
-        // { id: 'tools', label: 'Dev Tools', icon: Wrench },
-        { id: 'chat', label: 'Chat', icon: Info }, // New Chat tab
+        { id: 'activity', label: 'Activity Hub', icon: Activity },
+        { id: 'chat', label: 'Chat', icon: Info },
       ];
 
       const handleAction = (action) => {
@@ -142,7 +136,7 @@
           };
           const token = localStorage.getItem('token');
           console.log('Token used for create employee:', token); // Debug log
-          const response = await fetch('http://localhost:5001/api/users', {
+          const response = await fetch('https://bcrm.100acress.com/api/users', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -1013,6 +1007,172 @@
         );
       };
 
+      const renderBlogManagement = () => (
+        <div className="blog-management-section">
+          <div className="section-header">
+            <h3 className="section-title">Blog Management</h3>
+            <p className="section-desc">Manage blog content, analytics, and publishing</p>
+          </div>
+          
+          <div className="blog-actions-grid">
+            <Card className="action-card">
+              <CardContent>
+                <div className="action-header">
+                  <BarChart3 className="action-icon" />
+                  <h4>Blog Dashboard</h4>
+                </div>
+                <p>View analytics, performance metrics, and blog statistics</p>
+                <Button 
+                  onClick={() => navigate('/blog-dashboard')}
+                  className="action-btn"
+                >
+                  Open Dashboard
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="action-card">
+              <CardContent>
+                <div className="action-header">
+                  <FileText className="action-icon" />
+                  <h4>Blog Management</h4>
+                </div>
+                <p>Create, edit, and manage all blog posts</p>
+                <Button 
+                  onClick={() => navigate('/blog-management')}
+                  className="action-btn"
+                >
+                  Manage Blogs
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="action-card">
+              <CardContent>
+                <div className="action-header">
+                  <Clock className="action-icon" />
+                  <h4>Draft Management</h4>
+                </div>
+                <p>Manage draft posts and unpublished content</p>
+                <Button 
+                  onClick={() => navigate('/draft-management')}
+                  className="action-btn"
+                >
+                  Manage Drafts
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="action-card">
+              <CardContent>
+                <div className="action-header">
+                  <Globe className="action-icon" />
+                  <h4>Blog Section</h4>
+                </div>
+                <p>View public blog section and published posts</p>
+                <Button 
+                  onClick={() => navigate('/blog-section')}
+                  className="action-btn"
+                >
+                  View Blog Section
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      );
+
+      const renderAdminAccess = () => (
+        <div className="admin-access-section">
+          <div className="section-header">
+            <h3 className="section-title">Admin Access Control</h3>
+            <p className="section-desc">Manage administrative access and permissions</p>
+          </div>
+          
+          <div className="admin-actions-grid">
+            <Card className="action-card">
+              <CardContent>
+                <div className="action-header">
+                  <Crown className="action-icon" />
+                  <h4>Super Admin Access</h4>
+                </div>
+                <p>Full system access with all administrative privileges</p>
+                <Button 
+                  onClick={() => {
+                    localStorage.setItem('userRole', 'super-admin');
+                    localStorage.setItem('isLoggedIn', 'true');
+                    window.location.reload();
+                  }}
+                  className="action-btn admin-btn"
+                >
+                  Switch to Super Admin
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="action-card">
+              <CardContent>
+                <div className="action-header">
+                  <UserCheck className="action-icon" />
+                  <h4>Head Admin Access</h4>
+                </div>
+                <p>Team management and administrative oversight</p>
+                <Button 
+                  onClick={() => {
+                    localStorage.setItem('userRole', 'head-admin');
+                    localStorage.setItem('isLoggedIn', 'true');
+                    window.location.reload();
+                  }}
+                  className="action-btn admin-btn"
+                >
+                  Switch to Head Admin
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="action-card">
+              <CardContent>
+                <div className="action-header">
+                  <Users className="action-icon" />
+                  <h4>Team Leader Access</h4>
+                </div>
+                <p>Employee management and team coordination</p>
+                <Button 
+                  onClick={() => {
+                    localStorage.setItem('userRole', 'team-leader');
+                    localStorage.setItem('isLoggedIn', 'true');
+                    window.location.reload();
+                  }}
+                  className="action-btn admin-btn"
+                >
+                  Switch to Team Leader
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="action-card">
+              <CardContent>
+                <div className="action-header">
+                  <Briefcase className="action-icon" />
+                  <h4>Employee Access</h4>
+                </div>
+                <p>Standard employee access with limited permissions</p>
+                <Button 
+                  onClick={() => {
+                    localStorage.setItem('userRole', 'employee');
+                    localStorage.setItem('isLoggedIn', 'true');
+                    window.location.reload();
+                  }}
+                  className="action-btn admin-btn"
+                >
+                  Switch to Employee
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      );
+
       const renderContent = () => {
         switch (activeTab) {
           case 'overview':
@@ -1027,12 +1187,20 @@
             return renderSecurity();
           case 'logs':
             return renderLogs();
+          case 'role-assignment':
+            return <RoleAssignment />;
           case 'create-employee':
             return renderCreateEmployee();
+          case 'activity':
+            return <ActivityCredentials />;
           case 'project-enquiries':
             return renderProjectEnquiries();
           case 'registered-users':
             return renderRegisteredUsers();
+          case 'blog-management':
+            return renderBlogManagement();
+          case 'admin-access':
+            return renderAdminAccess();
           case 'performance':
             return renderPerformance();
           case 'deployment':
@@ -1055,14 +1223,19 @@
         <>
           <div className="developer-console">
             <div className="console-header">
+              <div className="console-heading">
+                <div>
+                  <h1 className="console-title">Developer Console</h1>
+                  <p className="console-subtitle">Manage roles, employees, and system tools in one place</p>
+                </div>
+              </div>
               {/* Hamburger for mobile */}
               <button
                 className="hamburger-btn"
                 onClick={() => setSidebarOpen(true)}
-                style={{ display: 'none' }}
                 aria-label="Open navigation menu"
               >
-                <Menu size={28} />
+                <Menu size={22} />
               </button>
             </div>
 
@@ -1070,18 +1243,14 @@
               {/* Sidebar/Nav Panel */}
               <div
                 className={`nav-panel${sidebarOpen ? ' open' : ''}`}
-                style={{
-                  display: sidebarOpen ? 'block' : '',
-                }}
               >
                 {/* Close button for mobile */}
                 <button
                   className="close-sidebar-btn"
                   onClick={() => setSidebarOpen(false)}
-                  style={{ display: 'none' }}
                   aria-label="Close navigation menu"
                 >
-                  <X size={28} />
+                  <X size={20} />
                 </button>
                 <CardContent className="nav-content">
                   <nav className="nav-menu">

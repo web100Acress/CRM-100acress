@@ -50,6 +50,14 @@ const resetPassword = async (token, newPassword) => {
   return user;
 };
 
+const updateUserStatus = async (id, status) => {
+  return await User.findByIdAndUpdate(
+    id, 
+    { status }, 
+    { new: true, runValidators: true }
+  );
+};
+
 module.exports = {
   createUser,
   getUsers,
@@ -58,4 +66,5 @@ module.exports = {
   deleteUser,
   setResetToken,
   resetPassword,
-}; 
+  updateUserStatus,
+};
