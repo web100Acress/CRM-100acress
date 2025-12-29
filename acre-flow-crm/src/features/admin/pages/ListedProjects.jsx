@@ -5,7 +5,7 @@ import api100acress from "../config/api100acressClient";
 import AdminSidebar from "../components/AdminSidebar";
 import { Link } from "react-router-dom";
 import { message, Modal } from "antd"; 
-import { LogOut, ChevronDown, User, Settings as SettingsIcon, ArrowLeft, Eye, Edit, Trash2, Home, Plus, Calendar, Phone, MapPin, Building } from 'lucide-react';
+import { LogOut, ChevronDown, User, Settings as SettingsIcon, ArrowLeft, Eye, Edit, Trash2, Home, Plus, Calendar, Phone, MapPin, Building, EyeOff, Eye as EyeOn } from 'lucide-react';
 
 const Projects = () => {
   const [viewAll, setViewAll] = useState([]);
@@ -120,6 +120,31 @@ const Projects = () => {
     };
     fetchData();
   }, [refreshTrigger]);
+
+  const toggleProjectVisibility = async (id, currentStatus) => {
+    try {
+      const response = await api100acress.patch(`/project/toggle-visibility/${id}`, {
+        isHidden: !currentStatus
+      });
+
+      if (response.status >= 200 && response.status < 300) {
+        messageApi.open({
+          type: "success",
+          content: "Project visibility updated successfully.",
+          duration: 2,
+        });
+        // Refresh the projects list
+        setRefreshTrigger(prev => prev + 1);
+      }
+    } catch (error) {
+      console.error("Error updating project visibility:", error);
+      messageApi.open({
+        type: "error",
+        content: "Failed to update project visibility. Please try again.",
+        duration: 2,
+      });
+    }
+  };
 
   const handleDeleteUser = async (id) => {
     try {
@@ -545,7 +570,12 @@ const Projects = () => {
                     <span className="text-white font-semibold text-xs sm:text-sm">{getUserInitials(userInfo?.name)}</span>
                   </div>
                   <div className="text-right hidden sm:block">
-                    <p className="text-xs sm:text-sm font-medium text-gray-900">{userInfo?.name}</p>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Visibility
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
                     <p className="text-xs text-gray-600 truncate max-w-[120px]">{userInfo?.email}</p>
                   </div>
                   <ChevronDown size={16} className={`text-gray-600 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
@@ -747,6 +777,33 @@ const Projects = () => {
                             </div>
                           </div>
                           
+                          <div className={`mt-3 rounded-xl border p-3 ${item.isHidden ? 'bg-gray-50 border-gray-200' : 'bg-emerald-50 border-emerald-200'}`}>
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-semibold border ${item.isHidden ? 'bg-gray-100 text-gray-700 border-gray-200' : 'bg-emerald-100 text-emerald-700 border-emerald-200'}`}>
+                                    {item.isHidden ? <EyeOff size={14} /> : <Eye size={14} />}
+                                    {item.isHidden ? 'Hidden on Website' : 'Visible on Website'}
+                                  </span>
+                                </div>
+                                <div className="text-[11px] text-gray-600 mt-1 truncate">
+                                  Tap switch to {item.isHidden ? 'show' : 'hide'}
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => toggleProjectVisibility(id, item.isHidden)}
+                                className={`relative inline-flex h-7 w-12 flex-shrink-0 items-center rounded-full transition-colors ${item.isHidden ? 'bg-gray-300' : 'bg-emerald-500'}`}
+                                title={item.isHidden ? 'Hidden from website' : 'Visible on website'}
+                              >
+                                <span
+                                  className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${item.isHidden ? 'translate-x-1' : 'translate-x-6'}`}
+                                />
+                              </button>
+                            </div>
+                          </div>
+                          
                           <div className="flex flex-wrap gap-2 mt-3">
                             <Link to={`/Admin/ProjectsView/${pUrl}`} className="flex-1">
                               <button className="w-full px-3 py-2 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-1">
@@ -795,6 +852,9 @@ const Projects = () => {
                       <th scope="col" className="sticky top-0 z-10 bg-gray-50 px-3 py-2 text-center text-xs font-bold uppercase tracking-wide text-gray-600 hidden sm:table-cell">
                         Address
                       </th>
+                      <th scope="col" className="px-2 py-2 text-center font-bold text-gray-600 w-20 sm:w-24">
+                        Visibility
+                      </th>
                       <th scope="col" className="px-1 sm:px-4 py-2 text-center font-bold text-gray-600 w-24 sm:w-auto">
                         Action
                       </th>
@@ -824,20 +884,25 @@ const Projects = () => {
                             <td className="px-3 py-2 text-center text-gray-700 border-b border-gray-100 whitespace-nowrap overflow-hidden text-ellipsis hidden sm:table-cell">
                               {item.city}
                             </td>
-                            <td className="px-3 py-2 text-center text-gray-700 border-b border-gray-100 max-w-[260px] whitespace-normal hidden sm:table-cell">
-                              {item.projectAddress}
+                            <td className="px-3 py-2 text-center text-gray-700 border-b border-gray-100 whitespace-nowrap overflow-hidden text-ellipsis hidden sm:table-cell">
+                              {item.projectAddress || '-'}
                             </td>
-
-                            <td className="px-1 sm:px-3 py-2 text-left sm:text-center border-b border-gray-100 w-24 sm:w-auto">
-                              <div className="flex flex-wrap justify-start sm:justify-center items-center gap-2">
+                            <td className="px-2 py-2 text-center border-b border-gray-100 w-20 sm:w-24">
+                              <div className="flex flex-col items-center gap-1">
                                 <button
-                                  type="button"
-                                  onClick={() => handleViewDetails(item)}
-                                  className="mr-4 sm:hidden px-3 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white shadow-sm hover:bg-blue-700 transition-all duration-200"
+                                  onClick={() => toggleProjectVisibility(id, item.isHidden)}
+                                  className={`p-2 rounded-full transition-colors ${item.isHidden ? 'bg-gray-100 text-gray-500 hover:bg-gray-200' : 'bg-blue-100 text-blue-600 hover:bg-blue-200'}`}
+                                  title={item.isHidden ? 'Hidden from website' : 'Visible on website'}
                                 >
-                                  View Details
+                                  {item.isHidden ? <EyeOff size={18} /> : <Eye size={18} />}
                                 </button>
-
+                                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${item.isHidden ? 'bg-gray-50 text-gray-600 border-gray-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
+                                  {item.isHidden ? 'Hidden' : 'Visible'}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-1 sm:px-4 py-2 text-center border-b border-gray-100 w-24 sm:w-auto">
+                              <div className="flex justify-center sm:justify-start gap-2">
                                 <Link to={`/Admin/ProjectsView/${pUrl}`}>
                                   <button
                                     type="button"
@@ -880,7 +945,7 @@ const Projects = () => {
                       })
                     ) : (
                       <tr>
-                        <td colSpan="6" className="text-center py-10 text-gray-500 italic">
+                        <td colSpan="7" className="text-center py-10 text-gray-500 italic">
                           No projects found.
                         </td>
                       </tr>
