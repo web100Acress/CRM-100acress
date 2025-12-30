@@ -82,6 +82,20 @@ export const ENDPOINTS = {
     FEATURE_FLAGS: `${BASE_URL}/api/comm-admin/feature-flags`,
     PROVIDERS: `${BASE_URL}/api/comm-admin/providers`,
   },
+
+  WHATSAPP: {
+    LIST_MESSAGES: `${BASE_URL}/api/whatsapp/messages`,
+    SEND: `${BASE_URL}/api/whatsapp/send`,
+  },
+
+  EMAIL: {
+    LIST_TEMPLATES: `${BASE_URL}/api/email/templates`,
+    CREATE_TEMPLATE: `${BASE_URL}/api/email/templates`,
+    UPDATE_TEMPLATE: (id) => `${BASE_URL}/api/email/templates/${id}`,
+    DELETE_TEMPLATE: (id) => `${BASE_URL}/api/email/templates/${id}`,
+    LIST_MESSAGES: `${BASE_URL}/api/email/messages`,
+    SEND: `${BASE_URL}/api/email/send`,
+  },
 };
 
 export default ENDPOINTS;

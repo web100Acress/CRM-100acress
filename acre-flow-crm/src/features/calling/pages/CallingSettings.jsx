@@ -20,6 +20,11 @@ const CallingSettings = ({ userRole = 'super-admin' }) => {
     providerName: 'stub',
     isActive: true,
     defaultFromNumber: '',
+    credentials: {
+      accountSid: '',
+      authToken: '',
+      forwardTo: '',
+    },
   });
 
   const loadAll = async () => {
@@ -30,7 +35,22 @@ const CallingSettings = ({ userRole = 'super-admin' }) => {
 
       setFlags(flagsRes?.data || flagsRes);
       const list = providersRes?.data || providersRes;
-      setProviders(Array.isArray(list) ? list : []);
+      const normalized = Array.isArray(list) ? list : [];
+      setProviders(normalized);
+
+      const active = normalized.find((p) => p?.isActive);
+      if (active) {
+        setProviderForm({
+          providerName: active.providerName || 'stub',
+          isActive: Boolean(active.isActive),
+          defaultFromNumber: active.defaultFromNumber || '',
+          credentials: {
+            accountSid: active?.credentials?.accountSid || '',
+            authToken: active?.credentials?.authToken || '',
+            forwardTo: active?.credentials?.forwardTo || '',
+          },
+        });
+      }
     } catch (e) {
       alert(e?.message || 'Failed to load calling settings');
     } finally {
@@ -67,11 +87,20 @@ const CallingSettings = ({ userRole = 'super-admin' }) => {
   const saveProvider = async () => {
     try {
       setSaving(true);
+      const providerCredentials =
+        providerForm.providerName === 'twilio'
+          ? {
+              accountSid: providerForm?.credentials?.accountSid || '',
+              authToken: providerForm?.credentials?.authToken || '',
+              forwardTo: providerForm?.credentials?.forwardTo || '',
+            }
+          : {};
+
       await commAdminApi.upsertProvider({
         providerName: providerForm.providerName,
         isActive: Boolean(providerForm.isActive),
         defaultFromNumber: providerForm.defaultFromNumber || '',
-        credentials: {},
+        credentials: providerCredentials,
       });
       await loadAll();
     } catch (e) {
@@ -184,6 +213,55 @@ const CallingSettings = ({ userRole = 'super-admin' }) => {
                   </button>
                 </div>
               </div>
+
+              {providerForm.providerName === 'twilio' && (
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-sm text-gray-600">Twilio Account SID</label>
+                    <input
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2"
+                      value={providerForm?.credentials?.accountSid || ''}
+                      onChange={(e) =>
+                        setProviderForm((p) => ({
+                          ...p,
+                          credentials: { ...p.credentials, accountSid: e.target.value },
+                        }))
+                      }
+                      placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm text-gray-600">Twilio Auth Token</label>
+                    <input
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2"
+                      value={providerForm?.credentials?.authToken || ''}
+                      onChange={(e) =>
+                        setProviderForm((p) => ({
+                          ...p,
+                          credentials: { ...p.credentials, authToken: e.target.value },
+                        }))
+                      }
+                      placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm text-gray-600">Forward To (optional)</label>
+                    <input
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2"
+                      value={providerForm?.credentials?.forwardTo || ''}
+                      onChange={(e) =>
+                        setProviderForm((p) => ({
+                          ...p,
+                          credentials: { ...p.credentials, forwardTo: e.target.value },
+                        }))
+                      }
+                      placeholder="+91XXXXXXXXXX"
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="mt-5">
                 <div className="text-sm font-semibold text-gray-700 mb-2">Saved Providers</div>

@@ -35,6 +35,8 @@ import ViewPropertyAdmin from "@/features/admin/components/ViewPropertyAdmin";
 
 import CallLogs from "@/features/calling/pages/CallLogs";
 import CallingSettings from "@/features/calling/pages/CallingSettings";
+import EmailCenter from "@/features/communication/pages/EmailCenter";
+import WhatsAppLogs from "@/features/communication/pages/WhatsAppLogs";
 
 import ProjectEnquiries from '@/features/admin/pages/ProjectEnquiries';
 import ListedProjects from '@/features/admin/pages/ListedProjects';
@@ -253,6 +255,28 @@ const App = () => {
               element={
                 isLoggedIn && userRole === "super-admin" ? (
                   <CallingSettings userRole={userRole} />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
+
+            <Route
+              path="/email"
+              element={
+                isLoggedIn && userRole === "super-admin" ? (
+                  <EmailCenter userRole={userRole} />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
+
+            <Route
+              path="/whatsapp"
+              element={
+                isLoggedIn && userRole === "super-admin" ? (
+                  <WhatsAppLogs userRole={userRole} />
                 ) : (
                   <Navigate to="/" replace />
                 )

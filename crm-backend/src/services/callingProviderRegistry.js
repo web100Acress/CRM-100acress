@@ -8,4 +8,12 @@ async function getActiveProvider() {
   return 'stub';
 }
 
-module.exports = { getActiveProvider };
+async function getActiveProviderAccount() {
+  const active = await ProviderAccount.findOne({ isActive: true }).lean();
+  if (active && active.providerName) {
+    return active;
+  }
+  return { providerName: 'stub', isActive: true, defaultFromNumber: '', credentials: {} };
+}
+
+module.exports = { getActiveProvider, getActiveProviderAccount };

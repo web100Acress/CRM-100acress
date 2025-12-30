@@ -8,6 +8,8 @@ import {
   Home,
   PhoneCall,
   Settings,
+  Mail,
+  MessageCircle,
   LogOut,
   X
 } from 'lucide-react';
@@ -50,6 +52,8 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
       { path: '/leads', icon: Building2, label: 'All Leads' },
       { path: '/calls', icon: PhoneCall, label: 'Call Logs' },
       { path: '/calling-settings', icon: Settings, label: 'Calling Settings' },
+      { path: '/email', icon: Mail, label: 'Email Center' },
+      { path: '/whatsapp', icon: MessageCircle, label: 'WhatsApp Logs' },
       { path: '/users', icon: Users, label: 'Manage Users' },
     ],
     admin: [

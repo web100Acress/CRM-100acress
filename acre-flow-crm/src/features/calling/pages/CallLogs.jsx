@@ -3,6 +3,24 @@ import DashboardLayout from '@/layout/DashboardLayout';
 import { callsApi } from '@/api/calls.api.js';
 import { Search, Filter, FileText, PhoneCall } from 'lucide-react';
 
+const formatSeconds = (sec) => {
+  const s = Math.max(0, Number(sec) || 0);
+  const mm = String(Math.floor(s / 60)).padStart(2, '0');
+  const ss = String(s % 60).padStart(2, '0');
+  return `${mm}:${ss}`;
+};
+
+const badgeClass = (status) => {
+  const s = (status || '').toLowerCase();
+  if (s === 'answered') return 'bg-green-50 text-green-700 border border-green-200';
+  if (s === 'missed') return 'bg-amber-50 text-amber-700 border border-amber-200';
+  if (s === 'failed') return 'bg-red-50 text-red-700 border border-red-200';
+  if (s === 'ringing') return 'bg-blue-50 text-blue-700 border border-blue-200';
+  if (s === 'queued') return 'bg-slate-50 text-slate-700 border border-slate-200';
+  if (s === 'ended') return 'bg-gray-50 text-gray-700 border border-gray-200';
+  return 'bg-gray-50 text-gray-700 border border-gray-200';
+};
+
 const CallLogs = ({ userRole = 'employee' }) => {
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState([]);
@@ -128,9 +146,9 @@ const CallLogs = ({ userRole = 'employee' }) => {
                       <td className="px-4 py-3 font-medium text-gray-900">{r.phoneNumber}</td>
                       <td className="px-4 py-3 text-gray-700">{r.direction}</td>
                       <td className="px-4 py-3">
-                        <span className="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800">{r.status}</span>
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${badgeClass(r.status)}`}>{r.status}</span>
                       </td>
-                      <td className="px-4 py-3 text-gray-700">{r.durationSec || 0}s</td>
+                      <td className="px-4 py-3 text-gray-700 font-medium">{formatSeconds(r.durationSec)}</td>
                       <td className="px-4 py-3 text-gray-700">{r.provider}</td>
                       <td className="px-4 py-3 text-gray-700">{r.createdAt ? new Date(r.createdAt).toLocaleString() : '-'}</td>
                       <td className="px-4 py-3 text-right">

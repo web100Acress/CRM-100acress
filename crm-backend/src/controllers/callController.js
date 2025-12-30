@@ -1,12 +1,25 @@
 const CallLog = require('../models/callLogModel');
 const Lead = require('../models/leadModel');
 const { getFeatureFlags } = require('../services/featureFlagService');
-const { getActiveProvider } = require('../services/callingProviderRegistry');
+const { getActiveProviderAccount } = require('../services/callingProviderRegistry');
 
 const stubProvider = require('../services/callingProviders/stubProvider');
+const twilioProvider = require('../services/callingProviders/twilioProvider');
+
+function joinUrl(base, path) {
+  const b = (base || '').replace(/\/$/, '');
+  const p = (path || '').startsWith('/') ? path : `/${path}`;
+  return `${b}${p}`;
+}
+
+function getPublicBaseUrl() {
+  return process.env.PUBLIC_BASE_URL || process.env.BACKEND_PUBLIC_URL || '';
+}
 
 function pickProvider(providerName) {
   switch ((providerName || 'stub').toLowerCase()) {
+    case 'twilio':
+      return { name: 'twilio', adapter: twilioProvider };
     case 'stub':
     default:
       return { name: 'stub', adapter: stubProvider };
@@ -38,12 +51,26 @@ exports.startCall = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'phoneNumber is required' });
     }
 
-    const providerName = await getActiveProvider();
-    const provider = pickProvider(providerName);
+    const providerAccount = await getActiveProviderAccount();
+    const provider = pickProvider(providerAccount?.providerName);
 
-    const providerResult = await provider.adapter.startCall({
-      to: phoneNumber,
-    });
+    const publicBaseUrl = getPublicBaseUrl();
+    const webhookUrl = publicBaseUrl ? joinUrl(publicBaseUrl, '/api/webhooks/twilio/voice') : '';
+    const statusCallbackUrl = publicBaseUrl ? joinUrl(publicBaseUrl, '/api/webhooks/twilio/status') : '';
+
+    let providerResult;
+    if (provider.name === 'twilio') {
+      providerResult = await provider.adapter.startCall({
+        to: phoneNumber,
+        from: providerAccount?.defaultFromNumber,
+        webhookUrl,
+        statusCallbackUrl,
+        accountSid: providerAccount?.credentials?.accountSid,
+        authToken: providerAccount?.credentials?.authToken,
+      });
+    } else {
+      providerResult = await provider.adapter.startCall({ to: phoneNumber });
+    }
 
     const now = new Date();
     const callLog = await CallLog.create({
@@ -56,7 +83,7 @@ exports.startCall = async (req, res, next) => {
       startTime: now,
       provider: provider.name,
       providerCallId: providerResult.providerCallId,
-      meta: { to: phoneNumber },
+      meta: { to: phoneNumber, provider: provider.name },
     });
 
     return res.status(201).json({ success: true, data: callLog });
@@ -85,8 +112,17 @@ exports.endCall = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'Access denied' });
     }
 
+    const providerAccount = await getActiveProviderAccount();
     const provider = pickProvider(callLog.provider);
-    await provider.adapter.endCall({ providerCallId: callLog.providerCallId });
+    if (provider.name === 'twilio') {
+      await provider.adapter.endCall({
+        providerCallId: callLog.providerCallId,
+        accountSid: providerAccount?.credentials?.accountSid,
+        authToken: providerAccount?.credentials?.authToken,
+      });
+    } else {
+      await provider.adapter.endCall({ providerCallId: callLog.providerCallId });
+    }
 
     const endTime = new Date();
     const start = callLog.startTime ? new Date(callLog.startTime).getTime() : endTime.getTime();
