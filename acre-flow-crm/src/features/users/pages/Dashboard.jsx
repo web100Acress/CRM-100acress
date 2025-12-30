@@ -6,6 +6,9 @@ import DashboardStats from '@/layout/DashboardStats';
 // import LeadTable from '../components/LeadTable';
 // import TicketBoard from '../components/TicketBoard';
 import SuperAdminProfile from '@/layout/SuperAdminProfile';
+import HeadAdminProfile from '@/layout/HeadAdminProfile';
+import TeamLeaderProfile from '@/layout/TeamLeaderProfile';
+import EmployeeProfile from '@/layout/EmployeeProfile';
 
 const Dashboard = ({ userRole = 'employee' }) => {
   const navigate = useNavigate();
@@ -14,11 +17,35 @@ const Dashboard = ({ userRole = 'employee' }) => {
     navigate('/create-admin');
   };
 
-  // Show Super Admin Profile for super-admin role
+  // Show role-specific profile dashboards
   if (userRole === 'super-admin') {
     return (
       <DashboardLayout userRole={userRole}>
         <SuperAdminProfile onCreateAdmin={handleCreateAdmin} />
+      </DashboardLayout>
+    );
+  }
+
+  if (userRole === 'head-admin' || userRole === 'head') {
+    return (
+      <DashboardLayout userRole={userRole}>
+        <HeadAdminProfile />
+      </DashboardLayout>
+    );
+  }
+
+  if (userRole === 'team-leader') {
+    return (
+      <DashboardLayout userRole={userRole}>
+        <TeamLeaderProfile />
+      </DashboardLayout>
+    );
+  }
+
+  if (userRole === 'employee') {
+    return (
+      <DashboardLayout userRole={userRole}>
+        <EmployeeProfile />
       </DashboardLayout>
     );
   }
