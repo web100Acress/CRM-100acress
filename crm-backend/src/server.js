@@ -116,6 +116,8 @@ app.use('/api/leads', require('./routes/leadRoutes'));
 app.use('/api/meetings', require('./routes/meetingRoutes'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/userRoutes'));
+app.use('/api/calls', require('./routes/callRoutes'));
+app.use('/api/comm-admin', require('./routes/commAdminRoutes'));
 
 // ✅ Temporary route to seed last login data
 app.post('/api/admin/seed-last-login', async (req, res) => {

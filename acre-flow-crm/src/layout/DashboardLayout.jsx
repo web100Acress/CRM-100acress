@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Menu, Bell, Search } from "lucide-react";
 import Sidebar from "./Sidebar.jsx";
 import '@/styles/DashboardLayout.css'
+import FloatingDialer from "@/features/calling/components/FloatingDialer.jsx";
 
 const DashboardLayout = ({ children, userRole = "employee" }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -135,6 +136,8 @@ const DashboardLayout = ({ children, userRole = "employee" }) => {
 
         <main className="main-content">{children}</main>
       </div>
+
+      <FloatingDialer userRole={userRole} />
     </div>
   );
 };

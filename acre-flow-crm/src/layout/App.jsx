@@ -33,6 +33,9 @@ import AdminDashboard from "@/features/admin/pages/AdminDashboard";
 import AdminUserManagement from "@/features/admin/components/UserManagement";
 import ViewPropertyAdmin from "@/features/admin/components/ViewPropertyAdmin";
 
+import CallLogs from "@/features/calling/pages/CallLogs";
+import CallingSettings from "@/features/calling/pages/CallingSettings";
+
 import ProjectEnquiries from '@/features/admin/pages/ProjectEnquiries';
 import ListedProjects from '@/features/admin/pages/ListedProjects';
 import InsertProject from '@/features/admin/pages/AddProjects';
@@ -230,6 +233,28 @@ const App = () => {
                   )
                 ) : (
                   <Navigate to="/login" replace />
+                )
+              }
+            />
+
+            <Route
+              path="/calls"
+              element={
+                isLoggedIn ? (
+                  <CallLogs userRole={userRole} />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+
+            <Route
+              path="/calling-settings"
+              element={
+                isLoggedIn && userRole === "super-admin" ? (
+                  <CallingSettings userRole={userRole} />
+                ) : (
+                  <Navigate to="/" replace />
                 )
               }
             />

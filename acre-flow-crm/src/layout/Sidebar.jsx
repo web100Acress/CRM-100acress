@@ -6,6 +6,8 @@ import {
   Users,
   Building2,
   Home,
+  PhoneCall,
+  Settings,
   LogOut,
   X
 } from 'lucide-react';
@@ -46,6 +48,8 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
     'super-admin': [
       { path: '/', icon: Home, label: 'Dashboard' },
       { path: '/leads', icon: Building2, label: 'All Leads' },
+      { path: '/calls', icon: PhoneCall, label: 'Call Logs' },
+      { path: '/calling-settings', icon: Settings, label: 'Calling Settings' },
       { path: '/users', icon: Users, label: 'Manage Users' },
     ],
     admin: [
@@ -77,14 +81,17 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
     'head-admin': [
       { path: '/', icon: Home, label: 'Dashboard' },
       { path: '/leads', icon: Building2, label: 'My Leads' },
+      { path: '/calls', icon: PhoneCall, label: 'Call Logs' },
     ],
     'team-leader': [
       { path: '/', icon: Home, label: 'Dashboard' },
       { path: '/leads', icon: Building2, label: 'Assigned Leads' },
+      { path: '/calls', icon: PhoneCall, label: 'Call Logs' },
     ],
     employee: [
       { path: '/', icon: Home, label: 'Dashboard' },
       { path: '/leads', icon: Building2, label: 'My Leads' },
+      { path: '/calls', icon: PhoneCall, label: 'Call Logs' },
     ]
   };
 
@@ -101,7 +108,7 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
 
   // For team-leader, employee, and super-admin, always use role-specific navigation
   const navItems =
-    userRole === 'team-leader' || userRole === 'employee' || userRole === 'super-admin'
+    userRole === 'team-leader' || userRole === 'employee' || userRole === 'super-admin' || userRole === 'head-admin'
       ? (navigationItems[userRole] || navigationItems['employee'])
       : (filteredModuleNav.length > 0 ? filteredModuleNav : (navigationItems[userRole] || navigationItems['employee']));
 

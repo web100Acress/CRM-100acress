@@ -212,7 +212,7 @@ const ProjectEdit = () => {
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      const res = await api100acress.get(`/project/View/${pUrl}`);
+      const res = await api100acress.get(`/project/admin/View/${pUrl}`);
       if (res.status === 200 && res.data?.dataview) {
         const projectData = res.data.dataview[0] || {};
         setValues(prev => ({
