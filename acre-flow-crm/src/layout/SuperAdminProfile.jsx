@@ -247,7 +247,7 @@ const SuperAdminProfile = () => {
                 <div className="sa2-hero-bottom">
                   <div>
                     <div className="sa2-hero-title" style={{color: 'white'}}>100acres CRM</div>
-                    <div className="sa2-hero-sub" style={{color: 'white'}}>Real-time team performance & lead pipeline</div>
+                   
                   </div>
                   <button type="button" className="sa2-hero-cta" style={{backgroundColor: 'black', color: 'white'}} onClick={() => navigate('/leads')}>View Leads</button>
                 </div>
@@ -434,9 +434,9 @@ const SuperAdminProfile = () => {
         </div>
       </div>
       
-      <div style={{ position: 'fixed', bottom: '20px', right: '20px', display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'white', padding: '8px 12px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+      <div className="eye-view-counter">
         <Eye size={16} color="#666" />
-        <span style={{ fontSize: '14px', color: '#666' }}>24 bidders</span>
+        <span>24 bidders</span>
       </div>
     </div>
   );
