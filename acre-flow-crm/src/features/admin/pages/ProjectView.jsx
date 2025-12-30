@@ -103,7 +103,7 @@ const ProjectView = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await api100acress.get(`/project/View/${pUrl}`);
+        const res = await api100acress.get(`/project/admin/View/${pUrl}`);
         const dv = res?.data?.dataview;
         setViewDetails(Array.isArray(dv) && dv.length > 0 ? dv[0] : {});
       } catch (error) {
