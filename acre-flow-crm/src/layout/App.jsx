@@ -7,6 +7,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import DashboardLayout from "./DashboardLayout";
 import { useState, useEffect } from "react";
 import store from "@/store";
+import '@/styles/dark-mode.css';
+import { ThemeProvider } from "@/context/ThemeContext";
 import Dashboard from "@/features/users/pages/Dashboard";
 import Leads from "@/features/leads/pages/Leads";
 import Tickets from "@/features/tickets/pages/Tickets";
@@ -208,11 +210,12 @@ const App = () => {
 
   return (
     <Provider store={store}>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
+      <ThemeProvider>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
           <Routes>
             <Route
               path="/login"
@@ -570,6 +573,7 @@ const App = () => {
         </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>
+    </ThemeProvider>
     </Provider>
   );
 };

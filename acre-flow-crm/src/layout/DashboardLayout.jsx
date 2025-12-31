@@ -3,8 +3,10 @@ import { Menu, Bell, Search } from "lucide-react";
 import Sidebar from "./Sidebar.jsx";
 import '@/styles/DashboardLayout.css'
 import FloatingDialer from "@/features/calling/components/FloatingDialer.jsx";
+import { useTheme } from "@/context/ThemeContext";
 
 const DashboardLayout = ({ children, userRole = "employee" }) => {
+  const { isDark } = useTheme();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -87,7 +89,7 @@ const DashboardLayout = ({ children, userRole = "employee" }) => {
   };
 
   return (
-    <div className="dashboard-container">
+    <div className={`dashboard-container ${isDark ? 'dark-theme' : 'light-theme'}`}>
       {/* Sidebar */}
       <Sidebar
         userRole={userRole}
