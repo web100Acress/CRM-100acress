@@ -556,18 +556,70 @@ button:disabled.px-4.py-2.bg-gray-500.text-white.rounded.hover:bg-gray-600.text-
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .api-actions {
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-  
-  .db-status {
-    justify-content: center;
-  }
-  
-  .toggle-label {
-    font-size: 0.75rem;
-  }
+/* Description Section */
+.description-section {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  border-radius: 0.5rem;
+}
+
+.description-section .flex.justify-between.items-center.mb-2 {
+  margin-bottom: 0.5rem;
+}
+
+.description-section label {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.description-section span.text-xs.text-gray-500 {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.description-section input.w-full.px-3.py-2.border.rounded.text-sm {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-primary);
+  border-radius: 0.375rem;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+}
+
+.description-section input.w-full.px-3.py-2.border.rounded.text-sm:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.description-section input.w-full.px-3.py-2.border.rounded.text-sm::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+/* Enhanced History Display */
+.history-item {
+  transition: all 0.3s ease;
+}
+
+.history-item:hover {
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.history-item .text-xs.text-gray-700.bg-white.p-2.rounded.border-l-2.border-blue-400 {
+  background: var(--bg-primary);
+  border-left: 3px solid var(--accent-primary);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.history-item .text-xs.text-gray-700.bg-white.p-2.rounded.border-l-2.border-blue-400 strong {
+  color: var(--text-primary);
+  font-weight: 600;
 }

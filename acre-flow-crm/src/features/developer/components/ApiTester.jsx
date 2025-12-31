@@ -192,7 +192,8 @@ const ApiTester = () => {
               data: req.response?.data || 'No response data',
               time: new Date(req.timestamp).toLocaleTimeString(),
               url: req.url,
-              method: req.method
+              method: req.method,
+              description: req.description || 'No description provided' // Include description
             }));
             
             setHistory(dbHistory);
@@ -242,6 +243,7 @@ const ApiTester = () => {
       const requestData = {
         method: request.method,
         url: request.url,
+        description: request.description, // Include description
         headers: request.headers.filter(h => h.key && h.value),
         params: request.params.filter(p => p.key && p.value),
         body: request.body,
@@ -357,6 +359,21 @@ const ApiTester = () => {
                   <Play className="w-4 h-4" />
                 )}
               </button>
+            </div>
+
+            {/* Description Input */}
+            <div className="description-section">
+              <div className="flex justify-between items-center mb-2">
+                <label className="text-sm font-medium text-gray-700">API Description</label>
+                <span className="text-xs text-gray-500">Add a description for team members</span>
+              </div>
+              <input
+                type="text"
+                value={request.description}
+                onChange={(e) => setRequest({...request, description: e.target.value})}
+                placeholder="e.g., Get all users from the database - Returns user list with pagination"
+                className="w-full px-3 py-2 border rounded text-sm"
+              />
             </div>
 
             {/* Tabs */}
@@ -589,18 +606,25 @@ const ApiTester = () => {
           <CardContent>
             <div className="space-y-2 max-h-64 overflow-auto">
               {history.map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded hover:bg-gray-100">
-                  <div className="flex items-center gap-2 flex-1">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      item.status >= 200 && item.status < 300 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {item.method}
-                    </span>
-                    <span className="text-sm text-gray-600 truncate max-w-xs">{item.url}</span>
+                <div key={index} className="p-3 bg-gray-50 rounded hover:bg-gray-100 border border-gray-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        item.status >= 200 && item.status < 300 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {item.method}
+                      </span>
+                      <span className="text-sm text-gray-600 truncate max-w-xs">{item.url}</span>
+                    </div>
+                    <span className="text-xs text-gray-500">{item.time}</span>
                   </div>
-                  <span className="text-xs text-gray-500">{item.time}</span>
+                  {item.description && (
+                    <div className="text-xs text-gray-700 bg-white p-2 rounded border-l-2 border-blue-400">
+                      <strong>Description:</strong> {item.description}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
