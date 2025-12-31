@@ -63,6 +63,7 @@ import BannerManagement from '@/features/admin/pages/BannerManagement';
 import ShortSetting from '@/features/admin/pages/ShortSetting';
 import BackToTopButton from '@/features/admin/pages/BackToTopButton';
 import ActivityDashboard from '@/features/activity/pages/ActivityDashboard';
+import EmployeeDashboard from '@/layout/EmployeeDashboard';
 
 // Import Blog Components (temporarily disabled)
 // import BlogDashboard from "@/features/blog/pages/BlogDashboard";
@@ -536,6 +537,16 @@ const App = () => {
               element={
                 isLoggedIn && userRole === "team-leader" ? (
                   <Dashboard userRole={userRole} />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+            <Route
+              path="/employee-dashboard"
+              element={
+                isLoggedIn && (userRole === "employee" || userRole === "user") ? (
+                  <EmployeeDashboard />
                 ) : (
                   <Navigate to="/login" replace />
                 )

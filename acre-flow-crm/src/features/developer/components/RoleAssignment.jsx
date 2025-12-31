@@ -113,19 +113,26 @@ const RoleAssignment = () => {
     sales: [
       { id: 'sales_head', label: 'Sales Head' },
       { id: 'sales_executive', label: 'Sales Executive' },
+      { id: 'employee', label: 'Sales Employee' },
     ],
     hr: [
       { id: 'hr_manager', label: 'HR Manager' },
       { id: 'hr_executive', label: 'HR Executive' },
+      { id: 'employee', label: 'HR Employee' },
     ],
     blog: [
       { id: 'blog_manager', label: 'Blog Manager' },
       { id: 'blog_writer', label: 'Blog Writer' },
+      { id: 'employee', label: 'Blog Employee' },
     ],
     admin: [
+      { id: 'boss', label: 'Boss' },
+      { id: 'head-admin', label: 'Head Admin' },
+      { id: 'team-leader', label: 'Team Leader' },
       { id: 'admin', label: 'Admin' },
       { id: 'crm_admin', label: 'CRM Admin' },
       { id: 'super-admin', label: 'Super Admin' },
+      { id: 'employee', label: 'Admin Employee' },
     ],
   };
 
