@@ -8,7 +8,7 @@
 ```bash
 cd crm-backend
 npm run dev
-# Runs on http://localhost:5001
+# Runs on https://bcrm.100acress.com
 ```
 
 **Terminal 2 - Frontend:**

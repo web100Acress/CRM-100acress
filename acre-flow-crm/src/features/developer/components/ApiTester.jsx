@@ -176,7 +176,7 @@ const ApiTester = () => {
   useEffect(() => {
     const loadSavedRequests = async () => {
       try {
-        const response = await fetch('http://localhost:5001/api/api-tester/requests', {
+        const response = await fetch('https://bcrm.100acress.com/api/api-tester/requests', {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
@@ -220,7 +220,7 @@ const ApiTester = () => {
   useEffect(() => {
     const checkDbConnection = async () => {
       try {
-        const response = await fetch('http://localhost:5001/api/api-tester/status');
+        const response = await fetch('https://bcrm.100acress.com/api/api-tester/status');
         const data = await response.json();
         setDbConnected(data.connected);
       } catch (error) {
@@ -276,7 +276,7 @@ const ApiTester = () => {
       localStorage.setItem('apiTestRequests', JSON.stringify(savedRequests));
       
       // Save to database in real-time
-      await fetch('http://localhost:5001/api/api-tester/save', {
+      await fetch('https://bcrm.100acress.com/api/api-tester/save', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -305,7 +305,7 @@ const ApiTester = () => {
       // If we have the database ID, also delete from database
       const itemToDelete = history[index];
       if (itemToDelete._id) {
-        await fetch(`http://localhost:5001/api/api-tester/requests/${itemToDelete._id}`, {
+        await fetch(`https://bcrm.100acress.com/api/api-tester/requests/${itemToDelete._id}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`

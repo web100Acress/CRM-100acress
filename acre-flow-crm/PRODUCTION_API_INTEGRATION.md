@@ -1,6 +1,6 @@
 # Production API Integration Summary
 
-## ✅ **Production API URL:** `http://localhost:5001/`
+## ✅ **Production API URL:** `https://bcrm.100acress.com/`
 
 ## 📋 **Files Updated:**
 
@@ -67,7 +67,7 @@
 
 ## 📝 **Important Notes:**
 
-- All API calls now point to `http://localhost:5001/`
+- All API calls now point to `https://bcrm.100acress.com/`
 - Dashboard shows real data instead of fallback values
 - Head role is fully supported with proper data display
 - Socket.IO connects to production server for real-time updates
@@ -77,7 +77,7 @@
 
 You can still override the API URL by setting:
 ```bash
-VITE_API_BASE_URL=http://localhost:5001
+VITE_API_BASE_URL=https://bcrm.100acress.com
 ```
 
 This will take precedence over the hardcoded production URL.

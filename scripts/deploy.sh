@@ -33,7 +33,7 @@ BACKEND_PID=$!
 sleep 5
 
 # Check if backend is running
-if curl -f http://localhost:5001/api/health > /dev/null 2>&1; then
+if curl -f https://bcrm.100acress.com/api/health > /dev/null 2>&1; then
     echo "✅ Backend is running successfully!"
 else
     echo "❌ Backend failed to start"
@@ -71,7 +71,7 @@ FRONTEND_PID=$!
 echo "🔍 Performing final health checks..."
 
 # Check backend
-if curl -f http://localhost:5001/api/health > /dev/null 2>&1; then
+if curl -f https://bcrm.100acress.com/api/health > /dev/null 2>&1; then
     echo "✅ Backend health check passed"
 else
     echo "❌ Backend health check failed"
@@ -87,7 +87,7 @@ else
 fi
 
 echo "🎉 CRM Application deployed successfully!"
-echo "📊 Backend: http://localhost:5001"
+echo "📊 Backend: https://bcrm.100acress.com"
 echo "🌐 Frontend: http://localhost:4173"
 echo "📝 Backend PID: $BACKEND_PID"
 echo "📝 Frontend PID: $FRONTEND_PID"

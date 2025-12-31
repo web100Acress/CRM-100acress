@@ -36,7 +36,7 @@ const SalesHeadDashboard = () => {
       console.log('All localStorage:', JSON.stringify(localStorage, null, 2));
       
       if (token && userId) {
-        const response = await fetch(`http://localhost:5001/api/users/${userId}`, {
+        const response = await fetch(`https://bcrm.100acress.com/api/users/${userId}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

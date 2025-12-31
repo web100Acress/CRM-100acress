@@ -215,7 +215,7 @@ const RoleAssignment = () => {
     });
   };
 
-  const handleEditSave = async (assignmentId) => {
+  const handleEditSubmit = async (assignmentId) => {
     setEditLoading(true);
     setMessage('');
 
@@ -266,40 +266,6 @@ const RoleAssignment = () => {
     }
   };
 
-  const handleEditCancel = () => {
-    setEditingAssignment(null);
-    setEditFormData({ department: '', role: '', allowedModules: [], permissions: [] });
-  };
-
-  const handleDelete = async (id) => {
-    setMessage('');
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`https://bcrm.100acress.com/api/users/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        setAssignments(assignments.filter((a) => a.id !== id));
-        setMessage('✅ User deleted successfully!');
-        setTimeout(() => setMessage(''), 3000);
-      } else {
-        setMessage('❌ Error: Failed to delete user');
-      }
-    } catch (error) {
-      setMessage(`❌ Error: ${error.message}`);
-    }
-  };
-
-  const getDepartmentColor = (deptId) => {
-    const dept = departments.find((d) => d.id === deptId);
-    return dept?.color || 'bg-gray-500';
-  };
-
   const getDepartmentLabel = (deptId) => {
     const dept = departments.find((d) => d.id === deptId);
     return dept?.label || deptId;
@@ -318,12 +284,16 @@ const RoleAssignment = () => {
     return getDepartmentColor(deptId);
   };
 
+  const getDepartmentColor = (deptId) => {
+    const dept = departments.find((d) => d.id === deptId);
+    return dept?.color || 'bg-gray-500';
+  };
+
   const getRoleDisplay = (role, allowedModules) => {
     const mods = normalizeModules(allowedModules);
     if (mods.length > 1) return 'CUSTOM ACCESS';
     return (role || '').replace(/_/g, ' ').toUpperCase();
   };
-
   useEffect(() => {
     fetchAssignments();
   }, []);
@@ -352,7 +322,7 @@ const RoleAssignment = () => {
             department: user.department,
             role: user.role,
             allowedModules: normalizeModules(user.allowedModules),
-            permissions: normalizePermissions(user.permissions),
+            permissions: normalizeModules(user.permissions),
             assignedDate: user.createdAt ? new Date(user.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
           }));
         setAssignments(mappedAssignments);
@@ -366,6 +336,35 @@ const RoleAssignment = () => {
 
   const handleRefresh = () => {
     fetchAssignments();
+  };
+
+  const handleDelete = async (assignmentId) => {
+    if (!window.confirm('Are you sure you want to delete this user assignment?')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`https://bcrm.100acress.com/api/users/${assignmentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setMessage('✅ User deleted successfully!');
+        setTimeout(() => setMessage(''), 3000);
+        setTimeout(() => fetchAssignments(), 500);
+      } else {
+        setMessage(`❌ Error: ${data.message || 'Failed to delete user'}`);
+      }
+    } catch (error) {
+      setMessage(`❌ Error: ${error.message}`);
+    }
   };
 
   return (

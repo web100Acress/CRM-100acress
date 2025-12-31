@@ -6,7 +6,7 @@
 The frontend cannot connect to the backend server. The backend is either not running or not accessible at the expected URL.
 
 ### Root Cause
-Backend server on `http://localhost:5001` is not running or crashed.
+Backend server on `https://bcrm.100acress.com` is not running or crashed.
 
 ### Solution
 
@@ -50,7 +50,7 @@ npm run dev
 
 #### Step 4: Verify Connection
 Open browser console and check:
-- Network tab should show requests to `http://localhost:5001/api/activity/...`
+- Network tab should show requests to `https://bcrm.100acress.com/api/activity/...`
 - Status should be 200 (success) or 4xx (client error), NOT connection refused
 
 ---
@@ -96,7 +96,7 @@ const authMiddleware = require('../middlewares/auth');
 
 1. **Verify backend is running:**
    ```bash
-   curl http://localhost:5001/api/activity/departments
+   curl https://bcrm.100acress.com/api/activity/departments
    ```
 
 2. **Check CORS configuration** in `crm-backend/src/app.js`:
@@ -226,7 +226,7 @@ Then update frontend API calls to use `http://localhost:5002`
 1. Check browser console for errors
 2. Verify backend is running
 3. Check Network tab in DevTools
-4. Look for failed requests to `http://localhost:5001`
+4. Look for failed requests to `https://bcrm.100acress.com`
 
 ### Login Page Not Loading
 
@@ -277,7 +277,7 @@ Then update frontend API calls to use `http://localhost:5002`
 
 ```bash
 # Get all departments
-curl http://localhost:5001/api/activity/departments
+curl https://bcrm.100acress.com/api/activity/departments
 
 # Should return:
 # {"success":true,"data":[]}
@@ -287,7 +287,7 @@ curl http://localhost:5001/api/activity/departments
 
 ```javascript
 // Check if backend is accessible
-fetch('http://localhost:5001/api/activity/departments')
+fetch('https://bcrm.100acress.com/api/activity/departments')
   .then(r => r.json())
   .then(data => console.log(data))
   .catch(err => console.error('Error:', err))
