@@ -129,27 +129,45 @@ const EmployeeDashboard = () => {
   }, []);
 
   const myTasks = useMemo(() => {
-    // Use real-time leads data instead of static data
+    // Use real-time leads data from API
     if (dashboardStats.myLeads && dashboardStats.myLeads.length > 0) {
-      return dashboardStats.myLeads.map(lead => ({
-        name: `${lead.name} - ${lead.property || 'Property'}`,
-        priority: lead.status === 'hot' ? 'High' : lead.status === 'warm' ? 'Medium' : 'Low',
-        status: lead.workProgress === 'completed' ? 'Completed' : 
-                lead.workProgress === 'in-progress' ? 'Today' : 'Pending',
-        leadId: lead._id,
-        email: lead.email,
-        phone: lead.phone
-      }));
+      return dashboardStats.myLeads.map(lead => {
+        // Determine priority based on lead status and budget
+        let priority = 'Medium';
+        if (lead.status === 'hot') priority = 'High';
+        else if (lead.status === 'cold') priority = 'Low';
+        else if (lead.budget && parseInt(lead.budget.replace(/[^\d]/g, '')) > 5000000) priority = 'High';
+        else if (lead.budget && parseInt(lead.budget.replace(/[^\d]/g, '')) < 2000000) priority = 'Low';
+
+        // Determine status based on work progress and last contact
+        let status = 'Pending';
+        if (lead.workProgress === 'completed') status = 'Completed';
+        else if (lead.workProgress === 'in-progress') status = 'Today';
+        else if (lead.lastContact) {
+          const daysSinceContact = Math.floor((Date.now() - new Date(lead.lastContact)) / (1000 * 60 * 60 * 24));
+          if (daysSinceContact <= 1) status = 'Today';
+          else if (daysSinceContact <= 3) status = 'This Week';
+          else status = 'Pending';
+        }
+
+        return {
+          name: `${lead.name} - ${lead.property || 'Property Inquiry'}`,
+          priority: priority,
+          status: status,
+          leadId: lead._id,
+          email: lead.email,
+          phone: lead.phone,
+          budget: lead.budget,
+          location: lead.location,
+          actualStatus: lead.status,
+          workProgress: lead.workProgress,
+          lastContact: lead.lastContact
+        };
+      });
     }
     
-    // Fallback static data
-    return [
-      { name: 'Lead Follow-up - Rajesh', priority: 'High', status: 'Pending' },
-      { name: 'Property Visit - Anita', priority: 'Medium', status: 'Today' },
-      { name: 'Document Submission', priority: 'Low', status: 'Tomorrow' },
-      { name: 'Client Meeting - Mohammed', priority: 'High', status: 'Pending' },
-      { name: 'Report Generation', priority: 'Medium', status: 'Today' }
-    ];
+    // Return empty array if no real data - no fallback static data
+    return [];
   }, [dashboardStats.myLeads]);
 
   const employeeData = {
@@ -179,6 +197,45 @@ const EmployeeDashboard = () => {
     
     return days.map((d) => ({ day: d, value: map.get(d) || 0 }));
   }, []);
+
+  // Calculate real-time task status from API data
+  const getTaskStatusCounts = () => {
+    const leads = dashboardStats.myLeads || [];
+    
+    const pending = leads.filter(lead => {
+      if (lead.workProgress === 'completed') return false;
+      if (lead.workProgress === 'in-progress') return false;
+      if (lead.lastContact) {
+        const daysSinceContact = Math.floor((Date.now() - new Date(lead.lastContact)) / (1000 * 60 * 60 * 24));
+        return daysSinceContact > 3;
+      }
+      return true;
+    }).length;
+
+    const today = leads.filter(lead => {
+      if (lead.workProgress === 'in-progress') return true;
+      if (lead.lastContact) {
+        const daysSinceContact = Math.floor((Date.now() - new Date(lead.lastContact)) / (1000 * 60 * 60 * 24));
+        return daysSinceContact <= 1;
+      }
+      return false;
+    }).length;
+
+    const thisWeek = leads.filter(lead => {
+      if (lead.workProgress === 'in-progress') return false;
+      if (lead.lastContact) {
+        const daysSinceContact = Math.floor((Date.now() - new Date(lead.lastContact)) / (1000 * 60 * 60 * 24));
+        return daysSinceContact > 1 && daysSinceContact <= 7;
+      }
+      return false;
+    }).length;
+
+    const completed = leads.filter(lead => lead.workProgress === 'completed').length;
+
+    return { pending, today, thisWeek, completed };
+  };
+
+  const taskStatusCounts = getTaskStatusCounts();
 
   const getInitials = (name) => {
     const s = (name || '').trim();
@@ -293,25 +350,46 @@ const EmployeeDashboard = () => {
                     </div>
                   </div>
                   <div className="sa2-list-items">
-                    {myTasks.map((task, i) => (
-                      <div key={i} className="sa2-list-item">
-                        <div className="sa2-list-left">
-                          <span className="sa2-list-bar" style={{
-                            backgroundColor: task.priority === 'High' ? '#ef4444' : 
-                                           task.priority === 'Medium' ? '#f59e42' : '#10b981'
-                          }} />
-                          <span className="sa2-list-name">{task.name}</span>
+                    {myTasks.length > 0 ? (
+                      myTasks.map((task, i) => (
+                        <div key={i} className="sa2-list-item" onClick={() => task.leadId && navigate(`/leads?highlight=${task.leadId}`)} style={{cursor: 'pointer'}}>
+                          <div className="sa2-list-left">
+                            <span className="sa2-list-bar" style={{
+                              backgroundColor: task.priority === 'High' ? '#ef4444' : 
+                                             task.priority === 'Medium' ? '#f59e42' : '#10b981'
+                            }} />
+                            <div>
+                              <span className="sa2-list-name">{task.name}</span>
+                              {task.budget && (
+                                <span className="sa2-list-sub" style={{fontSize: '11px', color: '#666'}}>
+                                  Budget: {task.budget}
+                                </span>
+                              )}
+                              {task.location && (
+                                <span className="sa2-list-sub" style={{fontSize: '11px', color: '#666', marginLeft: '10px'}}>
+                                  📍 {task.location}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="sa2-list-right">
+                            <span className="sa2-pill" style={{
+                              backgroundColor: task.status === 'Pending' ? '#ef4444' : 
+                                             task.status === 'Today' ? '#f59e42' : 
+                                             task.status === 'This Week' ? '#8b5cf6' :
+                                             task.status === 'Completed' ? '#10b981' : '#3b82f6',
+                              color: 'white',
+                              fontSize: '10px'
+                            }}>{task.status}</span>
+                          </div>
                         </div>
-                        <div className="sa2-list-right">
-                          <span className="sa2-pill" style={{
-                            backgroundColor: task.status === 'Pending' ? '#ef4444' : 
-                                           task.status === 'Today' ? '#f59e42' : '#3b82f6',
-                            color: 'white',
-                            fontSize: '10px'
-                          }}>{task.status}</span>
-                        </div>
+                      ))
+                    ) : (
+                      <div style={{textAlign: 'center', padding: '40px', color: '#666'}}>
+                        <div style={{fontSize: '16px', marginBottom: '8px'}}>No tasks assigned yet</div>
+                        <div style={{fontSize: '12px'}}>Your assigned leads will appear here</div>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -381,24 +459,31 @@ const EmployeeDashboard = () => {
                 <div className="sa2-picks">
                   <div className="sa2-pick-item">
                     <div className="sa2-pick-left">
-                      <span className="sa2-pick-bar" style={{backgroundColor: '#f59e42'}} />
+                      <span className="sa2-pick-bar" style={{backgroundColor: '#ef4444'}} />
                       <span className="sa2-pick-name">Pending</span>
                     </div>
-                    <div className="sa2-pick-right">{dashboardStats.pendingTasks}</div>
+                    <div className="sa2-pick-right">{taskStatusCounts.pending}</div>
                   </div>
                   <div className="sa2-pick-item">
                     <div className="sa2-pick-left">
-                      <span className="sa2-pick-bar" style={{backgroundColor: '#3b82f6'}} />
+                      <span className="sa2-pick-bar" style={{backgroundColor: '#f59e42'}} />
                       <span className="sa2-pick-name">Today</span>
                     </div>
-                    <div className="sa2-pick-right">3</div>
+                    <div className="sa2-pick-right">{taskStatusCounts.today}</div>
+                  </div>
+                  <div className="sa2-pick-item">
+                    <div className="sa2-pick-left">
+                      <span className="sa2-pick-bar" style={{backgroundColor: '#8b5cf6'}} />
+                      <span className="sa2-pick-name">This Week</span>
+                    </div>
+                    <div className="sa2-pick-right">{taskStatusCounts.thisWeek}</div>
                   </div>
                   <div className="sa2-pick-item">
                     <div className="sa2-pick-left">
                       <span className="sa2-pick-bar" style={{backgroundColor: '#10b981'}} />
                       <span className="sa2-pick-name">Completed</span>
                     </div>
-                    <div className="sa2-pick-right">{dashboardStats.completedTasks}</div>
+                    <div className="sa2-pick-right">{taskStatusCounts.completed}</div>
                   </div>
                 </div>
               </CardContent>
