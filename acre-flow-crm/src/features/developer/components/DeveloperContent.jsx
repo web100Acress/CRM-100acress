@@ -1,70 +1,83 @@
     import React, { useState, useEffect } from 'react';
-    import '../../../styles/DeveloperContent.css'
-    import { 
-      Code, 
-      Database, 
-      Server, 
-      Shield, 
-      Activity, 
-      Terminal, 
-      FileText,
-      Globe,
-      Key,
-      Zap,
-      Monitor,
-      GitBranch,
-      Package,
-      Bug,
-      Wrench,
-      Users,
-      UserCheck,
-      Crown,
-      LogOut,
-      Briefcase,
-      Clock,
-      Cpu,
-      HardDrive,
-      Network,
-      AlertTriangle,
-      CheckCircle,
-      XCircle,
-      Play,
-      Pause,
-      BarChart3,
-      RefreshCw,
-      Download,
-      Upload,
-      UserPlus,
-      Info,
-      Menu,
-      X
-    } from 'lucide-react';
-    import { Card, CardContent, CardHeader, CardTitle } from '@/layout/card';
-    import { Button } from '@/layout/button';
-    import { useToast } from '@/hooks/use-toast';
-    import { useNavigate } from 'react-router-dom';
-    import DeveloperChat from './DeveloperChat';
-    import RoleAssignment from './RoleAssignment';
-    import ActivityCredentials from './ActivityCredentials';
+import '../../../styles/DeveloperContent.css'
+import '../../../styles/sidebar.css'
+import { 
+  Code, 
+  Database, 
+  Server, 
+  Shield, 
+  Activity, 
+  Terminal, 
+  FileText,
+  Globe,
+  Key,
+  Zap,
+  Monitor,
+  GitBranch,
+  Package,
+  Bug,
+  Wrench,
+  Users,
+  UserCheck,
+  Crown,
+  LogOut,
+  Briefcase,
+  Clock,
+  Cpu,
+  HardDrive,
+  Network,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Play,
+  Pause,
+  BarChart3,
+  RefreshCw,
+  Download,
+  Upload,
+  UserPlus,
+  Info,
+  Menu,
+  X,
+  Moon,
+  Sun,
+  Building2,
+  Home,
+  PhoneCall,
+  Settings,
+  Mail,
+  MessageCircle,
+  Search
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/layout/card';
+import { Button } from '@/layout/button';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
+import DeveloperChat from './DeveloperChat';
+import RoleAssignment from './RoleAssignment';
+import ActivityCredentials from './ActivityCredentials';
+import { useTheme } from '@/context/ThemeContext';
 
-    const DeveloperContent = ({ userRole }) => {
-      const [activeTab, setActiveTab] = useState('overview');
-      const [sidebarOpen, setSidebarOpen] = useState(false); // <-- Hamburger state
-      const [systemStats, setSystemStats] = useState({
-        serverStatus: 'Online',
-        dbConnections: '0/0',
-        memoryUsage: '0GB / 0GB',
-        cpuUsage: '0%',
-        apiCalls: '0, today',
-        errorRate: '0.02%'
-      });
+const DeveloperContent = ({ userRole }) => {
+  const { isDark, toggleTheme } = useTheme();
+  const [activeTab, setActiveTab] = useState('overview');
+  const [sidebarOpen, setSidebarOpen] = useState(false); // <-- Hamburger state
+  const [systemStats, setSystemStats] = useState({
+    serverStatus: 'Online',
+    dbConnections: '0/0',
+    memoryUsage: '0GB / 0GB',
+    cpuUsage: '0%',
+    apiCalls: '0, today',
+    errorRate: '0.02%'
+  });
 
-      const [newEmployee, setNewEmployee] = useState({
-        name: '',
-        email: '',
-        role: '',
-        password: ''
-      });
+  const [newEmployee, setNewEmployee] = useState({
+    name: '',
+    email: '',
+    role: '',
+    password: ''
+  });
 
       const { toast } = useToast();
       const navigate = useNavigate();
@@ -1220,91 +1233,214 @@
         }
       };
       return (
-        <>
-          <div className="developer-console">
-            <div className="console-header">
-              <div className="console-heading">
-                <div>
-                  <h1 className="console-title">Developer Console</h1>
-                  <p className="console-subtitle">Manage roles, employees, and system tools in one place</p>
+    <>
+      {/* Desktop Sidebar */}
+      <div
+        className={`crm-sidebar ${isDark ? 'is-dark' : 'is-light'} ${sidebarOpen ? 'is-collapsed' : ''} ${
+          false ? 'hidden' : 'flex'
+        }`}
+      >
+        <div className="crm-sidebar-rail">
+          <div className="crm-rail-top">
+            <div className="crm-rail-logo" title="100acres CRM">
+              <Code className="crm-rail-logo-icon" />
+            </div>
+          </div>
+
+          <div className="crm-rail-nav">
+            {tabs.map((tab, idx) => (
+              <React.Fragment key={tab.id}>
+                <button
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                  }}
+                  className={`crm-rail-link ${activeTab === tab.id ? 'active' : ''}`}
+                >
+                  <tab.icon className="crm-rail-icon" />
+                </button>
+                {idx < tabs.length - 1 && <div className="crm-rail-divider" />}
+              </React.Fragment>
+            ))}
+          </div>
+
+          <div className="crm-rail-bottom">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="crm-rail-action"
+              title={isDark ? 'Light Mode' : 'Dark Mode'}
+            >
+              {isDark ? <Sun className="crm-rail-icon" /> : <Moon className="crm-rail-icon" />}
+            </button>
+            <button type="button" onClick={handleLogout} className="crm-rail-action" title="Logout">
+              <LogOut className="crm-rail-icon" />
+            </button>
+          </div>
+        </div>
+
+        {!sidebarOpen && (
+          <div className="crm-sidebar-panel">
+            <div className="crm-panel-header">
+              <div className="crm-panel-brand">
+                <div className="crm-panel-brand-icon">
+                  <Code className="crm-panel-brand-icon-svg" />
+                </div>
+                <div className="crm-panel-brand-text">
+                  <div className="crm-panel-brand-title">Developer Console</div>
+                  <div className="crm-panel-brand-sub">System Management</div>
                 </div>
               </div>
-              {/* Hamburger for mobile */}
-              <button
-                className="hamburger-btn"
-                onClick={() => setSidebarOpen(true)}
-                aria-label="Open navigation menu"
-              >
-                <Menu size={22} />
-              </button>
             </div>
 
-            <div className="console-layout">
-              {/* Sidebar/Nav Panel */}
-              <div
-                className={`nav-panel${sidebarOpen ? ' open' : ''}`}
-              >
-                {/* Close button for mobile */}
-                <button
-                  className="close-sidebar-btn"
-                  onClick={() => setSidebarOpen(false)}
-                  aria-label="Close navigation menu"
-                >
-                  <X size={20} />
-                </button>
-                <CardContent className="nav-content">
-                  <nav className="nav-menu">
-                    {tabs.map((tab) => (
-                      <button
-                        key={tab.id}
-                        onClick={() => {
-                          setActiveTab(tab.id);
-                          setSidebarOpen(false); // close sidebar on mobile after nav
-                        }}
-                        className={`nav-item ${activeTab === tab.id ? 'active' : ''}`}
-                      >
-                        <tab.icon className="nav-icon" />
-                        <span className="nav-text">{tab.label}</span>
-                      </button>
-                    ))}
-                  </nav>
-                  <div className="logout-section">
-                    <div className="user-info"></div>
-                    <button className="logout-btn" onClick={handleLogout}>
-                      <LogOut size={18} />
-                      <span>Logout</span>
-                    </button>
-                  </div>
-                </CardContent>
+            <div className="crm-panel-nav">
+              <div className="crm-panel-group">
+                <div className="crm-panel-heading">Developer Tools</div>
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`crm-panel-link ${activeTab === tab.id ? 'active' : ''}`}
+                  >
+                    <span className="crm-panel-link-icon"><tab.icon className="crm-panel-icon" /></span>
+                    <span className="crm-panel-link-label">{tab.label}</span>
+                  </button>
+                ))}
               </div>
-              {/* Overlay for mobile sidebar */}
-              {sidebarOpen && (
-                <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)}></div>
-              )}
-              {/* Main Content */}
-              <div className="content-panel">
-                <Card className="content-card">
-                  <CardHeader>
-                    <CardTitle className="content-title">
-                      {(() => {
-                        const activeTabData = tabs.find(t => t.id === activeTab);
-                        const IconComponent = activeTabData?.icon;
-                        return IconComponent ? <IconComponent className="title-icon" /> : null;
-                      })()}
-                      {tabs.find(t => t.id === activeTab)?.label}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {renderContent()}
-                  </CardContent>
-                </Card>
+            </div>
+
+            <div className="crm-panel-footer">
+              <div className="crm-panel-user">
+                <div className="crm-panel-user-avatar"><Shield className="crm-panel-user-icon" /></div>
+                <div className="crm-panel-user-meta">
+                  <div className="crm-panel-user-name">{developerName}</div>
+                  <div className="crm-panel-user-role">Developer</div>
+                </div>
+              </div>
+
+              <div className="crm-panel-footer-actions">
+                <button type="button" onClick={toggleTheme} className="crm-panel-toggle">
+                  <span className="crm-panel-toggle-label">Dark Mode</span>
+                  <span className={`crm-panel-toggle-pill ${isDark ? 'on' : 'off'}`}>
+                    <span className="crm-panel-toggle-dot" />
+                  </span>
+                </button>
+
+                <button type="button" className="crm-panel-logout" onClick={handleLogout}>
+                  <LogOut className="crm-panel-logout-icon" />
+                  <span>Logout</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Mobile Sidebar */}
+      {false && (
+        <>
+          <div className={`crm-mobile-sidebar ${isDark ? 'is-dark' : 'is-light'}`}>
+            <div className="crm-mobile-header">
+              <div className="crm-mobile-brand">
+                <div className="crm-panel-brand-icon">
+                  <Code className="crm-panel-brand-icon-svg" />
+                </div>
+                <div className="crm-panel-brand-text">
+                  <div className="crm-panel-brand-title">Developer Console</div>
+                  <div className="crm-panel-brand-sub">System Management</div>
+                </div>
+              </div>
+              <button className="crm-mobile-close"><X /></button>
+            </div>
+
+            <div className="crm-mobile-nav">
+              <div className="crm-panel-group">
+                <div className="crm-panel-heading">Developer Tools</div>
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`crm-panel-link ${activeTab === tab.id ? 'active' : ''}`}
+                  >
+                    <span className="crm-panel-link-icon"><tab.icon className="crm-panel-icon" /></span>
+                    <span className="crm-panel-link-label">{tab.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="crm-panel-footer">
+              <div className="crm-panel-user">
+                <div className="crm-panel-user-avatar"><Shield className="crm-panel-user-icon" /></div>
+                <div className="crm-panel-user-meta">
+                  <div className="crm-panel-user-name">{developerName}</div>
+                  <div className="crm-panel-user-role">Developer</div>
+                </div>
+              </div>
+
+              <div className="crm-panel-footer-actions">
+                <button type="button" onClick={toggleTheme} className="crm-panel-toggle">
+                  <span className="crm-panel-toggle-label">Dark Mode</span>
+                  <span className={`crm-panel-toggle-pill ${isDark ? 'on' : 'off'}`}>
+                    <span className="crm-panel-toggle-dot" />
+                  </span>
+                </button>
+
+                <button type="button" className="crm-panel-logout" onClick={handleLogout}>
+                  <LogOut className="crm-panel-logout-icon" />
+                  <span>Logout</span>
+                </button>
               </div>
             </div>
           </div>
 
-        
+          <div className="crm-sidebar-backdrop"></div>
         </>
-      );
-    };
+      )}
 
-    export default DeveloperContent;
+      {/* Main Content Area */}
+      <div className="main-content-wrapper">
+        <header className="dashboard-header">
+          <div className="header-left">
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="menu-button">
+              <Menu className="menu-icon" />
+            </button>
+            <h1 className="user-greeting">
+              Hello {developerName} (Developer)
+            </h1>
+          </div>
+
+          <div className="header-right">
+            <div className="search-wrapper">
+              <Search className="search-icon" />
+              <input
+                type="text"
+                placeholder="Search"
+                className="search-input"
+              />
+            </div>
+          </div>
+        </header>
+
+        <main className="main-content">
+          <Card className="content-card">
+            <CardHeader>
+              <CardTitle className="content-title">
+                {(() => {
+                  const activeTabData = tabs.find(t => t.id === activeTab);
+                  const IconComponent = activeTabData?.icon;
+                  return IconComponent ? <IconComponent className="title-icon" /> : null;
+                })()}
+                {tabs.find(t => t.id === activeTab)?.label}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {renderContent()}
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    </>
+  );
+};
+
+export default DeveloperContent;
