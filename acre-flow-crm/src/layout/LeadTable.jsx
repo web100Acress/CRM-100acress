@@ -45,7 +45,7 @@ const LeadTable = ({ userRole }) => {
   const [selectedLeadForDetails, setSelectedLeadForDetails] = useState(null);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const leadsPerPage = window.innerWidth <= 480 ? 30 : 5;
+  const leadsPerPage = window.innerWidth <= 480 ? 30 : 20;
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -413,15 +413,8 @@ const LeadTable = ({ userRole }) => {
           <option value="cold">Cold</option>
         </select>
 
-        <Button
-          onClick={exportToCSV}
-          disabled={isExporting || filteredLeads.length === 0}
-          variant="outline"
-          className="lead-export-button text-white"
-        >
-          <Download className="lead-export-icon" />
-          {isExporting ? "Exporting..." : "Export to CSV"}
-        </Button>
+      
+      
 
         {(userRole === "boss" || userRole === "super-admin" || userRole === "head-admin" || userRole === "admin" || userRole === "crm_admin") && (
           <button className="lead-create-button" onClick={handleCreateLead}>
