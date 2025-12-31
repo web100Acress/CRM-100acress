@@ -185,7 +185,7 @@
   .lead-table-responsive-wrapper { /* Unique class name */
     flex: 1;
     overflow-x: auto;
-    overflow-y: hidden;
+    overflow-y: auto;
     min-height: 0;
     -webkit-overflow-scrolling: touch;
     border-radius: 12px;
