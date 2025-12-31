@@ -10,7 +10,7 @@ async function sendWelcomeEmail({ email, password, name, role }) {
     'developer': 'Developer'
   };
   const roleDisplay = roleDisplayMap[role] || role;
-  const subject = `Welcome to 100acres CRM - Your ${roleDisplay} Account`;
+  const subject = `Welcome to 100acress CRM - Your ${roleDisplay} Account`;
   
   const html = `
     <!DOCTYPE html>
@@ -18,7 +18,7 @@ async function sendWelcomeEmail({ email, password, name, role }) {
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Welcome to 100acres CRM</title>
+      <title>Welcome to 100acress CRM</title>
       <style>
         body {
           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -224,14 +224,14 @@ async function sendWelcomeEmail({ email, password, name, role }) {
     <body>
       <div class="email-container">
         <div class="email-header">
-          <h1>🏢 Welcome to 100acres CRM</h1>
+          <h1>🏢 Welcome to 100acress CRM</h1>
           <p class="subtitle">Your ${roleDisplay} Account is Ready!</p>
         </div>
         
         <div class="email-body">
           <div class="welcome-section">
             <h2>Hello ${name || 'Team Member'}! 👋</h2>
-            <p>Welcome to 100acres CRM! Your ${roleDisplay} account has been successfully created and is ready for you to start managing your responsibilities.</p>
+            <p>Welcome to 100acress CRM! Your ${roleDisplay} account has been successfully created and is ready for you to start managing your responsibilities.</p>
           </div>
           
           <div class="credentials-card">
@@ -285,7 +285,7 @@ async function sendWelcomeEmail({ email, password, name, role }) {
         
         <div class="footer">
           <p>Best regards,</p>
-          <p class="company-name">The 100acres CRM Team</p>
+          <p class="company-name">The 100acress CRM Team</p>
           <p style="font-size: 12px; color: #a0aec0;">This is an automated message. Please do not reply to this email.</p>
         </div>
       </div>
@@ -295,7 +295,7 @@ async function sendWelcomeEmail({ email, password, name, role }) {
   
   const text = `Hello ${name || ''},
 
-Welcome to 100acres CRM! Your ${roleDisplay} account has been created.
+Welcome to 100acress CRM! Your ${roleDisplay} account has been created.
 
 🔐 IMPORTANT SECURITY INSTRUCTIONS 🔐
 
@@ -325,7 +325,7 @@ ${role === 'employee' ?
 Please log in and change your password after your first login.
 
 Best regards,
-The 100acres CRM Team`;
+The 100acress CRM Team`;
   
   await sendMail(email, subject, text, html);
 }
@@ -501,7 +501,7 @@ exports.requestPasswordReset = async (req, res) => {
         <p>Or copy and paste this link in your browser:</p>
         <p style="word-break: break-all; color: #666;">${resetUrl}</p>
         <p>If you didn't request this, please ignore this email.</p>
-        <p>Best regards,<br>100acres CRM Team</p>
+        <p>Best regards,<br>100acress CRM Team</p>
       </div>
       `
     };
