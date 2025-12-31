@@ -1,6 +1,7 @@
     import React, { useState, useEffect } from 'react';
 import '../../../styles/DeveloperContent.css'
 import '../../../styles/sidebar.css'
+import '../styles/DeveloperHeader.css'
 import { 
   Code, 
   Database, 
@@ -54,9 +55,25 @@ import { Button } from '@/layout/button';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { NavLink } from 'react-router-dom';
+
+// Developer-specific imports
+import DeveloperHeader from './DeveloperHeader';
 import DeveloperChat from './DeveloperChat';
 import RoleAssignment from './RoleAssignment';
 import ActivityCredentials from './ActivityCredentials';
+import DeveloperTools from './DeveloperTools';
+import SystemMonitor from './SystemMonitor';
+import DatabaseManager from './DatabaseManager';
+import ApiTester from './ApiTester';
+import LogViewer from './LogViewer';
+import PerformanceMetrics from './PerformanceMetrics';
+import DeploymentPanel from './DeploymentPanel';
+import SecurityAudit from './SecurityAudit';
+import BackupManager from './BackupManager';
+import CacheManager from './CacheManager';
+import QueueMonitor from './QueueMonitor';
+import ErrorHandler from './ErrorHandler';
+
 import { useTheme } from '@/context/ThemeContext';
 
 const DeveloperContent = ({ userRole }) => {
@@ -100,12 +117,24 @@ const DeveloperContent = ({ userRole }) => {
       const developerName = localStorage.getItem('developerName') || 'Developer';
 
       const tabs = [
-        { id: 'overview', label: 'System Overview', icon: Monitor },
-        { id: 'role-assignment', label: 'Role Assignment', icon: Users },
-        { id: 'create-employee', label: 'Create Employee', icon: UserPlus },
-        { id: 'activity', label: 'Activity Hub', icon: Activity },
-        { id: 'chat', label: 'Chat', icon: Info },
-      ];
+    { id: 'overview', label: 'System Overview', icon: Monitor },
+    { id: 'role-assignment', label: 'Role Assignment', icon: Users },
+    { id: 'create-employee', label: 'Create Employee', icon: UserPlus },
+    { id: 'activity', label: 'Activity Hub', icon: Activity },
+    { id: 'chat', label: 'Chat', icon: Info },
+    { id: 'tools', label: 'Developer Tools', icon: Wrench },
+    { id: 'monitor', label: 'System Monitor', icon: Server },
+    { id: 'database', label: 'Database Manager', icon: Database },
+    { id: 'api-tester', label: 'API Tester', icon: Globe },
+    { id: 'logs', label: 'Log Viewer', icon: FileText },
+    { id: 'performance', label: 'Performance Metrics', icon: BarChart3 },
+    { id: 'deployment', label: 'Deployment Panel', icon: GitBranch },
+    { id: 'security', label: 'Security Audit', icon: Shield },
+    { id: 'backup', label: 'Backup Manager', icon: HardDrive },
+    { id: 'cache', label: 'Cache Manager', icon: Zap },
+    { id: 'queue', label: 'Queue Monitor', icon: RefreshCw },
+    { id: 'errors', label: 'Error Handler', icon: AlertTriangle },
+  ];
 
       const handleAction = (action) => {
         toast({
@@ -1190,38 +1219,38 @@ const DeveloperContent = ({ userRole }) => {
         switch (activeTab) {
           case 'overview':
             return renderOverview();
-          case 'access-control':
-            return renderAccessControl();
-          case 'database':
-            return renderDatabase();
-          case 'api':
-            return renderAPI();
-          case 'security':
-            return renderSecurity();
-          case 'logs':
-            return renderLogs();
           case 'role-assignment':
             return <RoleAssignment />;
           case 'create-employee':
             return renderCreateEmployee();
           case 'activity':
             return <ActivityCredentials />;
-          case 'project-enquiries':
-            return renderProjectEnquiries();
-          case 'registered-users':
-            return renderRegisteredUsers();
-          case 'blog-management':
-            return renderBlogManagement();
-          case 'admin-access':
-            return renderAdminAccess();
-          case 'performance':
-            return renderPerformance();
-          case 'deployment':
-            return renderDeployment();
-          case 'tools':
-            return renderTools();
           case 'chat':
             return <DeveloperChat developerName={developerName} />;
+          case 'tools':
+            return <DeveloperTools />;
+          case 'monitor':
+            return <SystemMonitor />;
+          case 'database':
+            return <DatabaseManager />;
+          case 'api-tester':
+            return <ApiTester />;
+          case 'logs':
+            return <LogViewer />;
+          case 'performance':
+            return <PerformanceMetrics />;
+          case 'deployment':
+            return <DeploymentPanel />;
+          case 'security':
+            return <SecurityAudit />;
+          case 'backup':
+            return <BackupManager />;
+          case 'cache':
+            return <CacheManager />;
+          case 'queue':
+            return <QueueMonitor />;
+          case 'errors':
+            return <ErrorHandler />;
           default:
             return (
               <div className="coming-soon">
@@ -1399,27 +1428,11 @@ const DeveloperContent = ({ userRole }) => {
 
       {/* Main Content Area */}
       <div className="main-content-wrapper">
-        <header className="dashboard-header">
-          <div className="header-left">
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="menu-button">
-              <Menu className="menu-icon" />
-            </button>
-            <h1 className="user-greeting">
-              Hello {developerName} (Developer)
-            </h1>
-          </div>
-
-          <div className="header-right">
-            <div className="search-wrapper">
-              <Search className="search-icon" />
-              <input
-                type="text"
-                placeholder="Search"
-                className="search-input"
-              />
-            </div>
-          </div>
-        </header>
+        <DeveloperHeader 
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          developerName={developerName}
+        />
 
         <main className="main-content">
           <Card className="content-card">
