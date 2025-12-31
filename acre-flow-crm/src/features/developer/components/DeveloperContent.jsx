@@ -2,6 +2,7 @@
 import '../../../styles/DeveloperContent.css'
 import '../../../styles/sidebar.css'
 import '../styles/DeveloperHeader.css'
+import '../styles/DeveloperLayout.css'
 import { 
   Code, 
   Database, 
@@ -1262,7 +1263,7 @@ const DeveloperContent = ({ userRole }) => {
         }
       };
       return (
-    <>
+    <div className={`dashboard-container ${isDark ? 'dark-theme' : 'light-theme'}`}>
       {/* Desktop Sidebar */}
       <div
         className={`crm-sidebar ${isDark ? 'is-dark' : 'is-light'} ${sidebarOpen ? 'is-collapsed' : ''} ${
@@ -1427,14 +1428,14 @@ const DeveloperContent = ({ userRole }) => {
       )}
 
       {/* Main Content Area */}
-      <div className="main-content-wrapper">
+      <div className="main-content">
         <DeveloperHeader 
           sidebarOpen={sidebarOpen}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           developerName={developerName}
         />
 
-        <main className="main-content">
+        <main className="developer-main">
           <Card className="content-card">
             <CardHeader>
               <CardTitle className="content-title">
@@ -1452,7 +1453,7 @@ const DeveloperContent = ({ userRole }) => {
           </Card>
         </main>
       </div>
-    </>
+    </div>
   );
 };
 
