@@ -13,7 +13,7 @@ const ActivityLogin = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5001/api/activity/departments/login', {
+      const response = await fetch('https://bcrm.100acress.com/api/activity/departments/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })

@@ -1,70 +1,103 @@
     import React, { useState, useEffect } from 'react';
-    import '../../../styles/DeveloperContent.css'
-    import { 
-      Code, 
-      Database, 
-      Server, 
-      Shield, 
-      Activity, 
-      Terminal, 
-      FileText,
-      Globe,
-      Key,
-      Zap,
-      Monitor,
-      GitBranch,
-      Package,
-      Bug,
-      Wrench,
-      Users,
-      UserCheck,
-      Crown,
-      LogOut,
-      Briefcase,
-      Clock,
-      Cpu,
-      HardDrive,
-      Network,
-      AlertTriangle,
-      CheckCircle,
-      XCircle,
-      Play,
-      Pause,
-      BarChart3,
-      RefreshCw,
-      Download,
-      Upload,
-      UserPlus,
-      Info,
-      Menu,
-      X
-    } from 'lucide-react';
-    import { Card, CardContent, CardHeader, CardTitle } from '@/layout/card';
-    import { Button } from '@/layout/button';
-    import { useToast } from '@/hooks/use-toast';
-    import { useNavigate } from 'react-router-dom';
-    import DeveloperChat from './DeveloperChat';
-    import RoleAssignment from './RoleAssignment';
-    import ActivityCredentials from './ActivityCredentials';
+import '../../../styles/DeveloperContent.css'
+import '../../../styles/sidebar.css'
+import '../styles/DeveloperHeader.css'
+import '../styles/DeveloperLayout.css'
+import '../styles/DeveloperOverview.css'
+import { 
+  Code, 
+  Database, 
+  Server, 
+  Shield, 
+  Activity, 
+  Terminal, 
+  FileText,
+  Globe,
+  Key,
+  Zap,
+  Monitor,
+  GitBranch,
+  Package,
+  Bug,
+  Wrench,
+  Users,
+  UserCheck,
+  Crown,
+  LogOut,
+  Briefcase,
+  Clock,
+  Cpu,
+  HardDrive,
+  Network,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Play,
+  Pause,
+  BarChart3,
+  RefreshCw,
+  Download,
+  Upload,
+  UserPlus,
+  Info,
+  Menu,
+  X,
+  Moon,
+  Sun,
+  Building2,
+  Home,
+  PhoneCall,
+  Settings,
+  Mail,
+  MessageCircle,
+  Search
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/layout/card';
+import { Button } from '@/layout/button';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 
-    const DeveloperContent = ({ userRole }) => {
-      const [activeTab, setActiveTab] = useState('overview');
-      const [sidebarOpen, setSidebarOpen] = useState(false); // <-- Hamburger state
-      const [systemStats, setSystemStats] = useState({
-        serverStatus: 'Online',
-        dbConnections: '0/0',
-        memoryUsage: '0GB / 0GB',
-        cpuUsage: '0%',
-        apiCalls: '0, today',
-        errorRate: '0.02%'
-      });
+// Developer-specific imports
+import DeveloperHeader from './DeveloperHeader';
+import DeveloperOverview from './DeveloperOverview';
+import DeveloperChat from './DeveloperChat';
+import RoleAssignment from './RoleAssignment';
+import ActivityCredentials from './ActivityCredentials';
+import DeveloperTools from './DeveloperTools';
+import SystemMonitor from './SystemMonitor';
+import DatabaseManager from './DatabaseManager';
+import ApiTester from './ApiTester';
+import LogViewer from './LogViewer';
+import PerformanceMetrics from './PerformanceMetrics';
+import DeploymentPanel from './DeploymentPanel';
+import SecurityAudit from './SecurityAudit';
+import BackupManager from './BackupManager';
+import CacheManager from './CacheManager';
+import QueueMonitor from './QueueMonitor';
+import ErrorHandler from './ErrorHandler';
 
-      const [newEmployee, setNewEmployee] = useState({
-        name: '',
-        email: '',
-        role: '',
-        password: ''
-      });
+import { useTheme } from '@/context/ThemeContext';
+
+const DeveloperContent = ({ userRole }) => {
+  const { isDark, toggleTheme } = useTheme();
+  const [activeTab, setActiveTab] = useState('overview');
+  const [sidebarOpen, setSidebarOpen] = useState(false); // <-- Hamburger state
+  const [systemStats, setSystemStats] = useState({
+    serverStatus: 'Online',
+    dbConnections: '0/0',
+    memoryUsage: '0GB / 0GB',
+    cpuUsage: '0%',
+    apiCalls: '0, today',
+    errorRate: '0.02%'
+  });
+
+  const [newEmployee, setNewEmployee] = useState({
+    name: '',
+    email: '',
+    role: '',
+    password: ''
+  });
 
       const { toast } = useToast();
       const navigate = useNavigate();
@@ -87,12 +120,24 @@
       const developerName = localStorage.getItem('developerName') || 'Developer';
 
       const tabs = [
-        { id: 'overview', label: 'System Overview', icon: Monitor },
-        { id: 'role-assignment', label: 'Role Assignment', icon: Users },
-        { id: 'create-employee', label: 'Create Employee', icon: UserPlus },
-        { id: 'activity', label: 'Activity Hub', icon: Activity },
-        { id: 'chat', label: 'Chat', icon: Info },
-      ];
+    { id: 'overview', label: 'System Overview', icon: Monitor },
+    { id: 'role-assignment', label: 'Role Assignment', icon: Users },
+    { id: 'create-employee', label: 'Create Employee', icon: UserPlus },
+    { id: 'activity', label: 'Activity Hub', icon: Activity },
+    { id: 'chat', label: 'Chat', icon: Info },
+    { id: 'tools', label: 'Developer Tools', icon: Wrench },
+    { id: 'monitor', label: 'System Monitor', icon: Server },
+    { id: 'database', label: 'Database Manager', icon: Database },
+    { id: 'api-tester', label: 'API Tester', icon: Globe },
+    { id: 'logs', label: 'Log Viewer', icon: FileText },
+    { id: 'performance', label: 'Performance Metrics', icon: BarChart3 },
+    { id: 'deployment', label: 'Deployment Panel', icon: GitBranch },
+    { id: 'security', label: 'Security Audit', icon: Shield },
+    { id: 'backup', label: 'Backup Manager', icon: HardDrive },
+    { id: 'cache', label: 'Cache Manager', icon: Zap },
+    { id: 'queue', label: 'Queue Monitor', icon: RefreshCw },
+    { id: 'errors', label: 'Error Handler', icon: AlertTriangle },
+  ];
 
       const handleAction = (action) => {
         toast({
@@ -354,102 +399,6 @@
           </div>
         </div>
       );
-
-      const renderOverview = () => (
-        <div className="overview-container">
-          {/* Header with avatar and name */}
-          <div className="overview-header">
-            <div className="overview-avatar">
-              <div className="avatar-initial">
-                {developerName.charAt(0).toUpperCase()}
-              </div>
-            </div>
-            <div className="overview-welcome">
-              <h2 className="overview-greeting">
-                Welcome, <span className="developer-name">{developerName}</span>!
-              </h2>
-              <p className="overview-subtext">Here is your system overview and quick actions.</p>
-            </div>
-          </div>
-      
-          {/* Stats Grid */}
-          <div className="overview-stats">
-            <div className="stat-box">
-              <div className="stat-title"><Server className="icon" /> Server Status</div>
-              <div className="stat-value green">{systemStats.serverStatus}</div>
-              <p className="stat-description">Last checked: 0 mins ago</p>
-            </div>
-      
-            <div className="stat-box">
-              <div className="stat-title"><Database className="icon" /> DB Connections</div>
-              <div className="stat-value">{systemStats.dbConnections}</div>
-              <p className="stat-description">Active connections</p>
-            </div>
-      
-            <div className="stat-box">
-              <div className="stat-title"><Activity className="icon" /> Memory Usage</div>
-              <div className="stat-value">{systemStats.memoryUsage}</div>
-              <p className="stat-description">System memory</p>
-            </div>
-      
-            <div className="stat-box">
-              <div className="stat-title"><Zap className="icon" /> CPU Usage</div>
-              <div className="stat-value">{systemStats.cpuUsage}</div>
-              <p className="stat-description">Current load</p>
-            </div>
-      
-            <div className="stat-box">
-              <div className="stat-title"><Globe className="icon" /> API Calls</div>
-              <div className="stat-value">{systemStats.apiCalls}</div>
-              <p className="stat-description">Request count</p>
-            </div>
-      
-            
-          
-          </div>
-      
-          {/* Quick Actions and Activities */}
-          <div className="overview-actions">
-            {/* <div className="action-card">
-              <h3 className="card-title">Quick Actions</h3>
-              <div className="action-buttons">
-                <button onClick={() => handleAction('Cache Clear')} className="btn primary">
-                  <Zap className="btn-icon" /> Clear System Cache
-                </button>
-                <button onClick={() => handleAction('DB Optimize')} className="btn">
-                  <Database className="btn-icon" /> Optimize Database
-                </button>
-                <button onClick={() => handleAction('Backup Create')} className="btn">
-                  <Package className="btn-icon" /> Create System Backup
-                </button>
-              </div>
-            </div> */}
-      
-            <div className="activity-card">
-              <h3 className="card-title">Recent Activities</h3>
-              <div className="activity-list">
-                <div className="activity-item">
-                  <span>Database backup completed</span>
-                  <span className="time">0 hours ago</span>
-                </div>
-                <div className="activity-item">
-                  <span>Security scan passed</span>
-                  <span className="time">0 hours ago</span>
-                </div>
-                <div className="activity-item">
-                  <span>System update deployed</span>
-                  <span className="time">0 day ago</span>
-                </div>
-                <div className="activity-item">
-                  <span>Performance optimization</span>
-                  <span className="time">0 days ago</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-      
 
        
       const renderCreateEmployee = () => (
@@ -1176,39 +1125,39 @@
       const renderContent = () => {
         switch (activeTab) {
           case 'overview':
-            return renderOverview();
-          case 'access-control':
-            return renderAccessControl();
-          case 'database':
-            return renderDatabase();
-          case 'api':
-            return renderAPI();
-          case 'security':
-            return renderSecurity();
-          case 'logs':
-            return renderLogs();
+            return <DeveloperOverview developerName={developerName} systemStats={systemStats} handleAction={handleAction} />;
           case 'role-assignment':
             return <RoleAssignment />;
           case 'create-employee':
             return renderCreateEmployee();
           case 'activity':
             return <ActivityCredentials />;
-          case 'project-enquiries':
-            return renderProjectEnquiries();
-          case 'registered-users':
-            return renderRegisteredUsers();
-          case 'blog-management':
-            return renderBlogManagement();
-          case 'admin-access':
-            return renderAdminAccess();
-          case 'performance':
-            return renderPerformance();
-          case 'deployment':
-            return renderDeployment();
-          case 'tools':
-            return renderTools();
           case 'chat':
             return <DeveloperChat developerName={developerName} />;
+          case 'tools':
+            return <DeveloperTools />;
+          case 'monitor':
+            return <SystemMonitor />;
+          case 'database':
+            return <DatabaseManager />;
+          case 'api-tester':
+            return <ApiTester />;
+          case 'logs':
+            return <LogViewer />;
+          case 'performance':
+            return <PerformanceMetrics />;
+          case 'deployment':
+            return <DeploymentPanel />;
+          case 'security':
+            return <SecurityAudit />;
+          case 'backup':
+            return <BackupManager />;
+          case 'cache':
+            return <CacheManager />;
+          case 'queue':
+            return <QueueMonitor />;
+          case 'errors':
+            return <ErrorHandler />;
           default:
             return (
               <div className="coming-soon">
@@ -1220,91 +1169,198 @@
         }
       };
       return (
-        <>
-          <div className="developer-console">
-            <div className="console-header">
-              <div className="console-heading">
-                <div>
-                  <h1 className="console-title">Developer Console</h1>
-                  <p className="console-subtitle">Manage roles, employees, and system tools in one place</p>
+    <div className={`dashboard-container ${isDark ? 'dark-theme' : 'light-theme'}`}>
+      {/* Desktop Sidebar */}
+      <div
+        className={`crm-sidebar ${isDark ? 'is-dark' : 'is-light'} ${sidebarOpen ? 'is-collapsed' : ''} ${
+          false ? 'hidden' : 'flex'
+        }`}
+      >
+        <div className="crm-sidebar-rail">
+          <div className="crm-rail-top">
+            <div className="crm-rail-logo" title="100acres CRM">
+              <Code className="crm-rail-logo-icon" />
+            </div>
+          </div>
+
+          <div className="crm-rail-nav">
+            {tabs.map((tab, idx) => (
+              <React.Fragment key={tab.id}>
+                <button
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                  }}
+                  className={`crm-rail-link ${activeTab === tab.id ? 'active' : ''}`}
+                >
+                  <tab.icon className="crm-rail-icon" />
+                </button>
+                {idx < tabs.length - 1 && <div className="crm-rail-divider" />}
+              </React.Fragment>
+            ))}
+          </div>
+
+          <div className="crm-rail-bottom">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="crm-rail-action"
+              title={isDark ? 'Light Mode' : 'Dark Mode'}
+            >
+              {isDark ? <Sun className="crm-rail-icon" /> : <Moon className="crm-rail-icon" />}
+            </button>
+            <button type="button" onClick={handleLogout} className="crm-rail-action" title="Logout">
+              <LogOut className="crm-rail-icon" />
+            </button>
+          </div>
+        </div>
+
+        {!sidebarOpen && (
+          <div className="crm-sidebar-panel">
+            <div className="crm-panel-header">
+              <div className="crm-panel-brand">
+                <div className="crm-panel-brand-icon">
+                  <Code className="crm-panel-brand-icon-svg" />
+                </div>
+                <div className="crm-panel-brand-text">
+                  <div className="crm-panel-brand-title">Developer Console</div>
+                  <div className="crm-panel-brand-sub">System Management</div>
                 </div>
               </div>
-              {/* Hamburger for mobile */}
-              <button
-                className="hamburger-btn"
-                onClick={() => setSidebarOpen(true)}
-                aria-label="Open navigation menu"
-              >
-                <Menu size={22} />
-              </button>
             </div>
 
-            <div className="console-layout">
-              {/* Sidebar/Nav Panel */}
-              <div
-                className={`nav-panel${sidebarOpen ? ' open' : ''}`}
-              >
-                {/* Close button for mobile */}
-                <button
-                  className="close-sidebar-btn"
-                  onClick={() => setSidebarOpen(false)}
-                  aria-label="Close navigation menu"
-                >
-                  <X size={20} />
-                </button>
-                <CardContent className="nav-content">
-                  <nav className="nav-menu">
-                    {tabs.map((tab) => (
-                      <button
-                        key={tab.id}
-                        onClick={() => {
-                          setActiveTab(tab.id);
-                          setSidebarOpen(false); // close sidebar on mobile after nav
-                        }}
-                        className={`nav-item ${activeTab === tab.id ? 'active' : ''}`}
-                      >
-                        <tab.icon className="nav-icon" />
-                        <span className="nav-text">{tab.label}</span>
-                      </button>
-                    ))}
-                  </nav>
-                  <div className="logout-section">
-                    <div className="user-info"></div>
-                    <button className="logout-btn" onClick={handleLogout}>
-                      <LogOut size={18} />
-                      <span>Logout</span>
-                    </button>
-                  </div>
-                </CardContent>
+            <div className="crm-panel-nav">
+              <div className="crm-panel-group">
+                <div className="crm-panel-heading">Developer Tools</div>
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`crm-panel-link ${activeTab === tab.id ? 'active' : ''}`}
+                  >
+                    <span className="crm-panel-link-icon"><tab.icon className="crm-panel-icon" /></span>
+                    <span className="crm-panel-link-label">{tab.label}</span>
+                  </button>
+                ))}
               </div>
-              {/* Overlay for mobile sidebar */}
-              {sidebarOpen && (
-                <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)}></div>
-              )}
-              {/* Main Content */}
-              <div className="content-panel">
-                <Card className="content-card">
-                  <CardHeader>
-                    <CardTitle className="content-title">
-                      {(() => {
-                        const activeTabData = tabs.find(t => t.id === activeTab);
-                        const IconComponent = activeTabData?.icon;
-                        return IconComponent ? <IconComponent className="title-icon" /> : null;
-                      })()}
-                      {tabs.find(t => t.id === activeTab)?.label}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {renderContent()}
-                  </CardContent>
-                </Card>
+            </div>
+
+            <div className="crm-panel-footer">
+              <div className="crm-panel-user">
+                <div className="crm-panel-user-avatar"><Shield className="crm-panel-user-icon" /></div>
+                <div className="crm-panel-user-meta">
+                  <div className="crm-panel-user-name">{developerName}</div>
+                  <div className="crm-panel-user-role">Developer</div>
+                </div>
+              </div>
+
+              <div className="crm-panel-footer-actions">
+                <button type="button" onClick={toggleTheme} className="crm-panel-toggle">
+                  <span className="crm-panel-toggle-label">Dark Mode</span>
+                  <span className={`crm-panel-toggle-pill ${isDark ? 'on' : 'off'}`}>
+                    <span className="crm-panel-toggle-dot" />
+                  </span>
+                </button>
+
+                <button type="button" className="crm-panel-logout" onClick={handleLogout}>
+                  <LogOut className="crm-panel-logout-icon" />
+                  <span>Logout</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Mobile Sidebar */}
+      {false && (
+        <>
+          <div className={`crm-mobile-sidebar ${isDark ? 'is-dark' : 'is-light'}`}>
+            <div className="crm-mobile-header">
+              <div className="crm-mobile-brand">
+                <div className="crm-panel-brand-icon">
+                  <Code className="crm-panel-brand-icon-svg" />
+                </div>
+                <div className="crm-panel-brand-text">
+                  <div className="crm-panel-brand-title">Developer Console</div>
+                  <div className="crm-panel-brand-sub">System Management</div>
+                </div>
+              </div>
+              <button className="crm-mobile-close"><X /></button>
+            </div>
+
+            <div className="crm-mobile-nav">
+              <div className="crm-panel-group">
+                <div className="crm-panel-heading">Developer Tools</div>
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`crm-panel-link ${activeTab === tab.id ? 'active' : ''}`}
+                  >
+                    <span className="crm-panel-link-icon"><tab.icon className="crm-panel-icon" /></span>
+                    <span className="crm-panel-link-label">{tab.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="crm-panel-footer">
+              <div className="crm-panel-user">
+                <div className="crm-panel-user-avatar"><Shield className="crm-panel-user-icon" /></div>
+                <div className="crm-panel-user-meta">
+                  <div className="crm-panel-user-name">{developerName}</div>
+                  <div className="crm-panel-user-role">Developer</div>
+                </div>
+              </div>
+
+              <div className="crm-panel-footer-actions">
+                <button type="button" onClick={toggleTheme} className="crm-panel-toggle">
+                  <span className="crm-panel-toggle-label">Dark Mode</span>
+                  <span className={`crm-panel-toggle-pill ${isDark ? 'on' : 'off'}`}>
+                    <span className="crm-panel-toggle-dot" />
+                  </span>
+                </button>
+
+                <button type="button" className="crm-panel-logout" onClick={handleLogout}>
+                  <LogOut className="crm-panel-logout-icon" />
+                  <span>Logout</span>
+                </button>
               </div>
             </div>
           </div>
 
-        
+          <div className="crm-sidebar-backdrop"></div>
         </>
-      );
-    };
+      )}
 
-    export default DeveloperContent;
+      {/* Main Content Area */}
+      <div className="main-content">
+        <DeveloperHeader 
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          developerName={developerName}
+        />
+
+        <main className="developer-main">
+          <Card className="content-card">
+            <CardHeader>
+              <CardTitle className="content-title">
+                {(() => {
+                  const activeTabData = tabs.find(t => t.id === activeTab);
+                  const IconComponent = activeTabData?.icon;
+                  return IconComponent ? <IconComponent className="title-icon" /> : null;
+                })()}
+                {tabs.find(t => t.id === activeTab)?.label}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {renderContent()}
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default DeveloperContent;

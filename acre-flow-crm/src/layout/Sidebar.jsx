@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import '@/styles/sidebar.css'
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
@@ -15,18 +15,11 @@ import {
   LogOut,
   X
 } from 'lucide-react';
+import { useTheme } from '@/context/ThemeContext';
 
 const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose }) => {
   const navigate = useNavigate();
-
-  const [sidebarDark, setSidebarDark] = useState(() => {
-    try {
-      const raw = localStorage.getItem('crmSidebarTheme');
-      return raw === 'dark';
-    } catch {
-      return false;
-    }
-  });
+  const { isDark, toggleTheme } = useTheme();
 
   const userName = localStorage.getItem('userName') || 'User';
   const allowedModules = (() => {
@@ -55,18 +48,6 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
     localStorage.clear();
     navigate('/login');
     window.location.reload();
-  };
-
-  const toggleSidebarTheme = () => {
-    setSidebarDark((v) => {
-      const next = !v;
-      try {
-        localStorage.setItem('crmSidebarTheme', next ? 'dark' : 'light');
-      } catch {
-        // ignore
-      }
-      return next;
-    });
   };
 
   const navigationItems = {
@@ -220,7 +201,7 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
     <>
       {/* Desktop Sidebar */}
       <div
-        className={`crm-sidebar ${sidebarDark ? 'is-dark' : 'is-light'} ${isCollapsed ? 'is-collapsed' : ''} ${
+        className={`crm-sidebar ${isDark ? 'is-dark' : 'is-light'} ${isCollapsed ? 'is-collapsed' : ''} ${
           isMobile ? 'hidden' : 'flex'
         }`}
       >
@@ -257,11 +238,11 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
           <div className="crm-rail-bottom">
             <button
               type="button"
-              onClick={toggleSidebarTheme}
+              onClick={toggleTheme}
               className="crm-rail-action"
-              title={sidebarDark ? 'Light Mode' : 'Dark Mode'}
+              title={isDark ? 'Light Mode' : 'Dark Mode'}
             >
-              {sidebarDark ? <Sun className="crm-rail-icon" /> : <Moon className="crm-rail-icon" />}
+              {isDark ? <Sun className="crm-rail-icon" /> : <Moon className="crm-rail-icon" />}
             </button>
             <button type="button" onClick={handleLogout} className="crm-rail-action" title="Logout">
               <LogOut className="crm-rail-icon" />
@@ -316,9 +297,9 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
               </div>
 
               <div className="crm-panel-footer-actions">
-                <button type="button" onClick={toggleSidebarTheme} className="crm-panel-toggle">
+                <button type="button" onClick={toggleTheme} className="crm-panel-toggle">
                   <span className="crm-panel-toggle-label">Dark Mode</span>
-                  <span className={`crm-panel-toggle-pill ${sidebarDark ? 'on' : 'off'}`}>
+                  <span className={`crm-panel-toggle-pill ${isDark ? 'on' : 'off'}`}>
                     <span className="crm-panel-toggle-dot" />
                   </span>
                 </button>
@@ -336,7 +317,7 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
       {/* Mobile Sidebar */}
       {isMobile && isOpen && (
         <>
-          <div className={`crm-mobile-sidebar ${sidebarDark ? 'is-dark' : 'is-light'}`}>
+          <div className={`crm-mobile-sidebar ${isDark ? 'is-dark' : 'is-light'}`}>
             <div className="crm-mobile-header">
               <div className="crm-mobile-brand">
                 <div className="crm-panel-brand-icon">
@@ -384,9 +365,9 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
               </div>
 
               <div className="crm-panel-footer-actions">
-                <button type="button" onClick={toggleSidebarTheme} className="crm-panel-toggle">
+                <button type="button" onClick={toggleTheme} className="crm-panel-toggle">
                   <span className="crm-panel-toggle-label">Dark Mode</span>
-                  <span className={`crm-panel-toggle-pill ${sidebarDark ? 'on' : 'off'}`}>
+                  <span className={`crm-panel-toggle-pill ${isDark ? 'on' : 'off'}`}>
                     <span className="crm-panel-toggle-dot" />
                   </span>
                 </button>

@@ -12,6 +12,7 @@ const { port } = require('./config/config');
 const meetingController = require('./controllers/meetingController');
 const User = require('./models/userModel');
 const Lead = require('./models/leadModel');
+const ApiTesterRequest = require('./models/apiTesterRequestModel'); // ✅ Added
 
 // ✅ Connect to MongoDB
 connectDB();
@@ -26,7 +27,7 @@ const allowedOrigins = [
   'https://100acress.com',
   'https://www.100acress.com',   // ✅ Added
   'https://api.100acress.com',
-  'http://localhost:5001',
+  'https://bcrm.100acress.com',
   'http://localhost:3500',
   'https://crm.100acress.com',
   'https://bcrm.100acress.com'

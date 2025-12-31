@@ -208,7 +208,7 @@ Example: Sales Head → /sales-head-dashboard
 
 ### API Endpoint for User Creation
 ```
-POST http://localhost:5001/api/users
+POST https://bcrm.100acress.com/api/users
 
 Request:
 {
@@ -229,7 +229,7 @@ Response:
 
 ### Login Endpoint (Needs Update)
 ```
-POST http://localhost:5001/api/auth/login
+POST https://bcrm.100acress.com/api/auth/login
 
 Response should include:
 {

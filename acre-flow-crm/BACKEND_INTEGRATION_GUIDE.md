@@ -17,7 +17,7 @@ The Role Assignment feature now integrates with the backend API to create users 
 
 **Form Submission:**
 ```javascript
-POST http://localhost:5001/api/users
+POST https://bcrm.100acress.com/api/users
 Content-Type: application/json
 
 {
@@ -195,7 +195,7 @@ The backend User model should include:
 ### 1. User Creation (Already Implemented)
 ```javascript
 // Frontend call
-const response = await fetch('http://localhost:5001/api/users', {
+const response = await fetch('https://bcrm.100acress.com/api/users', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -240,7 +240,7 @@ Response includes department and role
 Ensure these are set in `.env`:
 
 ```
-VITE_API_BASE_URL=http://localhost:5001
+VITE_API_BASE_URL=https://bcrm.100acress.com
 VITE_API_TIMEOUT=10000
 ```
 

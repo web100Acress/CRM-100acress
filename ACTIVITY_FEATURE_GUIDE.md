@@ -65,7 +65,7 @@ npm install
 npm run dev
 ```
 
-Backend will run on `http://localhost:5001`
+Backend will run on `https://bcrm.100acress.com`
 
 ### 2. Frontend Setup
 

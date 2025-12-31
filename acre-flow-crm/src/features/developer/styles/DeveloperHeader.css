@@ -1,0 +1,203 @@
+/* Developer Header Styles */
+.developer-header {
+  background-color: var(--header-bg);
+  border-bottom: 1px solid var(--header-border);
+  color: var(--text-primary);
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: between;
+  transition: all 0.3s ease;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.header-title-section {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  flex: 1;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.header-brand-icon {
+  width: 32px;
+  height: 32px;
+  color: var(--accent-primary);
+}
+
+.header-brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.header-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.header-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.user-greeting {
+  font-size: 1rem;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.user-name {
+  font-weight: 600;
+  color: var(--accent-primary);
+}
+
+.user-role {
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.75rem;
+  width: 16px;
+  height: 16px;
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+.search-input {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
+  padding: 0.5rem 0.75rem 0.5rem 2.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  width: 250px;
+  transition: all 0.3s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.search-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.notification-button,
+.settings-button {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.notification-button:hover,
+.settings-button:hover {
+  background-color: var(--bg-tertiary);
+  border-color: var(--border-secondary);
+}
+
+.bell-icon,
+.settings-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.notification-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  background-color: #ef4444;
+  border-radius: 50%;
+  border: 2px solid var(--header-bg);
+}
+
+/* Dark mode specific styles */
+:root.dark-theme .developer-header {
+  background-color: var(--header-bg);
+  border-color: var(--header-border);
+}
+
+:root.dark-theme .search-input {
+  background-color: var(--bg-tertiary);
+  border-color: var(--border-primary);
+}
+
+:root.dark-theme .notification-button,
+:root.dark-theme .settings-button {
+  background-color: var(--bg-tertiary);
+  border-color: var(--border-primary);
+}
+
+:root.dark-theme .notification-button:hover,
+:root.dark-theme .settings-button:hover {
+  background-color: var(--bg-secondary);
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .header-title-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .search-input {
+    width: 180px;
+  }
+  
+  .header-subtitle {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .search-wrapper {
+    display: none;
+  }
+  
+  .user-greeting {
+    font-size: 0.875rem;
+  }
+  
+  .header-title {
+    font-size: 1.125rem;
+  }
+}

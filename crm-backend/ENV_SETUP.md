@@ -57,12 +57,12 @@ MongoDB connected
 Once both backends are running:
 
 1. **CRM Frontend**: http://localhost:5173
-2. **CRM Backend**: http://localhost:5001
+2. **CRM Backend**: https://bcrm.100acress.com
 3. **100acress Backend**: http://localhost:3500
 
 The proxy endpoint will be available at:
 ```
-GET http://localhost:5001/api/users/external/100acress-users
+GET https://bcrm.100acress.com/api/users/external/100acress-users
 ```
 
 This endpoint will fetch users from 100acress backend at:

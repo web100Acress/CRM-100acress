@@ -96,7 +96,7 @@ npm run dev
 ### Environment Setup
 Create a `.env` file in the root directory:
 ```env
-VITE_API_BASE_URL=http://localhost:5001/api/api
+VITE_API_BASE_URL=https://bcrm.100acress.com/api/api
 VITE_APP_NAME=CRM Dashboard
 ```
 
@@ -122,7 +122,7 @@ export const ENDPOINTS = {
 
 // src/api/http.js - Centralized HTTP client
 const httpClient = axios.create({
-  baseURL: 'http://localhost:5001/api/api',
+  baseURL: 'https://bcrm.100acress.com/api/api',
   timeout: 10000,
   // Interceptors for auth, error handling, etc.
 });

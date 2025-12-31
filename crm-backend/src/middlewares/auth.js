@@ -62,15 +62,24 @@ module.exports = async (req, res, next) => {
         // Create a user object compatible with CRM
         const acressUser = acressResult.user;
         
+        console.log('100acress user data:', {
+          _id: acressUser._id,
+          email: acressUser.email,
+          name: acressUser.name,
+          role: acressUser.role,
+          mappedRole: acressUser.mappedRole || mapAcressRoleToCRM(acressUser.role)
+        });
+        
         req.user = {
           _id: acressUser._id,
           email: acressUser.email,
           name: acressUser.name,
-          role: acressUser.mappedRole || mapAcressRoleToCRM(acressUser.role),
+          role: acressUser.mappedRole || mapAcressRoleToCRM(acressUser.role) || 'user',
           sourceSystem: '100acress',
           originalRole: acressUser.role, // Keep original role for reference
         };
         
+        console.log('Final req.user:', req.user);
         return next();
       }
 

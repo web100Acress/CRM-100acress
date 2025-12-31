@@ -16,7 +16,7 @@ npm install
 npm start
 ```
 
-The server will run on `http://localhost:5001/api/api`
+The server will run on `https://bcrm.100acress.com/api/api`
 
 ### 2. Start the Frontend
 
@@ -77,12 +77,12 @@ sudo systemctl start mongod
 
 ### Test CORS:
 ```bash
-curl http://localhost:5001/api/api/test-cors
+curl https://bcrm.100acress.com/api/api/test-cors
 ```
 
 ### Test Password Reset:
 ```bash
-curl -X POST http://localhost:5001/api/api/auth/request-password-reset \
+curl -X POST https://bcrm.100acress.com/api/api/auth/request-password-reset \
   -H "Content-Type: application/json" \
   -d '{"email":"amankumartiwari5255@gmail.com"}'
 ```
