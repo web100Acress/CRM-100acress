@@ -7,6 +7,18 @@ const saveApiRequest = async (req, res) => {
   try {
     const { method, url, headers, params, body, contentType, timestamp, response } = req.body;
     
+    // Prepare response data with proper validation
+    let responseData = null;
+    if (response) {
+      responseData = {
+        status: response.status && !isNaN(response.status) ? Number(response.status) : null,
+        statusText: response.statusText || '',
+        headers: response.headers || {},
+        data: response.data || null,
+        time: response.time || ''
+      };
+    }
+    
     const apiRequest = new ApiTesterRequest({
       userId: req.user.userId || req.user.id || req.user._id,
       method,
@@ -15,8 +27,9 @@ const saveApiRequest = async (req, res) => {
       params: params || [],
       body: body || '',
       contentType: contentType || 'application/json',
+      description: req.body.description || '', // Include description
       timestamp: timestamp || new Date(),
-      response: response || null
+      response: responseData
     });
 
     await apiRequest.save();

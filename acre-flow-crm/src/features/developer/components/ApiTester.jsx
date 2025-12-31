@@ -12,7 +12,8 @@ import {
   History,
   Settings,
   Globe,
-  Play
+  Play,
+  Edit
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/layout/card';
 import '../styles/ApiTester.css';
@@ -186,14 +187,19 @@ const ApiTester = () => {
           if (data.success && data.data) {
             // Convert database requests to history format
             const dbHistory = data.data.map(req => ({
+              _id: req._id, // Include database ID
               status: req.response?.status || 200,
               statusText: req.response?.statusText || 'OK',
-              headers: req.response?.headers || {},
+              responseHeaders: req.response?.headers || {},
               data: req.response?.data || 'No response data',
               time: new Date(req.timestamp).toLocaleTimeString(),
               url: req.url,
               method: req.method,
-              description: req.description || 'No description provided' // Include description
+              description: req.description || 'No description provided',
+              headers: Array.isArray(req.headers) ? req.headers : [],
+              params: Array.isArray(req.params) ? req.params : [],
+              body: req.body || '',
+              contentType: req.contentType || 'application/json'
             }));
             
             setHistory(dbHistory);
@@ -244,12 +250,18 @@ const ApiTester = () => {
         method: request.method,
         url: request.url,
         description: request.description, // Include description
-        headers: request.headers.filter(h => h.key && h.value),
-        params: request.params.filter(p => p.key && p.value),
+        headers: Array.isArray(request.headers) ? request.headers.filter(h => h.key && h.value) : [],
+        params: Array.isArray(request.params) ? request.params.filter(p => p.key && p.value) : [],
         body: request.body,
         contentType: request.contentType,
         timestamp: new Date().toISOString(),
-        response: response
+        response: response ? {
+          status: response.status && !isNaN(response.status) ? Number(response.status) : null,
+          statusText: response.statusText || '',
+          headers: response.headers || {},
+          data: response.data || null,
+          time: response.time || ''
+        } : null
       };
       
       const savedRequests = JSON.parse(localStorage.getItem('apiTestRequests') || '[]');
@@ -271,6 +283,47 @@ const ApiTester = () => {
       console.error('Error saving request:', error);
       alert('Failed to save request');
     }
+  };
+
+  const deleteHistoryItem = async (index) => {
+    try {
+      // Remove from local state
+      const newHistory = history.filter((_, i) => i !== index);
+      setHistory(newHistory);
+      
+      // Update localStorage
+      localStorage.setItem('apiTestRequests', JSON.stringify(newHistory));
+      
+      // If we have the database ID, also delete from database
+      const itemToDelete = history[index];
+      if (itemToDelete._id) {
+        await fetch(`http://localhost:5001/api/api-tester/requests/${itemToDelete._id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+      }
+      
+      alert('Request deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting request:', error);
+      alert('Failed to delete request');
+    }
+  };
+
+  const editHistoryItem = (index) => {
+    const itemToEdit = history[index];
+    setRequest({
+      method: itemToEdit.method || 'GET',
+      url: itemToEdit.url || '',
+      description: itemToEdit.description || '',
+      headers: Array.isArray(itemToEdit.headers) ? itemToEdit.headers : [{ key: '', value: '' }],
+      params: Array.isArray(itemToEdit.params) ? itemToEdit.params : [{ key: '', value: '' }],
+      body: itemToEdit.body || '',
+      contentType: itemToEdit.contentType || 'application/json'
+    });
+    setResponse(itemToEdit.response);
   };
 
   const formatBody = () => {
@@ -618,7 +671,23 @@ const ApiTester = () => {
                       </span>
                       <span className="text-sm text-gray-600 truncate max-w-xs">{item.url}</span>
                     </div>
-                    <span className="text-xs text-gray-500">{item.time}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500">{item.time}</span>
+                      <button
+                        onClick={() => editHistoryItem(index)}
+                        className="px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
+                        title="Edit Request"
+                      >
+                        <Edit className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={() => deleteHistoryItem(index)}
+                        className="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600"
+                        title="Delete Request"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
                   </div>
                   {item.description && (
                     <div className="text-xs text-gray-700 bg-white p-2 rounded border-l-2 border-blue-400">
