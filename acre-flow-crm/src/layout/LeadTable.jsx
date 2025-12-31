@@ -259,12 +259,17 @@ const LeadTable = ({ userRole }) => {
     // Only the current assignee can forward the lead
     if (lead.assignedTo !== currentUserId) return false;
 
-    // Check if there are users in the next level
-    const nextRole = {
-      "super-admin": "head-admin",
-      "head-admin": "team-leader",
+    // Define forwarding hierarchy for new roles
+    const forwardHierarchy = {
+      "boss": "head-admin",
+      "head-admin": "team-leader", 
       "team-leader": "employee",
-    }[currentUserRole];
+      "admin": "team-leader",
+      "super-admin": "boss",
+      "crm_admin": "head-admin",
+    };
+
+    const nextRole = forwardHierarchy[currentUserRole];
 
     return nextRole && assignableUsers.some((user) => user.role === nextRole);
   };
@@ -288,13 +293,13 @@ const LeadTable = ({ userRole }) => {
 
     // If lead is unassigned, higher roles can assign it
     if (!lead.assignedTo) {
-      return ["super-admin", "head-admin", "team-leader"].includes(
+      return ["boss", "super-admin", "head-admin", "team-leader", "admin", "crm_admin"].includes(
         currentUserRole
       );
     }
 
     // Check if current user has higher role than assignee
-    const roleLevels = ["super-admin", "head-admin", "team-leader", "employee"];
+    const roleLevels = ["boss", "super-admin", "head-admin", "admin", "crm_admin", "team-leader", "employee"];
     const currentUserLevel = roleLevels.indexOf(currentUserRole);
 
     // Find the assignee's role
@@ -418,7 +423,7 @@ const LeadTable = ({ userRole }) => {
           {isExporting ? "Exporting..." : "Export to CSV"}
         </Button>
 
-        {(userRole === "super-admin" || userRole === "head-admin") && (
+        {(userRole === "boss" || userRole === "super-admin" || userRole === "head-admin" || userRole === "admin" || userRole === "crm_admin") && (
           <button className="lead-create-button" onClick={handleCreateLead}>
             <Plus
               size={18}
@@ -622,7 +627,7 @@ const LeadTable = ({ userRole }) => {
                       >
                         <MessageSquare size={16} />
                       </button>
-                      {userRole === "super-admin" && (
+                      {(userRole === "boss" || userRole === "super-admin") && (
                         <button onClick={() => handleDeleteLead(lead._id)} className="lead-action-button delete-lead-btn">
                           <Trash2 size={16} />
                         </button>
@@ -807,7 +812,7 @@ const LeadTable = ({ userRole }) => {
                     Assignment Chain
                   </button>
                   
-                  {userRole === "super-admin" && (
+                  {(userRole === "boss" || userRole === "super-admin") && (
                     <button 
                       className="lead-details-action-btn danger"
                       onClick={() => {

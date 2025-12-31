@@ -97,7 +97,7 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
       { path: '/calls', icon: PhoneCall, label: 'Call Logs' },
     ],
     employee: [
-      { path: '/', icon: Home, label: 'Dashboard' },
+      { path: '/employee-dashboard', icon: Home, label: 'Dashboard' },
       { path: '/leads', icon: Building2, label: 'My Leads' },
       { path: '/calls', icon: PhoneCall, label: 'Call Logs' },
     ]
