@@ -3,6 +3,7 @@ import '../../../styles/DeveloperContent.css'
 import '../../../styles/sidebar.css'
 import '../styles/DeveloperHeader.css'
 import '../styles/DeveloperLayout.css'
+import '../styles/DeveloperOverview.css'
 import { 
   Code, 
   Database, 
@@ -59,6 +60,7 @@ import { NavLink } from 'react-router-dom';
 
 // Developer-specific imports
 import DeveloperHeader from './DeveloperHeader';
+import DeveloperOverview from './DeveloperOverview';
 import DeveloperChat from './DeveloperChat';
 import RoleAssignment from './RoleAssignment';
 import ActivityCredentials from './ActivityCredentials';
@@ -397,102 +399,6 @@ const DeveloperContent = ({ userRole }) => {
           </div>
         </div>
       );
-
-      const renderOverview = () => (
-        <div className="overview-container">
-          {/* Header with avatar and name */}
-          <div className="overview-header">
-            <div className="overview-avatar">
-              <div className="avatar-initial">
-                {developerName.charAt(0).toUpperCase()}
-              </div>
-            </div>
-            <div className="overview-welcome">
-              <h2 className="overview-greeting">
-                Welcome, <span className="developer-name">{developerName}</span>!
-              </h2>
-              <p className="overview-subtext">Here is your system overview and quick actions.</p>
-            </div>
-          </div>
-      
-          {/* Stats Grid */}
-          <div className="overview-stats">
-            <div className="stat-box">
-              <div className="stat-title"><Server className="icon" /> Server Status</div>
-              <div className="stat-value green">{systemStats.serverStatus}</div>
-              <p className="stat-description">Last checked: 0 mins ago</p>
-            </div>
-      
-            <div className="stat-box">
-              <div className="stat-title"><Database className="icon" /> DB Connections</div>
-              <div className="stat-value">{systemStats.dbConnections}</div>
-              <p className="stat-description">Active connections</p>
-            </div>
-      
-            <div className="stat-box">
-              <div className="stat-title"><Activity className="icon" /> Memory Usage</div>
-              <div className="stat-value">{systemStats.memoryUsage}</div>
-              <p className="stat-description">System memory</p>
-            </div>
-      
-            <div className="stat-box">
-              <div className="stat-title"><Zap className="icon" /> CPU Usage</div>
-              <div className="stat-value">{systemStats.cpuUsage}</div>
-              <p className="stat-description">Current load</p>
-            </div>
-      
-            <div className="stat-box">
-              <div className="stat-title"><Globe className="icon" /> API Calls</div>
-              <div className="stat-value">{systemStats.apiCalls}</div>
-              <p className="stat-description">Request count</p>
-            </div>
-      
-            
-          
-          </div>
-      
-          {/* Quick Actions and Activities */}
-          <div className="overview-actions">
-            {/* <div className="action-card">
-              <h3 className="card-title">Quick Actions</h3>
-              <div className="action-buttons">
-                <button onClick={() => handleAction('Cache Clear')} className="btn primary">
-                  <Zap className="btn-icon" /> Clear System Cache
-                </button>
-                <button onClick={() => handleAction('DB Optimize')} className="btn">
-                  <Database className="btn-icon" /> Optimize Database
-                </button>
-                <button onClick={() => handleAction('Backup Create')} className="btn">
-                  <Package className="btn-icon" /> Create System Backup
-                </button>
-              </div>
-            </div> */}
-      
-            <div className="activity-card">
-              <h3 className="card-title">Recent Activities</h3>
-              <div className="activity-list">
-                <div className="activity-item">
-                  <span>Database backup completed</span>
-                  <span className="time">0 hours ago</span>
-                </div>
-                <div className="activity-item">
-                  <span>Security scan passed</span>
-                  <span className="time">0 hours ago</span>
-                </div>
-                <div className="activity-item">
-                  <span>System update deployed</span>
-                  <span className="time">0 day ago</span>
-                </div>
-                <div className="activity-item">
-                  <span>Performance optimization</span>
-                  <span className="time">0 days ago</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-      
 
        
       const renderCreateEmployee = () => (
@@ -1219,7 +1125,7 @@ const DeveloperContent = ({ userRole }) => {
       const renderContent = () => {
         switch (activeTab) {
           case 'overview':
-            return renderOverview();
+            return <DeveloperOverview developerName={developerName} systemStats={systemStats} handleAction={handleAction} />;
           case 'role-assignment':
             return <RoleAssignment />;
           case 'create-employee':
