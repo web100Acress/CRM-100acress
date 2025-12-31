@@ -277,8 +277,20 @@ async function sendWelcomeEmail({ email, password, name, role }) {
           </div>
           
           <div style="text-align: center; margin: 30px 0;">
-            <p style="color: #4a5568; font-size: 16px;">
+            <p style="color: #4a5568; font-size: 16px; margin-bottom: 20px;">
               <strong>🔑 Please log in and change your password after your first login for security reasons.</strong>
+            </p>
+            <a href="https://crm.100acress.com/login" 
+               style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                      color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; 
+                      font-weight: 600; font-size: 16px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+                      transition: all 0.3s ease;" 
+               onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(102, 126, 234, 0.5)'" 
+               onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(102, 126, 234, 0.4)'">
+              🚀 Click Here to Login
+            </a>
+            <p style="color: #718096; font-size: 14px; margin-top: 15px;">
+              Or visit: <a href="https://crm.100acress.com/login" style="color: #667eea; text-decoration: none;">https://crm.100acress.com/login</a>
             </p>
           </div>
         </div>

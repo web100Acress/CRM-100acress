@@ -299,7 +299,25 @@ const RoleAssignment = () => {
   const getRoleDisplay = (role, allowedModules) => {
     const mods = normalizeModules(allowedModules);
     if (mods.length > 1) return 'CUSTOM ACCESS';
-    return (role || '').replace(/_/g, ' ').toUpperCase();
+    
+    const roleMap = {
+      'employee': 'BD',
+      'head-admin': 'HOD',
+      'super-admin': 'BOSS',
+      'team-leader': 'TEAM LEADER',
+      'developer': 'DEVELOPER',
+      'admin': 'ADMIN',
+      'sales_head': 'SALES HEAD',
+      'sales_executive': 'SALES EXECUTIVE',
+      'hr_manager': 'HR MANAGER',
+      'hr_executive': 'HR EXECUTIVE',
+      'blog_manager': 'BLOG MANAGER',
+      'blog_writer': 'BLOG WRITER',
+      'crm_admin': 'CRM ADMIN',
+      'boss': 'BOSS'
+    };
+    
+    return roleMap[role] || (role || '').replace(/_/g, ' ').toUpperCase();
   };
   useEffect(() => {
     fetchAssignments();

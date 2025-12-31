@@ -51,10 +51,20 @@ const UserManagementContent = () => {
 
   const getRoleDisplayName = (role) => {
     switch (role) {
-      case 'super-admin': return 'Super Admin';
-      case 'head-admin': return 'Head Admin';
+      case 'super-admin': return 'BOSS';
+      case 'head-admin': return 'HOD';
       case 'team-leader': return 'Team Leader';
-      case 'employee': return 'Employee';
+      case 'employee': return 'BD';
+      case 'developer': return 'Developer';
+      case 'admin': return 'Admin';
+      case 'sales_head': return 'Sales Head';
+      case 'sales_executive': return 'Sales Executive';
+      case 'hr_manager': return 'HR Manager';
+      case 'hr_executive': return 'HR Executive';
+      case 'blog_manager': return 'Blog Manager';
+      case 'blog_writer': return 'Blog Writer';
+      case 'crm_admin': return 'CRM Admin';
+      case 'boss': return 'BOSS';
       default: return role;
     }
   };
@@ -401,10 +411,12 @@ const UserManagementContent = () => {
           </div>
           <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className="user-management-filter-select">
             <option value="all">All Roles</option>
-            <option value="super-admin">Super Admin</option>
-            <option value="head-admin">Head Admin</option>
+            <option value="super-admin">BOSS</option>
+            <option value="head-admin">HOD</option>
             <option value="team-leader">Team Leader</option>
-            <option value="employee">Employee</option>
+            <option value="employee">BD</option>
+            <option value="developer">Developer</option>
+            <option value="admin">Admin</option>
           </select>
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="user-management-filter-select">
             <option value="all">All Status</option>
