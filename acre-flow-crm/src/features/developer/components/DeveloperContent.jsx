@@ -407,9 +407,9 @@ const DeveloperContent = ({ userRole }) => {
             <div className="card-header">
               <h3 className="card-title">
                 <UserPlus className="card-icon" />
-                Create New Employee
+                Create New BD
               </h3>
-              <p className="card-subtitle">Fill in the details to create a new employee account</p>
+              <p className="card-subtitle">Fill in the details to create a new Business Development account</p>
             </div>
             
             <form onSubmit={handleCreateEmployee} className="employee-form">
@@ -452,13 +452,11 @@ const DeveloperContent = ({ userRole }) => {
                     required
                   >
                     <option value="">Select Role</option>
-                    <option value="employee">Employee</option>
+                    <option value="employee">BD</option>
                     <option value="team-leader">Team Leader</option>
-                    <option value="head-admin">Admin</option>
+                    <option value="head-admin">HOD</option>
                     <option value="super-admin">BOSS</option>
                     <option value="developer">Developer</option>
-                    <option value="hr_finance">HR/Finance</option>
-                    <option value="it_infrastructure">IT Infrastructure</option>
                   </select>
                 </div>  
 
@@ -476,11 +474,11 @@ const DeveloperContent = ({ userRole }) => {
                     required
                   >
                     <option value="">-- Select Department --</option>
-                    <option value="hr">HR</option>
+                    {/* <option value="hr">HR</option>   */}
                     <option value="engineering">Engineering</option>
                     <option value="sales">Sales</option>
-                    <option value="marketing">Marketing</option>
-                    <option value="finance">Finance</option>
+                    {/* <option value="marketing">Marketing</option> */}
+                    {/* <option value="finance">Finance</option> */}
                     <option value="it">IT</option>
                   </select>
                 </div>

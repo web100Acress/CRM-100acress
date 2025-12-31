@@ -1,22 +1,333 @@
 const userService = require('../services/userService');
 const { sendMail } = require('../services/emailService');
 
-async function sendWelcomeEmail({ email, password, name }) {
-  const subject = 'Welcome to 100acres CRM!';
+async function sendWelcomeEmail({ email, password, name, role }) {
+  const roleDisplayMap = {
+    'employee': 'Business Development (BD)',
+    'head-admin': 'HOD',
+    'super-admin': 'BOSS',
+    'team-leader': 'Team Leader',
+    'developer': 'Developer'
+  };
+  const roleDisplay = roleDisplayMap[role] || role;
+  const subject = `Welcome to 100acres CRM - Your ${roleDisplay} Account`;
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Welcome to 100acres CRM</title>
+      <style>
+        body {
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          margin: 0;
+          padding: 20px;
+          background-color: #f4f7f6;
+          color: #333;
+        }
+        .email-container {
+          max-width: 600px;
+          margin: 0 auto;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border-radius: 16px;
+          overflow: hidden;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .email-header {
+          background: rgba(255,255,255,0.1);
+          padding: 30px;
+          text-align: center;
+          border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        .email-header h1 {
+          color: white;
+          margin: 0;
+          font-size: 28px;
+          font-weight: 700;
+          text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .email-header .subtitle {
+          color: rgba(255,255,255,0.9);
+          margin: 10px 0 0 0;
+          font-size: 16px;
+        }
+        .email-body {
+          background: white;
+          padding: 40px 30px;
+        }
+        .welcome-section {
+          text-align: center;
+          margin-bottom: 30px;
+        }
+        .welcome-section h2 {
+          color: #2d3748;
+          font-size: 24px;
+          margin-bottom: 10px;
+        }
+        .welcome-section p {
+          color: #718096;
+          font-size: 16px;
+          line-height: 1.6;
+        }
+        .credentials-card {
+          background: linear-gradient(135deg, #f6f9fc 0%, #e9ecef 100%);
+          border: 2px solid #e2e8f0;
+          border-radius: 12px;
+          padding: 25px;
+          margin: 25px 0;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        .credentials-title {
+          color: #2d3748;
+          font-size: 18px;
+          font-weight: 600;
+          margin-bottom: 20px;
+          text-align: center;
+          background: linear-gradient(135deg, #667eea, #764ba2);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+        .credential-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 12px 0;
+          border-bottom: 1px solid #e2e8f0;
+        }
+        .credential-item:last-child {
+          border-bottom: none;
+        }
+        .credential-label {
+          font-weight: 600;
+          color: #4a5568;
+          font-size: 14px;
+        }
+        .credential-value {
+          font-weight: 500;
+          color: #2d3748;
+          font-size: 14px;
+          background: white;
+          padding: 6px 12px;
+          border-radius: 6px;
+          border: 1px solid #e2e8f0;
+        }
+        .security-section {
+          background: #fff5f5;
+          border: 2px solid #fed7d7;
+          border-radius: 12px;
+          padding: 25px;
+          margin: 25px 0;
+        }
+        .security-title {
+          color: #c53030;
+          font-size: 18px;
+          font-weight: 600;
+          margin-bottom: 15px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .security-list {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+        }
+        .security-list li {
+          padding: 8px 0;
+          color: #742a2a;
+          font-size: 14px;
+          line-height: 1.5;
+          position: relative;
+          padding-left: 25px;
+        }
+        .security-list li:before {
+          content: "⚠️";
+          position: absolute;
+          left: 0;
+          top: 8px;
+        }
+        .responsibilities-section {
+          background: #f0fff4;
+          border: 2px solid #9ae6b4;
+          border-radius: 12px;
+          padding: 25px;
+          margin: 25px 0;
+        }
+        .responsibilities-title {
+          color: #22543d;
+          font-size: 18px;
+          font-weight: 600;
+          margin-bottom: 15px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .responsibilities-list {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+        }
+        .responsibilities-list li {
+          padding: 8px 0;
+          color: #2f855a;
+          font-size: 14px;
+          line-height: 1.5;
+          position: relative;
+          padding-left: 25px;
+        }
+        .responsibilities-list li:before {
+          content: "✓";
+          position: absolute;
+          left: 0;
+          top: 8px;
+          color: #22543d;
+          font-weight: bold;
+        }
+        .footer {
+          background: #f7fafc;
+          padding: 30px;
+          text-align: center;
+          border-top: 1px solid #e2e8f0;
+        }
+        .footer p {
+          color: #718096;
+          font-size: 14px;
+          margin: 5px 0;
+        }
+        .company-name {
+          font-weight: 600;
+          color: #2d3748;
+        }
+        @media (max-width: 600px) {
+          .email-container {
+            margin: 10px;
+            border-radius: 12px;
+          }
+          .email-header, .email-body, .footer {
+            padding: 20px;
+          }
+          .credential-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+          }
+          .credential-value {
+            align-self: stretch;
+            text-align: center;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="email-container">
+        <div class="email-header">
+          <h1>🏢 Welcome to 100acres CRM</h1>
+          <p class="subtitle">Your ${roleDisplay} Account is Ready!</p>
+        </div>
+        
+        <div class="email-body">
+          <div class="welcome-section">
+            <h2>Hello ${name || 'Team Member'}! 👋</h2>
+            <p>Welcome to 100acres CRM! Your ${roleDisplay} account has been successfully created and is ready for you to start managing your responsibilities.</p>
+          </div>
+          
+          <div class="credentials-card">
+            <div class="credentials-title">🔐 Your Account Credentials</div>
+            <div class="credential-item">
+              <span class="credential-label">Your Role:</span>
+              <span class="credential-value">${roleDisplay}</span>
+            </div>
+            <div class="credential-item">
+              <span class="credential-label">Email Address:</span>
+              <span class="credential-value">${email}</span>
+            </div>
+            <div class="credential-item">
+              <span class="credential-label">Password:</span>
+              <span class="credential-value">${password}</span>
+            </div>
+          </div>
+          
+          <div class="security-section">
+            <div class="security-title">🚨 Important Security Warning</div>
+            <ul class="security-list">
+              <li>DO NOT share your CRM login credentials with anyone</li>
+              <li>DO NOT share sensitive information or data with unauthorized persons</li>
+              ${role === 'employee' ? '<li>Your account is for Business Development purposes only</li>' : '<li>Your account access should be used for authorized purposes only</li>'}
+              <li>Any unauthorized sharing of credentials or data will result in immediate account suspension</li>
+            </ul>
+          </div>
+          
+          <div class="responsibilities-section">
+            <div class="responsibilities-title">📋 Your Responsibilities</div>
+            <ul class="responsibilities-list">
+              ${role === 'employee' ? 
+                `<li>Manage your assigned leads professionally</li>
+                 <li>Update lead status regularly</li>
+                 <li>Maintain confidentiality of all customer information</li>
+                 <li>Report any suspicious activity immediately</li>` :
+                `<li>Perform your duties professionally and ethically</li>
+                 <li>Maintain confidentiality of sensitive information</li>
+                 <li>Follow company policies and procedures</li>
+                 <li>Report any suspicious activity immediately</li>`
+              }
+            </ul>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <p style="color: #4a5568; font-size: 16px;">
+              <strong>🔑 Please log in and change your password after your first login for security reasons.</strong>
+            </p>
+          </div>
+        </div>
+        
+        <div class="footer">
+          <p>Best regards,</p>
+          <p class="company-name">The 100acres CRM Team</p>
+          <p style="font-size: 12px; color: #a0aec0;">This is an automated message. Please do not reply to this email.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  
   const text = `Hello ${name || ''},
 
-Welcome to 100acres CRM!
+Welcome to 100acres CRM! Your ${roleDisplay} account has been created.
 
-Your login details:
+🔐 IMPORTANT SECURITY INSTRUCTIONS 🔐
+
+Your Role: ${roleDisplay}
+Your login credentials:
 Email: ${email}
 Password: ${password}
 
+⚠️  SECURITY WARNING:
+- DO NOT share your CRM login credentials with anyone
+- DO NOT share sensitive information or data with unauthorized persons
+- ${role === 'employee' ? 'Your account is for Business Development purposes only' : 'Your account access should be used for authorized purposes only'}
+- Any unauthorized sharing of credentials or data will result in immediate account suspension
+
+📋 RESPONSIBILITIES:
+${role === 'employee' ? 
+`- Manage your assigned leads professionally
+- Update lead status regularly
+- Maintain confidentiality of all customer information
+- Report any suspicious activity immediately` :
+`- Perform your duties professionally and ethically
+- Maintain confidentiality of sensitive information
+- Follow company policies and procedures
+- Report any suspicious activity immediately`
+}
+
 Please log in and change your password after your first login.
 
-Regards,
+Best regards,
 The 100acres CRM Team`;
   
-  await sendMail(email, subject, text, null);
+  await sendMail(email, subject, text, html);
 }
 
 let io = null;
@@ -32,6 +343,7 @@ exports.createUser = async (req, res, next) => {
         email: user.email,
         password: plainPassword || '[Password not set]',
         name: user.name,
+        role: user.role,
       });
     }
     res.status(201).json({ success: true, data: user });
