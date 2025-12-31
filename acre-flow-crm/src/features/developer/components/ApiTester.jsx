@@ -23,8 +23,8 @@ const ApiTester = () => {
     method: 'GET',
     url: '',
     description: '', // Added description field
-    headers: [{ key: '', value: '' }],
-    params: [{ key: '', value: '' }],
+    headers: [{ key: '', value: '' }], // Ensure always array
+    params: [{ key: '', value: '' }], // Ensure always array
     body: '',
     contentType: 'application/json'
   });
@@ -245,6 +245,13 @@ const ApiTester = () => {
 
   const saveRequest = async () => {
     try {
+      // Debug: log current request state
+      console.log('Saving request:', {
+        headers: request.headers,
+        headersType: typeof request.headers,
+        headersIsArray: Array.isArray(request.headers)
+      });
+      
       // Save to localStorage
       const requestData = {
         method: request.method,
@@ -278,10 +285,11 @@ const ApiTester = () => {
         body: JSON.stringify(requestData)
       });
       
-      alert('Request saved successfully!');
+      // Show success toast notification
+      showToast('Request saved successfully!', 'success');
     } catch (error) {
       console.error('Error saving request:', error);
-      alert('Failed to save request');
+      showToast('Failed to save request', 'error');
     }
   };
 
@@ -305,11 +313,42 @@ const ApiTester = () => {
         });
       }
       
-      alert('Request deleted successfully!');
+      // Show success toast notification
+      showToast('Request deleted successfully!', 'success');
     } catch (error) {
       console.error('Error deleting request:', error);
-      alert('Failed to delete request');
+      showToast('Failed to delete request', 'error');
     }
+  };
+
+  const showToast = (message, type = 'success') => {
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `api-tester-toast ${type}`;
+    toast.innerHTML = `
+      <div class="toast-content">
+        <span class="toast-message">${message}</span>
+        <button class="toast-close">&times;</button>
+      </div>
+    `;
+    
+    // Add to DOM
+    document.body.appendChild(toast);
+    
+    // Show toast
+    setTimeout(() => toast.classList.add('show'), 100);
+    
+    // Auto hide after 3 seconds
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => document.body.removeChild(toast), 300);
+    }, 3000);
+    
+    // Close button functionality
+    toast.querySelector('.toast-close').addEventListener('click', () => {
+      toast.classList.remove('show');
+      setTimeout(() => document.body.removeChild(toast), 300);
+    });
   };
 
   const editHistoryItem = (index) => {

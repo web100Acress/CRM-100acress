@@ -17,7 +17,7 @@ router.get('/requests', authMiddleware, getApiRequests);
 // Delete specific API request
 router.delete('/requests/:id', authMiddleware, deleteApiRequest);
 
-// Check database connection status
-router.get('/status', authMiddleware, getDatabaseStatus);
+// Check database connection status (no auth required)
+router.get('/status', getDatabaseStatus);
 
 module.exports = router;
