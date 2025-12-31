@@ -246,7 +246,7 @@ const EmployeeDashboard = () => {
 
   return (
     <DashboardLayout userRole={userRole}>
-      <div className="superadmin-container sa2">
+      <div className="superadmin-container sa2" style={{height: '100vh', overflowY: 'auto'}}>
         <div className="sa2-topbar">
           <div className="sa2-topbar-title">
             <div className="sa2-topbar-dot" />
@@ -496,6 +496,29 @@ const EmployeeDashboard = () => {
           <span>{dashboardStats.myTasks} tasks</span>
         </div>
       </div>
+
+      {/* Custom CSS for scrolling fix */}
+      <style>{`
+        .superadmin-container.sa2 {
+          height: 100vh !important;
+          overflow-y: auto !important;
+          overflow-x: hidden !important;
+          position: relative !important;
+        }
+        
+        .sa2-grid {
+          min-height: calc(100vh - 80px) !important;
+          padding-bottom: 20px !important;
+        }
+        
+        /* Ensure proper scrolling on mobile */
+        @media (max-width: 768px) {
+          .superadmin-container.sa2 {
+            height: 100vh !important;
+            overflow-y: auto !important;
+          }
+        }
+      `}</style>
     </DashboardLayout>
   );
 };
