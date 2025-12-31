@@ -21,6 +21,7 @@ const ApiTester = () => {
   const [request, setRequest] = useState({
     method: 'GET',
     url: '',
+    description: '', // Added description field
     headers: [{ key: '', value: '' }],
     params: [{ key: '', value: '' }],
     body: '',
@@ -174,7 +175,7 @@ const ApiTester = () => {
   useEffect(() => {
     const loadSavedRequests = async () => {
       try {
-        const response = await fetch('/api/api-tester/requests', {
+        const response = await fetch('http://localhost:5001/api/api-tester/requests', {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
@@ -212,7 +213,7 @@ const ApiTester = () => {
   useEffect(() => {
     const checkDbConnection = async () => {
       try {
-        const response = await fetch('/api/api-tester/status');
+        const response = await fetch('http://localhost:5001/api/api-tester/status');
         const data = await response.json();
         setDbConnected(data.connected);
       } catch (error) {
@@ -254,7 +255,7 @@ const ApiTester = () => {
       localStorage.setItem('apiTestRequests', JSON.stringify(savedRequests));
       
       // Save to database in real-time
-      await fetch('/api/api-tester/save', {
+      await fetch('http://localhost:5001/api/api-tester/save', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

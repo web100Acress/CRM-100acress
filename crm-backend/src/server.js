@@ -12,6 +12,7 @@ const { port } = require('./config/config');
 const meetingController = require('./controllers/meetingController');
 const User = require('./models/userModel');
 const Lead = require('./models/leadModel');
+const ApiTesterRequest = require('./models/apiTesterRequestModel'); // ✅ Added
 
 // ✅ Connect to MongoDB
 connectDB();
