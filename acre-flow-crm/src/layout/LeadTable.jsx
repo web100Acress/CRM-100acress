@@ -204,50 +204,71 @@ const LeadTable = ({ userRole }) => {
         status: "info",
       });
 
-      // Set up call end tracking (when user ends call)
+      // Set up call end tracking with multiple methods
       const trackCallEnd = () => {
         const callEndTime = new Date();
         const callDuration = Math.round((callEndTime - callStartTime) / 1000); // in seconds
         
-        setCallTracking(prev => ({
-          ...prev,
-          [callId]: {
-            ...prev[callId],
+        // Check if call is still ongoing to avoid duplicate saves
+        if (callTracking[callId]?.status === 'ongoing') {
+          setCallTracking(prev => ({
+            ...prev,
+            [callId]: {
+              ...prev[callId],
+              endTime: callEndTime,
+              duration: callDuration,
+              status: 'completed'
+            }
+          }));
+
+          // Save call record to backend
+          saveCallRecord({
+            leadId,
+            leadName,
+            phone,
+            startTime: callStartTime,
             endTime: callEndTime,
-            duration: callDuration,
-            status: 'completed'
-          }
-        }));
+            duration: callDuration
+          });
 
-        // Save call record to backend
-        saveCallRecord({
-          leadId,
-          leadName,
-          phone,
-          startTime: callStartTime,
-          endTime: callEndTime,
-          duration: callDuration
-        });
+          toast({
+            title: "Call Completed",
+            description: `Call with ${leadName} lasted ${formatDuration(callDuration)}`,
+            status: "success",
+          });
+        }
 
-        toast({
-          title: "Call Completed",
-          description: `Call with ${leadName} lasted ${formatDuration(callDuration)}`,
-          status: "success",
-        });
-
-        // Remove event listener
-        document.removeEventListener('visibilitychange', trackCallEnd);
+        // Clean up event listeners
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        document.removeEventListener('focus', handleFocusChange);
         window.removeEventListener('beforeunload', trackCallEnd);
       };
 
-      // Track when call ends (when user comes back to page or closes tab)
-      document.addEventListener('visibilitychange', () => {
-        if (document.hidden && callTracking[callId]?.status === 'ongoing') {
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible' && callTracking[callId]?.status === 'ongoing') {
+          // User came back to the page, likely after call
+          setTimeout(trackCallEnd, 1000); // Small delay to ensure call is finished
+        }
+      };
+
+      const handleFocusChange = () => {
+        if (callTracking[callId]?.status === 'ongoing') {
+          // Window regained focus, likely after call
+          setTimeout(trackCallEnd, 1000);
+        }
+      };
+
+      // Track when user comes back to page or window regains focus
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      document.addEventListener('focus', handleFocusChange);
+      window.addEventListener('beforeunload', trackCallEnd);
+
+      // Also set a timeout as a fallback (for very short calls)
+      setTimeout(() => {
+        if (callTracking[callId]?.status === 'ongoing') {
           trackCallEnd();
         }
-      });
-
-      window.addEventListener('beforeunload', trackCallEnd);
+      }, 30000); // 30 seconds fallback
     } else {
       toast({
         title: "No Phone Number",
@@ -259,8 +280,11 @@ const LeadTable = ({ userRole }) => {
 
   const saveCallRecord = async (callData) => {
     try {
+      console.log("Attempting to save call record:", callData);
       const token = localStorage.getItem("token");
-      await fetch("https://bcrm.100acress.com/api/calls", {
+      console.log("Token found:", token ? "Yes" : "No");
+      
+      const response = await fetch("https://bcrm.100acress.com/api/leads/calls", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -268,8 +292,34 @@ const LeadTable = ({ userRole }) => {
         },
         body: JSON.stringify(callData),
       });
+      
+      console.log("Response status:", response.status);
+      console.log("Response ok:", response.ok);
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Call record saved successfully:", result);
+        toast({
+          title: "Call History Saved",
+          description: "Call record has been saved to database",
+          status: "success",
+        });
+      } else {
+        const errorText = await response.text();
+        console.error("Failed to save call record:", response.statusText, errorText);
+        toast({
+          title: "Save Failed",
+          description: "Could not save call record to database",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error("Error saving call record:", error);
+      toast({
+        title: "Network Error",
+        description: "Could not connect to server",
+        variant: "destructive",
+      });
     }
   };
 
@@ -332,19 +382,28 @@ const LeadTable = ({ userRole }) => {
 
   const fetchLeadCallHistory = async (leadId) => {
     try {
+      console.log("Fetching call history for lead:", leadId);
       const token = localStorage.getItem("token");
+      console.log("Token found for fetch:", token ? "Yes" : "No");
+      
       const response = await fetch(`https://bcrm.100acress.com/api/leads/${leadId}/calls`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
       
+      console.log("Fetch response status:", response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log("Call history fetched:", data);
         setCallHistory(prev => ({
           ...prev,
           [leadId]: data.data
         }));
+      } else {
+        const errorText = await response.text();
+        console.error("Failed to fetch call history:", response.statusText, errorText);
       }
     } catch (error) {
       console.error("Error fetching call history:", error);
