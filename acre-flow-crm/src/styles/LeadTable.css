@@ -87,30 +87,30 @@
     color: #9ca3af;
   }
 
-  .lead-search-input-group svg {
-    color: #9ca3af;
-    min-width: 18px;
-    min-height: 18px;
-  }
+.lead-search-input-group svg {
+  color: #9ca3af;
+  min-width: 18px;
+  min-height: 18px;
+}
 
-  /* Status Filter Select */
-  .lead-status-filter-select { /* Unique class name */
-    padding: 10px 14px;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    background-color: white;
-    font-size: 14px;
-    color: #374151;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-   
-    background-repeat: no-repeat;
-    background-position: right 10px center;
-    background-size: 1em;
-    cursor: pointer;
-    transition: border-color 0.2s, box-shadow 0.2s;
-  }
+/* Status Filter Select */
+.lead-status-filter-select { /* Unique class name */
+  padding: 10px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background-color: white;
+  font-size: 14px;
+  color: #374151;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+ 
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 1em;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
 
   .lead-status-filter-select:focus {
     border-color: #3b82f6;

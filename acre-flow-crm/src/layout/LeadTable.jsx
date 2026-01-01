@@ -14,6 +14,8 @@ import {
   UserCheck,
   Link as LinkIcon,
   Download,
+  Settings,
+  PhoneCall,
 } from "lucide-react";
 import FollowUpModal from "./FollowUpModal";
 import CreateLeadForm from "./CreateLeadForm";
@@ -43,6 +45,9 @@ const LeadTable = ({ userRole }) => {
   const [chainModalLead, setChainModalLead] = useState(null);
   const [showLeadDetails, setShowLeadDetails] = useState(false);
   const [selectedLeadForDetails, setSelectedLeadForDetails] = useState(null);
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+  const [selectedLeadForAdvanced, setSelectedLeadForAdvanced] = useState(null);
+  const [callTracking, setCallTracking] = useState({});
 
   const [currentPage, setCurrentPage] = useState(1);
   const leadsPerPage = window.innerWidth <= 480 ? 30 : 20;
@@ -136,6 +141,167 @@ const LeadTable = ({ userRole }) => {
   };
 
   const handleCreateLead = () => setShowCreateLead(true);
+
+  const handleUpdateStatus = async (leadId, newStatus) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`https://bcrm.100acress.com/api/leads/${leadId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (res.ok) {
+        setLeadsList((prev) =>
+          prev.map((lead) =>
+            lead._id === leadId ? { ...lead, status: newStatus } : lead
+          )
+        );
+        toast({
+          title: "Status Updated",
+          description: `Lead status updated to ${newStatus}`,
+        });
+      } else {
+        const data = await res.json();
+        alert(data.message || "Failed to update status");
+      }
+    } catch (err) {
+      alert("Error: " + err.message);
+    }
+  };
+
+  const handleCallLead = async (phone, leadId, leadName) => {
+    if (phone) {
+      // Start call tracking
+      const callStartTime = new Date();
+      const callId = `call_${leadId}_${Date.now()}`;
+      
+      setCallTracking(prev => ({
+        ...prev,
+        [callId]: {
+          leadId,
+          leadName,
+          phone,
+          startTime: callStartTime,
+          endTime: null,
+          duration: null,
+          status: 'ongoing'
+        }
+      }));
+
+      // Open phone dialer
+      window.open(`tel:${phone}`, '_self');
+      
+      // Show toast notification
+      toast({
+        title: "Call Started",
+        description: `Calling ${leadName} at ${phone}`,
+        status: "info",
+      });
+
+      // Set up call end tracking (when user ends call)
+      const trackCallEnd = () => {
+        const callEndTime = new Date();
+        const callDuration = Math.round((callEndTime - callStartTime) / 1000); // in seconds
+        
+        setCallTracking(prev => ({
+          ...prev,
+          [callId]: {
+            ...prev[callId],
+            endTime: callEndTime,
+            duration: callDuration,
+            status: 'completed'
+          }
+        }));
+
+        // Save call record to backend
+        saveCallRecord({
+          leadId,
+          leadName,
+          phone,
+          startTime: callStartTime,
+          endTime: callEndTime,
+          duration: callDuration
+        });
+
+        toast({
+          title: "Call Completed",
+          description: `Call with ${leadName} lasted ${formatDuration(callDuration)}`,
+          status: "success",
+        });
+
+        // Remove event listener
+        document.removeEventListener('visibilitychange', trackCallEnd);
+        window.removeEventListener('beforeunload', trackCallEnd);
+      };
+
+      // Track when call ends (when user comes back to page or closes tab)
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden && callTracking[callId]?.status === 'ongoing') {
+          trackCallEnd();
+        }
+      });
+
+      window.addEventListener('beforeunload', trackCallEnd);
+    } else {
+      toast({
+        title: "No Phone Number",
+        description: "This lead doesn't have a phone number",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const saveCallRecord = async (callData) => {
+    try {
+      const token = localStorage.getItem("token");
+      await fetch("https://bcrm.100acress.com/api/calls", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(callData),
+      });
+    } catch (error) {
+      console.error("Error saving call record:", error);
+    }
+  };
+
+  const formatDuration = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}m ${remainingSeconds}s`;
+  };
+
+  const getCallHistory = (leadId) => {
+    return Object.values(callTracking).filter(call => call.leadId === leadId);
+  };
+
+  const handleEmailLead = (email) => {
+    if (email) {
+      window.open(`mailto:${email}`, '_self');
+    } else {
+      toast({
+        title: "No Email Address",
+        description: "This lead doesn't have an email address",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAdvancedOptions = (lead) => {
+    setSelectedLeadForAdvanced(lead);
+    setShowAdvancedOptions(true);
+  };
+
+  const handleCloseAdvancedOptions = () => {
+    setShowAdvancedOptions(false);
+    setSelectedLeadForAdvanced(null);
+  };
 
   const handleDeleteLead = async (leadId) => {
     if (!window.confirm("Are you sure you want to delete this lead?")) return;
@@ -453,9 +619,6 @@ const LeadTable = ({ userRole }) => {
                       <Phone size={14} /> {lead.phone}
                     </div>
                     <div className="lead-info-display">
-                      <Mail size={14} /> {lead.email}
-                    </div>
-                    <div className="lead-info-display">
                       <MapPin size={14} /> {lead.location}
                     </div>
                   </td>
@@ -598,7 +761,45 @@ const LeadTable = ({ userRole }) => {
                   </td>
                   <td data-label="Actions">
                     <div className="lead-action-buttons-group">
-                      {/* Actions column: Add button to show assignment chain modal */}
+                      {/* Status Update Dropdown */}
+                      <select
+                        value={lead.status}
+                        onChange={(e) => handleUpdateStatus(lead._id, e.target.value)}
+                        className="lead-status-update-select"
+                        title="Update Lead Status"
+                      >
+                        <option value="Hot">🔥 Hot</option>
+                        <option value="Warm">🌡️ Warm</option>
+                        <option value="Cold">❄️ Cold</option>
+                      </select>
+
+                      {/* Quick Actions */}
+                      <button
+                        onClick={() => handleCallLead(lead.phone, lead._id, lead.name)}
+                        title="Call Lead"
+                        className="lead-action-button call-btn"
+                      >
+                        <PhoneCall size={16} />
+                      </button>
+                      
+                      <button
+                        onClick={() => handleEmailLead(lead.email)}
+                        title="Email Lead"
+                        className="lead-action-button email-btn"
+                      >
+                        <Mail size={16} />
+                      </button>
+
+                      {/* Advanced Options */}
+                      <button
+                        onClick={() => handleAdvancedOptions(lead)}
+                        title="Advanced Options"
+                        className="lead-action-button advanced-btn"
+                      >
+                        <Settings size={16} />
+                      </button>
+
+                      {/* Existing Actions */}
                       <button
                         className="lead-action-button chain-view-btn"
                         title="View Assignment Chain"
@@ -830,6 +1031,78 @@ const LeadTable = ({ userRole }) => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* --- Advanced Options Modal --- */}
+      {showAdvancedOptions && selectedLeadForAdvanced && (
+        <Dialog open={showAdvancedOptions} onOpenChange={handleCloseAdvancedOptions}>
+          <DialogContent className="lead-advanced-options-modal">
+            <DialogHeader>
+              <DialogTitle>Advanced Options - {selectedLeadForAdvanced.name}</DialogTitle>
+            </DialogHeader>
+            <div className="lead-advanced-options-content">
+              <div className="lead-advanced-info">
+                <h4>Lead Information</h4>
+                <div className="lead-advanced-details">
+                  <p><strong>Name:</strong> {selectedLeadForAdvanced.name}</p>
+                  <p><strong>Email:</strong> {selectedLeadForAdvanced.email}</p>
+                  <p><strong>Phone:</strong> {selectedLeadForAdvanced.phone}</p>
+                  <p><strong>Location:</strong> {selectedLeadForAdvanced.location}</p>
+                  <p><strong>Property:</strong> {selectedLeadForAdvanced.property}</p>
+                  <p><strong>Budget:</strong> {selectedLeadForAdvanced.budget}</p>
+                  <p><strong>Status:</strong> 
+                    <span className={`lead-status-badge ${getStatusClass(selectedLeadForAdvanced.status)}`}>
+                      {selectedLeadForAdvanced.status}
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="lead-advanced-actions">
+                <h4>Quick Actions</h4>
+                <div className="lead-advanced-buttons">
+                  <button 
+                    className="lead-advanced-btn call-advanced-btn"
+                    onClick={() => handleCallLead(selectedLeadForAdvanced.phone, selectedLeadForAdvanced._id, selectedLeadForAdvanced.name)}
+                  >
+                    <PhoneCall size={20} />
+                    Call Now
+                  </button>
+                  
+                  <button 
+                    className="lead-advanced-btn email-advanced-btn"
+                    onClick={() => handleEmailLead(selectedLeadForAdvanced.email)}
+                  >
+                    <Mail size={20} />
+                    Send Email
+                  </button>
+
+                  <div className="lead-advanced-status-section">
+                    <label>Update Status:</label>
+                    <select
+                      value={selectedLeadForAdvanced.status}
+                      onChange={(e) => {
+                        handleUpdateStatus(selectedLeadForAdvanced._id, e.target.value);
+                        setSelectedLeadForAdvanced({...selectedLeadForAdvanced, status: e.target.value});
+                      }}
+                      className="lead-advanced-status-select"
+                    >
+                      <option value="Hot">🔥 Hot</option>
+                      <option value="Warm">🌡️ Warm</option>
+                      <option value="Cold">❄️ Cold</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="lead-advanced-footer">
+              <Button variant="outline" onClick={handleCloseAdvancedOptions}>
+                Close
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* --- Modals --- */}
       {showFollowUp && selectedLead && (

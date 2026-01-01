@@ -222,3 +222,40 @@ exports.getBDDetails = async (req, res, next) => {
     next(err);
   }
 };
+
+// Save call record
+exports.saveCallRecord = async (req, res, next) => {
+  try {
+    const { leadId, leadName, phone, startTime, endTime, duration } = req.body;
+    const userId = req.user?.userId || req.user?._id;
+    
+    // Create call record
+    const callRecord = {
+      userId,
+      leadId,
+      leadName,
+      phone,
+      startTime,
+      endTime,
+      duration,
+      callDate: new Date(),
+      type: 'outbound'
+    };
+
+    // Here you would save to database
+    // For now, just log it
+    console.log('Call record saved:', callRecord);
+    
+    res.status(201).json({ 
+      success: true, 
+      message: 'Call record saved successfully',
+      data: callRecord 
+    });
+  } catch (err) {
+    console.error('Error saving call record:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to save call record' 
+    });
+  }
+};
