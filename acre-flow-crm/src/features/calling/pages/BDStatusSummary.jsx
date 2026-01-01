@@ -28,12 +28,22 @@ export default function BDStatusSummary() {
       const token = localStorage.getItem('token');
       console.log('🔑 Token exists:', !!token);
       
+      if (!bdId) {
+        throw new Error('BD ID is required');
+      }
+      
       // httpClient interceptor returns response.data directly
       const response = await httpClient.get(ENDPOINTS.LEADS.BD_STATUS(bdId));
       console.log('📊 BD Details Response:', response);
       
-      // Handle different response structures (response.data or direct response)
-      const bdData = response?.data || response;
+      // Handle different response structures
+      // API might return: { success: true, data: {...} } or just {...}
+      let bdData = null;
+      if (response?.data) {
+        bdData = response.data;
+      } else if (response && typeof response === 'object' && !Array.isArray(response)) {
+        bdData = response;
+      }
       
       if (bdData) {
         setBdDetails(bdData);
@@ -123,14 +133,26 @@ export default function BDStatusSummary() {
   const handleMobileViewDetails = async (bdId) => {
     setDetailsLoading(true);
     try {
+      if (!bdId) {
+        throw new Error('BD ID is required');
+      }
+      
       const response = await httpClient.get(ENDPOINTS.LEADS.BD_STATUS(bdId));
+      console.log('📊 Mobile BD Details Response:', response);
+      
+      // Handle different response structures
       const bdData = response?.data || response;
-      setBdDetails(bdData || null);
-      setDrawerVisible(true);
-      message.success('BD details loaded');
+      
+      if (bdData) {
+        setBdDetails(bdData);
+        setDrawerVisible(true);
+        message.success('BD details loaded');
+      } else {
+        throw new Error('No data received');
+      }
     } catch (error) {
       console.error('❌ Error fetching BD details for mobile view:', error);
-      message.error('Failed to load BD details');
+      message.error(error?.message || 'Failed to load BD details');
       setBdDetails(null);
     } finally {
       setDetailsLoading(false);
