@@ -19,6 +19,7 @@ import SitemapManager from '@/features/admin/pages/SitemapManager';
 import BlogPost from '@/features/admin/pages/BlogPost';
 import BannerManagement from '@/features/admin/pages/BannerManagement';
 import ShortSetting from '@/features/admin/pages/ShortSetting';
+import BDStatusSummary from '@/features/calling/pages/BDStatusSummary';
 // Import pages from features
 // import Dashboard from '@/features/users/pages/Dashboard';
 // import Login from '@/features/auth/pages/Login';
@@ -77,6 +78,9 @@ const AppRoutes = ({ isLoggedIn, userRole, isDeveloperLoggedIn }) => {
         <Route path="short-setting" element={<ShortSetting />} />
         <Route path="user-management" element={<UserManagement />} />
       </Route>
+
+      {/* BD Analytics Route for super-admin and head-admin */}
+      <Route path="/admin/bd-analytics" element={isLoggedIn && (userRole === "super-admin" || userRole === "head-admin") ? <BDStatusSummary /> : <Navigate to="/login" replace />} />
 
       {/* Project View Route */}
       <Route path="/Admin/ProjectsView/:pUrl" element={isLoggedIn && (userRole === "admin" || userRole === "sales_head") ? <ProjectView /> : <Navigate to="/login" replace />} />

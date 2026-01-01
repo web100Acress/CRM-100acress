@@ -64,6 +64,7 @@ import ShortSetting from '@/features/admin/pages/ShortSetting';
 import BackToTopButton from '@/features/admin/pages/BackToTopButton';
 import ActivityDashboard from '@/features/activity/pages/ActivityDashboard';
 import EmployeeDashboard from '@/layout/EmployeeDashboard';
+import BDStatusSummary from '@/features/calling/pages/BDStatusSummary';
 
 // Import Blog Components (temporarily disabled)
 // import BlogDashboard from "@/features/blog/pages/BlogDashboard";
@@ -388,6 +389,9 @@ const App = () => {
             <Route path="/hr/job-applications/:id" element={isLoggedIn && hasModule('HR') && hasPermission('hr.all_jobs') ? <JobApplications /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
             <Route path="/hr/leave-management" element={isLoggedIn && hasModule('HR') && hasPermission('hr.leave_management') ? <LeaveManagement /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
             <Route path="/hr/onboarding" element={isLoggedIn && hasModule('HR') && hasPermission('hr.onboarding') ? <Onboarding /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+
+            {/* BD Analytics Route for super-admin and head-admin */}
+            <Route path="/admin/bd-analytics" element={isLoggedIn && (userRole === "super-admin" || userRole === "head-admin") ? <BDStatusSummary /> : <Navigate to="/login" replace />} />
             <Route path="/hr/offboarding" element={isLoggedIn && hasModule('HR') && hasPermission('hr.offboarding') ? <Offboarding /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
             <Route path="/upload-documents/:token" element={<CandidateDocumentUpload />} />
             <Route path="/blog-dashboard" element={isLoggedIn && hasModule('Blog') && hasPermission('blog.dashboard') ? <BlogDashboard /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />

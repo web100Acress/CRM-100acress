@@ -201,3 +201,24 @@ exports.getAssignableUsers = async (req, res, next) => {
     next(err);
   }
 };
+
+// BD Analytics - Get status summary for all BD users
+exports.getBDSummary = async (req, res, next) => {
+  try {
+    const summary = await leadService.getBDSummary();
+    res.status(200).json({ success: true, data: summary });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// BD Analytics - Get detailed status for specific BD
+exports.getBDDetails = async (req, res, next) => {
+  try {
+    const { bdId } = req.params;
+    const details = await leadService.getBDDetails(bdId);
+    res.status(200).json({ success: true, data: details });
+  } catch (err) {
+    next(err);
+  }
+};

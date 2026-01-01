@@ -3,6 +3,10 @@ const router = express.Router();
 const leadController = require('../controllers/leadController');
 const auth = require('../middlewares/auth');
 
+// BD Analytics routes - Place BEFORE /:id routes
+router.get('/bd-status-summary', auth, leadController.getBDSummary);
+router.get('/bd-status/:bdId', auth, leadController.getBDDetails);
+
 // Place static routes BEFORE any /:id routes
 router.get('/assignable-users', auth, leadController.getAssignableUsers);
 
@@ -21,4 +25,4 @@ router.get('/:id/followups', auth, leadController.getFollowUps);
 // Forward lead to next person in hierarchy
 router.post('/:id/forward', auth, leadController.forwardLead);
 
-module.exports = router; 
+module.exports = router;
