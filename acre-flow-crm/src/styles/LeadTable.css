@@ -1148,6 +1148,199 @@
   border-top: 1px solid #f3f4f6;
 }
 
+.lead-advanced-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 20px;
+}
+
+/* Call History Styles */
+.lead-advanced-call-history h4 {
+  margin: 0 0 20px 0;
+  color: #1f2937;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.call-history-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  border-color: #d1d5db;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #10b981, #3b82f6, #8b5cf6);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.stat-card:hover::before {
+  opacity: 1;
+}
+
+.stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.stat-info {
+  flex: 1;
+}
+
+.stat-number {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2937;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Circular Chart Styles */
+.circular-chart-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.circular-chart {
+  transform: rotate(-90deg);
+  transition: transform 0.3s ease;
+}
+
+.stat-card:hover .circular-chart {
+  transform: rotate(-90deg) scale(1.1);
+}
+
+.circular-chart-progress {
+  transition: stroke-dashoffset 0.5s ease;
+  stroke-linecap: round;
+}
+
+.circular-chart-text {
+  transform: rotate(90deg);
+  font-weight: 700;
+}
+
+.lead-call-history-list {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.lead-call-history-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.lead-call-history-item:last-child {
+  border-bottom: none;
+}
+
+.lead-call-history-item:hover {
+  background: #f8fafc;
+  transform: translateX(4px);
+}
+
+.call-history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.call-date {
+  font-weight: 500;
+  color: #374151;
+  font-size: 14px;
+}
+
+.call-duration {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 3px 10px;
+  border-radius: 15px;
+  font-size: 11px;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+}
+
+.call-details p {
+  margin: 4px 0;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.call-details strong {
+  color: #374151;
+  margin-right: 4px;
+}
+
+.no-call-history {
+  text-align: center;
+  padding: 40px 20px;
+  color: #9ca3af;
+  font-style: italic;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.no-call-history svg {
+  opacity: 0.5;
+}
+
+/* Role Filter Select */
+
 /* Mobile responsive for details modal - Enhanced */
 @media (max-width: 640px) {
   .lead-details-dialog {

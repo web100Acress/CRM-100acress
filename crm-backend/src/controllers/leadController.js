@@ -229,8 +229,11 @@ exports.saveCallRecord = async (req, res, next) => {
     const { leadId, leadName, phone, startTime, endTime, duration } = req.body;
     const userId = req.user?.userId || req.user?._id;
     
+    // Import CallRecord model
+    const CallRecord = require('../models/callRecordModel');
+    
     // Create call record
-    const callRecord = {
+    const callRecord = new CallRecord({
       userId,
       leadId,
       leadName,
@@ -240,22 +243,69 @@ exports.saveCallRecord = async (req, res, next) => {
       duration,
       callDate: new Date(),
       type: 'outbound'
-    };
+    });
 
-    // Here you would save to database
-    // For now, just log it
-    console.log('Call record saved:', callRecord);
+    // Save to database
+    const savedRecord = await callRecord.save();
+    
+    console.log('Call record saved to database:', savedRecord);
     
     res.status(201).json({ 
       success: true, 
       message: 'Call record saved successfully',
-      data: callRecord 
+      data: savedRecord 
     });
   } catch (err) {
     console.error('Error saving call record:', err);
     res.status(500).json({ 
       success: false, 
       message: 'Failed to save call record' 
+    });
+  }
+};
+
+// Get call records for a user
+exports.getCallRecords = async (req, res, next) => {
+  try {
+    const userId = req.user?.userId || req.user?._id;
+    const CallRecord = require('../models/callRecordModel');
+    
+    const callRecords = await CallRecord.find({ userId })
+      .populate('leadId', 'name email phone')
+      .sort({ callDate: -1 });
+    
+    res.status(200).json({ 
+      success: true, 
+      data: callRecords 
+    });
+  } catch (err) {
+    console.error('Error fetching call records:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch call records' 
+    });
+  }
+};
+
+// Get call records for a specific lead
+exports.getLeadCallHistory = async (req, res, next) => {
+  try {
+    const { leadId } = req.params;
+    const CallRecord = require('../models/callRecordModel');
+    
+    const callRecords = await CallRecord.find({ leadId })
+      .populate('userId', 'name email')
+      .sort({ callDate: -1 });
+    
+    res.status(200).json({ 
+      success: true, 
+      data: callRecords 
+    });
+  } catch (err) {
+    console.error('Error fetching lead call history:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch call history' 
     });
   }
 };

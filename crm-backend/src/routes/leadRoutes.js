@@ -28,4 +28,10 @@ router.post('/:id/forward', auth, leadController.forwardLead);
 // Save call record
 router.post('/calls', auth, leadController.saveCallRecord);
 
+// Get call records for current user
+router.get('/calls', auth, leadController.getCallRecords);
+
+// Get call history for specific lead
+router.get('/:leadId/calls', auth, leadController.getLeadCallHistory);
+
 module.exports = router;

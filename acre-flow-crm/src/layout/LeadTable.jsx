@@ -16,6 +16,7 @@ import {
   Download,
   Settings,
   PhoneCall,
+  PieChart,
 } from "lucide-react";
 import FollowUpModal from "./FollowUpModal";
 import CreateLeadForm from "./CreateLeadForm";
@@ -48,6 +49,7 @@ const LeadTable = ({ userRole }) => {
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [selectedLeadForAdvanced, setSelectedLeadForAdvanced] = useState(null);
   const [callTracking, setCallTracking] = useState({});
+  const [callHistory, setCallHistory] = useState({});
 
   const [currentPage, setCurrentPage] = useState(1);
   const leadsPerPage = window.innerWidth <= 480 ? 30 : 20;
@@ -277,8 +279,76 @@ const LeadTable = ({ userRole }) => {
     return `${minutes}m ${remainingSeconds}s`;
   };
 
+  // Simple circular chart component
+  const CircularChart = ({ percentage, size = 60, strokeWidth = 6, color = '#10b981' }) => {
+    const radius = (size - strokeWidth) / 2;
+    const circumference = radius * 2 * Math.PI;
+    const strokeDasharray = circumference;
+    const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
+    return (
+      <div className="circular-chart-container">
+        <svg width={size} height={size} className="circular-chart">
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke="#e5e7eb"
+            strokeWidth={strokeWidth}
+          />
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke={color}
+            strokeWidth={strokeWidth}
+            strokeDasharray={strokeDasharray}
+            strokeDashoffset={strokeDashoffset}
+            transform={`rotate(-90 ${size / 2} ${size / 2})`}
+            className="circular-chart-progress"
+          />
+          <text
+            x={size / 2}
+            y={size / 2}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            className="circular-chart-text"
+            fontSize="12"
+            fontWeight="600"
+            fill={color}
+          >
+            {percentage}%
+          </text>
+        </svg>
+      </div>
+    );
+  };
+
   const getCallHistory = (leadId) => {
     return Object.values(callTracking).filter(call => call.leadId === leadId);
+  };
+
+  const fetchLeadCallHistory = async (leadId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`https://bcrm.100acress.com/api/leads/${leadId}/calls`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setCallHistory(prev => ({
+          ...prev,
+          [leadId]: data.data
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching call history:", error);
+    }
   };
 
   const handleEmailLead = (email) => {
@@ -293,9 +363,11 @@ const LeadTable = ({ userRole }) => {
     }
   };
 
-  const handleAdvancedOptions = (lead) => {
+  const handleAdvancedOptions = async (lead) => {
     setSelectedLeadForAdvanced(lead);
     setShowAdvancedOptions(true);
+    // Fetch call history for this lead
+    await fetchLeadCallHistory(lead._id);
   };
 
   const handleCloseAdvancedOptions = () => {
@@ -1042,29 +1114,48 @@ const LeadTable = ({ userRole }) => {
             <div className="lead-advanced-options-content">
               <div className="lead-advanced-info">
                 <h4>Lead Information</h4>
-                <div className="lead-advanced-details">
-                  <p><strong>Name:</strong> {selectedLeadForAdvanced.name}</p>
-                  <p><strong>Email:</strong> {selectedLeadForAdvanced.email}</p>
-                  <p><strong>Phone:</strong> {selectedLeadForAdvanced.phone}</p>
-                  <p><strong>Location:</strong> {selectedLeadForAdvanced.location}</p>
-                  <p><strong>Property:</strong> {selectedLeadForAdvanced.property}</p>
-                  <p><strong>Budget:</strong> {selectedLeadForAdvanced.budget}</p>
-                  <p><strong>Status:</strong> 
+                <div className="lead-advanced-details-grid">
+                  <div className="lead-detail-item">
+                    <span className="detail-label">Name:</span>
+                    <span className="detail-value">{selectedLeadForAdvanced.name}</span>
+                  </div>
+                  <div className="lead-detail-item">
+                    <span className="detail-label">Email:</span>
+                    <span className="detail-value">{selectedLeadForAdvanced.email}</span>
+                  </div>
+                  <div className="lead-detail-item">
+                    <span className="detail-label">Phone:</span>
+                    <span className="detail-value">{selectedLeadForAdvanced.phone}</span>
+                  </div>
+                  <div className="lead-detail-item">
+                    <span className="detail-label">Location:</span>
+                    <span className="detail-value">{selectedLeadForAdvanced.location}</span>
+                  </div>
+                  <div className="lead-detail-item">
+                    <span className="detail-label">Property:</span>
+                    <span className="detail-value">{selectedLeadForAdvanced.property}</span>
+                  </div>
+                  <div className="lead-detail-item">
+                    <span className="detail-label">Budget:</span>
+                    <span className="detail-value">{selectedLeadForAdvanced.budget}</span>
+                  </div>
+                  <div className="lead-detail-item">
+                    <span className="detail-label">Status:</span>
                     <span className={`lead-status-badge ${getStatusClass(selectedLeadForAdvanced.status)}`}>
                       {selectedLeadForAdvanced.status}
                     </span>
-                  </p>
+                  </div>
                 </div>
               </div>
 
               <div className="lead-advanced-actions">
                 <h4>Quick Actions</h4>
-                <div className="lead-advanced-buttons">
+                <div className="lead-advanced-buttons-grid">
                   <button 
                     className="lead-advanced-btn call-advanced-btn"
                     onClick={() => handleCallLead(selectedLeadForAdvanced.phone, selectedLeadForAdvanced._id, selectedLeadForAdvanced.name)}
                   >
-                    <PhoneCall size={20} />
+                    <PhoneCall size={18} />
                     Call Now
                   </button>
                   
@@ -1072,7 +1163,7 @@ const LeadTable = ({ userRole }) => {
                     className="lead-advanced-btn email-advanced-btn"
                     onClick={() => handleEmailLead(selectedLeadForAdvanced.email)}
                   >
-                    <Mail size={20} />
+                    <Mail size={18} />
                     Send Email
                   </button>
 
@@ -1092,6 +1183,102 @@ const LeadTable = ({ userRole }) => {
                     </select>
                   </div>
                 </div>
+              </div>
+
+              {/* Call History Section */}
+              <div className="lead-advanced-call-history">
+                <h4>Call History & Follow-up Analytics</h4>
+                
+                {/* Statistics Cards */}
+                <div className="call-history-stats">
+                  <div className="stat-card">
+                    <div className="stat-icon">
+                      <PhoneCall size={20} color="#10b981" />
+                    </div>
+                    <div className="stat-info">
+                      <div className="stat-number">
+                        {callHistory[selectedLeadForAdvanced._id]?.length || 0}
+                      </div>
+                      <div className="stat-label">Total Calls</div>
+                    </div>
+                    <CircularChart 
+                      percentage={Math.min((callHistory[selectedLeadForAdvanced._id]?.length || 0) * 20, 100)} 
+                      size={50} 
+                      strokeWidth={4} 
+                      color="#10b981" 
+                    />
+                  </div>
+                  
+                  <div className="stat-card">
+                    <div className="stat-icon">
+                      <MessageSquare size={20} color="#3b82f6" />
+                    </div>
+                    <div className="stat-info">
+                      <div className="stat-number">
+                        {selectedLeadForAdvanced.followUps?.length || 0}
+                      </div>
+                      <div className="stat-label">Follow-ups</div>
+                    </div>
+                    <CircularChart 
+                      percentage={Math.min((selectedLeadForAdvanced.followUps?.length || 0) * 25, 100)} 
+                      size={50} 
+                      strokeWidth={4} 
+                      color="#3b82f6" 
+                    />
+                  </div>
+                  
+                  <div className="stat-card">
+                    <div className="stat-icon">
+                      <PieChart size={20} color="#8b5cf6" />
+                    </div>
+                    <div className="stat-info">
+                      <div className="stat-number">
+                        {callHistory[selectedLeadForAdvanced._id]?.length > 0 
+                          ? Math.round(callHistory[selectedLeadForAdvanced._id].reduce((acc, call) => acc + call.duration, 0) / callHistory[selectedLeadForAdvanced._id].length)
+                          : 0
+                        }s
+                      </div>
+                      <div className="stat-label">Avg Duration</div>
+                    </div>
+                    <CircularChart 
+                      percentage={callHistory[selectedLeadForAdvanced._id]?.length > 0 
+                        ? Math.min((callHistory[selectedLeadForAdvanced._id].reduce((acc, call) => acc + call.duration, 0) / callHistory[selectedLeadForAdvanced._id].length) * 2, 100)
+                        : 0
+                      } 
+                      size={50} 
+                      strokeWidth={4} 
+                      color="#8b5cf6" 
+                    />
+                  </div>
+                </div>
+
+                {/* Call History List */}
+                {callHistory[selectedLeadForAdvanced._id] && callHistory[selectedLeadForAdvanced._id].length > 0 ? (
+                  <div className="lead-call-history-list">
+                    {callHistory[selectedLeadForAdvanced._id].map((call, index) => (
+                      <div key={call._id} className="lead-call-history-item">
+                        <div className="call-history-header">
+                          <span className="call-date">
+                            {new Date(call.callDate).toLocaleDateString()}
+                          </span>
+                          <span className="call-duration">
+                            {formatDuration(call.duration)}
+                          </span>
+                        </div>
+                        <div className="call-details">
+                          <p><strong>Called by:</strong> {call.userId?.name || 'Unknown'}</p>
+                          <p><strong>Phone:</strong> {call.phone}</p>
+                          <p><strong>Time:</strong> {new Date(call.startTime).toLocaleTimeString()} - {new Date(call.endTime).toLocaleTimeString()}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="no-call-history">
+                    <PieChart size={40} color="#9ca3af" />
+                    <p>No call history available for this lead</p>
+                  </div>
+                )}
               </div>
             </div>
             
