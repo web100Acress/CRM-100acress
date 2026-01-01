@@ -25,4 +25,7 @@ router.get('/:id/followups', auth, leadController.getFollowUps);
 // Forward lead to next person in hierarchy
 router.post('/:id/forward', auth, leadController.forwardLead);
 
+// Save call record
+router.post('/calls', auth, leadController.saveCallRecord);
+
 module.exports = router;

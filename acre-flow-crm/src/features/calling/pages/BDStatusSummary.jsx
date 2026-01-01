@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Modal, Spin, Space, Card, Row, Col, Statistic, Tag, Typography, Drawer, Avatar, Badge, message } from 'antd';
-import { ReloadOutlined, UserOutlined, PhoneOutlined, MailOutlined, EnvironmentOutlined, HomeOutlined, MessageOutlined, MobileOutlined } from '@ant-design/icons';
-// import Sidebar from '@/layout/Sidebar';
+import { Table, Button, Modal, Spin, Space, Card, Row, Col, Statistic, Tag, Typography, Drawer, Avatar, Badge, Descriptions } from 'antd';
+import { ReloadOutlined, UserOutlined, PhoneOutlined, MailOutlined, EnvironmentOutlined, HomeOutlined, MessageOutlined, MobileOutlined, CloseOutlined } from '@ant-design/icons';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import DashboardLayout from '@/layout/DashboardLayout';
-import httpClient from '@/api/http';
-import ENDPOINTS from '@/api/endpoints';
 import './BDStatusSummary.css';
 
 const { Title, Text } = Typography;
@@ -15,183 +13,132 @@ export default function BDStatusSummary() {
   const [loading, setLoading] = useState(true);
   const [bdSummary, setBdSummary] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
+  const [selectedBD, setSelectedBD] = useState(null);
   const [bdDetails, setBdDetails] = useState(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
-  const [drawerVisible, setDrawerVisible] = useState(false);
-  const [isSingleBDView, setIsSingleBDView] = useState(false);
-  const [currentBDId, setCurrentBDId] = useState(null);
-
-  const fetchBDDetails = async (bdId) => {
-    setDetailsLoading(true);
-    try {
-      console.log('🔄 Fetching BD Details for BD ID:', bdId);
-      const token = localStorage.getItem('token');
-      console.log('🔑 Token exists:', !!token);
-      
-      if (!bdId) {
-        throw new Error('BD ID is required');
-      }
-      
-      // httpClient interceptor returns response.data directly
-      const response = await httpClient.get(ENDPOINTS.LEADS.BD_STATUS(bdId));
-      console.log('📊 BD Details Response:', response);
-      
-      // Handle different response structures
-      // API might return: { success: true, data: {...} } or just {...}
-      let bdData = null;
-      if (response?.data) {
-        bdData = response.data;
-      } else if (response && typeof response === 'object' && !Array.isArray(response)) {
-        bdData = response;
-      }
-      
-      if (bdData) {
-        setBdDetails(bdData);
-        setIsSingleBDView(true);
-        setCurrentBDId(bdId);
-        message.success('BD details loaded successfully');
-      } else {
-        throw new Error('No data received from server');
-      }
-    } catch (error) {
-      console.error('❌ Error fetching BD details:', error);
-      const errorMessage = error?.message || 'Failed to fetch BD details. Please try again.';
-      message.error(errorMessage);
-      setBdDetails(null);
-    } finally {
-      setDetailsLoading(false);
-    }
-  };
 
   const fetchBDSummary = async () => {
     setLoading(true);
     try {
-      console.log('🔄 Fetching BD Summary...');
+      console.log('🔄 Fetching BD Summary from frontend...');
       const token = localStorage.getItem('token');
       console.log('🔑 Token exists:', !!token);
       
-      const response = await httpClient.get(ENDPOINTS.LEADS.BD_STATUS_SUMMARY);
-      console.log('📊 BD Summary Response:', response);
+      const response = await fetch('http://localhost:5001/api/leads/bd-status-summary', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      });
       
-      // Handle different response structures
-      const summaryData = response?.data || response || [];
+      console.log('📡 Response status:', response.status);
       
-      if (Array.isArray(summaryData)) {
-        setBdSummary(summaryData);
-        message.success(`Loaded ${summaryData.length} BD summaries`);
-      } else if (summaryData && Array.isArray(summaryData.data)) {
-        setBdSummary(summaryData.data);
-        message.success(`Loaded ${summaryData.data.length} BD summaries`);
-      } else {
-        setBdSummary([]);
-        message.warning('No BD summary data available');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+      
+      const data = await response.json();
+      console.log('📊 BD Summary Response:', data);
+      setBdSummary(data.data || []);
     } catch (error) {
       console.error('❌ Error fetching BD summary:', error);
-      const errorMessage = error?.message || 'Failed to fetch BD summary. Please try again.';
-      message.error(errorMessage);
-      setBdSummary([]);
+      // Try test API as fallback
+      try {
+        console.log('🔄 Trying test API...');
+        const testResponse = await fetch('http://localhost:5001/test-bd-status');
+        const testData = await testResponse.json();
+        console.log('📊 Test API Response:', testData);
+        if (testData.success) {
+          setBdSummary(testData.data || []);
+        }
+      } catch (testError) {
+        console.error('❌ Test API also failed:', testError);
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    // Check if URL contains a BD ID
-    const pathArray = window.location.pathname.split('/');
-    const bdIdFromUrl = pathArray[pathArray.length - 1];
-    
-    if (bdIdFromUrl && bdIdFromUrl !== 'bd-status-summary') {
-      // Load specific BD details
-      fetchBDDetails(bdIdFromUrl);
-    } else {
-      // Load summary view
-      fetchBDSummary();
-      setIsSingleBDView(false);
-      setCurrentBDId(null);
-    }
-    
-    // Set up polling for real-time updates every 10 seconds
-    const interval = setInterval(() => {
-      if (isSingleBDView && currentBDId) {
-        fetchBDDetails(currentBDId);
-      } else {
-        fetchBDSummary();
-      }
-    }, 10000);
-    
-    return () => clearInterval(interval);
-  }, [isSingleBDView, currentBDId]);
-
-  const handleViewDetails = (bdId) => {
-    // Navigate to the same page format with BD details
-    // This will open the same component but with a specific BD's details
-    window.location.href = `/bd-status-summary/${bdId}`;
-  };
-
-  // Mobile responsive view details handler
-  const handleMobileViewDetails = async (bdId) => {
+  const fetchBDDetails = async (bdId) => {
     setDetailsLoading(true);
     try {
-      if (!bdId) {
-        throw new Error('BD ID is required');
+      console.log('🔄 Fetching BD Details from frontend...');
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`http://localhost:5001/api/leads/bd-status/${bdId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      });
+      
+      console.log('📡 BD Details Response status:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      const response = await httpClient.get(ENDPOINTS.LEADS.BD_STATUS(bdId));
-      console.log('📊 Mobile BD Details Response:', response);
-      
-      // Handle different response structures
-      const bdData = response?.data || response;
-      
-      if (bdData) {
-        setBdDetails(bdData);
-        setDrawerVisible(true);
-        message.success('BD details loaded');
-      } else {
-        throw new Error('No data received');
-      }
+      const data = await response.json();
+      console.log('📊 BD Details Response:', data);
+      setBdDetails(data.data || null);
     } catch (error) {
-      console.error('❌ Error fetching BD details for mobile view:', error);
-      message.error(error?.message || 'Failed to load BD details');
+      console.error('❌ Error fetching BD details:', error);
       setBdDetails(null);
     } finally {
       setDetailsLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchBDSummary();
+    
+    // Set up polling for real-time updates every 10 seconds
+    const interval = setInterval(() => {
+      fetchBDSummary();
+    }, 10000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleViewDetails = async (record) => {
+    setSelectedBD(record);
+    setModalVisible(true);
+    await fetchBDDetails(record.bdId);
+  };
+
+  const handleCloseModal = () => {
+    setModalVisible(false);
+    setSelectedBD(null);
+    setBdDetails(null);
+  };
+
+  // Simplified columns - only Name, Email, and View Details
   const columns = [
-    { title: 'Name', dataIndex: 'name', key: 'name' },
-    { title: 'Email', dataIndex: 'email', key: 'email' },
-    { title: 'Leads', dataIndex: 'totalLeads', key: 'totalLeads' },
-    { title: 'Hot', dataIndex: 'hot', key: 'hot' },
-    { title: 'Warm', dataIndex: 'warm', key: 'warm' },
-    { title: 'Cold', dataIndex: 'cold', key: 'cold' },
-    { title: 'Follow-ups', dataIndex: 'followUps', key: 'followUps' },
-    { title: 'Conversion %', dataIndex: 'conversionRate', key: 'conversionRate', render: v => v + '%' },
+    { 
+      title: 'Name', 
+      dataIndex: 'name', 
+      key: 'name',
+      width: '35%'
+    },
+    { 
+      title: 'Email', 
+      dataIndex: 'email', 
+      key: 'email',
+      width: '45%'
+    },
     {
       title: 'Action',
       key: 'action',
+      width: '20%',
       render: (_, record) => (
-        <Space>
-          <Button 
-            onClick={() => handleViewDetails(record.bdId)} 
-            size="small"
-            type="primary"
-            icon={<UserOutlined />}
-            className="desktop-view"
-          >
-            View Details
-          </Button>
-          <Button 
-            onClick={() => handleMobileViewDetails(record.bdId)} 
-            size="small"
-            type="primary"
-            icon={<UserOutlined />}
-            className="mobile-view"
-          >
-            Details
-          </Button>
-        </Space>
+        <Button 
+          onClick={() => handleViewDetails(record)} 
+          size="small"
+          type="primary"
+          icon={<UserOutlined />}
+        >
+          View Details
+        </Button>
       ),
     },
   ];
@@ -203,9 +150,9 @@ export default function BDStatusSummary() {
     return (
       <div style={{ fontSize: '12px' }}>
         {chain.map((entry, index) => (
-          <div key={index} style={{ marginBottom: '4px', padding: '4px', backgroundColor: entry.status === 'assigned' ? '#f0f9ff' : entry.status === 'completed' ? '#f0fdf4' : '#fef2f2', borderRadius: '4px' }}>
+          <div key={index} style={{ marginBottom: '8px', padding: '8px', backgroundColor: entry.status === 'assigned' ? '#f0f9ff' : entry.status === 'completed' ? '#f0fdf4' : '#fef2f2', borderRadius: '4px' }}>
             <div style={{ fontWeight: 'bold', color: '#1e40af' }}>{entry.name} ({entry.role})</div>
-            <div style={{ color: '#6b7280' }}>Status: <span style={{ fontWeight: 'bold', color: entry.status === 'assigned' ? '#2563eb' : entry.status === 'completed' ? '#16a34a' : '#dc2626' }}>{entry.status}</span></div>
+            <div style={{ color: '#6b7280', marginTop: '4px' }}>Status: <span style={{ fontWeight: 'bold', color: entry.status === 'assigned' ? '#2563eb' : entry.status === 'completed' ? '#16a34a' : '#dc2626' }}>{entry.status}</span></div>
             <div style={{ color: '#6b7280' }}>Assigned: {new Date(entry.assignedAt).toLocaleDateString()}</div>
             {entry.completedAt && <div style={{ color: '#6b7280' }}>Completed: {new Date(entry.completedAt).toLocaleDateString()}</div>}
             {entry.notes && <div style={{ color: '#6b7280', fontStyle: 'italic' }}>Notes: {entry.notes}</div>}
@@ -218,298 +165,390 @@ export default function BDStatusSummary() {
   return (
     <DashboardLayout userRole={userRole}>
       <div style={{ display: 'flex', minHeight: '100vh' }}>
-        {/* <Sidebar userRole={userRole} /> */}
         <div style={{ flex: 1, padding: 24 }}>
-          {/* User Info Header - Simplified for Summary View */}
-          {!isSingleBDView ? (
-            <div style={{ 
-              marginBottom: '20px', 
-              padding: '16px', 
-              backgroundColor: '#f8fafc', 
-              borderRadius: '12px',
-              border: '1px solid #e2e8f0',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <Avatar size="large" icon={<UserOutlined />} style={{ backgroundColor: '#1890ff' }} />
-                <div>
-                  <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e293b' }}>
-                    {userName}
-                  </div>
-                </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <Button 
-                  type="text" 
-                  icon={<MessageOutlined />}
-                  style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '14px' }}
-                  onClick={() => {
-                    // Message functionality - can be implemented later
-                    console.log('Message clicked');
-                  }}
-                >
-                  Message
-                </Button>
-                <Button 
-                  type="text" 
-                  icon={<MobileOutlined />}
-                  style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '14px' }}
-                  onClick={() => {
-                    // Mobile view details - toggle mobile view
-                    window.open('/bd-status-summary', '_blank');
-                  }}
-                >
-                  Mobile View
-                </Button>
-              </div>
-            </div>
-          ) : (
-            /* Full Header for Single BD View */
-            <div style={{ 
-              marginBottom: '20px', 
-              padding: '16px', 
-              backgroundColor: '#f8fafc', 
-              borderRadius: '12px',
-              border: '1px solid #e2e8f0',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <Avatar size="large" icon={<UserOutlined />} style={{ backgroundColor: '#1890ff' }} />
-                <div>
-                  <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#1e293b' }}>
-                    {userName} {bdDetails && `- ${bdDetails.bd.name}`}
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#64748b' }}>
-                    BD Detailed Status View
-                  </div>
-                </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Button 
-                  type="text" 
-                  icon={<MessageOutlined />}
-                  style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
-                  onClick={() => {
-                    // Message functionality - can be implemented later
-                    console.log('Message clicked');
-                  }}
-                >
-                  Message
-                </Button>
-                <Button 
-                  type="text" 
-                  icon={<MobileOutlined />}
-                  style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
-                  onClick={() => {
-                    // Mobile view details - toggle mobile view
-                    window.open('/bd-status-summary', '_blank');
-                  }}
-                >
-                  Mobile View
-                </Button>
-                <Button 
-                  type="primary" 
-                  onClick={() => {
-                    window.location.href = '/bd-status-summary';
-                  }}
-                >
-                  Back to Summary
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Single BD View */}
-          {isSingleBDView ? (
-          <div>
-            <div style={{ 
-              marginBottom: '24px', 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center',
-              padding: '16px',
-              backgroundColor: '#ffffff',
-              borderRadius: '12px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
-            }}>
+          {/* User Info Header */}
+          <div style={{ 
+            marginBottom: '20px', 
+            padding: '16px', 
+            backgroundColor: '#f8fafc', 
+            borderRadius: '12px',
+            border: '1px solid #e2e8f0',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <Avatar size="large" icon={<UserOutlined />} style={{ backgroundColor: '#1890ff' }} />
               <div>
-                <Title level={2} style={{ margin: 0, color: '#1e293b' }}>
-                  {bdDetails ? `${bdDetails.bd.name} - Complete Status Overview` : 'Loading BD Details...'}
-                </Title>
-                {bdDetails && (
-                  <Text type="secondary" style={{ fontSize: '14px' }}>
-                    Real-time status updates • Last refreshed: {new Date().toLocaleTimeString()}
-                  </Text>
-                )}
+                <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#1e293b' }}>
+                  {userName}
+                </div>
+                <div style={{ fontSize: '12px', color: '#64748b' }}>
+                  BD Status Summary
+                </div>
               </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <Button 
+                type="text" 
+                icon={<MessageOutlined />}
+                style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '14px' }}
+                onClick={() => {
+                  console.log('Message clicked');
+                }}
+              >
+                Message
+              </Button>
+              <Button 
+                type="text" 
+                icon={<MobileOutlined />}
+                style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '14px' }}
+                onClick={() => {
+                  window.open('/bd-status-summary', '_blank');
+                }}
+              >
+                Mobile View
+              </Button>
+            </div>
+          </div>
+
+          {/* Summary View */}
+          <div>
+            <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Title level={3} style={{ margin: 0 }}>BD Lead Status Analytics</Title>
               <Space>
                 <Button 
                   type="primary" 
                   icon={<ReloadOutlined />} 
-                  onClick={() => currentBDId && fetchBDDetails(currentBDId)}
-                  loading={detailsLoading}
-                  size="large"
+                  onClick={fetchBDSummary}
+                  loading={loading}
                 >
                   Refresh
                 </Button>
               </Space>
             </div>
+            
+            {/* Main Table - Simplified */}
+            <div className="table-container">
+              <Table
+                columns={columns}
+                dataSource={bdSummary}
+                rowKey="bdId"
+                loading={loading}
+                pagination={{ 
+                  pageSize: 10,
+                  showSizeChanger: true,
+                  showQuickJumper: true,
+                  showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`
+                }}
+                scroll={{ x: 800 }}
+                size="middle"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
 
-            {detailsLoading ? (
-              <div style={{ textAlign: 'center', padding: '40px' }}>
-                <Spin size="large" />
-                <div style={{ marginTop: '16px', color: '#666' }}>Loading BD details...</div>
+      {/* Details Modal */}
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <Avatar size="large" icon={<UserOutlined />} style={{ backgroundColor: '#1890ff' }} />
+            <div>
+              <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
+                {selectedBD?.name || 'BD Details'}
               </div>
-            ) : !bdDetails ? (
-              <div style={{ textAlign: 'center', padding: '40px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
-                <div style={{ fontSize: '16px', color: '#666', marginBottom: '16px' }}>No data found for this BD</div>
-                <Button onClick={() => window.location.href = '/bd-status-summary'}>
-                  Back to Summary
-                </Button>
+              <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 'normal' }}>
+                {selectedBD?.email}
               </div>
-            ) : (
-              <>
-                {/* BD Summary Cards - Advanced Design */}
-                <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
-                  <Col xs={24} sm={12} md={8} lg={6}>
-                    <Card 
-                      style={{ 
-                        background: 'linear-gradient(135deg, #fef3f2 0%, #fee4e2 100%)',
-                        border: 'none',
-                        borderRadius: '12px',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                      }}
-                    >
-                      <Statistic
-                        title={<span style={{ color: '#64748b', fontSize: '14px' }}>Total Leads</span>}
-                        value={bdDetails.leads.length}
-                        valueStyle={{ color: '#dc2626', fontSize: '32px', fontWeight: 'bold' }}
-                        prefix={<UserOutlined style={{ fontSize: '24px', marginRight: '8px' }} />}
-                      />
-                    </Card>
-                  </Col>
-                  <Col xs={24} sm={12} md={8} lg={6}>
-                    <Card 
-                      style={{ 
-                        background: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
-                        border: 'none',
-                        borderRadius: '12px',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                      }}
-                    >
-                      <Statistic
-                        title={<span style={{ color: '#64748b', fontSize: '14px' }}>Hot Leads</span>}
-                        value={bdDetails.leads.filter(l => l.status === 'Hot').length}
-                        valueStyle={{ color: '#dc2626', fontSize: '32px', fontWeight: 'bold' }}
-                        prefix={<span style={{ fontSize: '24px', marginRight: '8px' }}>🔥</span>}
-                      />
-                    </Card>
-                  </Col>
-                  <Col xs={24} sm={12} md={8} lg={6}>
-                    <Card 
-                      style={{ 
-                        background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
-                        border: 'none',
-                        borderRadius: '12px',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                      }}
-                    >
-                      <Statistic
-                        title={<span style={{ color: '#64748b', fontSize: '14px' }}>Warm Leads</span>}
-                        value={bdDetails.leads.filter(l => l.status === 'Warm').length}
-                        valueStyle={{ color: '#f59e0b', fontSize: '32px', fontWeight: 'bold' }}
-                        prefix={<span style={{ fontSize: '24px', marginRight: '8px' }}>🌡️</span>}
-                      />
-                    </Card>
-                  </Col>
-                  <Col xs={24} sm={12} md={8} lg={6}>
-                    <Card 
-                      style={{ 
-                        background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-                        border: 'none',
-                        borderRadius: '12px',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                      }}
-                    >
-                      <Statistic
-                        title={<span style={{ color: '#64748b', fontSize: '14px' }}>Cold Leads</span>}
-                        value={bdDetails.leads.filter(l => l.status === 'Cold').length}
-                        valueStyle={{ color: '#6b7280', fontSize: '32px', fontWeight: 'bold' }}
-                        prefix={<span style={{ fontSize: '24px', marginRight: '8px' }}>❄️</span>}
-                      />
-                    </Card>
-                  </Col>
-                  <Col xs={24} sm={12} md={8} lg={6}>
-                    <Card 
-                      style={{ 
-                        background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
-                        border: 'none',
-                        borderRadius: '12px',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                      }}
-                    >
-                      <Statistic
-                        title={<span style={{ color: '#64748b', fontSize: '14px' }}>Total Follow-ups</span>}
-                        value={bdDetails.leads.reduce((sum, l) => sum + (Array.isArray(l.followUps) ? l.followUps.length : 0), 0)}
-                        valueStyle={{ color: '#10b981', fontSize: '32px', fontWeight: 'bold' }}
-                        prefix={<MessageOutlined style={{ fontSize: '24px', marginRight: '8px' }} />}
-                      />
-                    </Card>
-                  </Col>
-                  <Col xs={24} sm={12} md={8} lg={6}>
-                    <Card 
-                      style={{ 
-                        background: 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)',
-                        border: 'none',
-                        borderRadius: '12px',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                      }}
-                    >
-                      <Statistic
-                        title={<span style={{ color: '#64748b', fontSize: '14px' }}>Completed</span>}
-                        value={bdDetails.leads.filter(l => l.workProgress === 'done').length}
-                        valueStyle={{ color: '#8b5cf6', fontSize: '32px', fontWeight: 'bold' }}
-                        prefix={<span style={{ fontSize: '24px', marginRight: '8px' }}>✅</span>}
-                      />
-                    </Card>
-                  </Col>
-                </Row>
+            </div>
+          </div>
+        }
+        open={modalVisible}
+        onCancel={handleCloseModal}
+        width={1200}
+        footer={[
+          <Button key="close" type="primary" onClick={handleCloseModal}>
+            Close
+          </Button>
+        ]}
+        closeIcon={<CloseOutlined />}
+      >
+        {detailsLoading ? (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <Spin size="large" />
+            <div style={{ marginTop: '16px', color: '#666' }}>Loading BD details...</div>
+          </div>
+        ) : !bdDetails ? (
+          <div style={{ textAlign: 'center', padding: '40px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+            <div style={{ fontSize: '16px', color: '#666' }}>No data found for this BD</div>
+          </div>
+        ) : (
+          <>
+            {/* BD Statistics Overview */}
+            <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+              <Col xs={24} sm={12} md={8}>
+                <Card 
+                  style={{ 
+                    background: 'linear-gradient(135deg, #fef3f2 0%, #fee4e2 100%)',
+                    border: 'none',
+                    borderRadius: '12px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                  }}
+                >
+                  <Statistic
+                    title={<span style={{ color: '#64748b', fontSize: '14px' }}>Total Leads</span>}
+                    value={selectedBD?.totalLeads || 0}
+                    valueStyle={{ color: '#dc2626', fontSize: '28px', fontWeight: 'bold' }}
+                    prefix={<UserOutlined style={{ fontSize: '20px', marginRight: '8px' }} />}
+                  />
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <Card 
+                  style={{ 
+                    background: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
+                    border: 'none',
+                    borderRadius: '12px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                  }}
+                >
+                  <Statistic
+                    title={<span style={{ color: '#64748b', fontSize: '14px' }}>Hot Leads</span>}
+                    value={selectedBD?.hot || 0}
+                    valueStyle={{ color: '#dc2626', fontSize: '28px', fontWeight: 'bold' }}
+                    prefix={<span style={{ fontSize: '20px', marginRight: '8px' }}>🔥</span>}
+                  />
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <Card 
+                  style={{ 
+                    background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+                    border: 'none',
+                    borderRadius: '12px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                  }}
+                >
+                  <Statistic
+                    title={<span style={{ color: '#64748b', fontSize: '14px' }}>Warm Leads</span>}
+                    value={selectedBD?.warm || 0}
+                    valueStyle={{ color: '#f59e0b', fontSize: '28px', fontWeight: 'bold' }}
+                    prefix={<span style={{ fontSize: '20px', marginRight: '8px' }}>🌡️</span>}
+                  />
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <Card 
+                  style={{ 
+                    background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+                    border: 'none',
+                    borderRadius: '12px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                  }}
+                >
+                  <Statistic
+                    title={<span style={{ color: '#64748b', fontSize: '14px' }}>Cold Leads</span>}
+                    value={selectedBD?.cold || 0}
+                    valueStyle={{ color: '#6b7280', fontSize: '28px', fontWeight: 'bold' }}
+                    prefix={<span style={{ fontSize: '20px', marginRight: '8px' }}>❄️</span>}
+                  />
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <Card 
+                  style={{ 
+                    background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+                    border: 'none',
+                    borderRadius: '12px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                  }}
+                >
+                  <Statistic
+                    title={<span style={{ color: '#64748b', fontSize: '14px' }}>Follow-ups</span>}
+                    value={selectedBD?.followUps || 0}
+                    valueStyle={{ color: '#10b981', fontSize: '28px', fontWeight: 'bold' }}
+                    prefix={<MessageOutlined style={{ fontSize: '20px', marginRight: '8px' }} />}
+                  />
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} md={8}>
+                <Card 
+                  style={{ 
+                    background: 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)',
+                    border: 'none',
+                    borderRadius: '12px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                  }}
+                >
+                  <Statistic
+                    title={<span style={{ color: '#64748b', fontSize: '14px' }}>Conversion Rate</span>}
+                    value={selectedBD?.conversionRate || 0}
+                    suffix="%"
+                    valueStyle={{ color: '#8b5cf6', fontSize: '28px', fontWeight: 'bold' }}
+                    prefix={<span style={{ fontSize: '20px', marginRight: '8px' }}>📈</span>}
+                  />
+                </Card>
+              </Col>
+            </Row>
 
-                {/* Leads Table */}
-                <Table
+            {/* Circular Charts Section - Side by Side */}
+            <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+              <Col xs={24} md={12}>
+                <Card 
+                  style={{ 
+                    background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '12px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    height: '100%'
+                  }}
+                >
+                  <Title level={5} style={{ marginBottom: '16px', textAlign: 'center' }}>Lead Status Distribution</Title>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: 'Hot Leads', value: selectedBD?.hot || 0, color: '#dc2626' },
+                          { name: 'Warm Leads', value: selectedBD?.warm || 0, color: '#f59e0b' },
+                          { name: 'Cold Leads', value: selectedBD?.cold || 0, color: '#6b7280' },
+                        ]}
+                        cx="50%"
+                        cy="45%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name.split(' ')[0]}: ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {[
+                          { name: 'Hot Leads', value: selectedBD?.hot || 0, color: '#dc2626' },
+                          { name: 'Warm Leads', value: selectedBD?.warm || 0, color: '#f59e0b' },
+                          { name: 'Cold Leads', value: selectedBD?.cold || 0, color: '#6b7280' },
+                        ].map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend 
+                        verticalAlign="bottom" 
+                        height={30}
+                        iconType="circle"
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </Card>
+              </Col>
+              
+              <Col xs={24} md={12}>
+                <Card 
+                  style={{ 
+                    background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '12px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    height: '100%'
+                  }}
+                >
+                  <Title level={5} style={{ marginBottom: '16px', textAlign: 'center' }}>Work Progress Distribution</Title>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { 
+                            name: 'Pending', 
+                            value: bdDetails?.leads?.filter(l => !l.workProgress || l.workProgress === 'pending').length || 0, 
+                            color: '#fbbf24' 
+                          },
+                          { 
+                            name: 'In Progress', 
+                            value: bdDetails?.leads?.filter(l => l.workProgress === 'inprogress').length || 0, 
+                            color: '#3b82f6' 
+                          },
+                          { 
+                            name: 'Done', 
+                            value: bdDetails?.leads?.filter(l => l.workProgress === 'done').length || 0, 
+                            color: '#10b981' 
+                          },
+                        ]}
+                        cx="50%"
+                        cy="45%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {[
+                          { name: 'Pending', color: '#fbbf24' },
+                          { name: 'In Progress', color: '#3b82f6' },
+                          { name: 'Done', color: '#10b981' },
+                        ].map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend 
+                        verticalAlign="bottom" 
+                        height={30}
+                        iconType="circle"
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </Card>
+              </Col>
+            </Row>
+
+            {/* Leads Details Table */}
+            <div style={{ marginTop: '24px' }}>
+              <Title level={5} style={{ marginBottom: '16px' }}>Lead Details</Title>
+              <Table
                 columns={[
-                  { title: 'Lead', dataIndex: 'name', key: 'name' },
-                  { title: 'Status', dataIndex: 'status', key: 'status' },
-                  { title: 'Follow-ups', dataIndex: 'followUps', key: 'followUps', render: (f) => (f ? f.length : 0) },
-                  { title: 'Budget', dataIndex: 'budget', key: 'budget' },
-                  { title: 'Location', dataIndex: 'location', key: 'location' },
+                  { title: 'Lead Name', dataIndex: 'name', key: 'name', width: 150 },
+                  { 
+                    title: 'Status', 
+                    dataIndex: 'status', 
+                    key: 'status',
+                    width: 100,
+                    render: (status) => {
+                      const colors = {
+                        Hot: '#dc2626',
+                        Warm: '#f59e0b',
+                        Cold: '#6b7280'
+                      };
+                      return (
+                        <Tag color={colors[status] || '#6b7280'}>
+                          {status}
+                        </Tag>
+                      );
+                    }
+                  },
+                  { 
+                    title: 'Follow-ups', 
+                    dataIndex: 'followUps', 
+                    key: 'followUps', 
+                    width: 100,
+                    render: (f) => (f ? f.length : 0) 
+                  },
+                  { title: 'Budget', dataIndex: 'budget', key: 'budget', width: 120 },
+                  { title: 'Location', dataIndex: 'location', key: 'location', width: 150 },
                   { 
                     title: 'Work Progress', 
                     dataIndex: 'workProgress', 
                     key: 'workProgress',
+                    width: 120,
                     render: (progress) => {
-                      const colors = {
-                        pending: '#fbbf24',
-                        inprogress: '#3b82f6',
-                        done: '#10b981'
+                      const config = {
+                        pending: { color: '#fbbf24', label: 'PENDING' },
+                        inprogress: { color: '#3b82f6', label: 'IN PROGRESS' },
+                        done: { color: '#10b981', label: 'DONE' }
                       };
+                      const curr = config[progress] || { color: '#6b7280', label: 'PENDING' };
                       return (
-                        <span style={{ 
-                          backgroundColor: colors[progress] || '#6b7280',
-                          color: 'white',
-                          padding: '2px 8px',
-                          borderRadius: '12px',
-                          fontSize: '12px',
-                          fontWeight: 'bold'
-                        }}>
-                          {progress ? progress.toUpperCase() : 'PENDING'}
-                        </span>
+                        <Tag color={curr.color} style={{ fontWeight: 'bold' }}>
+                          {curr.label}
+                        </Tag>
                       );
                     }
                   },
@@ -517,40 +556,19 @@ export default function BDStatusSummary() {
                     title: 'Assignment Hierarchy', 
                     dataIndex: 'assignmentChain', 
                     key: 'assignmentChain',
+                    width: 250,
                     render: renderAssignmentChain
                   },
-                  {
-                    title: 'Action',
-                    key: 'action',
-                    render: (_, record) => (
-                      <Space>
-                        <Button 
-                          size="small"
-                          type="primary"
-                          icon={<MessageOutlined />}
-                          onClick={() => {
-                            // Message functionality - can be implemented later
-                            console.log('Message lead:', record.name);
-                            // You can implement messaging functionality here
-                            alert(`Message feature for ${record.name} will be implemented soon!`);
-                          }}
-                        >
-                          Message
-                        </Button>
-                      </Space>
-                    ),
-                  },
                 ]}
-                dataSource={bdDetails.leads}
+                dataSource={bdDetails.leads || []}
                 rowKey="_id"
                 pagination={{ 
-                  pageSize: 10,
+                  pageSize: 5,
                   showSizeChanger: true,
-                  showQuickJumper: true,
-                  showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`
+                  size: 'small'
                 }}
                 size="small"
-                scroll={{ x: 800 }}
+                scroll={{ x: 1000, y: 400 }}
                 expandable={{
                   expandedRowRender: (record) => (
                     <div style={{ padding: '16px', backgroundColor: '#f9fafb', borderRadius: '8px' }}>
@@ -585,47 +603,10 @@ export default function BDStatusSummary() {
                   rowExpandable: (record) => true,
                 }}
               />
-              </>
-            )}
-          </div>
-        ) : (
-          /* Summary View */
-          <div>
-            <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Title level={3} style={{ margin: 0 }}>BD Lead Status Analytics</Title>
-              <Space>
-                <Button 
-                  type="primary" 
-                  icon={<ReloadOutlined />} 
-                  onClick={fetchBDSummary}
-                  loading={loading}
-                >
-                  Refresh
-                </Button>
-              </Space>
             </div>
-            
-            {/* Main Table - Responsive */}
-            <div className="table-container">
-              <Table
-                columns={columns}
-                dataSource={bdSummary}
-                rowKey="bdId"
-                loading={loading}
-                pagination={{ 
-                  pageSize: 10,
-                  showSizeChanger: true,
-                  showQuickJumper: true,
-                  showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`
-                }}
-                scroll={{ x: 800 }}
-                size="small"
-              />
-            </div>
-          </div>
-          )}
-        </div>
-      </div>
+          </>
+        )}
+      </Modal>
     </DashboardLayout>
   );
 }
