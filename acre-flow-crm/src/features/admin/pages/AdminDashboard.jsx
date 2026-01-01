@@ -4,6 +4,7 @@ import AdminSidebar from '../components/AdminSidebar';
 import AdminOverview from '../components/AdminOverview';
 import UserManagement from '../components/UserManagement';
 import CreateUser from '@/features/users/pages/CreateUser';
+import BDStatusSummary from '../../calling/pages/BDStatusSummary';
 // import SystemSettings from '../components/SystemSettings';
 
 const AdminDashboard = () => {
@@ -48,6 +49,8 @@ const AdminDashboard = () => {
     window.location.href = '/login';
   };
 
+  // import BDStatusSummary from '../components/BDStatusSummary';
+
   const renderContent = () => {
     switch (activeTab) {
       case 'overview':
@@ -56,10 +59,17 @@ const AdminDashboard = () => {
         return <UserManagement />;
       case 'register-user':
         return <CreateUser userRole="admin" userType="employee" />;
+      case 'bd-status':
+        // Only allow for super-admin/head-admin
+        if (["super-admin", "head-admin"].includes(userInfo?.role)) {
+          return <BDStatusSummary />;
+        }
+        return <AdminOverview />;
       default:
         return <AdminOverview />;
     }
   };
+
 
   return (
     <div className="flex h-screen bg-gray-100">

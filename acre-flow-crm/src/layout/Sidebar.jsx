@@ -13,7 +13,8 @@ import {
   Moon,
   Sun,
   LogOut,
-  X
+  X,
+  BarChart3
 } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 
@@ -59,6 +60,7 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
       { path: '/email', icon: Mail, label: 'Email Center' },
       { path: '/whatsapp', icon: MessageCircle, label: 'WhatsApp Logs' },
       { path: '/users', icon: Users, label: 'Manage Users' },
+      { path: '/admin/bd-analytics', icon: BarChart3, label: 'BD Analytics' },
     ],
     admin: [
       { path: '/admin-dashboard', icon: Home, label: 'Admin Dashboard', permission: 'admin.dashboard' },
@@ -90,6 +92,7 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
       { path: '/', icon: Home, label: 'Dashboard' },
       { path: '/leads', icon: Building2, label: 'My Leads' },
       { path: '/calls', icon: PhoneCall, label: 'Call Logs' },
+      { path: '/admin/bd-analytics', icon: BarChart3, label: 'BD Analytics' },
     ],
     'team-leader': [
       { path: '/', icon: Home, label: 'Dashboard' },

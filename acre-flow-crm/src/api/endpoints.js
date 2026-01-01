@@ -40,6 +40,8 @@ export const ENDPOINTS = {
     FOLLOW_UPS: (id) => `${BASE_URL}/api/leads/${id}/followups`,
     ADD_FOLLOW_UP: (id) => `${BASE_URL}/api/leads/${id}/followups`,
     ASSIGNABLE_USERS: `${BASE_URL}/api/leads/assignable-users`,
+    BD_STATUS_SUMMARY: `${BASE_URL}/api/leads/bd-status-summary`,
+    BD_STATUS: (bdId) => `${BASE_URL}/api/leads/bd-status/${bdId}`,
   },
 
   // Tickets endpoints
