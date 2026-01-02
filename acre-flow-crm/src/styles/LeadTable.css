@@ -938,6 +938,35 @@
   align-items: stretch;
 }
 
+.mobile-call-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex: 1;
+  justify-content: center;
+}
+
+.mobile-call-btn:hover {
+  background: linear-gradient(135deg, #0f172a 0%, #111827 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(17, 24, 39, 0.25);
+}
+
+@media (max-width: 380px) {
+  .mobile-lead-actions {
+    flex-direction: column;
+  }
+}
+
 .mobile-followup-btn {
   display: flex;
   align-items: center;
