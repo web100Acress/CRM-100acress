@@ -228,6 +228,7 @@ exports.saveCallRecord = async (req, res, next) => {
   try {
     const { leadId, leadName, phone, startTime, endTime, duration, status } = req.body;
     const userId = req.user?.userId || req.user?._id;
+    const userPhone = req.user?.phone;
     
     // Import CallRecord model
     const CallRecord = require('../models/callRecordModel');
@@ -235,6 +236,7 @@ exports.saveCallRecord = async (req, res, next) => {
     // Create call record
     const callRecord = new CallRecord({
       userId,
+      userPhone,
       leadId,
       leadName,
       phone,
@@ -273,6 +275,7 @@ exports.getCallRecords = async (req, res, next) => {
     
     const callRecords = await CallRecord.find({ userId })
       .populate('leadId', 'name email phone')
+      .populate('userId', 'name email phone')
       .sort({ callDate: -1 });
     
     res.status(200).json({ 
@@ -295,7 +298,7 @@ exports.getLeadCallHistory = async (req, res, next) => {
     const CallRecord = require('../models/callRecordModel');
     
     const callRecords = await CallRecord.find({ leadId })
-      .populate('userId', 'name email')
+      .populate('userId', 'name email phone')
       .sort({ callDate: -1 });
     
     res.status(200).json({ 

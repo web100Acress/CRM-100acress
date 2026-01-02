@@ -52,9 +52,93 @@ const LeadTable = ({ userRole }) => {
   const callTrackingRef = useRef({});
   const [callHistory, setCallHistory] = useState({});
 
+  const finalizePendingCall = async (pending, endTime = new Date()) => {
+    if (!pending?.leadId || !pending?.startTime) return;
+
+    const start = new Date(pending.startTime);
+    const duration = Math.max(0, Math.round((endTime - start) / 1000));
+    const status = Number(duration) >= 3 ? 'completed' : 'missed';
+
+    try {
+      localStorage.removeItem('pendingCall');
+    } catch {
+      // ignore
+    }
+
+    await saveCallRecord({
+      leadId: pending.leadId,
+      leadName: pending.leadName,
+      phone: pending.phone,
+      startTime: start,
+      endTime,
+      duration,
+      status,
+    });
+
+    // Auto-open the same lead's Advanced Options when user returns from dialer
+    try {
+      const leadObj = leadsList.find((l) => String(l._id) === String(pending.leadId));
+      setSelectedLeadForAdvanced(
+        leadObj || {
+          _id: pending.leadId,
+          name: pending.leadName,
+          phone: pending.phone,
+        }
+      );
+      setShowAdvancedOptions(true);
+      await fetchLeadCallHistory(pending.leadId);
+    } catch {
+      // ignore
+    }
+
+    toast({
+      title: status === 'completed' ? "Call Completed" : "Call Not Answered",
+      description: status === 'completed'
+        ? `Call with ${pending.leadName} lasted ${formatDuration(duration)}`
+        : `No answer from ${pending.leadName}. Saved as missed call.`,
+      status: status === 'completed' ? "success" : "warning",
+    });
+  };
+
   useEffect(() => {
     callTrackingRef.current = callTracking;
   }, [callTracking]);
+
+  useEffect(() => {
+    const tryFinalize = async () => {
+      try {
+        const raw = localStorage.getItem('pendingCall');
+        if (!raw) return;
+        const pending = JSON.parse(raw);
+        if (!pending?.startTime) return;
+
+        const start = new Date(pending.startTime);
+        if (Number.isNaN(start.getTime())) return;
+
+        // Only finalize if at least 1 second passed (avoids immediate finalize on navigation)
+        if (Date.now() - start.getTime() < 1000) return;
+
+        await finalizePendingCall(pending, new Date());
+      } catch {
+        // ignore
+      }
+    };
+
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        setTimeout(tryFinalize, 500);
+      }
+    };
+
+    window.addEventListener('focus', tryFinalize);
+    document.addEventListener('visibilitychange', onVisible);
+    setTimeout(tryFinalize, 500);
+
+    return () => {
+      window.removeEventListener('focus', tryFinalize);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, []);
 
   const [currentPage, setCurrentPage] = useState(1);
   const leadsPerPage = window.innerWidth <= 480 ? 30 : 20;
@@ -203,6 +287,20 @@ const LeadTable = ({ userRole }) => {
         return next;
       });
 
+      try {
+        localStorage.setItem('pendingCall', JSON.stringify({
+          callId,
+          leadId,
+          leadName,
+          phone,
+          startTime: callStartTime.toISOString(),
+        }));
+
+        localStorage.setItem('lastCalledLeadId', String(leadId));
+      } catch {
+        // ignore
+      }
+
       // Open phone dialer
       window.open(`tel:${phone}`, '_self');
       
@@ -245,6 +343,12 @@ const LeadTable = ({ userRole }) => {
             duration: callDuration,
             status: callStatus
           });
+
+          try {
+            localStorage.removeItem('pendingCall');
+          } catch {
+            // ignore
+          }
 
           toast({
             title: callStatus === 'completed' ? "Call Completed" : "Call Not Answered",
