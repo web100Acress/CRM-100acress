@@ -53,6 +53,7 @@ const LeadTable = ({ userRole }) => {
   const [callHistory, setCallHistory] = useState({});
   const [showCallConfirm, setShowCallConfirm] = useState(false);
   const [callConfirmData, setCallConfirmData] = useState(null);
+  const [showAdvancedLeadInfo, setShowAdvancedLeadInfo] = useState(false);
 
   const openCallConfirm = (pending, endTime = new Date()) => {
     if (!pending?.leadId || !pending?.startTime) return;
@@ -603,6 +604,7 @@ const LeadTable = ({ userRole }) => {
   const handleAdvancedOptions = async (lead) => {
     setSelectedLeadForAdvanced(lead);
     setShowAdvancedOptions(true);
+    setShowAdvancedLeadInfo(false);
     // Fetch call history for this lead
     await fetchLeadCallHistory(lead._id);
   };
@@ -610,6 +612,7 @@ const LeadTable = ({ userRole }) => {
   const handleCloseAdvancedOptions = () => {
     setShowAdvancedOptions(false);
     setSelectedLeadForAdvanced(null);
+    setShowAdvancedLeadInfo(false);
   };
 
   const handleDeleteLead = async (leadId) => {
@@ -1454,41 +1457,53 @@ const LeadTable = ({ userRole }) => {
               <DialogTitle>Advanced Options - {selectedLeadForAdvanced.name}</DialogTitle>
             </DialogHeader>
             <div className="lead-advanced-options-content">
-              <div className="lead-advanced-info">
-                <h4>Lead Information</h4>
-                <div className="lead-advanced-details-grid">
-                  <div className="lead-detail-item">
-                    <span className="detail-label">Name:</span>
-                    <span className="detail-value">{selectedLeadForAdvanced.name}</span>
-                  </div>
-                  <div className="lead-detail-item">
-                    <span className="detail-label">Email:</span>
-                    <span className="detail-value">{selectedLeadForAdvanced.email}</span>
-                  </div>
-                  <div className="lead-detail-item">
-                    <span className="detail-label">Phone:</span>
-                    <span className="detail-value">{selectedLeadForAdvanced.phone}</span>
-                  </div>
-                  <div className="lead-detail-item">
-                    <span className="detail-label">Location:</span>
-                    <span className="detail-value">{selectedLeadForAdvanced.location}</span>
-                  </div>
-                  <div className="lead-detail-item">
-                    <span className="detail-label">Property:</span>
-                    <span className="detail-value">{selectedLeadForAdvanced.property}</span>
-                  </div>
-                  <div className="lead-detail-item">
-                    <span className="detail-label">Budget:</span>
-                    <span className="detail-value">{selectedLeadForAdvanced.budget}</span>
-                  </div>
-                  <div className="lead-detail-item">
-                    <span className="detail-label">Status:</span>
-                    <span className={`lead-status-badge ${getStatusClass(selectedLeadForAdvanced.status)}`}>
-                      {selectedLeadForAdvanced.status}
-                    </span>
+              <div className="lead-advanced-info-toggle-row">
+                <button
+                  type="button"
+                  className="lead-advanced-info-toggle-btn"
+                  onClick={() => setShowAdvancedLeadInfo((v) => !v)}
+                >
+                  <Eye size={16} />
+                  {showAdvancedLeadInfo ? 'Hide Lead Info' : 'View Lead Info'}
+                </button>
+              </div>
+
+              {showAdvancedLeadInfo && (
+                <div className="lead-advanced-info-popup">
+                  <div className="lead-advanced-details-grid">
+                    <div className="lead-detail-item">
+                      <span className="detail-label">Name:</span>
+                      <span className="detail-value">{selectedLeadForAdvanced.name}</span>
+                    </div>
+                    <div className="lead-detail-item">
+                      <span className="detail-label">Email:</span>
+                      <span className="detail-value">{selectedLeadForAdvanced.email}</span>
+                    </div>
+                    <div className="lead-detail-item">
+                      <span className="detail-label">Phone:</span>
+                      <span className="detail-value">{selectedLeadForAdvanced.phone}</span>
+                    </div>
+                    <div className="lead-detail-item">
+                      <span className="detail-label">Location:</span>
+                      <span className="detail-value">{selectedLeadForAdvanced.location}</span>
+                    </div>
+                    <div className="lead-detail-item">
+                      <span className="detail-label">Property:</span>
+                      <span className="detail-value">{selectedLeadForAdvanced.property}</span>
+                    </div>
+                    <div className="lead-detail-item">
+                      <span className="detail-label">Budget:</span>
+                      <span className="detail-value">{selectedLeadForAdvanced.budget}</span>
+                    </div>
+                    <div className="lead-detail-item">
+                      <span className="detail-label">Status:</span>
+                      <span className={`lead-status-badge ${getStatusClass(selectedLeadForAdvanced.status)}`}>
+                        {selectedLeadForAdvanced.status}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               <div className="lead-advanced-actions">
                 <h4>Quick Actions</h4>

@@ -1175,6 +1175,159 @@
   margin-top: 20px;
 }
 
+.lead-advanced-options-modal {
+  max-width: 780px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.lead-advanced-options-modal h4 {
+  margin: 0;
+}
+
+.lead-advanced-options-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 6px;
+}
+
+ .lead-advanced-info-toggle-row {
+   display: flex;
+   justify-content: flex-start;
+   margin-bottom: 12px;
+ }
+
+ .lead-advanced-info-toggle-btn {
+   display: inline-flex;
+   align-items: center;
+   gap: 8px;
+   padding: 10px 14px;
+   border-radius: 10px;
+   border: 1px solid #e5e7eb;
+   background: #ffffff;
+   color: #111827;
+   font-weight: 600;
+   cursor: pointer;
+ }
+
+ .lead-advanced-info-toggle-btn:hover {
+   background: #f9fafb;
+ }
+
+ .lead-advanced-info-popup {
+   background: #ffffff;
+   border: 1px solid #e5e7eb;
+   border-radius: 12px;
+   padding: 14px;
+   margin-bottom: 16px;
+   box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+ }
+
+.lead-advanced-actions {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 14px;
+}
+
+.lead-advanced-actions h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 10px 0;
+}
+
+.lead-advanced-buttons-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.lead-advanced-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #111827;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.lead-advanced-btn:hover {
+  background: #f3f4f6;
+}
+
+.lead-advanced-btn.call-advanced-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.lead-advanced-btn.call-advanced-btn:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+}
+
+.lead-advanced-btn.email-advanced-btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.lead-advanced-btn.email-advanced-btn:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+}
+
+.lead-advanced-status-section {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.lead-advanced-status-section label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #374151;
+}
+
+.lead-advanced-status-select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  font-weight: 600;
+  color: #111827;
+}
+
+@media (max-width: 480px) {
+  .lead-advanced-info-toggle-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .lead-advanced-options-modal {
+    max-width: 95vw;
+    max-height: 92vh;
+  }
+
+  .lead-advanced-buttons-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Call History Styles */
 .lead-advanced-call-history h4 {
   margin: 0 0 20px 0;
