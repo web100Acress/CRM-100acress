@@ -226,7 +226,7 @@ exports.getBDDetails = async (req, res, next) => {
 // Save call record
 exports.saveCallRecord = async (req, res, next) => {
   try {
-    const { leadId, leadName, phone, startTime, endTime, duration } = req.body;
+    const { leadId, leadName, phone, startTime, endTime, duration, status } = req.body;
     const userId = req.user?.userId || req.user?._id;
     
     // Import CallRecord model
@@ -242,7 +242,8 @@ exports.saveCallRecord = async (req, res, next) => {
       endTime,
       duration,
       callDate: new Date(),
-      type: 'outbound'
+      type: 'outbound',
+      status: status || (Number(duration) > 0 ? 'completed' : 'missed')
     });
 
     // Save to database

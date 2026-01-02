@@ -49,7 +49,12 @@ const LeadTable = ({ userRole }) => {
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [selectedLeadForAdvanced, setSelectedLeadForAdvanced] = useState(null);
   const [callTracking, setCallTracking] = useState({});
+  const callTrackingRef = useRef({});
   const [callHistory, setCallHistory] = useState({});
+
+  useEffect(() => {
+    callTrackingRef.current = callTracking;
+  }, [callTracking]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const leadsPerPage = window.innerWidth <= 480 ? 30 : 20;
@@ -181,18 +186,22 @@ const LeadTable = ({ userRole }) => {
       const callStartTime = new Date();
       const callId = `call_${leadId}_${Date.now()}`;
       
-      setCallTracking(prev => ({
-        ...prev,
-        [callId]: {
-          leadId,
-          leadName,
-          phone,
-          startTime: callStartTime,
-          endTime: null,
-          duration: null,
-          status: 'ongoing'
-        }
-      }));
+      setCallTracking(prev => {
+        const next = {
+          ...prev,
+          [callId]: {
+            leadId,
+            leadName,
+            phone,
+            startTime: callStartTime,
+            endTime: null,
+            duration: null,
+            status: 'ongoing'
+          }
+        };
+        callTrackingRef.current = next;
+        return next;
+      });
 
       // Open phone dialer
       window.open(`tel:${phone}`, '_self');
@@ -208,18 +217,23 @@ const LeadTable = ({ userRole }) => {
       const trackCallEnd = () => {
         const callEndTime = new Date();
         const callDuration = Math.round((callEndTime - callStartTime) / 1000); // in seconds
+        const callStatus = Number(callDuration) >= 3 ? 'completed' : 'missed';
         
         // Check if call is still ongoing to avoid duplicate saves
-        if (callTracking[callId]?.status === 'ongoing') {
-          setCallTracking(prev => ({
-            ...prev,
-            [callId]: {
-              ...prev[callId],
-              endTime: callEndTime,
-              duration: callDuration,
-              status: 'completed'
-            }
-          }));
+        if (callTrackingRef.current?.[callId]?.status === 'ongoing') {
+          setCallTracking(prev => {
+            const next = {
+              ...prev,
+              [callId]: {
+                ...prev[callId],
+                endTime: callEndTime,
+                duration: callDuration,
+                status: callStatus
+              }
+            };
+            callTrackingRef.current = next;
+            return next;
+          });
 
           // Save call record to backend
           saveCallRecord({
@@ -228,13 +242,16 @@ const LeadTable = ({ userRole }) => {
             phone,
             startTime: callStartTime,
             endTime: callEndTime,
-            duration: callDuration
+            duration: callDuration,
+            status: callStatus
           });
 
           toast({
-            title: "Call Completed",
-            description: `Call with ${leadName} lasted ${formatDuration(callDuration)}`,
-            status: "success",
+            title: callStatus === 'completed' ? "Call Completed" : "Call Not Answered",
+            description: callStatus === 'completed'
+              ? `Call with ${leadName} lasted ${formatDuration(callDuration)}`
+              : `No answer from ${leadName}. Saved as missed call.`,
+            status: callStatus === 'completed' ? "success" : "warning",
           });
         }
 
@@ -245,14 +262,14 @@ const LeadTable = ({ userRole }) => {
       };
 
       const handleVisibilityChange = () => {
-        if (document.visibilityState === 'visible' && callTracking[callId]?.status === 'ongoing') {
+        if (document.visibilityState === 'visible' && callTrackingRef.current?.[callId]?.status === 'ongoing') {
           // User came back to the page, likely after call
           setTimeout(trackCallEnd, 1000); // Small delay to ensure call is finished
         }
       };
 
       const handleFocusChange = () => {
-        if (callTracking[callId]?.status === 'ongoing') {
+        if (callTrackingRef.current?.[callId]?.status === 'ongoing') {
           // Window regained focus, likely after call
           setTimeout(trackCallEnd, 1000);
         }
@@ -265,7 +282,7 @@ const LeadTable = ({ userRole }) => {
 
       // Also set a timeout as a fallback (for very short calls)
       setTimeout(() => {
-        if (callTracking[callId]?.status === 'ongoing') {
+        if (callTrackingRef.current?.[callId]?.status === 'ongoing') {
           trackCallEnd();
         }
       }, 30000); // 30 seconds fallback
@@ -284,7 +301,14 @@ const LeadTable = ({ userRole }) => {
       const token = localStorage.getItem("token");
       console.log("Token found:", token ? "Yes" : "No");
       
-      const response = await fetch("https://bcrm.100acress.com/api/leads/calls", {
+      // Use localhost for testing, change back to production when ready
+      const apiUrl = process.env.NODE_ENV === 'development' 
+        ? "http://localhost:5001/api/leads/calls" 
+        : "https://bcrm.100acress.com/api/leads/calls";
+      
+      console.log("Using API URL:", apiUrl);
+      
+      const response = await fetch(apiUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -386,7 +410,14 @@ const LeadTable = ({ userRole }) => {
       const token = localStorage.getItem("token");
       console.log("Token found for fetch:", token ? "Yes" : "No");
       
-      const response = await fetch(`https://bcrm.100acress.com/api/leads/${leadId}/calls`, {
+      // Use localhost for testing, change back to production when ready
+      const apiUrl = process.env.NODE_ENV === 'development' 
+        ? `http://localhost:5001/api/leads/${leadId}/calls` 
+        : `https://bcrm.100acress.com/api/leads/${leadId}/calls`;
+      
+      console.log("Using API URL:", apiUrl);
+      
+      const response = await fetch(apiUrl, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
