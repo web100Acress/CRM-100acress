@@ -1193,7 +1193,6 @@ const LeadTable = ({ userRole }) => {
           currentLeads.map((lead, index) => (
             <div key={lead._id} className="mobile-lead-card">
               <div className="mobile-lead-header">
-                <span className="mobile-lead-number">Lead #{index + 1}</span>
                 <span className={`lead-status-badge ${getStatusClass(lead.status)}`}>
                   {lead.status}
                 </span>
@@ -1206,6 +1205,15 @@ const LeadTable = ({ userRole }) => {
                 )}
               </div>
               <div className="mobile-lead-actions">
+                <button 
+                  className="mobile-call-btn"
+                  onClick={() => {
+                    handleCallLead(lead.phone, lead._id, lead.name);
+                  }}
+                >
+                  <PhoneCall size={14} />
+                  Call
+                </button>
                 <button 
                   className="mobile-followup-btn"
                   onClick={() => {
@@ -1253,7 +1261,6 @@ const LeadTable = ({ userRole }) => {
                 <div className="lead-details-section">
                   <h4><User size={16} /> Lead Information</h4>
                   <p><strong>Name:</strong> {selectedLeadForDetails.name}</p>
-                  <p><strong>ID:</strong> #{selectedLeadForDetails.id}</p>
                   <p><strong>Status:</strong> {selectedLeadForDetails.status}</p>
                   <p><strong>Work Progress:</strong> {selectedLeadForDetails.workProgress || 'Pending'}</p>
                 </div>
