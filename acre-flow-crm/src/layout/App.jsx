@@ -142,17 +142,6 @@ const App = () => {
       window.addEventListener(event, resetInactivityTimer);
     });
 
-    // Add window close event listener for automatic logout
-    const handleBeforeUnload = (event) => {
-      // Clear authentication when window is closed
-      localStorage.removeItem("isLoggedIn");
-      localStorage.removeItem("userRole");
-      localStorage.removeItem("token");
-      localStorage.removeItem("isDeveloperLoggedIn");
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
     resetInactivityTimer();
 
     return () => {
@@ -160,7 +149,6 @@ const App = () => {
       events.forEach((event) => {
         window.removeEventListener(event, resetInactivityTimer);
       });
-      window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, [isLoggedIn]);
 
