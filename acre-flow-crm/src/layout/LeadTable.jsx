@@ -131,11 +131,13 @@ const LeadTable = ({ userRole }) => {
     };
 
     window.addEventListener('focus', tryFinalize);
+    window.addEventListener('pageshow', tryFinalize);
     document.addEventListener('visibilitychange', onVisible);
     setTimeout(tryFinalize, 500);
 
     return () => {
       window.removeEventListener('focus', tryFinalize);
+      window.removeEventListener('pageshow', tryFinalize);
       document.removeEventListener('visibilitychange', onVisible);
     };
   }, []);
@@ -302,7 +304,7 @@ const LeadTable = ({ userRole }) => {
       }
 
       // Open phone dialer
-      window.open(`tel:${phone}`, '_self');
+      window.location.href = `tel:${phone}`;
       
       // Show toast notification
       toast({
@@ -1259,6 +1261,39 @@ const LeadTable = ({ userRole }) => {
                   >
                     <Eye size={16} />
                     View Follow-ups
+                  </button>
+
+                  <button 
+                    className="lead-details-action-btn secondary"
+                    onClick={() => {
+                      handleCallLead(selectedLeadForDetails.phone, selectedLeadForDetails._id, selectedLeadForDetails.name);
+                      setShowLeadDetails(false);
+                    }}
+                  >
+                    <PhoneCall size={16} />
+                    Call Lead
+                  </button>
+
+                  <button 
+                    className="lead-details-action-btn secondary"
+                    onClick={() => {
+                      handleEmailLead(selectedLeadForDetails.email);
+                      setShowLeadDetails(false);
+                    }}
+                  >
+                    <Mail size={16} />
+                    Email Lead
+                  </button>
+
+                  <button 
+                    className="lead-details-action-btn secondary"
+                    onClick={() => {
+                      handleAdvancedOptions(selectedLeadForDetails);
+                      setShowLeadDetails(false);
+                    }}
+                  >
+                    <Settings size={16} />
+                    Advanced Options
                   </button>
                   
                   <button 
