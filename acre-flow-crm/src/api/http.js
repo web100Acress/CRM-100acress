@@ -44,10 +44,7 @@ httpClient.interceptors.response.use(
       
       // Handle authentication errors
       if (status === 401) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('isLoggedIn');
-        window.location.href = '/login';
-        return Promise.reject(new Error('Authentication failed. Please login again.'));
+        return Promise.reject(new Error(data?.message || 'Authentication failed (401). Please try again.'));
       }
       
       // Handle forbidden errors
