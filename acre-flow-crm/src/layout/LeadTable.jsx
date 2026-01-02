@@ -406,6 +406,15 @@ const LeadTable = ({ userRole }) => {
       console.log("Attempting to save call record:", callData);
       const token = localStorage.getItem("token");
       console.log("Token found:", token ? "Yes" : "No");
+
+      if (!token) {
+        toast({
+          title: "Save Failed",
+          description: "Login expired. Please logout/login again, then retry call.",
+          variant: "destructive",
+        });
+        return;
+      }
       
       // Use localhost for testing, change back to production when ready
       const apiUrl = process.env.NODE_ENV === 'development' 
@@ -435,11 +444,31 @@ const LeadTable = ({ userRole }) => {
           status: "success",
         });
       } else {
-        const errorText = await response.text();
-        console.error("Failed to save call record:", response.statusText, errorText);
+        let errorPayload = null;
+        try {
+          errorPayload = await response.json();
+        } catch {
+          try {
+            errorPayload = await response.text();
+          } catch {
+            errorPayload = null;
+          }
+        }
+
+        const serverMessage =
+          (errorPayload && typeof errorPayload === 'object' && (errorPayload.message || errorPayload.error))
+            ? (errorPayload.message || errorPayload.error)
+            : (typeof errorPayload === 'string' ? errorPayload : response.statusText);
+
+        console.error("Failed to save call record:", {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorPayload,
+        });
+
         toast({
           title: "Save Failed",
-          description: "Could not save call record to database",
+          description: `HTTP ${response.status}: ${serverMessage || 'Could not save call record to database'}`,
           variant: "destructive",
         });
       }
@@ -447,7 +476,7 @@ const LeadTable = ({ userRole }) => {
       console.error("Error saving call record:", error);
       toast({
         title: "Network Error",
-        description: "Could not connect to server",
+        description: error?.message || "Could not connect to server",
         variant: "destructive",
       });
     }
