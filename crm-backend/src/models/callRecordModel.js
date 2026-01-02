@@ -6,6 +6,9 @@ const callRecordSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  userPhone: {
+    type: String
+  },
   leadId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Lead',
