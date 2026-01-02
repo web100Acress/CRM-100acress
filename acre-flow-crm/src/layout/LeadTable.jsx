@@ -65,7 +65,7 @@ const LeadTable = ({ userRole }) => {
       // ignore
     }
 
-    await saveCallRecord({
+    const saved = await saveCallRecord({
       leadId: pending.leadId,
       leadName: pending.leadName,
       phone: pending.phone,
@@ -74,6 +74,8 @@ const LeadTable = ({ userRole }) => {
       duration,
       status,
     });
+
+    if (!saved) return;
 
     // Auto-open the same lead's Advanced Options when user returns from dialer
     try {
@@ -336,15 +338,33 @@ const LeadTable = ({ userRole }) => {
           });
 
           // Save call record to backend
-          saveCallRecord({
-            leadId,
-            leadName,
-            phone,
-            startTime: callStartTime,
-            endTime: callEndTime,
-            duration: callDuration,
-            status: callStatus
-          });
+          (async () => {
+            const saved = await saveCallRecord({
+              leadId,
+              leadName,
+              phone,
+              startTime: callStartTime,
+              endTime: callEndTime,
+              duration: callDuration,
+              status: callStatus
+            });
+
+            if (saved) {
+              try {
+                await fetchLeadCallHistory(leadId);
+              } catch {
+                // ignore
+              }
+
+              toast({
+                title: callStatus === 'completed' ? "Call Completed" : "Call Not Answered",
+                description: callStatus === 'completed'
+                  ? `Call with ${leadName} lasted ${formatDuration(callDuration)}`
+                  : `No answer from ${leadName}. Saved as missed call.`,
+                status: callStatus === 'completed' ? "success" : "warning",
+              });
+            }
+          })();
 
           try {
             localStorage.removeItem('pendingCall');
@@ -352,13 +372,6 @@ const LeadTable = ({ userRole }) => {
             // ignore
           }
 
-          toast({
-            title: callStatus === 'completed' ? "Call Completed" : "Call Not Answered",
-            description: callStatus === 'completed'
-              ? `Call with ${leadName} lasted ${formatDuration(callDuration)}`
-              : `No answer from ${leadName}. Saved as missed call.`,
-            status: callStatus === 'completed' ? "success" : "warning",
-          });
         }
 
         // Clean up event listeners
@@ -413,7 +426,7 @@ const LeadTable = ({ userRole }) => {
           description: "Login expired. Please logout/login again, then retry call.",
           variant: "destructive",
         });
-        return;
+        return false;
       }
       
       // Use localhost for testing, change back to production when ready
@@ -443,6 +456,8 @@ const LeadTable = ({ userRole }) => {
           description: "Call record has been saved to database",
           status: "success",
         });
+
+        return true;
       } else {
         let errorPayload = null;
         try {
@@ -471,6 +486,8 @@ const LeadTable = ({ userRole }) => {
           description: `HTTP ${response.status}: ${serverMessage || 'Could not save call record to database'}`,
           variant: "destructive",
         });
+
+        return false;
       }
     } catch (error) {
       console.error("Error saving call record:", error);
@@ -479,6 +496,8 @@ const LeadTable = ({ userRole }) => {
         description: error?.message || "Could not connect to server",
         variant: "destructive",
       });
+
+      return false;
     }
   };
 
