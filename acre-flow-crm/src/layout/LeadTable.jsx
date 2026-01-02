@@ -51,13 +51,45 @@ const LeadTable = ({ userRole }) => {
   const [callTracking, setCallTracking] = useState({});
   const callTrackingRef = useRef({});
   const [callHistory, setCallHistory] = useState({});
+  const [showCallConfirm, setShowCallConfirm] = useState(false);
+  const [callConfirmData, setCallConfirmData] = useState(null);
 
-  const finalizePendingCall = async (pending, endTime = new Date()) => {
+  const openCallConfirm = (pending, endTime = new Date()) => {
     if (!pending?.leadId || !pending?.startTime) return;
 
     const start = new Date(pending.startTime);
+    if (Number.isNaN(start.getTime())) return;
+
     const duration = Math.max(0, Math.round((endTime - start) / 1000));
-    const status = Number(duration) >= 3 ? 'completed' : 'missed';
+
+    setCallConfirmData({
+      pending,
+      start,
+      endTime,
+      duration,
+      connected: Number(duration) >= 3,
+    });
+    setShowCallConfirm(true);
+  };
+
+  const confirmAndSaveCall = async () => {
+    const data = callConfirmData;
+    if (!data?.pending?.leadId) return;
+
+    const duration = Math.max(0, Number(data.duration) || 0);
+    const status = data.connected ? 'completed' : 'missed';
+
+    const saved = await saveCallRecord({
+      leadId: data.pending.leadId,
+      leadName: data.pending.leadName,
+      phone: data.pending.phone,
+      startTime: data.start,
+      endTime: data.endTime,
+      duration,
+      status,
+    });
+
+    if (!saved) return;
 
     try {
       localStorage.removeItem('pendingCall');
@@ -65,30 +97,19 @@ const LeadTable = ({ userRole }) => {
       // ignore
     }
 
-    const saved = await saveCallRecord({
-      leadId: pending.leadId,
-      leadName: pending.leadName,
-      phone: pending.phone,
-      startTime: start,
-      endTime,
-      duration,
-      status,
-    });
+    setShowCallConfirm(false);
 
-    if (!saved) return;
-
-    // Auto-open the same lead's Advanced Options when user returns from dialer
     try {
-      const leadObj = leadsList.find((l) => String(l._id) === String(pending.leadId));
+      const leadObj = leadsList.find((l) => String(l._id) === String(data.pending.leadId));
       setSelectedLeadForAdvanced(
         leadObj || {
-          _id: pending.leadId,
-          name: pending.leadName,
-          phone: pending.phone,
+          _id: data.pending.leadId,
+          name: data.pending.leadName,
+          phone: data.pending.phone,
         }
       );
       setShowAdvancedOptions(true);
-      await fetchLeadCallHistory(pending.leadId);
+      await fetchLeadCallHistory(data.pending.leadId);
     } catch {
       // ignore
     }
@@ -96,8 +117,8 @@ const LeadTable = ({ userRole }) => {
     toast({
       title: status === 'completed' ? "Call Completed" : "Call Not Answered",
       description: status === 'completed'
-        ? `Call with ${pending.leadName} lasted ${formatDuration(duration)}`
-        : `No answer from ${pending.leadName}. Saved as missed call.`,
+        ? `Call with ${data.pending.leadName} lasted ${formatDuration(duration)}`
+        : `No answer from ${data.pending.leadName}. Saved as missed call.`,
       status: status === 'completed' ? "success" : "warning",
     });
   };
@@ -120,7 +141,7 @@ const LeadTable = ({ userRole }) => {
         // Only finalize if at least 1 second passed (avoids immediate finalize on navigation)
         if (Date.now() - start.getTime() < 1000) return;
 
-        await finalizePendingCall(pending, new Date());
+        setTimeout(() => openCallConfirm(pending, new Date()), 0);
       } catch {
         // ignore
       }
@@ -337,40 +358,12 @@ const LeadTable = ({ userRole }) => {
             return next;
           });
 
-          // Save call record to backend
-          (async () => {
-            const saved = await saveCallRecord({
-              leadId,
-              leadName,
-              phone,
-              startTime: callStartTime,
-              endTime: callEndTime,
-              duration: callDuration,
-              status: callStatus
-            });
-
-            if (saved) {
-              try {
-                await fetchLeadCallHistory(leadId);
-              } catch {
-                // ignore
-              }
-
-              toast({
-                title: callStatus === 'completed' ? "Call Completed" : "Call Not Answered",
-                description: callStatus === 'completed'
-                  ? `Call with ${leadName} lasted ${formatDuration(callDuration)}`
-                  : `No answer from ${leadName}. Saved as missed call.`,
-                status: callStatus === 'completed' ? "success" : "warning",
-              });
-            }
-          })();
-
-          try {
-            localStorage.removeItem('pendingCall');
-          } catch {
-            // ignore
-          }
+          openCallConfirm({
+            leadId,
+            leadName,
+            phone,
+            startTime: callStartTime.toISOString(),
+          }, callEndTime);
 
         }
 
@@ -1376,6 +1369,78 @@ const LeadTable = ({ userRole }) => {
           <div className="lead-details-footer">
             <Button variant="outline" onClick={() => setShowLeadDetails(false)}>
               Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCallConfirm} onOpenChange={(open) => {
+        setShowCallConfirm(open);
+        if (!open) {
+          try {
+            localStorage.removeItem('pendingCall');
+          } catch {
+            // ignore
+          }
+        }
+      }}>
+        <DialogContent className="lead-details-dialog">
+          <DialogHeader>
+            <DialogTitle className="lead-details-title">Call Summary</DialogTitle>
+          </DialogHeader>
+          {callConfirmData?.pending && (
+            <div className="lead-details-content">
+              <div className="lead-details-section">
+                <p><strong>Lead:</strong> {callConfirmData.pending.leadName}</p>
+                <p><strong>Phone:</strong> {callConfirmData.pending.phone}</p>
+              </div>
+              <div className="lead-details-actions-section">
+                <h4>Was the call connected?</h4>
+                <div className="lead-details-actions-grid">
+                  <button
+                    className={`lead-details-action-btn ${callConfirmData.connected ? 'primary' : 'secondary'}`}
+                    onClick={() => setCallConfirmData((prev) => ({ ...prev, connected: true }))}
+                    type="button"
+                  >
+                    Yes (Connected)
+                  </button>
+                  <button
+                    className={`lead-details-action-btn ${callConfirmData.connected ? 'secondary' : 'primary'}`}
+                    onClick={() => setCallConfirmData((prev) => ({ ...prev, connected: false, duration: 0 }))}
+                    type="button"
+                  >
+                    No (Missed)
+                  </button>
+                </div>
+              </div>
+
+              <div className="lead-details-section">
+                <p><strong>Duration (seconds)</strong></p>
+                <input
+                  type="number"
+                  min={0}
+                  value={callConfirmData.duration}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    setCallConfirmData((prev) => ({ ...prev, duration: Number.isFinite(v) ? v : 0 }));
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #d1d5db',
+                    background: 'white',
+                  }}
+                />
+              </div>
+            </div>
+          )}
+          <div className="lead-details-footer">
+            <Button variant="outline" onClick={() => setShowCallConfirm(false)}>
+              Cancel
+            </Button>
+            <Button onClick={confirmAndSaveCall}>
+              Save
             </Button>
           </div>
         </DialogContent>
