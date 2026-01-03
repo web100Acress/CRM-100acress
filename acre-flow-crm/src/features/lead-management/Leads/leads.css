@@ -1,0 +1,80 @@
+/* Leads Page Styles */
+
+.leads-page-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: linear-gradient(to bottom right, #f3f4f6, #e5e7eb);
+}
+
+.page-header {
+  flex-shrink: 0;
+  padding: 32px 24px;
+  background-color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  text-align: center;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.page-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: #111827;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.page-subtitle {
+  font-size: 16px;
+  color: #4b5563;
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+.table-section {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+/* Mobile specific styles */
+@media (max-width: 767px) {
+  .leads-page-wrapper.mobile {
+    background: linear-gradient(to bottom right, #f9fafb, #f3f4f6);
+  }
+  
+  .page-header.mobile {
+    padding: 16px 12px;
+  }
+
+  .page-title.mobile {
+    font-size: 20px;
+  }
+
+  .page-subtitle.mobile {
+    font-size: 14px;
+  }
+
+  .table-section.mobile {
+    padding: 12px;
+  }
+}
+
+/* Tablet specific styles */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .page-header {
+    padding: 24px 20px;
+  }
+
+  .page-title {
+    font-size: 28px;
+  }
+
+  .page-subtitle {
+    font-size: 15px;
+  }
+
+  .table-section {
+    padding: 20px;
+  }
+}

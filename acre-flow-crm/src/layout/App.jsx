@@ -9,69 +9,69 @@ import { useState, useEffect } from "react";
 import store from "@/store";
 import '@/styles/dark-mode.css';
 import { ThemeProvider } from "@/context/ThemeContext";
-import Dashboard from "@/features/users/pages/Dashboard";
-import Leads from "@/features/leads/pages/Leads";
-import Tickets from "@/features/tickets/pages/Tickets";
-import CreateUser from "@/features/users/pages/CreateUser";
-import Login from "@/features/auth/pages/Login";
-import NotFound from "@/features/users/pages/NotFound";
-import Settings from "@/features/users/pages/Settings";
-import UserManagement from "@/features/users/pages/UserManagement";
-import Developer from "@/features/developer/pages/Developer";
-import DeveloperDashboard from "@/features/developer/pages/DeveloperDashboard";
-import ResetPassword from "@/features/auth/pages/ResetPassword";
-import ItInfrastructure from "@/features/it/pages/ItInfrastructure";
-import SalesHeadDashboard from "@/features/sales/pages/SalesHeadDashboard";
-import HRDashboard from "@/features/hr/pages/HRDashboard";
-import HRAllUsers from "@/features/hr/pages/HRAllUsers";
-import HRAllJobs from "@/features/hr/pages/HRAllJobs";
-import JobApplications from "@/features/hr/pages/JobApplications";
-import LeaveManagement from "@/features/hr/pages/LeaveManagement";
-import Onboarding from "@/features/hr/pages/Onboarding";
-import Offboarding from "@/features/hr/pages/Offboarding";
-import CandidateDocumentUpload from "@/features/hr/pages/CandidateDocumentUpload";
-import BlogDashboard from "@/features/blog/pages/BlogDashboard";
-import AdminDashboard from "@/features/admin/pages/AdminDashboard";
+import Dashboard from "@/pages/Dashboard/Dashboard.container";
+import Leads from "@/features/lead-management/Leads/Leads.container";
+import Tickets from "@/pages/Tickets/Tickets.container";
+import Login from "@/pages/Login/Login.container";
+import AdminDashboard from "@/pages/AdminDashboard/AdminDashboard.container";
+import HRDashboard from "@/pages/HRDashboard/HRDashboard.container";
+import SalesHeadDashboard from "@/pages/SalesHeadDashboard/SalesHeadDashboard.container";
+import CreateUser from "@/pages/CreateUser/CreateUser.container";
+import NotFound from "@/pages/NotFound/NotFound.container";
+import Settings from "@/pages/Settings/Settings.container";
+import UserManagement from "@/pages/UserManagement/UserManagement.container";
+import Developer from "@/pages/Developer/Developer.container";
+import DeveloperDashboard from "@/pages/DeveloperDashboard/DeveloperDashboard.container";
+import ResetPassword from "@/pages/ResetPassword/ResetPassword.container";
+import ItInfrastructure from "@/pages/ItInfrastructure/ItInfrastructure.container";
+import HRAllUsers from "@/pages/HRAllUsers/HRAllUsers.container";
+import HRAllJobs from "@/pages/HRAllJobs/HRAllJobs.container";
+import JobApplications from "@/pages/JobApplications/JobApplications.container";
+import LeaveManagement from "@/pages/LeaveManagement/LeaveManagement.container";
+import Onboarding from "@/pages/Onboarding/Onboarding.container";
+import Offboarding from "@/pages/Offboarding/Offboarding.container";
+import CandidateDocumentUpload from "@/pages/CandidateDocumentUpload/CandidateDocumentUpload.container";
+import BlogDashboard from "@/pages/BlogDashboard/BlogDashboard.container";
 import AdminUserManagement from "@/features/admin/components/UserManagement";
 import ViewPropertyAdmin from "@/features/admin/components/ViewPropertyAdmin";
 
-import CallLogs from "@/features/calling/pages/CallLogs";
-import CallingSettings from "@/features/calling/pages/CallingSettings";
-import EmailCenter from "@/features/communication/pages/EmailCenter";
-import WhatsAppLogs from "@/features/communication/pages/WhatsAppLogs";
+import CallLogs from "@/features/lead-management/CallLogs/CallLogs.container";
+import CallingSettings from '@/features/lead-management/CallingSettings/CallingSettings.container';
+import BDStatusSummary from '@/features/lead-management/BDStatusSummary/BDStatusSummary.container';
+import EmailCenter from '@/features/lead-management/EmailCenter/EmailCenter.container';
+import WhatsAppLogs from "@/features/lead-management/WhatsAppLogs/WhatsAppLogs.container";
 
-import ProjectEnquiries from '@/features/admin/pages/ProjectEnquiries';
-import ListedProjects from '@/features/admin/pages/ListedProjects';
-import InsertProject from '@/features/admin/pages/AddProjects';
-import ProjectView from '@/features/admin/pages/ProjectView';
-import ProjectEdit from '@/features/admin/pages/ProjectEdit';
-import ProjectsAddBhk from '@/features/admin/pages/ProjectsAddBhk';
-import ProjectAddHighlights from '@/features/admin/pages/ProjectAddHighlights';
-import ProjectOrderManager from '@/features/admin/pages/ProjectOrderManager';
-import ProjectOrderManagement from '@/features/admin/pages/ProjectOrderManagement';
-import ResaleEnquiries from '@/features/admin/pages/ResaleEnquiries';
-import ListedProperties from '@/features/admin/pages/ListedProperties';
-import ViewPropertyDetails from '@/features/admin/pages/ViewPropertyDetails';
-import EditPropertyDetails from '@/features/admin/pages/EditPropertyDetails';
-import S3Manager from '@/features/admin/pages/S3Manager';
-import ContactCards from '@/features/admin/pages/ContactCards';
-import SitemapManager from '@/features/admin/pages/SitemapManager';
-import BlogPost from '@/features/admin/pages/BlogPost';
-import BlogViewAdmin from '@/features/admin/pages/BlogViewAdmin';
-import BlogEdit from '@/features/admin/pages/BlogEdit';
-import BannerManagement from '@/features/admin/pages/BannerManagement';
-import ShortSetting from '@/features/admin/pages/ShortSetting';
-import BackToTopButton from '@/features/admin/pages/BackToTopButton';
-import ActivityDashboard from '@/features/activity/pages/ActivityDashboard';
-import EmployeeDashboard from '@/layout/EmployeeDashboard';
-import BDStatusSummary from '@/features/calling/pages/BDStatusSummary';
+import ProjectEnquiries from '@/pages/ProjectEnquiries/ProjectEnquiries.container';
+import ListedProjects from '@/pages/ListedProjects/ListedProjects.container';
+import InsertProject from '@/pages/InsertProject/InsertProject.container';
+import ProjectView from '@/pages/ProjectView/ProjectView.container';
+import ProjectEdit from '@/pages/ProjectEdit/ProjectEdit.container';
+import ProjectsAddBhk from '@/pages/ProjectsAddBhk/ProjectsAddBhk.container';
+import ProjectAddHighlights from '@/pages/ProjectAddHighlights/ProjectAddHighlights.container';
+import ProjectOrderManager from '@/pages/ProjectOrderManager/ProjectOrderManager.container';
+import ProjectOrderManagement from '@/pages/ProjectOrderManagement/ProjectOrderManagement.container';
+import ResaleEnquiries from '@/pages/ResaleEnquiries/ResaleEnquiries.container';
+import ListedProperties from '@/pages/ListedProperties/ListedProperties.container';
+import ViewPropertyDetails from '@/pages/ViewPropertyDetails/ViewPropertyDetails.container';
+import EditPropertyDetails from '@/pages/EditPropertyDetails/EditPropertyDetails.container';
+import S3Manager from '@/pages/S3Manager/S3Manager.container';
+import ContactCards from '@/pages/ContactCards/ContactCards.container';
+import SitemapManager from '@/pages/SitemapManager/SitemapManager.container';
+import BlogPost from '@/pages/BlogPost/BlogPost.container';
+import BlogViewAdmin from '@/pages/BlogViewAdmin/BlogViewAdmin.container';
+import BlogEdit from '@/pages/BlogEdit/BlogEdit.container';
+import BannerManagement from '@/pages/BannerManagement/BannerManagement.container';
+import ShortSetting from '@/pages/ShortSetting/ShortSetting.container';
+import BackToTopButton from '@/pages/BackToTopButton/BackToTopButton.container';
+import ActivityDashboard from '@/pages/ActivityDashboard/ActivityDashboard.container';
+import EmployeeDashboard from '@/features/employee/dashboard/EmployeeDashboard';
 
 // Import Blog Components (temporarily disabled)
 // import BlogDashboard from "@/features/blog/pages/BlogDashboard";
-import BlogOverview from "@/features/blog/components/BlogOverview";
-import BlogUser from "@/features/blog/pages/BlogUser";
-import AllBlogs from "@/features/blog/pages/AllBlogs";
-import ManageBlog from "@/features/blog/pages/ManageBlog";
+import BlogOverview from "@/pages/BlogOverview/BlogOverview.container";
+import BlogUser from "@/pages/BlogUser/BlogUser.container";
+import AllBlogs from "@/pages/AllBlogs/AllBlogs.container";
+import ManageBlog from "@/pages/ManageBlog/ManageBlog.container";
 // import DraftManagement from "@/features/Blog_Components/DraftManagement";
 // import BlogSection from "@/features/Blog_Components/BlogSection";
 // import SingleBlog from "@/features/Blog_Components/SingleBlog";
@@ -379,7 +379,7 @@ const App = () => {
             <Route path="/hr/onboarding" element={isLoggedIn && hasModule('HR') && hasPermission('hr.onboarding') ? <Onboarding /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
 
             {/* BD Analytics Route for super-admin and head-admin */}
-            <Route path="/admin/bd-analytics" element={isLoggedIn && (userRole === "super-admin" || userRole === "head-admin") ? <BDStatusSummary /> : <Navigate to="/login" replace />} />
+            <Route path="/admin/bd-analytics" element={isLoggedIn && (userRole === "super-admin" || userRole === "head-admin") ? <BDStatusSummary /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
             <Route path="/hr/offboarding" element={isLoggedIn && hasModule('HR') && hasPermission('hr.offboarding') ? <Offboarding /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
             <Route path="/upload-documents/:token" element={<CandidateDocumentUpload />} />
             <Route path="/blog-dashboard" element={isLoggedIn && hasModule('Blog') && hasPermission('blog.dashboard') ? <BlogDashboard /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { X, Send } from "lucide-react";
 import ReactDOM from "react-dom";
 import { ENDPOINTS } from "@/api/endpoints";
+import './FollowUpModal.css';
 
 const FollowUpModal = ({ lead, onClose, userRole }) => {
   const userName = localStorage.getItem('userName') || '';

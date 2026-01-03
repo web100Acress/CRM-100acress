@@ -3,6 +3,7 @@ import { Table, Button, Modal, Spin, Space, Card, Row, Col, Statistic, Tag, Typo
 import { ReloadOutlined, UserOutlined, PhoneOutlined, MailOutlined, EnvironmentOutlined, HomeOutlined, MessageOutlined, MobileOutlined, CloseOutlined } from '@ant-design/icons';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import DashboardLayout from '@/layout/DashboardLayout';
+import BDStatusSummaryMobile from './BDStatusSummary.mobile';
 import './BDStatusSummary.css';
 
 const { Title, Text } = Typography;
@@ -10,6 +11,71 @@ const { Title, Text } = Typography;
 export default function BDStatusSummary() {
   const userRole = localStorage.getItem('userRole') || 'super-admin';
   const userName = localStorage.getItem('userName') || 'User';
+  const [isMobile, setIsMobile] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [forceMobile, setForceMobile] = useState(false);
+  
+  // Detect mobile device and handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      setWindowWidth(width);
+      setIsMobile(width <= 768);
+    };
+    
+    // Initial detection
+    handleResize();
+    
+    // Add resize listener
+    window.addEventListener('resize', handleResize);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
+  // Also check user agent for mobile devices
+  const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  
+  // Use combined detection or force mobile
+  const shouldUseMobile = forceMobile || isMobile || isMobileDevice || windowWidth <= 768;
+  
+  // Debug log
+  console.log('📱 Mobile Detection Debug:', {
+    windowWidth,
+    isMobile,
+    isMobileDevice,
+    forceMobile,
+    shouldUseMobile,
+    userAgent: navigator.userAgent,
+    platform: navigator.platform
+  });
+  
+  // Additional debug for mobile component
+  console.log('📱 BDStatusSummaryMobile component loaded:', !!BDStatusSummaryMobile);
+  
+  // Force mobile view for testing - remove this in production
+  const forceTestMobile = true; // Set to false to disable
+  
+  // Return mobile component for mobile devices
+  if (shouldUseMobile || forceTestMobile) {
+    console.log('📱 Using Mobile View', { shouldUseMobile, forceTestMobile });
+    try {
+      return <BDStatusSummaryMobile userRole={userRole} />;
+    } catch (error) {
+      console.error('❌ Error rendering mobile component:', error);
+      return (
+        <div style={{ padding: '20px', textAlign: 'center' }}>
+          <h3>Mobile View Error</h3>
+          <p>Could not load mobile view: {error.message}</p>
+          <button onClick={() => setForceMobile(false)}>Try Desktop View</button>
+        </div>
+      );
+    }
+  } else {
+    console.log('🖥️ Using Desktop View');
+  }
+  
   const [loading, setLoading] = useState(true);
   const [bdSummary, setBdSummary] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
@@ -24,7 +90,7 @@ export default function BDStatusSummary() {
       const token = localStorage.getItem('token');
       console.log('🔑 Token exists:', !!token);
       
-      const response = await fetch('http://localhost:5001/api/leads/bd-status-summary', {
+      const response = await fetch('https://bcrm.100acress.com/api/leads/bd-status-summary', {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -45,7 +111,7 @@ export default function BDStatusSummary() {
       // Try test API as fallback
       try {
         console.log('🔄 Trying test API...');
-        const testResponse = await fetch('http://localhost:5001/test-bd-status');
+        const testResponse = await fetch('https://bcrm.100acress.com/test-bd-status');
         const testData = await testResponse.json();
         console.log('📊 Test API Response:', testData);
         if (testData.success) {
@@ -65,7 +131,7 @@ export default function BDStatusSummary() {
       console.log('🔄 Fetching BD Details from frontend...');
       const token = localStorage.getItem('token');
       
-      const response = await fetch(`http://localhost:5001/api/leads/bd-status/${bdId}`, {
+      const response = await fetch(`https://bcrm.100acress.com/api/leads/bd-status/${bdId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -201,14 +267,22 @@ export default function BDStatusSummary() {
                 Message
               </Button>
               <Button 
-                type="text" 
+                type={forceMobile ? 'primary' : 'text'}
                 icon={<MobileOutlined />}
-                style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '14px' }}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '4px', 
+                  fontSize: '14px',
+                  backgroundColor: forceMobile ? '#1890ff' : 'transparent',
+                  color: forceMobile ? '#fff' : undefined
+                }}
                 onClick={() => {
-                  window.open('/bd-status-summary', '_blank');
+                  setForceMobile(!forceMobile);
+                  console.log('Force Mobile:', !forceMobile);
                 }}
               >
-                Mobile View
+                {forceMobile ? 'Desktop View' : 'Mobile View'}
               </Button>
             </div>
           </div>
