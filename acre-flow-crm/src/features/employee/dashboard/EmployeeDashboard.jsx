@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '@/styles/SuperAdminProfile.css';
-import DashboardLayout from './DashboardLayout';
+import './EmployeeDashboard.css';
+import DashboardLayout from '@/layout/DashboardLayout';
 
 import {
   User, Mail, Phone, Shield, Building2, Users, Ticket, Eye, Target, CheckCircle, TrendingUp, Users2, Briefcase

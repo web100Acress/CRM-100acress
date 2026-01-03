@@ -5,7 +5,7 @@ import DashboardStats from '@/layout/DashboardStats';
 import SuperAdminProfile from '@/layout/SuperAdminProfile';
 import HeadAdminProfile from '@/layout/HeadAdminProfile';
 import TeamLeaderProfile from '@/layout/TeamLeaderProfile';
-import EmployeeProfile from '@/layout/EmployeeProfile';
+import EmployeeProfile from '@/features/employee/profile/EmployeeProfile';
 
 const DashboardMobile = ({ userRole = 'employee' }) => {
   const navigate = useNavigate();

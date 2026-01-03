@@ -18,7 +18,7 @@ import {
   PhoneCall,
   PieChart,
 } from "lucide-react";
-import FollowUpModal from "./FollowUpModal";
+import FollowUpModal from "@/features/employee/follow-up/FollowUpModal";
 import CreateLeadForm from "./CreateLeadForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/layout/dialog";
 import { useToast } from "@/hooks/use-toast";

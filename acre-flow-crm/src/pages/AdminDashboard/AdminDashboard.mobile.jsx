@@ -4,7 +4,7 @@ import AdminSidebar from '@/features/admin/components/AdminSidebar';
 import AdminOverview from '@/features/admin/components/AdminOverview';
 import UserManagement from '@/features/admin/components/UserManagement';
 import CreateUser from '@/pages/CreateUser/CreateUser.container';
-import BDStatusSummary from '@/pages/BDStatusSummary/BDStatusSummary.container';
+import BDStatusSummary from '@/features/lead-management/BDStatusSummary/BDStatusSummary.container';
 
 const AdminDashboardMobile = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);

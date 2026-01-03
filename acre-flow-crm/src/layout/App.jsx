@@ -10,7 +10,7 @@ import store from "@/store";
 import '@/styles/dark-mode.css';
 import { ThemeProvider } from "@/context/ThemeContext";
 import Dashboard from "@/pages/Dashboard/Dashboard.container";
-import Leads from "@/pages/Leads/Leads.container";
+import Leads from "@/features/lead-management/Leads/Leads.container";
 import Tickets from "@/pages/Tickets/Tickets.container";
 import Login from "@/pages/Login/Login.container";
 import AdminDashboard from "@/pages/AdminDashboard/AdminDashboard.container";
@@ -35,11 +35,11 @@ import BlogDashboard from "@/pages/BlogDashboard/BlogDashboard.container";
 import AdminUserManagement from "@/features/admin/components/UserManagement";
 import ViewPropertyAdmin from "@/features/admin/components/ViewPropertyAdmin";
 
-import CallLogs from "@/pages/CallLogs/CallLogs.container";
-import CallingSettings from '@/pages/CallingSettings/CallingSettings.container';
-import BDStatusSummary from '@/pages/BDStatusSummary/BDStatusSummary.container';
-import EmailCenter from '@/pages/EmailCenter/EmailCenter.container';
-import WhatsAppLogs from "@/pages/WhatsAppLogs/WhatsAppLogs.container";
+import CallLogs from "@/features/lead-management/CallLogs/CallLogs.container";
+import CallingSettings from '@/features/lead-management/CallingSettings/CallingSettings.container';
+import BDStatusSummary from '@/features/lead-management/BDStatusSummary/BDStatusSummary.container';
+import EmailCenter from '@/features/lead-management/EmailCenter/EmailCenter.container';
+import WhatsAppLogs from "@/features/lead-management/WhatsAppLogs/WhatsAppLogs.container";
 
 import ProjectEnquiries from '@/pages/ProjectEnquiries/ProjectEnquiries.container';
 import ListedProjects from '@/pages/ListedProjects/ListedProjects.container';
@@ -64,7 +64,7 @@ import BannerManagement from '@/pages/BannerManagement/BannerManagement.containe
 import ShortSetting from '@/pages/ShortSetting/ShortSetting.container';
 import BackToTopButton from '@/pages/BackToTopButton/BackToTopButton.container';
 import ActivityDashboard from '@/pages/ActivityDashboard/ActivityDashboard.container';
-import EmployeeDashboard from '@/layout/EmployeeDashboard';
+import EmployeeDashboard from '@/features/employee/dashboard/EmployeeDashboard';
 
 // Import Blog Components (temporarily disabled)
 // import BlogDashboard from "@/features/blog/pages/BlogDashboard";

@@ -1,5 +1,5 @@
 import React from 'react';
-import BDStatusSummary from '@/features/calling/pages/BDStatusSummary';
+import BDStatusSummary from './BDStatusSummary';
 
 const BDStatusSummaryDesktop = () => {
   return (

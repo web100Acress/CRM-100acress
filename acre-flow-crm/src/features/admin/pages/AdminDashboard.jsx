@@ -4,7 +4,7 @@ import AdminSidebar from '../components/AdminSidebar';
 import AdminOverview from '../components/AdminOverview';
 import UserManagement from '../components/UserManagement';
 import CreateUser from '@/features/users/pages/CreateUser';
-import BDStatusSummary from '../../calling/pages/BDStatusSummary';
+import BDStatusSummary from '../../lead-management/BDStatusSummary/BDStatusSummary.container';
 // import SystemSettings from '../components/SystemSettings';
 
 const AdminDashboard = () => {
