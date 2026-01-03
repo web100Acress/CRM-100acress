@@ -1230,7 +1230,7 @@ const LeadTable = ({ userRole }) => {
                     setShowLeadDetails(true);
                   }}
                 >
-                  <Eye size={16} />
+                  <Eye size={14} />
                   Details
                 </button>
               </div>
