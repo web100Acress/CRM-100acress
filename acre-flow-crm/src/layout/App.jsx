@@ -17,7 +17,7 @@ import AdminDashboard from "@/pages/AdminDashboard/AdminDashboard.container";
 import HRDashboard from "@/pages/HRDashboard/HRDashboard.container";
 import SalesHeadDashboard from "@/pages/SalesHeadDashboard/SalesHeadDashboard.container";
 import CreateUser from "@/pages/CreateUser/CreateUser.container";
-import NotFound from "@/features/users/pages/NotFound";
+import NotFound from "@/pages/NotFound/NotFound.container";
 import Settings from "@/pages/Settings/Settings.container";
 import UserManagement from "@/pages/UserManagement/UserManagement.container";
 import Developer from "@/pages/Developer/Developer.container";
