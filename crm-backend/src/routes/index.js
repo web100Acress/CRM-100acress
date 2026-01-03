@@ -5,5 +5,12 @@ router.use('/users', require('./userRoutes'));
 router.use('/leads', require('./leadRoutes'));
 router.use('/auth', require('./auth'));
 router.use('/dashboard', require('./dashboardRoutes'));
+router.use('/activity', require('./activityRoutes'));
+router.use('/calls', require('./callRoutes'));
+router.use('/comm-admin', require('./commAdminRoutes'));
+router.use('/webhooks', require('./callWebhookRoutes'));
+router.use('/whatsapp', require('./whatsappRoutes'));
+router.use('/email', require('./emailRoutes'));
+router.use('/api-tester', require('./apiTester.routes'));
 
-module.exports = router; 
+module.exports = router;

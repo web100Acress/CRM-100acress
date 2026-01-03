@@ -3,12 +3,17 @@
 
 import axios from 'axios';
 
+// Get base URL from environment variables or use default
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://bcrm.100acress.com/';
+
 // Create axios instance with base configuration
 const httpClient = axios.create({
-  baseURL: 'http://localhost:5001/api',
+  baseURL: API_BASE_URL,
   timeout: 10000,
+  withCredentials: true, // Important for cookies/sessions
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
   },
 });
 
@@ -39,10 +44,7 @@ httpClient.interceptors.response.use(
       
       // Handle authentication errors
       if (status === 401) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('isLoggedIn');
-        window.location.href = '/login';
-        return Promise.reject(new Error('Authentication failed. Please login again.'));
+        return Promise.reject(new Error(data?.message || 'Authentication failed (401). Please try again.'));
       }
       
       // Handle forbidden errors

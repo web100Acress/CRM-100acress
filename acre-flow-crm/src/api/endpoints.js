@@ -1,7 +1,9 @@
-// Centralized API endpoints configuration
+  // Centralized API endpoints configuration
 // All API endpoint URLs are defined here for easy maintenance
 
-const BASE_URL = 'http://localhost:5001/api';
+// const BASE_URL = 'https://bcrm.100acress.com';
+// Use live backend without trailing slash to avoid double slashes in paths
+const BASE_URL = 'https://bcrm.100acress.com';
 
 export const ENDPOINTS = {
   // Auth endpoints
@@ -29,15 +31,17 @@ export const ENDPOINTS = {
 
   // Leads endpoints
   LEADS: {
-    LIST: `${BASE_URL}/leads`,
-    CREATE: `${BASE_URL}/leads`,
-    GET_BY_ID: (id) => `${BASE_URL}/leads/${id}`,
-    UPDATE: (id) => `${BASE_URL}/leads/${id}`,
-    DELETE: (id) => `${BASE_URL}/leads/${id}`,
-    ASSIGN: (id) => `${BASE_URL}/leads/${id}/assign`,
-    FOLLOW_UPS: (id) => `${BASE_URL}/leads/${id}/followups`,
-    ADD_FOLLOW_UP: (id) => `${BASE_URL}/leads/${id}/followups`,
-    ASSIGNABLE_USERS: `${BASE_URL}/leads/assignable-users`,
+    LIST: `${BASE_URL}/api/leads`,
+    CREATE: `${BASE_URL}/api/leads`,
+    GET_BY_ID: (id) => `${BASE_URL}/api/leads/${id}`,
+    UPDATE: (id) => `${BASE_URL}/api/leads/${id}`,
+    DELETE: (id) => `${BASE_URL}/api/leads/${id}`,
+    ASSIGN: (id) => `${BASE_URL}/api/leads/${id}/assign`,
+    FOLLOW_UPS: (id) => `${BASE_URL}/api/leads/${id}/followups`,
+    ADD_FOLLOW_UP: (id) => `${BASE_URL}/api/leads/${id}/followups`,
+    ASSIGNABLE_USERS: `${BASE_URL}/api/leads/assignable-users`,
+    BD_STATUS_SUMMARY: `${BASE_URL}/api/leads/bd-status-summary`,
+    BD_STATUS: (bdId) => `${BASE_URL}/api/leads/bd-status/${bdId}`,
   },
 
   // Tickets endpoints
@@ -67,6 +71,33 @@ export const ENDPOINTS = {
     RECENT_ACTIVITY: `${BASE_URL}/dashboard/recent-activity`,
     CHARTS_DATA: `${BASE_URL}/dashboard/charts`,
   },
+
+  CALLS: {
+    CONFIG: `${BASE_URL}/api/calls/config`,
+    START: `${BASE_URL}/api/calls/start`,
+    END: `${BASE_URL}/api/calls/end`,
+    LOGS: `${BASE_URL}/api/calls/logs`,
+    NOTES: (id) => `${BASE_URL}/api/calls/${id}/notes`,
+  },
+
+  COMM_ADMIN: {
+    FEATURE_FLAGS: `${BASE_URL}/api/comm-admin/feature-flags`,
+    PROVIDERS: `${BASE_URL}/api/comm-admin/providers`,
+  },
+
+  WHATSAPP: {
+    LIST_MESSAGES: `${BASE_URL}/api/whatsapp/messages`,
+    SEND: `${BASE_URL}/api/whatsapp/send`,
+  },
+
+  EMAIL: {
+    LIST_TEMPLATES: `${BASE_URL}/api/email/templates`,
+    CREATE_TEMPLATE: `${BASE_URL}/api/email/templates`,
+    UPDATE_TEMPLATE: (id) => `${BASE_URL}/api/email/templates/${id}`,
+    DELETE_TEMPLATE: (id) => `${BASE_URL}/api/email/templates/${id}`,
+    LIST_MESSAGES: `${BASE_URL}/api/email/messages`,
+    SEND: `${BASE_URL}/api/email/send`,
+  },
 };
 
-export default ENDPOINTS; 
+export default ENDPOINTS;

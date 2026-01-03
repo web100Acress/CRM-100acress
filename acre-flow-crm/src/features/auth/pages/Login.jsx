@@ -29,8 +29,68 @@ const Login = () => {
 
   const navigate = null; // Remove navigate for demo
 
+  // Helper function to redirect based on role
+  const redirectBasedOnRole = (role) => {
+    const normalizedRole = (role || '').toLowerCase().trim();
+
+    switch (normalizedRole) {
+      // Department-based roles
+      case "sales_head":
+      case "sales_executive":
+        window.location.href = "/sales-head-dashboard";
+        break;
+      case "hr_manager":
+      case "hr_executive":
+        window.location.href = "/hr-dashboard";
+        break;
+      case "blog_manager":
+      case "blog_writer":
+        window.location.href = "/blog-dashboard";
+        break;
+      case "admin":
+      case "super_admin":
+      case "superadmin":
+        window.location.href = "/admin-dashboard";
+        break;
+      // Existing roles
+      case "developer":
+        window.location.href = "/developer-dashboard";
+        break;
+      case "hr_finance":
+        window.location.href = "/hr-finance";
+        break;
+      case "it_infrastructure":
+        window.location.href = "/it-infrastructure";
+        break;
+      case "super-admin":
+        window.location.href = "/super-admin-dashboard";
+        break;
+      case "head-admin":
+      case "head admin":
+        window.location.href = "/head-admin-dashboard";
+        break;
+      case "team-leader":
+      case "team leader":
+        window.location.href = "/team-leader-dashboard";
+        break;
+      case "boss":
+        window.location.href = "/admin-dashboard";  // Redirect boss to admin dashboard
+        break;
+      case "employee":
+      case "user":
+        window.location.href = "/employee-dashboard";  // Redirect employee to employee dashboard
+        break;
+      default:
+        window.location.href = "/";
+    }
+  };
+
   // Static credentials
   const DEVELOPER = { email: "amandev@gmail.com", password: "dev123" };
+  const SALES_HEAD = { email: "sales@example.com", password: "sales123" };
+  const HR_MANAGER = { email: "hr@example.com", password: "hr123" };
+  const BLOG_MANAGER = { email: "blog@example.com", password: "blog123" };
+  const ADMIN = { email: "admin@example.com", password: "admin123" };
   const HR_FINANCE = { email: "amanhr@gmail.com", password: "hr123" };
   const IT_INFRA = { email: "amanit@gmail.com", password: "it123" };
 
@@ -67,6 +127,88 @@ const Login = () => {
     }
 
     if (
+      credentials.email === SALES_HEAD.email &&
+      credentials.password === SALES_HEAD.password
+    ) {
+      localStorage.setItem("isSalesHeadLoggedIn", "true");
+      localStorage.setItem("salesHeadEmail", credentials.email);
+      localStorage.setItem("salesHeadName", "Sales Head");
+      localStorage.setItem("salesHeadRole", "sales_head");
+      localStorage.removeItem("isDeveloperLoggedIn");
+      localStorage.removeItem("isHrLoggedIn");
+      localStorage.removeItem("isBlogLoggedIn");
+      window.location.href = "/sales-head-dashboard";
+      return;
+    }
+
+    if (
+      credentials.email === HR_MANAGER.email &&
+      credentials.password === HR_MANAGER.password
+    ) {
+      localStorage.setItem("isHRLoggedIn", "true");
+      localStorage.setItem("hrEmail", credentials.email);
+      localStorage.setItem("hrName", "HR Manager");
+      localStorage.setItem("hrRole", "hr_manager");
+      localStorage.removeItem("isDeveloperLoggedIn");
+      localStorage.removeItem("isSalesHeadLoggedIn");
+      localStorage.removeItem("isBlogLoggedIn");
+      window.location.href = "/hr-dashboard";
+      return;
+    }
+
+    if (
+      credentials.email === BLOG_MANAGER.email &&
+      credentials.password === BLOG_MANAGER.password
+    ) {
+      localStorage.setItem("isBlogLoggedIn", "true");
+      localStorage.setItem("blogEmail", credentials.email);
+      localStorage.setItem("blogName", "Blog Manager");
+      localStorage.setItem("blogRole", "blog_manager");
+      localStorage.removeItem("isDeveloperLoggedIn");
+      localStorage.removeItem("isHRLoggedIn");
+      localStorage.removeItem("isSalesHeadLoggedIn");
+      window.location.href = "/blog-dashboard";
+      return;
+    }
+
+    if (
+      credentials.email === ADMIN.email &&
+      credentials.password === ADMIN.password
+    ) {
+      localStorage.setItem("isAdminLoggedIn", "true");
+      localStorage.setItem("adminEmail", credentials.email);
+      localStorage.setItem("adminName", "Admin");
+      localStorage.setItem("adminRole", "admin");
+      localStorage.setItem("userRole", "admin");
+      localStorage.setItem("sourceSystem", "static");
+      localStorage.removeItem("isDeveloperLoggedIn");
+      localStorage.removeItem("isHRLoggedIn");
+      localStorage.removeItem("isSalesHeadLoggedIn");
+      localStorage.removeItem("isBlogLoggedIn");
+      
+      // Try to get 100acress token for 100acress API access
+      try {
+        const acressLoginResponse = await fetch("https://api.100acress.com/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(credentials),
+          credentials: "include",
+        });
+
+        const acressLoginData = await acressLoginResponse.json();
+        if (acressLoginResponse.ok && acressLoginData.token) {
+          localStorage.setItem("myToken", acressLoginData.token);
+        }
+      } catch (acressError) {
+        // If 100acress login fails, continue with static login
+        console.warn("Could not get 100acress token for static admin:", acressError);
+      }
+      
+      window.location.href = "/admin-dashboard";
+      return;
+    }
+
+    if (
       credentials.email === IT_INFRA.email &&
       credentials.password === IT_INFRA.password
     ) {
@@ -80,52 +222,195 @@ const Login = () => {
       return;
     }
 
-    // Backend login
+    // Try Activity Hub Department Login - check if email exists in Activity departments
     try {
-      const response = await fetch("http://localhost:5001/api/auth/login", {
+      // First check if this email exists in any Activity department
+      const checkResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/activity/departments/check-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: credentials.email }),
+      });
+
+      if (checkResponse.ok) {
+        const checkData = await checkResponse.json();
+        
+        // Check if user is admin - skip department login
+        if (checkData.success && checkData.isAdmin) {
+          console.log("Admin user detected, skipping department login");
+          // Continue to normal CRM login flow
+        } else if (checkData.success && checkData.exists) {
+          // Email exists in Activity departments, try login
+          const activityResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/activity/departments/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(credentials),
+          });
+
+          const activityData = await activityResponse.json();
+          if (activityResponse.ok && activityData.success && activityData.data) {
+            // Activity Hub login successful - use unique session ID for multiple users
+            const sessionId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            const sessionKey = `activity_${sessionId}`;
+            
+            localStorage.setItem(sessionKey + "_department", activityData.data.name);
+            localStorage.setItem(sessionKey + "_email", activityData.data.email);
+            localStorage.setItem(sessionKey + "_departmentId", activityData.data.id);
+            localStorage.setItem(sessionKey + "_userName", activityData.data.userName);
+            localStorage.setItem(sessionKey + "_sessionId", sessionId);
+            localStorage.setItem("isActivityLoggedIn", "true");
+            localStorage.setItem("currentActivitySession", sessionId);
+            
+            // Store all active sessions
+            const activeSessions = JSON.parse(localStorage.getItem("activeActivitySessions") || "[]");
+            if (!activeSessions.includes(sessionId)) {
+              activeSessions.push(sessionId);
+              localStorage.setItem("activeActivitySessions", JSON.stringify(activeSessions));
+            }
+            
+            window.location.href = "/activity-dashboard";
+            return;
+          } else {
+            // Handle specific error responses for Activity login
+            if (activityResponse.status === 401) {
+              setError("Invalid department credentials. Please check your email and password.");
+            } else if (activityResponse.status === 404) {
+              setError("Department not found. Please contact your administrator.");
+            } else {
+              setError(activityData.message || "Activity login failed");
+            }
+            return; // Stop here - don't try regular login
+          }
+        }
+      }
+    } catch (activityError) {
+      // If check fails, continue to normal login flow
+      console.log("Activity department check failed, continuing to normal login...");
+    }
+
+    // Backend login - Try CRM first, then 100acress
+    try {
+      // Try CRM login first
+      const crmResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
         credentials: "include",
       });
 
-      const data = await response.json();
-      if (response.ok && data.token) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("userRole", data.user.role);
-        localStorage.setItem("userEmail", data.user.email);
-        localStorage.setItem("userName", data.user.name);
+      const crmData = await crmResponse.json();
+      if (crmResponse.ok && crmData.token) {
+        // CRM login successful
+        localStorage.setItem("token", crmData.token);
+        localStorage.setItem("userRole", crmData.user.role);
+        localStorage.setItem("userEmail", crmData.user.email);
+        localStorage.setItem("userName", crmData.user.name);
         localStorage.setItem("isLoggedIn", "true");
-        localStorage.setItem("userId", data.user._id);
+        localStorage.setItem("userId", crmData.user._id);
+        localStorage.setItem("sourceSystem", "crm");
         localStorage.removeItem("isDeveloperLoggedIn");
         localStorage.removeItem("isHrFinanceLoggedIn");
 
-        switch (data.user.role) {
-          case "developer":
-            window.location.href = "/developer-dashboard";
-            break;
-          case "hr_finance":
-            window.location.href = "/hr-finance";
-            break;
-          case "it_infrastructure":
-            window.location.href = "/it-infrastructure";
-            break;
-          case "super-admin":
-            window.location.href = "/super-admin-dashboard";
-            break;
-          case "head-admin":
-            window.location.href = "/head-admin-dashboard";
-            break;
-          case "team-leader":
-            window.location.href = "/team-leader-dashboard";
-            break;
-          default:
-            window.location.href = "/";
+        if (Array.isArray(crmData.user.allowedModules)) {
+          localStorage.setItem("allowedModules", JSON.stringify(crmData.user.allowedModules));
+        } else {
+          localStorage.removeItem("allowedModules");
         }
-      } else {
-        setError(data.message || "Invalid email or password");
+
+        if (Array.isArray(crmData.user.permissions)) {
+          localStorage.setItem("permissions", JSON.stringify(crmData.user.permissions));
+        } else {
+          localStorage.removeItem("permissions");
+        }
+
+        // Store department if available
+        if (crmData.user.department) {
+          localStorage.setItem("userDepartment", crmData.user.department);
+        }
+
+        // If user is admin, try to get 100acress token as well for 100acress API access
+        if (crmData.user.role === 'admin' || crmData.user.role === 'Admin') {
+          try {
+            const acressLoginResponse = await fetch("https://api.100acress.com/api/auth/login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(credentials),
+              credentials: "include",
+            });
+
+            const acressLoginData = await acressLoginResponse.json();
+            if (acressLoginResponse.ok && acressLoginData.token) {
+              localStorage.setItem("myToken", acressLoginData.token);
+            }
+          } catch (acressError) {
+            // If 100acress login fails, continue with CRM login
+            // User can still use CRM features, just won't have 100acress API access
+            console.warn("Could not get 100acress token:", acressError);
+          }
+        }
+
+        // Redirect based on role
+        redirectBasedOnRole(crmData.user.role);
+        return;
+      }
+
+      // If CRM login fails, try 100acress login
+      try {
+        const acressResponse = await fetch("https://api.100acress.com/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(credentials),
+          credentials: "include",
+        });
+
+        const acressData = await acressResponse.json();
+        
+        if (acressResponse.ok && acressData.token) {
+          // 100acress login successful, now verify with CRM backend
+          const verifyResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/verify-100acress-token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: acressData.token }),
+            credentials: "include",
+          });
+
+          const verifyData = await verifyResponse.json();
+          
+          if (verifyResponse.ok && verifyData.success && verifyData.token) {
+            // Store 100acress token for 100acress API calls
+            localStorage.setItem("myToken", acressData.token);
+            // Store CRM token for CRM API calls
+            localStorage.setItem("token", verifyData.token);
+            localStorage.setItem("userRole", verifyData.user.role);
+            localStorage.setItem("userEmail", verifyData.user.email);
+            localStorage.setItem("userName", verifyData.user.name);
+            localStorage.setItem("isLoggedIn", "true");
+            localStorage.setItem("userId", verifyData.user._id);
+            localStorage.setItem("sourceSystem", "100acress");
+            localStorage.setItem("originalRole", verifyData.user.originalRole || verifyData.user.role);
+            
+            // Clear other login states
+            localStorage.removeItem("isDeveloperLoggedIn");
+            localStorage.removeItem("isHrFinanceLoggedIn");
+            localStorage.removeItem("isAdminLoggedIn");
+            localStorage.removeItem("isSalesHeadLoggedIn");
+            localStorage.removeItem("isHRLoggedIn");
+            localStorage.removeItem("isBlogLoggedIn");
+
+            // Redirect based on mapped role
+            redirectBasedOnRole(verifyData.user.role);
+            return;
+          } else {
+            setError(verifyData.message || "Failed to verify 100acress account with CRM");
+          }
+        } else {
+          setError(acressData.message || "Invalid email or password");
+        }
+      } catch (acressErr) {
+        // If 100acress login also fails, show error
+        setError(crmData.message || "Invalid email or password");
       }
     } catch (err) {
+      console.error("Login error:", err);
       setError("Login failed. Please try again.");
     }
 
@@ -137,7 +422,7 @@ const Login = () => {
     setForgotStatus("");
     try {
       const res = await fetch(
-        "http://localhost:5001/api/auth/request-password-reset",
+        `${import.meta.env.VITE_API_BASE_URL}/api/auth/request-password-reset`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

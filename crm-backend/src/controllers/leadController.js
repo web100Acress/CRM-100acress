@@ -201,3 +201,115 @@ exports.getAssignableUsers = async (req, res, next) => {
     next(err);
   }
 };
+
+// BD Analytics - Get status summary for all BD users
+exports.getBDSummary = async (req, res, next) => {
+  try {
+    const summary = await leadService.getBDSummary();
+    res.status(200).json({ success: true, data: summary });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// BD Analytics - Get detailed status for specific BD
+exports.getBDDetails = async (req, res, next) => {
+  try {
+    const { bdId } = req.params;
+    const details = await leadService.getBDDetails(bdId);
+    res.status(200).json({ success: true, data: details });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Save call record
+exports.saveCallRecord = async (req, res, next) => {
+  try {
+    const { leadId, leadName, phone, startTime, endTime, duration, status } = req.body;
+    const userId = req.user?.userId || req.user?._id;
+    const userPhone = req.user?.phone;
+    
+    // Import CallRecord model
+    const CallRecord = require('../models/callRecordModel');
+    
+    // Create call record
+    const callRecord = new CallRecord({
+      userId,
+      userPhone,
+      leadId,
+      leadName,
+      phone,
+      startTime,
+      endTime,
+      duration,
+      callDate: new Date(),
+      type: 'outbound',
+      status: status || (Number(duration) > 0 ? 'completed' : 'missed')
+    });
+
+    // Save to database
+    const savedRecord = await callRecord.save();
+    
+    console.log('Call record saved to database:', savedRecord);
+    
+    res.status(201).json({ 
+      success: true, 
+      message: 'Call record saved successfully',
+      data: savedRecord 
+    });
+  } catch (err) {
+    console.error('Error saving call record:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to save call record' 
+    });
+  }
+};
+
+// Get call records for a user
+exports.getCallRecords = async (req, res, next) => {
+  try {
+    const userId = req.user?.userId || req.user?._id;
+    const CallRecord = require('../models/callRecordModel');
+    
+    const callRecords = await CallRecord.find({ userId })
+      .populate('leadId', 'name email phone')
+      .populate('userId', 'name email phone')
+      .sort({ callDate: -1 });
+    
+    res.status(200).json({ 
+      success: true, 
+      data: callRecords 
+    });
+  } catch (err) {
+    console.error('Error fetching call records:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch call records' 
+    });
+  }
+};
+
+// Get call records for a specific lead
+exports.getLeadCallHistory = async (req, res, next) => {
+  try {
+    const { leadId } = req.params;
+    const CallRecord = require('../models/callRecordModel');
+    
+    const callRecords = await CallRecord.find({ leadId })
+      .populate('userId', 'name email phone')
+      .sort({ callDate: -1 });
+    
+    res.status(200).json({ 
+      success: true, 
+      data: callRecords 
+    });
+  } catch (err) {
+    console.error('Error fetching lead call history:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch call history' 
+    });
+  }
+};

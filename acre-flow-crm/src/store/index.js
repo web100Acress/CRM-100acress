@@ -11,6 +11,8 @@ import leadsSlice from '@/features/leads/slices/leadsSlice';
 import ticketsSlice from '@/features/tickets/slices/ticketsSlice';
 import meetingsSlice from '@/features/meetings/slices/meetingsSlice';
 import dashboardSlice from '@/features/dashboard/slices/dashboardSlice';
+import bannerSlice from '@/features/admin/Redux/slice/BannerSlice';
+import smallBannerSlice from '@/features/admin/Redux/slice/SmallBannerSlice';
 
 // Combine all reducers
 const rootReducer = combineReducers({
@@ -20,6 +22,8 @@ const rootReducer = combineReducers({
   tickets: ticketsSlice,
   meetings: meetingsSlice,
   dashboard: dashboardSlice,
+  banner: bannerSlice,
+  smallBanner: smallBannerSlice,
 });
 
 // Configure the store

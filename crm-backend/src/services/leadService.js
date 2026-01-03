@@ -141,6 +141,69 @@ const getNextAssignableUsers = async (currentUserRole) => {
   return await User.find({ role: nextRole });
 };
 
+// --- BD Analytics ---
+// Get summary for all BDs (employees) who have assigned leads
+const getBDSummary = async () => {
+  console.log('🔍 Fetching BD Summary...');
+  
+  // Only employees
+  const bds = await User.find({ role: 'employee' });
+  console.log(`👥 Found ${bds.length} employees`);
+  
+  const leads = await Lead.find().sort({ createdAt: -1 }); // Get all leads, sorted by newest first
+  console.log(`📋 Found ${leads.length} total leads`);
+
+  // For each BD, aggregate stats
+  const summary = await Promise.all(bds.map(async (bd) => {
+    const assignedLeads = leads.filter(l => l.assignedTo === String(bd._id));
+    console.log(`👤 ${bd.name}: ${assignedLeads.length} leads assigned`);
+    
+    // Only include BDs who have at least one assigned lead
+    if (assignedLeads.length === 0) return null;
+    
+    const hot = assignedLeads.filter(l => l.status === 'Hot').length;
+    const warm = assignedLeads.filter(l => l.status === 'Warm').length;
+    const cold = assignedLeads.filter(l => l.status === 'Cold').length;
+    const followUps = assignedLeads.reduce((sum, l) => sum + (Array.isArray(l.followUps) ? l.followUps.length : 0), 0);
+    const converted = assignedLeads.filter(l => l.status === 'Converted').length;
+    const conversionRate = assignedLeads.length > 0 ? Math.round((converted / assignedLeads.length) * 100) : 0;
+    
+    // Include latest lead info for debugging
+    const latestLead = assignedLeads[0];
+    
+    return {
+      bdId: bd._id,
+      name: bd.name,
+      email: bd.email,
+      totalLeads: assignedLeads.length,
+      hot, warm, cold,
+      followUps,
+      conversionRate,
+      latestLeadCreatedAt: latestLead ? latestLead.createdAt : null,
+      // Include lead IDs for debugging
+      leadIds: assignedLeads.map(l => l._id)
+    };
+  }));
+  
+  // Filter out null entries (BDs without leads)
+  const result = summary.filter(item => item !== null);
+  console.log(`📊 Returning ${result.length} BDs with leads`);
+  return result;
+};
+
+// Get all leads, follow-ups, calls etc. for a specific BD
+const getBDDetails = async (bdId) => {
+  const bd = await User.findById(bdId);
+  if (!bd) return null;
+  const leads = await Lead.find({ assignedTo: String(bdId) });
+  // const callLogs = await CallLog.find({ userId: String(bdId) });
+  return {
+    bd: { _id: bd._id, name: bd.name, email: bd.email },
+    leads,
+    // callLogs,
+  };
+};
+
 // Function to get users that can be assigned to (including self for certain roles)
 const getAssignableUsers = async (currentUserRole, currentUserId) => {
   // If team-leader, return all employees and self
@@ -188,6 +251,8 @@ const getFollowUps = async (id) => {
 
 module.exports = {
   createLead,
+  getBDSummary,
+  getBDDetails,
   getLeads,
   getLeadsForUser,
   getLeadById,
