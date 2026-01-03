@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Menu, X, Home, Users, BarChart3, Settings, LogOut, Bell, Search, User } from 'lucide-react';
+import { Menu, X, Home, Users, BarChart3, LogOut, Bell, Search, User, MessageCircle, Activity } from 'lucide-react';
 import { Badge } from '@/layout/badge';
 
 const MobileLayout = ({ userRole = 'employee', activeTab, setActiveTab, children }) => {
@@ -117,15 +117,34 @@ const MobileLayout = ({ userRole = 'employee', activeTab, setActiveTab, children
 
   const renderBottomNavigation = () => (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg">
-      <div className="grid grid-cols-4 py-2">
+      <div className="grid grid-cols-5 py-2">
         <button
-          onClick={() => setActiveTab('overview')}
+          onClick={() => navigate('/')}
           className={`flex flex-col items-center py-2 px-3 transition-all duration-200 ${
-            activeTab === 'overview' ? 'text-blue-600' : 'text-gray-600'
+            window.location.pathname === '/' ? 'text-blue-600' : 'text-gray-600'
           }`}
         >
           <Home size={20} />
           <span className="text-xs mt-1">Home</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('whatsapp')}
+          className={`flex flex-col items-center py-2 px-3 transition-all duration-200 ${
+            activeTab === 'whatsapp' ? 'text-blue-600' : 'text-gray-600'
+          }`}
+        >
+          <MessageCircle size={20} />
+          <span className="text-xs mt-1">WhatsApp</span>
+        </button>
+        <button
+          onClick={() => navigate('/leads')}
+          className={`flex flex-col items-center py-2 px-3 transition-all duration-200 ${
+            window.location.pathname === '/leads' ? 'text-blue-600' : 'text-gray-600'
+          }`}
+        >
+          <BarChart3 size={20} />
+          
+          <span className="text-xs mt-1">Leads</span>
         </button>
         {(userRole === 'super-admin' || userRole === 'head-admin') && (
           <button
@@ -139,22 +158,13 @@ const MobileLayout = ({ userRole = 'employee', activeTab, setActiveTab, children
           </button>
         )}
         <button
-          onClick={() => setActiveTab('leads')}
+          onClick={() => setActiveTab('status')}
           className={`flex flex-col items-center py-2 px-3 transition-all duration-200 ${
-            activeTab === 'leads' ? 'text-blue-600' : 'text-gray-600'
+            activeTab === 'status' ? 'text-blue-600' : 'text-gray-600'
           }`}
         >
-          <BarChart3 size={20} />
-          <span className="text-xs mt-1">Leads</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('settings')}
-          className={`flex flex-col items-center py-2 px-3 transition-all duration-200 ${
-            activeTab === 'settings' ? 'text-blue-600' : 'text-gray-600'
-          }`}
-        >
-          <Settings size={20} />
-          <span className="text-xs mt-1">Settings</span>
+          <Activity size={20} />
+          <span className="text-xs mt-1">Status</span>
         </button>
       </div>
     </div>

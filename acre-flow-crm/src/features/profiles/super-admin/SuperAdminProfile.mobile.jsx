@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import '@/styles/SuperAdminProfile.css';
 
 import {
-  User, Mail, Phone, Shield, Building2, Users, Ticket, Eye, TrendingUp, Activity, PieChart, Calendar, Clock, BarChart3
+  User, Mail, Phone, Shield, Building2, Users, Ticket, Eye, TrendingUp, Activity, PieChart, Calendar, Clock, BarChart3, Settings
 } from 'lucide-react';
 
 import { Badge } from '@/layout/badge';

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MobileLayout from '@/layout/MobileLayout';
+import MobileSidebar from '@/layout/MobileSidebar';
 import LeadTableMobile from '@/layout/LeadTable.mobile';
 import { Plus, Search, Filter, Download, RefreshCw, TrendingUp, Users, Phone, Mail, Calendar, Menu, X, User, Home, Activity, Bell, Settings, LogOut, BarChart3 } from 'lucide-react';
 import { Badge } from '@/layout/badge';
@@ -119,7 +120,7 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
             </button>
             <div>
               <h1 className="text-lg font-bold text-white">Leads Management</h1>
-              <p className="text-xs text-blue-100">Mobile Dashboard</p>
+              {/* <p className="text-xs text-blue-100">Mobile Dashboard</p> */}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -245,105 +246,12 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
         )}
       </div>
 
-      {/* Unified Slide Menu */}
-      <div className={`fixed top-0 left-0 h-full w-72 bg-white shadow-2xl transform transition-transform z-50 ${
-        rightMenuOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
-        {/* Profile Section */}
-        <div className="p-4 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-gray-900 text-lg">Menu</h3>
-            <button
-              onClick={() => setRightMenuOpen(false)}
-              className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              <X size={20} />
-            </button>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-lg">
-              <User size={24} className="text-white" />
-            </div>
-            <div>
-              <h4 className="font-semibold text-gray-900">{localStorage.getItem('userName') || 'User'}</h4>
-              <p className="text-sm text-gray-500">{localStorage.getItem('userEmail') || 'user@example.com'}</p>
-              <p className="text-xs text-gray-400 capitalize">{userRole}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Navigation Section */}
-        <div className="p-4">
-          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Navigation</h4>
-          <nav className="space-y-1">
-            <button 
-              onClick={() => { navigate('/dashboard'); setRightMenuOpen(false); }}
-              className="w-full text-left p-3 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-3"
-            >
-              <Home size={18} className="text-blue-600" />
-              <span className="text-gray-700">Dashboard</span>
-            </button>
-            <button className="w-full text-left p-3 rounded-lg bg-blue-50 text-blue-600 transition-colors flex items-center gap-3">
-              <Users size={18} className="text-green-600" />
-              <span className="text-gray-700">Leads</span>
-            </button>
-            <button className="w-full text-left p-3 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-3">
-              <Activity size={18} className="text-purple-600" />
-              <span className="text-gray-700">Tasks</span>
-            </button>
-          </nav>
-        </div>
-
-        {/* Quick Actions Section */}
-        <div className="p-4 border-t">
-          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Quick Actions</h4>
-          <nav className="space-y-1">
-            <button className="w-full text-left p-3 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-3">
-              <Bell size={18} className="text-gray-600" />
-              <span className="text-gray-700">Notifications</span>
-            </button>
-            <button className="w-full text-left p-3 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-3">
-              <Search size={18} className="text-gray-600" />
-              <span className="text-gray-700">Search</span>
-            </button>
-            <button className="w-full text-left p-3 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-3">
-              <Settings size={18} className="text-gray-600" />
-              <span className="text-gray-700">Settings</span>
-            </button>
-          </nav>
-        </div>
-
-        {/* Account Section */}
-        <div className="p-4 border-t">
-          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Account</h4>
-          <nav className="space-y-1">
-            <button className="w-full text-left p-3 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-3">
-              <User size={18} className="text-gray-600" />
-              <span className="text-gray-700">Edit Profile</span>
-            </button>
-            <button 
-              onClick={() => {
-                localStorage.removeItem('token');
-                localStorage.removeItem('userName');
-                localStorage.removeItem('userEmail');
-                navigate('/login');
-              }}
-              className="w-full text-left p-3 rounded-lg hover:bg-red-50 text-red-600 transition-colors flex items-center gap-3"
-            >
-              <LogOut size={18} />
-              <span className="text-red-600">Logout</span>
-            </button>
-          </nav>
-        </div>
-      </div>
-
-      {/* Overlay */}
-      {rightMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40"
-          onClick={() => setRightMenuOpen(false)}
-        />
-      )}
+      {/* Mobile Sidebar */}
+      <MobileSidebar 
+        userRole={userRole} 
+        isOpen={rightMenuOpen} 
+        onClose={() => setRightMenuOpen(false)} 
+      />
     </div>
   );
 
