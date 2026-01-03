@@ -2,10 +2,10 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/layout/DashboardLayout';
 import DashboardStats from '@/layout/DashboardStats';
-import SuperAdminProfile from '@/layout/SuperAdminProfile';
-import HeadAdminProfile from '@/layout/HeadAdminProfile';
-import TeamLeaderProfile from '@/layout/TeamLeaderProfile';
-import EmployeeProfile from '@/features/employee/profile/EmployeeProfile';
+import SuperAdminProfile from '@/features/profiles/super-admin/SuperAdminProfile';
+import HeadAdminProfile from '@/features/profiles/head-admin/HeadAdminProfile';
+import TeamLeaderProfile from '@/features/profiles/team-leader/TeamLeaderProfile';
+import EmployeeProfile from '@/features/profiles/employee/EmployeeProfile';
 
 const DashboardDesktop = ({ userRole = 'employee' }) => {
   const navigate = useNavigate();
