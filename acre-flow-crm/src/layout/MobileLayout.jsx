@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Menu, X, Home, Users, BarChart3, Settings, LogOut, User, Bell, Search } from 'lucide-react';
+import { Menu, X, Home, Users, BarChart3, Settings, LogOut, Bell, Search, User } from 'lucide-react';
 import { Badge } from '@/layout/badge';
 
 const MobileLayout = ({ userRole = 'employee', activeTab, setActiveTab, children }) => {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
   const userData = {
     name: localStorage.getItem('userName') || 'User',
@@ -27,30 +26,6 @@ const MobileLayout = ({ userRole = 'employee', activeTab, setActiveTab, children
     localStorage.removeItem('userEmail');
     navigate('/login');
   };
-
-  const renderMobileHeader = () => (
-    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg p-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-lg bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 transition-all duration-200"
-          >
-            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
-          <div>
-            <h1 className="text-lg font-bold text-white capitalize">{userRole} Dashboard</h1>
-            <p className="text-xs text-blue-100">Mobile View</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-white/30">
-            <span className="text-white text-sm font-bold">{getInitials(userData.name)}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 
   const renderMobileSidebar = () => (
     <div className={`mobile-menu ${mobileMenuOpen ? 'open' : ''}`}>
@@ -114,6 +89,20 @@ const MobileLayout = ({ userRole = 'employee', activeTab, setActiveTab, children
           </button>
           <div className="border-t border-gray-200 pt-2 mt-2">
             <button
+              onClick={() => { navigate('/notifications'); setMobileMenuOpen(false); }}
+              className="w-full text-left p-3 rounded-xl hover:bg-gray-50 text-gray-700 transition-all duration-200 flex items-center gap-3"
+            >
+              <Bell size={18} className="text-gray-600" />
+              <span className="font-medium">Notifications</span>
+            </button>
+            <button
+              onClick={() => { navigate('/search'); setMobileMenuOpen(false); }}
+              className="w-full text-left p-3 rounded-xl hover:bg-gray-50 text-gray-700 transition-all duration-200 flex items-center gap-3"
+            >
+              <Search size={18} className="text-gray-600" />
+              <span className="font-medium">Search</span>
+            </button>
+            <button
               onClick={handleLogout}
               className="w-full text-left p-3 rounded-xl hover:bg-red-50 text-red-600 transition-all duration-200 flex items-center gap-3"
             >
@@ -173,7 +162,14 @@ const MobileLayout = ({ userRole = 'employee', activeTab, setActiveTab, children
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {renderMobileHeader()}
+      {/* Floating Hamburger Button */}
+      {/* <button
+        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        className="fixed top-4 left-4 z-50 p-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200"
+      >
+        {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+      </button> */}
+
       {mobileMenuOpen && renderMobileSidebar()}
       
       <div className="p-4 pb-20">
