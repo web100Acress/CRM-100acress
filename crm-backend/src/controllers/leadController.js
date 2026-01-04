@@ -116,6 +116,43 @@ exports.updateLead = async (req, res, next) => {
   }
 };
 
+exports.updateLeadStatus = async (req, res, next) => {
+  try {
+    const { status } = req.body;
+    const leadId = req.params.id;
+    
+    // Get the lead first
+    const lead = await leadService.getLeadById(leadId);
+    if (!lead) {
+      return res.status(404).json({ success: false, message: 'Lead not found' });
+    }
+
+    // Update only the status field
+    const updatedLead = await leadService.updateLead(leadId, { status });
+    
+    res.json({ success: true, data: updatedLead });
+    
+    // Real-time emit for leads and dashboard
+    if (io) {
+      const Lead = require('../models/leadModel');
+      const User = require('../models/userModel');
+      const allLeads = await Lead.find();
+      io.emit('leadUpdate', allLeads);
+      // Dashboard stats emit
+      const totalUsers = await User.countDocuments();
+      const activeLeads = await Lead.countDocuments({ status: { $ne: 'Closed' } });
+      const leads = await Lead.find();
+      const leadsByStatus = leads.reduce((acc, lead) => {
+        acc[lead.status] = (acc[lead.status] || 0) + 1;
+        return acc;
+      }, {});
+      io.emit('dashboardUpdate', { totalUsers, activeLeads, leadsByStatus });
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
 exports.deleteLead = async (req, res, next) => {
   try {
     const lead = await leadService.deleteLead(req.params.id);

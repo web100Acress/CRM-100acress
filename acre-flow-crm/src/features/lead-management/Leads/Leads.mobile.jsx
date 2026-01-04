@@ -33,6 +33,8 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
   const [showFollowUp, setShowFollowUp] = useState(false);
   const [showCreateLead, setShowCreateLead] = useState(false);
   const [showLeadDetails, setShowLeadDetails] = useState(false);
+  const [showStatusUpdate, setShowStatusUpdate] = useState(false);
+  const [selectedLeadForStatus, setSelectedLeadForStatus] = useState(null);
   const [showAssignmentChain, setShowAssignmentChain] = useState(false);
   const [selectedLeadForChain, setSelectedLeadForChain] = useState(null);
   const [assignmentChain, setAssignmentChain] = useState([]);
@@ -644,6 +646,62 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
     setShowLeadDetails(true);
   };
 
+  const handleStatusUpdate = (lead) => {
+    setSelectedLeadForStatus(lead);
+    setShowStatusUpdate(true);
+  };
+
+  const updateLeadStatus = async (newStatus) => {
+    try {
+      const token = localStorage.getItem("token");
+      
+      // Use localhost for development, change back to production when ready
+      const apiUrl = process.env.NODE_ENV === 'development' 
+        ? `http://localhost:5001/api/leads/${selectedLeadForStatus._id}/status`
+        : `https://bcrm.100acress.com/api/leads/${selectedLeadForStatus._id}/status`;
+      
+      const response = await fetch(
+        apiUrl,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status: newStatus })
+        }
+      );
+
+      if (response.ok) {
+        // Update the lead in local state
+        setLeads(prevLeads => 
+          prevLeads.map(lead => 
+            lead._id === selectedLeadForStatus._id 
+              ? { ...lead, status: newStatus }
+              : lead
+          )
+        );
+        
+        toast({
+          title: "Status Updated",
+          description: `Lead status updated to ${newStatus}`,
+        });
+        
+        setShowStatusUpdate(false);
+        setSelectedLeadForStatus(null);
+      } else {
+        throw new Error('Failed to update status');
+      }
+    } catch (error) {
+      console.error('Error updating lead status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update lead status",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleForwardLead = async (leadId, selectedEmployeeId = null) => {
     try {
       setForwardingLead(leadId);
@@ -972,6 +1030,19 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
                     </button>
                   )}
                 </div>
+
+                {/* Status Update Button - Only for Employees */}
+                {(currentUserRole === 'employee' || currentUserRole === 'sales_head' || currentUserRole === 'team-leader') && (
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <button
+                      onClick={() => handleStatusUpdate(lead)}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg hover:from-amber-600 hover:to-orange-600 transition-all duration-200 shadow-md hover:shadow-lg"
+                    >
+                      <Edit size={18} />
+                      <span className="text-sm font-medium">Update Status</span>
+                    </button>
+                  </div>
+                )}
 
                 {/* Additional Actions Row */}
                 <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100">
@@ -1483,7 +1554,114 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
           </DialogContent>
         </Dialog>
       )}
-    </div>
+
+
+    {/* Status Update Dialog - Only for Employees */}
+    {showStatusUpdate && selectedLeadForStatus && (
+      <Dialog open={showStatusUpdate} onOpenChange={setShowStatusUpdate}>
+        <DialogContent className="max-w-sm w-[95vw] max-h-[85vh] overflow-y-auto mx-4">
+          <DialogHeader className="bg-gradient-to-r from-amber-500 to-orange-500 text-white p-4">
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Edit size={18} />
+              <span className="font-semibold">Update Lead Status</span>
+              <button
+                onClick={() => setShowStatusUpdate(false)}
+                className="p-1 rounded-full hover:bg-white/20 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </DialogTitle>
+            <DialogDescription className="text-amber-100">
+              Update the status for {selectedLeadForStatus.name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="p-3 space-y-3">
+            {/* Lead Summary */}
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-3 rounded-lg border border-amber-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">{getInitials(selectedLeadForStatus.name)}</span>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900 text-sm">{selectedLeadForStatus.name}</h3>
+                  <p className="text-xs text-gray-600">{selectedLeadForStatus.phone}</p>
+                  <p className="text-xs text-gray-500 truncate">{selectedLeadForStatus.email}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Status Options */}
+            <div className="space-y-2">
+              <h4 className="font-semibold text-gray-900 text-sm">Select New Status</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => updateLeadStatus('Pending')}
+                  className={`p-3 rounded-lg border transition-all duration-200 ${
+                    selectedLeadForStatus.status === 'Pending'
+                      ? 'bg-yellow-100 border-yellow-200 text-yellow-800'
+                      : 'bg-white border-gray-200 text-gray-700 hover:bg-yellow-50 hover:border-yellow-300'
+                  }`}
+                >
+                  <div className="text-center">
+                    <span className="text-base mb-1">⏳</span>
+                    <p className="text-xs font-medium">Pending</p>
+                  </div>
+                </button>
+                
+                <button
+                  onClick={() => updateLeadStatus('Processing')}
+                  className={`p-3 rounded-lg border transition-all duration-200 ${
+                    selectedLeadForStatus.status === 'Processing'
+                      ? 'bg-blue-100 border-blue-200 text-blue-800'
+                      : 'bg-white border-gray-200 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
+                  }`}
+                >
+                  <div className="text-center">
+                    <span className="text-base mb-1">🔄</span>
+                    <p className="text-xs font-medium">Processing</p>
+                  </div>
+                </button>
+                
+                <button
+                  onClick={() => updateLeadStatus('Done')}
+                  className={`p-3 rounded-lg border transition-all duration-200 ${
+                    selectedLeadForStatus.status === 'Done'
+                      ? 'bg-green-100 border-green-200 text-green-800'
+                      : 'bg-white border-gray-200 text-gray-700 hover:bg-green-50 hover:border-green-300'
+                  }`}
+                >
+                  <div className="text-center">
+                    <span className="text-base mb-1">✅</span>
+                    <p className="text-xs font-medium">Done</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2 pt-3 border-t">
+              <button
+                onClick={() => setShowStatusUpdate(false)}
+                className="flex-1 h-10 text-sm bg-gray-100 text-gray-700 hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  updateLeadStatus(selectedLeadForStatus.status);
+                  setShowStatusUpdate(false);
+                }}
+                className="flex-1 h-10 bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 text-sm"
+              >
+                Update Status
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    )}
+  </div>
   );
 };
 

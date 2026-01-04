@@ -13,6 +13,7 @@ router.get('/assignable-users', auth, leadController.getAssignableUsers);
 router.get('/', auth, leadController.getLeads);
 router.post('/', auth, leadController.createLead);
 router.put('/:id', auth, leadController.updateLead);
+router.patch('/:id/status', auth, leadController.updateLeadStatus);
 router.delete('/:id', auth, leadController.deleteLead);
 router.get('/:id', auth, leadController.getLeadById);
 
