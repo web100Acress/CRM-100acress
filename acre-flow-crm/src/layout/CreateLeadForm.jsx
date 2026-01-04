@@ -19,6 +19,12 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
   const [assignableUsers, setAssignableUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast(); // Initialize useToast
+  const [currentUserRole, setCurrentUserRole] = useState('');
+
+  useEffect(() => {
+    const userRole = localStorage.getItem('userRole');
+    setCurrentUserRole(userRole);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -50,10 +56,22 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const json = await response.json();
-      setAssignableUsers(json.data || []);
+      let users = json.data || [];
+      
+      // Filter users based on current user role
+      if (currentUserRole === 'super-admin') {
+        // Super admin can only assign to head-admin users
+        users = users.filter(user => user.role === 'head-admin');
+      } else {
+        // Other roles can assign to all users (or implement your logic)
+        // For now, keep all users for other roles
+      }
+      
+      setAssignableUsers(users);
+      
       // Pre-select the first assignable user if any, otherwise keep unassigned
-      if (json.data && json.data.length > 0) {
-        setFormData(prev => ({ ...prev, assignedTo: json.data[0]._id }));
+      if (users.length > 0) {
+        setFormData(prev => ({ ...prev, assignedTo: users[0]._id }));
       } else {
         setFormData(prev => ({ ...prev, assignedTo: '' }));
       }
@@ -271,7 +289,12 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
             </select>
           </div>
           <div className="form-group">
-            <label htmlFor="assignedTo">Assign To</label>
+            <label htmlFor="assignedTo">
+              Assign To 
+              {currentUserRole === 'super-admin' && (
+                <span className="text-xs text-gray-500 ml-2">(Only HODs)</span>
+              )}
+            </label>
             <select
               id="assignedTo"
               name="assignedTo"
@@ -282,10 +305,15 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
               <option value="">Unassigned</option>
               {assignableUsers.map((user) => (
                 <option key={user._id} value={user._id}>
-                  {user.name} ({user.role})
+                  {user.name} ({user.role === 'head-admin' ? 'HOD' : user.role})
                 </option>
               ))}
             </select>
+            {currentUserRole === 'super-admin' && assignableUsers.length === 0 && (
+              <p className="text-xs text-gray-500 mt-1">
+                No HODs available to assign leads to
+              </p>
+            )}
           </div>
         </form>
 
