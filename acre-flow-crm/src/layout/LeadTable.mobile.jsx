@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Eye, MessageSquare, Phone, Mail, MapPin, Plus, Trash2, ArrowRight, UserCheck, PhoneCall, Calendar, Clock, Filter, Edit, MoreVertical } from 'lucide-react';
+import { Search, Eye, MessageSquare, Phone, Mail, MapPin, Plus, Trash2, ArrowRight, UserCheck, PhoneCall, Calendar, Clock, Filter, Edit, MoreVertical, Settings, PieChart } from 'lucide-react';
 import { Badge } from '@/layout/badge';
 import { Card, CardContent } from '@/layout/card';
 import { Button } from '@/layout/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/layout/dialog';
 import { useToast } from '@/hooks/use-toast';
 
 const LeadTableMobile = ({ userRole }) => {
@@ -15,6 +16,10 @@ const LeadTableMobile = ({ userRole }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showLeadDetails, setShowLeadDetails] = useState(false);
   const [showActions, setShowActions] = useState(null);
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+  const [selectedLeadForAdvanced, setSelectedLeadForAdvanced] = useState(null);
+  const [showAdvancedLeadInfo, setShowAdvancedLeadInfo] = useState(false);
+  const [callHistory, setCallHistory] = useState({});
   const { toast } = useToast();
   const leadsPerPage = 10;
 
@@ -180,6 +185,55 @@ const LeadTableMobile = ({ userRole }) => {
         title: "Status Updated",
         description: `Lead status changed to ${newStatus}`,
         status: "success",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update status",
+        status: "error",
+      });
+    }
+  };
+
+  const handleAdvancedOptions = (lead) => {
+    setSelectedLeadForAdvanced(lead);
+    setShowAdvancedOptions(true);
+    setShowAdvancedLeadInfo(false);
+    // Use existing call history from lead data
+    if (lead.callHistory) {
+      setCallHistory(prev => ({
+        ...prev,
+        [lead._id]: lead.callHistory
+      }));
+    }
+  };
+
+  const handleCloseAdvancedOptions = () => {
+    setShowAdvancedOptions(false);
+    setSelectedLeadForAdvanced(null);
+    setShowAdvancedLeadInfo(false);
+  };
+
+  const handleUpdateStatus = async (leadId, newStatus) => {
+    try {
+      const token = localStorage.getItem("token");
+      await fetch(`https://bcrm.100acress.com/api/leads/${leadId}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      
+      // Update local state
+      setLeadsList(leadsList.map(lead => 
+        lead._id === leadId ? { ...lead, status: newStatus } : lead
+      ));
+      
+      toast({
+        title: "Status Updated",
+        description: `Lead status changed to ${newStatus}`,
       });
     } catch (error) {
       toast({
@@ -391,6 +445,15 @@ const LeadTableMobile = ({ userRole }) => {
                       </div>
                       <div className="border-t border-gray-100">
                         <button
+                          onClick={() => { handleAdvancedOptions(lead); setShowActions(null); }}
+                          className="w-full text-left px-3 py-2 hover:bg-indigo-50 flex items-center gap-2"
+                        >
+                          <Settings size={14} />
+                          <span className="text-sm">Advanced Options</span>
+                        </button>
+                      </div>
+                      <div className="border-t border-gray-100">
+                        <button
                           onClick={() => { handleDelete(lead); setShowActions(null); }}
                           className="w-full text-left px-3 py-2 hover:bg-red-50 text-red-600 flex items-center gap-2"
                         >
@@ -564,6 +627,215 @@ const LeadTableMobile = ({ userRole }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Advanced Options Modal */}
+      {showAdvancedOptions && selectedLeadForAdvanced && (
+        <Dialog open={showAdvancedOptions} onOpenChange={handleCloseAdvancedOptions}>
+          <DialogContent className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-semibold text-gray-900">
+                Advanced Options - {selectedLeadForAdvanced.name}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {/* Toggle Lead Info */}
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setShowAdvancedLeadInfo(!showAdvancedLeadInfo)}
+                  className="w-full flex items-center gap-2 p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <Eye size={16} className="text-gray-600" />
+                  <span className="text-sm font-medium text-gray-700">
+                    {showAdvancedLeadInfo ? 'Hide Lead Info' : 'View Lead Info'}
+                  </span>
+                </button>
+              </div>
+
+              {/* Lead Info Section */}
+              {showAdvancedLeadInfo && (
+                <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                  <div className="grid grid-cols-1 gap-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium text-gray-600">Name:</span>
+                      <span className="text-sm text-gray-900">{selectedLeadForAdvanced.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium text-gray-600">Email:</span>
+                      <span className="text-sm text-gray-900">{selectedLeadForAdvanced.email}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium text-gray-600">Phone:</span>
+                      <span className="text-sm text-gray-900">{selectedLeadForAdvanced.phone}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium text-gray-600">Location:</span>
+                      <span className="text-sm text-gray-900">{selectedLeadForAdvanced.location}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium text-gray-600">Property:</span>
+                      <span className="text-sm text-gray-900">{selectedLeadForAdvanced.property}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium text-gray-600">Budget:</span>
+                      <span className="text-sm text-gray-900">{selectedLeadForAdvanced.budget}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium text-gray-600">Status:</span>
+                      <Badge className={`text-xs ${getStatusColor(selectedLeadForAdvanced.status)}`}>
+                        {selectedLeadForAdvanced.status}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Quick Actions */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-900 mb-3">Quick Actions</h4>
+                <div className="space-y-3">
+                  <button 
+                    onClick={() => {
+                      if (selectedLeadForAdvanced.phone) {
+                        window.location.href = `tel:${selectedLeadForAdvanced.phone}`;
+                        toast({
+                          title: "Calling",
+                          description: `Dialing ${selectedLeadForAdvanced.phone}`,
+                        });
+                      }
+                    }}
+                    className="w-full flex items-center gap-3 p-3 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
+                  >
+                    <PhoneCall size={18} className="text-green-600" />
+                    <span className="text-sm font-medium text-green-700">Call Now</span>
+                  </button>
+                  
+                  <button 
+                    onClick={() => {
+                      if (selectedLeadForAdvanced.email) {
+                        window.location.href = `mailto:${selectedLeadForAdvanced.email}`;
+                        toast({
+                          title: "Email",
+                          description: `Opening email client for ${selectedLeadForAdvanced.email}`,
+                        });
+                      }
+                    }}
+                    className="w-full flex items-center gap-3 p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                  >
+                    <Mail size={18} className="text-blue-600" />
+                    <span className="text-sm font-medium text-blue-700">Send Email</span>
+                  </button>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 block mb-2">Update Status:</label>
+                    <select
+                      value={selectedLeadForAdvanced.status}
+                      onChange={(e) => {
+                        handleUpdateStatus(selectedLeadForAdvanced._id, e.target.value);
+                        setSelectedLeadForAdvanced({...selectedLeadForAdvanced, status: e.target.value});
+                      }}
+                      className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="Hot">🔥 Hot</option>
+                      <option value="Warm">🌡️ Warm</option>
+                      <option value="Cold">❄️ Cold</option>
+                      <option value="New">🆕 New</option>
+                      <option value="Converted">✅ Converted</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Call History Stats */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-900 mb-3">Call History & Analytics</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="flex items-center gap-2">
+                      <PhoneCall size={16} className="text-green-600" />
+                      <div>
+                        <div className="text-lg font-bold text-gray-900">
+                          {callHistory[selectedLeadForAdvanced._id]?.length || 0}
+                        </div>
+                        <div className="text-xs text-gray-600">Total Calls</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="flex items-center gap-2">
+                      <MessageSquare size={16} className="text-blue-600" />
+                      <div>
+                        <div className="text-lg font-bold text-gray-900">
+                          {selectedLeadForAdvanced.followUps?.length || 0}
+                        </div>
+                        <div className="text-xs text-gray-600">Follow-ups</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Average Duration */}
+                {callHistory[selectedLeadForAdvanced._id]?.length > 0 && (
+                  <div className="mt-3 bg-gray-50 rounded-lg p-3">
+                    <div className="flex items-center gap-2">
+                      <Clock size={16} className="text-purple-600" />
+                      <div>
+                        <div className="text-lg font-bold text-gray-900">
+                          {callHistory[selectedLeadForAdvanced._id].reduce((acc, call) => acc + (call.duration || 0), 0) > 0 
+                            ? Math.round(callHistory[selectedLeadForAdvanced._id].reduce((acc, call) => acc + (call.duration || 0), 0) / callHistory[selectedLeadForAdvanced._id].length) + 's'
+                            : '0s'
+                          }
+                        </div>
+                        <div className="text-xs text-gray-600">Avg Duration</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Detailed Call History List */}
+                {callHistory[selectedLeadForAdvanced._id]?.length > 0 && (
+                  <div className="mt-4">
+                    <h5 className="text-sm font-medium text-gray-700 mb-2">Recent Calls</h5>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {callHistory[selectedLeadForAdvanced._id].slice().reverse().map((call, index) => (
+                        <div key={index} className="bg-white border border-gray-200 rounded-lg p-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2">
+                              <PhoneCall size={14} className="text-green-500" />
+                              <span className="text-sm font-medium text-gray-900">
+                                {call.duration || 0}s
+                              </span>
+                            </div>
+                            <span className="text-xs text-gray-500">
+                              {call.calledBy || 'Unknown'}
+                            </span>
+                          </div>
+                          <div className="text-xs text-gray-600">
+                            <div>Phone: {call.phoneNumber || selectedLeadForAdvanced.phone}</div>
+                            <div>Time: {call.startTime ? new Date(call.startTime).toLocaleString() : 'Unknown time'}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Close Button */}
+              <div className="pt-4 border-t border-gray-200">
+                <Button 
+                  variant="outline" 
+                  onClick={handleCloseAdvancedOptions}
+                  className="w-full"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

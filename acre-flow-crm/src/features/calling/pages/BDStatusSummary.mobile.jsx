@@ -24,7 +24,9 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  PhoneCall,
+  PieChart
 } from 'lucide-react';
 import MobileSidebar from '@/layout/MobileSidebar';
 import { Badge } from '@/layout/badge';
@@ -528,6 +530,90 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
                         <p className="text-xs text-gray-600">Conversion Rate</p>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Call History & Follow-up Analytics */}
+                  <div className="lead-advanced-call-history">
+                    <h4 className="font-medium text-gray-900 mb-3">Call History & Follow-up Analytics</h4>
+                    
+                    {/* Statistics Cards */}
+                    <div className="call-history-stats grid grid-cols-3 gap-3">
+                      <div className="stat-card bg-gray-50 rounded-lg p-3">
+                        <div className="stat-icon mb-2">
+                          <PhoneCall size={20} color="#10b981" />
+                        </div>
+                        <div className="stat-info">
+                          <div className="stat-number text-lg font-bold text-gray-900">
+                            {bdDetails.callHistory?.length || 0}
+                          </div>
+                          <div className="stat-label text-xs text-gray-600">Total Calls</div>
+                        </div>
+                      </div>
+                      
+                      <div className="stat-card bg-gray-50 rounded-lg p-3">
+                        <div className="stat-icon mb-2">
+                          <MessageSquare size={20} color="#3b82f6" />
+                        </div>
+                        <div className="stat-info">
+                          <div className="stat-number text-lg font-bold text-gray-900">
+                            {bdDetails.followUps?.length || 0}
+                          </div>
+                          <div className="stat-label text-xs text-gray-600">Follow-ups</div>
+                        </div>
+                      </div>
+                      
+                      <div className="stat-card bg-gray-50 rounded-lg p-3">
+                        <div className="stat-icon mb-2">
+                          <PieChart size={20} color="#8b5cf6" />
+                        </div>
+                        <div className="stat-info">
+                          <div className="stat-number text-lg font-bold text-gray-900">
+                            {bdDetails.callHistory?.length > 0 
+                              ? Math.round(bdDetails.callHistory.reduce((acc, call) => acc + (call.duration || 0), 0) / bdDetails.callHistory.length)
+                              : 0
+                            }s
+                          </div>
+                          <div className="stat-label text-xs text-gray-600">Avg Duration</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Call History List */}
+                    {bdDetails.callHistory && bdDetails.callHistory.length > 0 ? (
+                      <div className="lead-call-history-list mt-4">
+                        <h5 className="text-sm font-medium text-gray-700 mb-2">Recent Calls</h5>
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {bdDetails.callHistory.slice().reverse().map((call, index) => (
+                            <div key={call._id || index} className="lead-call-history-item bg-white border border-gray-200 rounded-lg p-3">
+                              <div className="call-history-header flex items-center justify-between mb-2">
+                                <span className="call-date text-sm text-gray-600">
+                                  {call.callDate ? new Date(call.callDate).toLocaleDateString() : 'Unknown date'}
+                                </span>
+                                <span className="call-duration text-sm font-medium text-gray-900">
+                                  {call.duration || 0}s
+                                </span>
+                              </div>
+                              <div className="call-details text-xs text-gray-600 space-y-1">
+                                <p><strong>Called by:</strong> {call.userId?.name || call.calledBy || 'Unknown'}</p>
+                                <p><strong>Phone:</strong> {call.phone || selectedBD.phone || 'Unknown'}</p>
+                                <p><strong>Time:</strong> {
+                                  call.startTime && call.endTime 
+                                    ? `${new Date(call.startTime).toLocaleTimeString()} - ${new Date(call.endTime).toLocaleTimeString()}`
+                                    : call.startTime 
+                                      ? new Date(call.startTime).toLocaleTimeString()
+                                      : 'Unknown time'
+                                }</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="no-call-history mt-4 text-center py-4">
+                        <PieChart size={40} color="#9ca3af" className="mx-auto mb-2" />
+                        <p className="text-gray-500 text-sm">No call history available</p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Recent Activity */}
