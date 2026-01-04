@@ -4,8 +4,12 @@ const User = require('../models/userModel');
 // Role hierarchy for lead forwarding
 const roleHierarchy = {
   'super-admin': 'head-admin',
-  'head-admin': 'team-leader',
+  'head-admin': 'sales_head',
+  'sales_head': 'employee',
   'team-leader': 'employee',
+  'admin': 'sales_head',
+  'boss': 'head-admin',
+  'crm_admin': 'head-admin',
   'employee': null // Employee is the final level
 };
 
