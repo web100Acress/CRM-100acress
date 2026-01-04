@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/layout/dialog';
 import { Button } from '@/layout/button';
-import { X, Save, Loader2, User, Mail, Phone, MapPin, Building2, DollarSign, Target } from 'lucide-react';
+import { Save, Loader2, User, Mail, Phone, MapPin, Building2, DollarSign, Target } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
@@ -18,6 +18,12 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
   const [assignableUsers, setAssignableUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const [currentUserRole, setCurrentUserRole] = useState('');
+
+  useEffect(() => {
+    const userRole = localStorage.getItem('userRole');
+    setCurrentUserRole(userRole);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -39,38 +45,43 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
   const fetchAssignableUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://bcrm.100acress.com/api/users', {
+      const response = await fetch(`http://localhost:5001/api/leads/assignable-users`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
       
-      if (response.ok) {
-        const data = await response.json();
-        setAssignableUsers(data.data || []);
-      } else {
-        // Mock users for testing
-        setAssignableUsers([
-          { _id: '1', name: 'Agent A', email: 'agentA@example.com' },
-          { _id: '2', name: 'Agent B', email: 'agentB@example.com' },
-          { _id: '3', name: 'Agent C', email: 'agentC@example.com' }
-        ]);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+      
+      const json = await response.json();
+      let users = json.data || [];
+      
+      // Filter users based on current user role
+      if (currentUserRole === 'super-admin') {
+        // Super admin can only assign to head-admin users
+        users = users.filter((user) => user.role === 'head-admin');
+      } else {
+        // Other roles can assign to all users (or implement your logic)
+        // For now, keep all users for other roles
+      }
+      
+      setAssignableUsers(users);
     } catch (error) {
       console.error('Error fetching assignable users:', error);
-      // Mock users for testing
-      setAssignableUsers([
-        { _id: '1', name: 'Agent A', email: 'agentA@example.com' },
-        { _id: '2', name: 'Agent B', email: 'agentB@example.com' },
-        { _id: '3', name: 'Agent C', email: 'agentC@example.com' }
-      ]);
+      toast({
+        title: "Error",
+        description: "Could not load assignable users.",
+        variant: "destructive"
+      });
     }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [name]: value
     }));
@@ -118,7 +129,7 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
         return;
       }
 
-      const response = await fetch('https://bcrm.100acress.com/api/leads', {
+      const response = await fetch(`http://localhost:5001/api/leads`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -172,24 +183,54 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
     }
   };
 
+  const budgetOptions = [
+    "Under ₹1 Cr",
+    "₹1 Cr - ₹5 Cr",
+    "₹5 Cr - ₹10 Cr",
+    "₹10 Cr - ₹20 Cr",
+    "₹20 Cr - ₹50 Cr",
+    "Above ₹50 Cr"
+  ];
+
+  const propertyOptions = [
+    "SCO Plots",
+    "Luxury Villas",
+    "Plots In Gurugram",
+    "Residential Projects",
+    "Independent Floors",
+    "Commercial Projects",
+    "Farm Houses",
+    "Industrial Projects",
+    "Senior Living",
+  ];
+
+  const locationOptions = [
+    "Projects on Sohna Road",
+    "Projects on Golf Course",
+    "Projects on Dwarka Expressway",
+    "Projects on New Gurgaon",
+    "Projects on Southern Peripheral Road",
+    "Projects on Golf Course Extn Road",
+    "Delhi",
+    "Noida",
+    "Gurugram",
+    "Other"
+  ];
+
+  const statusOptions = ["Cold", "Warm", "Hot", "Converted", "Lost"];
+
   if (!isOpen) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0">
-        <DialogHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4">
-          <DialogTitle className="text-lg font-semibold flex items-center justify-between">
+      <DialogContent className="w-[83%] max-w-[280px] max-h-[60vh] overflow-y-auto p-0">
+        <DialogHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-3">
+          <DialogTitle className="text-base font-semibold flex items-center justify-between">
             <span>Create New Lead</span>
-            <button
-              onClick={onClose}
-              className="p-1 rounded-full hover:bg-white/20 transition-colors"
-            >
-              <X size={20} />
-            </button>
           </DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+        <form onSubmit={handleSubmit} className="p-3 space-y-3">
           {/* Name Field */}
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
@@ -202,28 +243,10 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
               value={formData.name}
               onChange={handleChange}
               placeholder="Enter lead name"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
           </div>
-
-          {/* Email Field */}
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <Mail size={16} />
-              Email *
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Enter email address"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            />
-          </div>
-
           {/* Phone Field */}
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
@@ -236,25 +259,29 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
               value={formData.phone}
               onChange={handleChange}
               placeholder="Enter phone number"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
           </div>
-
           {/* Location Field */}
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
               <MapPin size={16} />
               Location
             </label>
-            <input
-              type="text"
+            <select
               name="location"
               value={formData.location}
               onChange={handleChange}
-              placeholder="Enter location"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">Select location</option>
+              {locationOptions.map((option) => (
+                <option value={option} key={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Budget Field */}
@@ -267,15 +294,14 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
               name="budget"
               value={formData.budget}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">Select Budget Range</option>
-              <option value="Below 20 Lakhs">Below 20 Lakhs</option>
-              <option value="20-30 Lakhs">20-30 Lakhs</option>
-              <option value="30-50 Lakhs">30-50 Lakhs</option>
-              <option value="50-70 Lakhs">50-70 Lakhs</option>
-              <option value="70-90 Lakhs">70-90 Lakhs</option>
-              <option value="90+ Lakhs">90+ Lakhs</option>
+              {budgetOptions.map((option) => (
+                <option value={option} key={option}>
+                  {option}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -289,17 +315,14 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
               name="property"
               value={formData.property}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">Select Property Type</option>
-              <option value="1BHK">1BHK</option>
-              <option value="2BHK">2BHK</option>
-              <option value="3BHK">3BHK</option>
-              <option value="4BHK">4BHK</option>
-              <option value="Studio">Studio</option>
-              <option value="Villa">Villa</option>
-              <option value="Penthouse">Penthouse</option>
-              <option value="Land">Land</option>
+              {propertyOptions.map((option) => (
+                <option value={option} key={option}>
+                  {option}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -313,11 +336,13 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
               name="status"
               value={formData.status}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              <option value="Cold">❄️ Cold</option>
-              <option value="Warm">🌡️ Warm</option>
-              <option value="Hot">🔥 Hot</option>
+              {statusOptions.map((option) => (
+                <option value={option} key={option}>
+                  {option}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -326,36 +351,44 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
             <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
               <User size={16} />
               Assign To
+              {currentUserRole === "super-admin" && (
+                <span className="text-xs text-gray-500 ml-2">(Only HODs)</span>
+              )}
             </label>
             <select
               name="assignedTo"
               value={formData.assignedTo}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">Select Agent</option>
-              {assignableUsers.map(user => (
-                <option key={user._id} value={user.name}>
-                  {user.name} ({user.email})
+              {assignableUsers.map((user) => (
+                <option key={user._id} value={user._id}>
+                  {user.name} ({user.role === "head-admin" ? "HOD" : user.role})
                 </option>
               ))}
             </select>
+            {currentUserRole === "super-admin" && assignableUsers.length === 0 && (
+              <p className="text-xs text-gray-500 mt-1">
+                No HODs available to assign leads to
+              </p>
+            )}
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-4 border-t">
+          <div className="flex gap-2 pt-3 border-t">
             <Button
               type="button"
               variant="outline"
               onClick={onCancel || onClose}
-              className="flex-1"
+              className="flex-1 text-sm py-1.5"
               disabled={loading}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="flex-1 bg-blue-600 hover:bg-blue-700"
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-sm py-1.5"
               disabled={loading}
             >
               {loading ? (

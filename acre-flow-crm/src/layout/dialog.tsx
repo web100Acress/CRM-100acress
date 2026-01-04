@@ -41,11 +41,12 @@ const DialogContent = React.forwardRef<
         transform: "translate(-50%, -50%)",
         zIndex: 50,
         width: "100%",
-        maxWidth: "600px",
+        maxWidth: "350px",
         backgroundColor: "#fff",
-        padding: "24px",
+        padding: "16px",
         borderRadius: "10px",
         boxShadow: "0 10px 25px rgba(0, 0, 0, 0.2)",
+        pointerEvents: "auto",
         ...style,
       }}
       {...props}
