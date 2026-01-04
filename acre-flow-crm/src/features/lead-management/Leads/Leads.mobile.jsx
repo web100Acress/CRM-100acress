@@ -1018,6 +1018,7 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
           isOpen={showFollowUp}
           onClose={() => setShowFollowUp(false)}
           lead={selectedLead}
+          userRole={currentUserRole}
           onSuccess={() => {
             setShowFollowUp(false);
             fetchLeads();
@@ -1114,19 +1115,6 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
             </DialogHeader>
             
             <div className="p-4 space-y-4">
-              {/* Lead Summary */}
-              {/* <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
-                    <span className="text-white text-lg font-bold">{getInitials(selectedLeadForChain.name)}</span>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{selectedLeadForChain.name}</h3>
-                    <p className="text-sm text-gray-600">{selectedLeadForChain.phone}</p>
-                    <p className="text-sm text-gray-500">{selectedLeadForChain.email}</p>
-                  </div>
-                </div>
-              </div> */}
 
               {/* Assignment Chain */}
               <div className="space-y-3">
