@@ -128,26 +128,24 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
   };
 
   const budgetOptions = [
-    '₹20L - ₹30L',
-    '₹30L - ₹45L',
-    '₹45L - ₹60L',
-    '₹60L - ₹80L',
-    '₹80L - ₹1Cr',
-    '₹1Cr - ₹1.5Cr',
-    '₹1.5Cr+'
+    'Under ₹1 Cr',
+    '₹1 Cr - ₹5 Cr',
+    '₹5 Cr - ₹10 Cr',
+    '₹10 Cr - ₹20 Cr',
+    '₹20 Cr - ₹50 Cr',
+    'Above ₹50 Cr'
   ];
 
   const propertyOptions = [
-    '1BHK Apartment',
-    '2BHK Apartment',
-    '2BHK Flat',
-    '3BHK Apartment',
-    '3BHK Flat',
-    '4BHK Apartment',
-    '4BHK Villa',
-    'Villa',
-    'Independent House',
-    'Plot'
+    'SCO Plots',
+    'Luxury Villas',
+    'Plots In Gurugram',
+    'Residential Projects',
+    'Independent Floors',
+    'Commercial Projects',
+    'Farm Houses',
+    'Industrial Projects',
+    'Senior Living'
   ];
 
   const statusOptions = [
@@ -187,7 +185,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
               className="form-input"
             />
           </div>
-          <div className="form-group">
+          {/* <div className="form-group">
             <label htmlFor="email">Email <span className="required">*</span></label>
             <input
               id="email"
@@ -199,7 +197,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
               required
               className="form-input"
             />
-          </div>
+          </div> */}
 
           <div className="form-group">
             <label htmlFor="phone">Phone Number <span className="required">*</span></label>
