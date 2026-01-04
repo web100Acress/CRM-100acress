@@ -87,9 +87,20 @@ const DashboardMobile = ({ userRole = 'employee' }) => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-white/30">
-              <span className="text-white text-sm font-bold">{getInitials(localStorage.getItem('userName') || 'User')}</span>
-            </div>
+            <button
+              onClick={() => navigate('/edit-profile')}
+              className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-white/30 hover:bg-white/30 transition-all duration-200 overflow-hidden"
+            >
+              {localStorage.getItem('userProfileImage') ? (
+                <img
+                  src={localStorage.getItem('userProfileImage')}
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User size={18} className="text-white" />
+              )}
+            </button>
           </div>
         </div>
       </div>
