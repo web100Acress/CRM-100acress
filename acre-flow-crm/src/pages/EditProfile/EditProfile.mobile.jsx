@@ -371,6 +371,14 @@ const EditProfileMobile = () => {
       showBack={true}
       rightAction={
         <div className="flex items-center gap-2">
+          {/* Close Button */}
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+          >
+            <X size={18} />
+          </button>
+          
           {/* Real-time Status Indicator */}
           <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100">
             <div className={`w-2 h-2 rounded-full ${
@@ -403,6 +411,15 @@ const EditProfileMobile = () => {
         {/* Profile Picture Section */}
         <Card className="bg-gradient-to-r from-blue-50 to-indigo-50">
           <CardContent className="p-6">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Profile Picture</h3>
+              <button
+                onClick={() => navigate(-1)}
+                className="p-2 rounded-full bg-white/80 text-gray-600 hover:bg-white hover:text-gray-800 transition-all shadow-sm"
+              >
+                <X size={16} />
+              </button>
+            </div>
             <div className="flex flex-col items-center">
               <div className="relative">
                 <input
