@@ -7,7 +7,6 @@ import { useToast } from '@/hooks/use-toast';
 const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
     phone: '',
     location: '',
     budget: '',
@@ -30,7 +29,6 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
       // Reset form data when the modal opens
       setFormData({
         name: '',
-        email: '',
         phone: '',
         location: '',
         budget: '',
@@ -95,22 +93,10 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
       const token = localStorage.getItem('token');
       
       // Validate required fields
-      if (!formData.name || !formData.phone || !formData.email) {
+      if (!formData.name || !formData.phone) {
         toast({
           title: "Validation Error",
-          description: "Name, phone, and email are required",
-          variant: "destructive"
-        });
-        setLoading(false);
-        return;
-      }
-
-      // Email validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.email)) {
-        toast({
-          title: "Validation Error",
-          description: "Please enter a valid email address",
+          description: "Name and phone are required",
           variant: "destructive"
         });
         setLoading(false);
@@ -148,7 +134,6 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
         // Reset form
         setFormData({
           name: '',
-          email: '',
           phone: '',
           location: '',
           budget: '',

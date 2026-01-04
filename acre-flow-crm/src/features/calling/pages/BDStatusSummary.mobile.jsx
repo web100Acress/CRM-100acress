@@ -117,6 +117,7 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
     try {
       const token = localStorage.getItem('token');
       
+      // Fetch BD details
       const response = await fetch(`https://bcrm.100acress.com/api/leads/bd-status/${bdId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -129,7 +130,46 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
       }
       
       const data = await response.json();
-      setBdDetails(data.data || null);
+      const bdData = data.data || null;
+      
+      // Fetch call history for this BD separately
+      try {
+        // Since getCallRecords only works for current user, we'll fetch BD's leads and their call history
+        const leadsResponse = await fetch(`https://bcrm.100acress.com/api/leads?assignedTo=${bdId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+        });
+        
+        if (leadsResponse.ok) {
+          const leadsData = await leadsResponse.json();
+          const leads = leadsData.data || [];
+          
+          // Collect all call history from BD's leads
+          let allCallHistory = [];
+          
+          for (const lead of leads) {
+            if (lead.callHistory && lead.callHistory.length > 0) {
+              allCallHistory.push(...lead.callHistory);
+            }
+          }
+          
+          // Sort by call date (newest first)
+          allCallHistory.sort((a, b) => new Date(b.callDate || b.createdAt) - new Date(a.callDate || a.createdAt));
+          
+          bdData.callHistory = allCallHistory;
+          console.log(`Found ${allCallHistory.length} calls for BD ${bdId} from ${leads.length} leads`);
+        } else {
+          console.log('Leads fetch failed, using empty call history');
+          bdData.callHistory = [];
+        }
+      } catch (callError) {
+        console.log('Error fetching BD call history:', callError);
+        bdData.callHistory = [];
+      }
+      
+      setBdDetails(bdData);
     } catch (error) {
       console.error('Error fetching BD details:', error);
       setBdDetails(null);
