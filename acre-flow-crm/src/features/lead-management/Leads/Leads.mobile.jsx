@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, RefreshCw, Menu, X, Home, Settings, LogOut, BarChart3, Plus, Phone, Mail, MessageSquare, Eye, User, Users, MapPin, UserCheck, Download, Trash2, ArrowRight, PhoneCall, PieChart, Calendar, Clock, TrendingUp, Activity, Target, Award, CheckCircle, XCircle, Building2, DollarSign, Mic, Volume2, Video, Edit } from 'lucide-react';
+import { Search, Filter, RefreshCw, Menu, X, Home, Settings, LogOut, BarChart3, Plus, Phone, Mail, MessageSquare, Eye, User, Users, MapPin, UserCheck, Download, Trash2, ArrowRight, PhoneCall, PieChart, Calendar, Clock, TrendingUp, Activity, Target, Award, CheckCircle, XCircle, Building2, DollarSign, Mic, Volume2, Video, Edit, ArrowRight as ForwardIcon } from 'lucide-react';
 import MobileSidebar from '@/layout/MobileSidebar';
 import { Badge } from '@/layout/badge';
 import { Card, CardContent } from '@/layout/card';
@@ -46,6 +46,13 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [selectedLeadForAdvanced, setSelectedLeadForAdvanced] = useState(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [forwardingLead, setForwardingLead] = useState(null);
+  const [assignableUsers, setAssignableUsers] = useState([]);
+  const [showForwardDropdown, setShowForwardDropdown] = useState(false);
+  const [selectedLeadForForward, setSelectedLeadForForward] = useState(null);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const currentUserId = localStorage.getItem("userId");
+  const currentUserRole = localStorage.getItem("userRole");
 
   // Fetch real stats data
   useEffect(() => {
@@ -80,7 +87,27 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
       }
     };
 
+    const fetchAssignableUsers = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(
+          "https://bcrm.100acress.com/api/leads/assignable-users",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        const json = await response.json();
+        setAssignableUsers(json.data || []);
+      } catch (error) {
+        console.error("Error fetching assignable users:", error);
+      }
+    };
+
     fetchStats();
+    fetchAssignableUsers();
   }, []);
 
   // Handle visibility change to detect when user returns from phone call
@@ -614,6 +641,122 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
     setShowLeadDetails(true);
   };
 
+  const handleForwardLead = async (leadId, selectedEmployeeId = null) => {
+    try {
+      setForwardingLead(leadId);
+      const token = localStorage.getItem("token");
+      
+      console.log('Attempting to forward lead:', leadId);
+      console.log('Token:', token ? 'Present' : 'Missing');
+      console.log('Selected employee:', selectedEmployeeId);
+      
+      const res = await fetch(
+        `https://bcrm.100acress.com/api/leads/${leadId}/forward`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ 
+            action: 'forward',
+            selectedEmployee: selectedEmployeeId 
+          }),
+        }
+      );
+
+      console.log('Response status:', res.status);
+      console.log('Response ok:', res.ok);
+      
+      let data;
+      try {
+        data = await res.json();
+        console.log('Response data:', data);
+      } catch (parseError) {
+        console.error('Error parsing response:', parseError);
+        const text = await res.text();
+        console.error('Response text:', text);
+        throw new Error('Invalid response from server');
+      }
+      
+      if (res.ok) {
+        // Refresh the leads list
+        const leadsResponse = await fetch("https://bcrm.100acress.com/api/leads", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        const leadsJson = await leadsResponse.json();
+        setLeads(leadsJson.data || []);
+        toast({
+          title: "Success",
+          description: data.message || "Lead forwarded successfully",
+          status: "success",
+        });
+        // Close dropdown and reset selection
+        setShowForwardDropdown(false);
+        setSelectedLeadForForward(null);
+        setSelectedEmployee(null);
+      } else {
+        console.error('Forward failed:', data);
+        toast({
+          title: "Error",
+          description: data.message || data.error || "Failed to forward lead",
+          status: "error",
+        });
+      }
+    } catch (err) {
+      console.error('Forward lead error:', err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to forward lead",
+        status: "error",
+      });
+    } finally {
+      setForwardingLead(null);
+    }
+  };
+
+  const handleForwardClick = (lead) => {
+    setSelectedLeadForForward(lead);
+    setShowForwardDropdown(true);
+    setSelectedEmployee(null);
+  };
+
+  const handleEmployeeSelect = (employee) => {
+    setSelectedEmployee(employee);
+  };
+
+  const confirmForward = () => {
+    if (selectedLeadForForward && selectedEmployee) {
+      handleForwardLead(selectedLeadForForward._id, selectedEmployee._id);
+    }
+  };
+
+  const canForwardLead = (lead) => {
+    // Only the current assignee can forward the lead
+    if (lead.assignedTo !== currentUserId) return false;
+
+    // Define forwarding hierarchy - only BD and team-leader can forward
+    const forwardHierarchy = {
+      "super-admin": ["head-admin"],
+      "head-admin": ["sales_head", "employee"], // head-admin can forward to sales_head and employee
+      "sales_head": ["employee"], // sales_head (BD) can forward to employee
+      "team-leader": ["employee"], // team-leader can forward to employee
+      "admin": ["sales_head"],
+      "boss": ["head-admin"],
+      "crm_admin": ["head-admin"],
+    };
+
+    const possibleRoles = forwardHierarchy[currentUserRole];
+    
+    if (!possibleRoles) return false;
+    
+    // Check if there are any assignable users with the target roles
+    return assignableUsers.some((user) => possibleRoles.includes(user.role));
+  };
+
   const fetchAssignmentChain = async (leadId) => {
     setChainLoading(true);
     try {
@@ -777,7 +920,7 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
                 </div>
 
                 {/* Enhanced Action Buttons */}
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-4 gap-2">
                   <button
                     onClick={() => handleCallLead(lead.phone, lead._id, lead.name)}
                     className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200 shadow-md hover:shadow-lg"
@@ -799,6 +942,19 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
                     <Eye size={18} />
                     <span className="text-xs mt-1 font-medium">Details</span>
                   </button>
+                  {canForwardLead(lead) && (
+                    <button
+                      onClick={() => handleForwardClick(lead)}
+                      disabled={forwardingLead === lead._id}
+                      className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Forward to employee"
+                    >
+                      <ForwardIcon size={18} />
+                      <span className="text-xs mt-1 font-medium">
+                        {forwardingLead === lead._id ? "..." : "Forward"}
+                      </span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Additional Actions Row */}
@@ -1136,6 +1292,132 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
             </DialogContent>
           </Dialog>
         </>
+      )}
+    {showForwardDropdown && selectedLeadForForward && (
+        <Dialog open={showForwardDropdown} onOpenChange={setShowForwardDropdown}>
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="bg-gradient-to-r from-orange-600 to-red-600 text-white">
+              <DialogTitle className="flex items-center gap-2">
+                <ForwardIcon size={20} />
+                Forward Lead - {selectedLeadForForward.name}
+              </DialogTitle>
+              <DialogDescription className="text-orange-100">
+                Select an employee to forward this lead to
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="p-4 space-y-4">
+              {/* Lead Summary */}
+              <div className="bg-gradient-to-r from-orange-50 to-red-50 p-4 rounded-lg border border-orange-200">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gradient-to-r from-orange-600 to-red-600 rounded-full flex items-center justify-center">
+                    <span className="text-white text-lg font-bold">{getInitials(selectedLeadForForward.name)}</span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">{selectedLeadForForward.name}</h3>
+                    <p className="text-sm text-gray-600">{selectedLeadForForward.phone}</p>
+                    <p className="text-sm text-gray-500">{selectedLeadForForward.email}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Employee Selection */}
+              <div className="space-y-3">
+                <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+                  <Users size={18} />
+                  Select Employee
+                </h4>
+                
+                {assignableUsers.length > 0 ? (
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {assignableUsers
+                      .filter(user => {
+                        // Filter employees that can be forwarded to based on role hierarchy
+                        const forwardHierarchy = {
+                          "super-admin": ["head-admin"],
+                          "head-admin": ["sales_head", "employee"],
+                          "sales_head": ["employee"],
+                          "team-leader": ["employee"],
+                          "admin": ["sales_head"],
+                          "boss": ["head-admin"],
+                          "crm_admin": ["head-admin"],
+                        };
+                        const possibleRoles = forwardHierarchy[currentUserRole];
+                        return possibleRoles && possibleRoles.includes(user.role);
+                      })
+                      .map((employee) => (
+                      <div
+                        key={employee._id}
+                        onClick={() => handleEmployeeSelect(employee)}
+                        className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
+                          selectedEmployee?._id === employee._id
+                            ? 'bg-orange-100 border-orange-300 ring-2 ring-orange-500'
+                            : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
+                              <span className="text-white text-xs font-bold">{getInitials(employee.name)}</span>
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">{employee.name}</p>
+                              <p className="text-xs text-gray-500">{employee.email}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <Badge className={`text-xs ${
+                              employee.role === 'employee' ? 'bg-blue-100 text-blue-800' :
+                              employee.role === 'sales_head' ? 'bg-green-100 text-green-800' :
+                              employee.role === 'team-leader' ? 'bg-purple-100 text-purple-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {employee.role}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Users size={40} className="text-gray-300 mx-auto mb-2" />
+                    <p className="text-gray-500">No employees available</p>
+                    <p className="text-xs text-gray-400 mt-1">There are no employees that can be forwarded to</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4 border-t">
+                <button
+                  onClick={() => setShowForwardDropdown(false)}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  <X size={16} />
+                  <span>Cancel</span>
+                </button>
+                <button
+                  onClick={confirmForward}
+                  disabled={!selectedEmployee || forwardingLead}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-lg hover:from-orange-700 hover:to-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {forwardingLead ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Forwarding...</span>
+                    </>
+                  ) : (
+                    <>
+                      <ForwardIcon size={16} />
+                      <span>Forward Lead</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

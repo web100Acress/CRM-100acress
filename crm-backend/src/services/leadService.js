@@ -85,27 +85,53 @@ const updateLead = async (id, updateData) => {
 };
 
 // New function to forward lead to next person in hierarchy
-const forwardLead = async (leadId, currentUserId, action = 'forward') => {
+const forwardLead = async (leadId, currentUserId, action = 'forward', selectedEmployeeId = null) => {
   const lead = await Lead.findById(leadId);
   if (!lead) return null;
 
   const currentUser = await User.findById(currentUserId);
   if (!currentUser) return null;
 
-  // Find the next role in hierarchy
-  const nextRole = roleHierarchy[currentUser.role];
-  if (!nextRole) {
-    throw new Error('Cannot forward lead: User is at the lowest level');
-  }
+  let nextAssignee;
+  
+  if (selectedEmployeeId) {
+    // Use the selected employee if provided
+    nextAssignee = await User.findById(selectedEmployeeId);
+    if (!nextAssignee) {
+      throw new Error('Selected employee not found');
+    }
+    
+    // Validate that the selected employee is in the correct role hierarchy
+    const forwardHierarchy = {
+      "super-admin": ["head-admin"],
+      "head-admin": ["sales_head", "employee"],
+      "sales_head": ["employee"],
+      "team-leader": ["employee"],
+      "admin": ["sales_head"],
+      "boss": ["head-admin"],
+      "crm_admin": ["head-admin"],
+    };
+    
+    const possibleRoles = forwardHierarchy[currentUser.role];
+    if (!possibleRoles || !possibleRoles.includes(nextAssignee.role)) {
+      throw new Error(`Cannot forward lead to ${nextAssignee.role}. You can only forward to: ${possibleRoles?.join(', ') || 'no one'}`);
+    }
+  } else {
+    // Default behavior: find the next role in hierarchy
+    const nextRole = roleHierarchy[currentUser.role];
+    if (!nextRole) {
+      throw new Error('Cannot forward lead: User is at the lowest level');
+    }
 
-  // Find users with the next role
-  const nextLevelUsers = await User.find({ role: nextRole });
-  if (nextLevelUsers.length === 0) {
-    throw new Error(`No users found with role: ${nextRole}`);
-  }
+    // Find users with the next role
+    const nextLevelUsers = await User.find({ role: nextRole });
+    if (nextLevelUsers.length === 0) {
+      throw new Error(`No users found with role: ${nextRole}`);
+    }
 
-  // For now, assign to the first available user (you can implement more sophisticated logic)
-  const nextAssignee = nextLevelUsers[0];
+    // For now, assign to the first available user (you can implement more sophisticated logic)
+    nextAssignee = nextLevelUsers[0];
+  }
 
   // Update current user's status in assignment chain
   const currentUserInChain = lead.assignmentChain.find(

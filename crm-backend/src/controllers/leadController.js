@@ -175,9 +175,9 @@ exports.getFollowUps = async (req, res, next) => {
 exports.forwardLead = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { action = 'forward' } = req.body;
+    const { action = 'forward', selectedEmployee } = req.body;
     
-    const lead = await leadService.forwardLead(id, req.user._id.toString(), action);
+    const lead = await leadService.forwardLead(id, req.user._id.toString(), action, selectedEmployee);
     if (!lead) {
       return res.status(404).json({ success: false, message: 'Lead not found' });
     }
