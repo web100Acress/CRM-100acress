@@ -45,7 +45,7 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
   const fetchAssignableUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5001/api/leads/assignable-users`, {
+      const response = await fetch(`https://bcrm.100acress.com/api/leads/assignable-users`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -129,7 +129,7 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
         return;
       }
 
-      const response = await fetch(`http://localhost:5001/api/leads`, {
+      const response = await fetch(`https://bcrm.100acress.com/api/leads`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

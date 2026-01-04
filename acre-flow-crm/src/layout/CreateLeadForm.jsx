@@ -53,7 +53,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5001/api/leads/assignable-users`,
+        `https://bcrm.100acress.com/api/leads/assignable-users`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -117,7 +117,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`http://localhost:5001/api/leads`, {
+      const response = await fetch(`https://bcrm.100acress.com/api/leads`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
