@@ -119,7 +119,6 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
     employee: [
       { path: '/employee-dashboard', icon: Home, label: 'Dashboard' },
       { path: '/leads', icon: Building2, label: 'My Leads' },
-      { path: '/calls', icon: PhoneCall, label: 'Call Logs' },
     ]
   };
 

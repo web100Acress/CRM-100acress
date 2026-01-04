@@ -51,6 +51,8 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
   const [showForwardDropdown, setShowForwardDropdown] = useState(false);
   const [selectedLeadForForward, setSelectedLeadForForward] = useState(null);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [forwardSuccess, setForwardSuccess] = useState(false);
+  const [forwardedLeadData, setForwardedLeadData] = useState(null);
   const currentUserId = localStorage.getItem("userId");
   const currentUserRole = localStorage.getItem("userRole");
 
@@ -694,10 +696,23 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
           description: data.message || "Lead forwarded successfully",
           status: "success",
         });
-        // Close dropdown and reset selection
-        setShowForwardDropdown(false);
-        setSelectedLeadForForward(null);
-        setSelectedEmployee(null);
+        
+        // Set success state and forwarded lead data
+        setForwardSuccess(true);
+        setForwardedLeadData({
+          leadName: selectedLeadForForward?.name,
+          employeeName: assignableUsers.find(u => u._id === selectedEmployeeId)?.name,
+          employeeRole: assignableUsers.find(u => u._id === selectedEmployeeId)?.role
+        });
+        
+        // Close dropdown and reset selection after delay
+        setTimeout(() => {
+          setShowForwardDropdown(false);
+          setSelectedLeadForForward(null);
+          setSelectedEmployee(null);
+          setForwardSuccess(false);
+          setForwardedLeadData(null);
+        }, 2000);
       } else {
         console.error('Forward failed:', data);
         toast({
@@ -1296,126 +1311,173 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
     {showForwardDropdown && selectedLeadForForward && (
         <Dialog open={showForwardDropdown} onOpenChange={setShowForwardDropdown}>
           <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-            <DialogHeader className="bg-gradient-to-r from-orange-600 to-red-600 text-white">
-              <DialogTitle className="flex items-center gap-2">
-                <ForwardIcon size={20} />
-                Forward Lead - {selectedLeadForForward.name}
-              </DialogTitle>
-              <DialogDescription className="text-orange-100">
-                Select an employee to forward this lead to
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="p-4 space-y-4">
-              {/* Lead Summary */}
-              <div className="bg-gradient-to-r from-orange-50 to-red-50 p-4 rounded-lg border border-orange-200">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-r from-orange-600 to-red-600 rounded-full flex items-center justify-center">
-                    <span className="text-white text-lg font-bold">{getInitials(selectedLeadForForward.name)}</span>
+            {!forwardSuccess ? (
+              <>
+                <DialogHeader className="bg-gradient-to-r from-orange-600 to-red-600 text-white">
+                  <DialogTitle className="flex items-center gap-2">
+                    <ForwardIcon size={20} />
+                    Forward Lead - {selectedLeadForForward.name}
+                  </DialogTitle>
+                  <DialogDescription className="text-orange-100">
+                    Select an employee to forward this lead to
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="p-4 space-y-4">
+                  {/* Enhanced Lead Summary */}
+                  <div className="bg-gradient-to-r from-orange-50 to-red-50 p-4 rounded-lg border border-orange-200 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gradient-to-r from-orange-600 to-red-600 rounded-full flex items-center justify-center shadow-lg">
+                        <span className="text-white text-lg font-bold">{getInitials(selectedLeadForForward.name)}</span>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900">{selectedLeadForForward.name}</h3>
+                        <p className="text-sm text-gray-600 flex items-center gap-1">
+                          <Phone size={12} />
+                          {selectedLeadForForward.phone}
+                        </p>
+                        <p className="text-sm text-gray-500 flex items-center gap-1">
+                          <Mail size={12} />
+                          {selectedLeadForForward.email}
+                        </p>
+                        {selectedLeadForForward.budget && (
+                          <p className="text-sm text-gray-500 flex items-center gap-1">
+                            <DollarSign size={12} />
+                            Budget: {selectedLeadForForward.budget}
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{selectedLeadForForward.name}</h3>
-                    <p className="text-sm text-gray-600">{selectedLeadForForward.phone}</p>
-                    <p className="text-sm text-gray-500">{selectedLeadForForward.email}</p>
+
+                  {/* Enhanced Employee Selection */}
+                  <div className="space-y-3">
+                    <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+                      <Users size={18} className="text-orange-600" />
+                      Select Employee to Forward
+                    </h4>
+                    
+                    {assignableUsers.length > 0 ? (
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {assignableUsers
+                          .filter(user => {
+                            // Filter employees that can be forwarded to based on role hierarchy
+                            const forwardHierarchy = {
+                              "super-admin": ["head-admin"],
+                              "head-admin": ["sales_head", "employee"],
+                              "sales_head": ["employee"],
+                              "team-leader": ["employee"],
+                              "admin": ["sales_head"],
+                              "boss": ["head-admin"],
+                              "crm_admin": ["head-admin"],
+                            };
+                            const possibleRoles = forwardHierarchy[currentUserRole];
+                            return possibleRoles && possibleRoles.includes(user.role);
+                          })
+                          .map((employee) => (
+                          <div
+                            key={employee._id}
+                            onClick={() => handleEmployeeSelect(employee)}
+                            className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 transform hover:scale-102 ${
+                              selectedEmployee?._id === employee._id
+                                ? 'bg-gradient-to-r from-orange-100 to-red-100 border-orange-300 ring-2 ring-orange-500 shadow-md'
+                                : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:shadow-sm'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-sm">
+                                  <span className="text-white text-sm font-bold">{getInitials(employee.name)}</span>
+                                </div>
+                                <div>
+                                  <p className="font-medium text-gray-900">{employee.name}</p>
+                                  <p className="text-xs text-gray-500">{employee.email}</p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <Badge className={`text-xs font-medium shadow-sm ${
+                                  employee.role === 'employee' ? 'bg-blue-100 text-blue-800 border-blue-200' :
+                                  employee.role === 'sales_head' ? 'bg-green-100 text-green-800 border-green-200' :
+                                  employee.role === 'team-leader' ? 'bg-purple-100 text-purple-800 border-purple-200' :
+                                  'bg-gray-100 text-gray-800 border-gray-200'
+                                }`}>
+                                  {employee.role.replace('_', ' ').toUpperCase()}
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <Users size={40} className="text-gray-300 mx-auto mb-2" />
+                        <p className="text-gray-500 font-medium">No employees available</p>
+                        <p className="text-xs text-gray-400 mt-1">There are no employees that can be forwarded to</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Enhanced Action Buttons */}
+                  <div className="flex gap-3 pt-4 border-t">
+                    <button
+                      onClick={() => {
+                        setShowForwardDropdown(false);
+                        setSelectedEmployee(null);
+                      }}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200 font-medium"
+                    >
+                      <X size={16} />
+                      <span>Cancel</span>
+                    </button>
+                    <button
+                      onClick={confirmForward}
+                      disabled={!selectedEmployee || forwardingLead}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-lg hover:from-orange-700 hover:to-red-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
+                    >
+                      {forwardingLead ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <span>Forwarding...</span>
+                        </>
+                      ) : (
+                        <>
+                          <ForwardIcon size={16} />
+                          <span>Forward Lead</span>
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
-              </div>
-
-              {/* Employee Selection */}
-              <div className="space-y-3">
-                <h4 className="font-semibold text-gray-900 flex items-center gap-2">
-                  <Users size={18} />
-                  Select Employee
-                </h4>
-                
-                {assignableUsers.length > 0 ? (
-                  <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {assignableUsers
-                      .filter(user => {
-                        // Filter employees that can be forwarded to based on role hierarchy
-                        const forwardHierarchy = {
-                          "super-admin": ["head-admin"],
-                          "head-admin": ["sales_head", "employee"],
-                          "sales_head": ["employee"],
-                          "team-leader": ["employee"],
-                          "admin": ["sales_head"],
-                          "boss": ["head-admin"],
-                          "crm_admin": ["head-admin"],
-                        };
-                        const possibleRoles = forwardHierarchy[currentUserRole];
-                        return possibleRoles && possibleRoles.includes(user.role);
-                      })
-                      .map((employee) => (
-                      <div
-                        key={employee._id}
-                        onClick={() => handleEmployeeSelect(employee)}
-                        className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
-                          selectedEmployee?._id === employee._id
-                            ? 'bg-orange-100 border-orange-300 ring-2 ring-orange-500'
-                            : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
-                              <span className="text-white text-xs font-bold">{getInitials(employee.name)}</span>
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-900">{employee.name}</p>
-                              <p className="text-xs text-gray-500">{employee.email}</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <Badge className={`text-xs ${
-                              employee.role === 'employee' ? 'bg-blue-100 text-blue-800' :
-                              employee.role === 'sales_head' ? 'bg-green-100 text-green-800' :
-                              employee.role === 'team-leader' ? 'bg-purple-100 text-purple-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
-                              {employee.role}
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+              </>
+            ) : (
+              /* Success State */
+              <div className="p-6 text-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                  <CheckCircle size={32} className="text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Lead Forwarded Successfully!</h3>
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200 mb-4">
+                  <p className="text-gray-700 font-medium mb-2">
+                    <span className="text-orange-600 font-semibold">{forwardedLeadData?.leadName}</span> has been assigned to
+                  </p>
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">{getInitials(forwardedLeadData?.employeeName)}</span>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900">{forwardedLeadData?.employeeName}</p>
+                      <Badge className="text-xs bg-blue-100 text-blue-800 border-blue-200">
+                        {forwardedLeadData?.employeeRole?.replace('_', ' ').toUpperCase()}
+                      </Badge>
+                    </div>
                   </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Users size={40} className="text-gray-300 mx-auto mb-2" />
-                    <p className="text-gray-500">No employees available</p>
-                    <p className="text-xs text-gray-400 mt-1">There are no employees that can be forwarded to</p>
-                  </div>
-                )}
+                </div>
+                <div className="text-sm text-gray-500">
+                  <p>The assigned employee will be notified</p>
+                  <p className="mt-1">This dialog will close automatically...</p>
+                </div>
               </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-3 pt-4 border-t">
-                <button
-                  onClick={() => setShowForwardDropdown(false)}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-                >
-                  <X size={16} />
-                  <span>Cancel</span>
-                </button>
-                <button
-                  onClick={confirmForward}
-                  disabled={!selectedEmployee || forwardingLead}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-lg hover:from-orange-700 hover:to-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {forwardingLead ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>Forwarding...</span>
-                    </>
-                  ) : (
-                    <>
-                      <ForwardIcon size={16} />
-                      <span>Forward Lead</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
+            )}
           </DialogContent>
         </Dialog>
       )}
