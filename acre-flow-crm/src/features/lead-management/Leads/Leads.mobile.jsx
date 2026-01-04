@@ -21,9 +21,9 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
   const [rightMenuOpen, setRightMenuOpen] = useState(false);
   const [stats, setStats] = useState({
     totalLeads: 0,
-    newLeads: 0,
-    hotLeads: 0,
-    convertedLeads: 0
+    coldLeads: 0,
+    warmLeads: 0,
+    hotLeads: 0
   });
   const [loading, setLoading] = useState(true);
   const [leads, setLeads] = useState([]);
@@ -51,6 +51,7 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
   const [showForwardDropdown, setShowForwardDropdown] = useState(false);
   const [selectedLeadForForward, setSelectedLeadForForward] = useState(null);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [selectedEmployees, setSelectedEmployees] = useState([]);
   const [forwardSuccess, setForwardSuccess] = useState(false);
   const [forwardedLeadData, setForwardedLeadData] = useState(null);
   const currentUserId = localStorage.getItem("userId");
@@ -72,15 +73,15 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
         
         // Calculate real stats
         const totalLeads = leads.length;
-        const newLeads = leads.filter(lead => lead.status?.toLowerCase() === 'new').length;
-        const hotLeads = leads.filter(lead => lead.status?.toLowerCase() === 'hot').length;
-        const convertedLeads = leads.filter(lead => lead.status?.toLowerCase() === 'converted').length;
+        const coldLeads = leads.filter(lead => lead.status === 'Cold').length;
+        const warmLeads = leads.filter(lead => lead.status === 'Warm').length;
+        const hotLeads = leads.filter(lead => lead.status === 'Hot').length;
         
         setStats({
           totalLeads,
-          newLeads,
-          hotLeads,
-          convertedLeads
+          coldLeads,
+          warmLeads,
+          hotLeads
         });
       } catch (error) {
         console.error("Error fetching stats:", error);
@@ -196,15 +197,15 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
         
         // Calculate stats
         const totalLeads = data.data?.length || 0;
-        const newLeads = data.data?.filter(lead => lead.status?.toLowerCase() === 'new').length || 0;
-        const hotLeads = data.data?.filter(lead => lead.status?.toLowerCase() === 'hot').length || 0;
-        const convertedLeads = data.data?.filter(lead => lead.status?.toLowerCase() === 'converted').length || 0;
+        const coldLeads = data.data?.filter(lead => lead.status === 'Cold').length || 0;
+        const warmLeads = data.data?.filter(lead => lead.status === 'Warm').length || 0;
+        const hotLeads = data.data?.filter(lead => lead.status === 'Hot').length || 0;
         
         setStats({
           totalLeads,
-          newLeads,
-          hotLeads,
-          convertedLeads
+          coldLeads,
+          warmLeads,
+          hotLeads
         });
       } else {
         // Mock data for testing
@@ -251,9 +252,9 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
         
         setStats({
           totalLeads: mockData.length,
-          newLeads: mockData.filter(lead => lead.status === 'Hot').length,
-          hotLeads: mockData.filter(lead => lead.status === 'Warm').length,
-          convertedLeads: mockData.filter(lead => lead.status === 'Cold').length
+          coldLeads: mockData.filter(lead => lead.status === 'Cold').length,
+          warmLeads: mockData.filter(lead => lead.status === 'Warm').length,
+          hotLeads: mockData.filter(lead => lead.status === 'Hot').length
         });
       }
     } catch (error) {
@@ -373,9 +374,9 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
           <div className="bg-white/20 backdrop-blur-sm rounded-lg p-3">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-blue-100 text-xs">Converted</p>
+                <p className="text-blue-100 text-xs">Hot</p>
                 <p className="text-white text-lg font-bold">
-                  {loading ? '...' : stats.convertedLeads}
+                  {loading ? '...' : stats.hotLeads}
                 </p>
               </div>
               <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
@@ -421,9 +422,9 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
               className="w-full p-2 bg-white/20 backdrop-blur-sm text-white rounded-lg border border-white/30 focus:outline-none focus:border-white/50"
             >
               <option value="all" className="text-gray-800">All Statuses</option>
-              <option value="hot" className="text-gray-800">🔥 Hot</option>
-              <option value="warm" className="text-gray-800">🌡️ Warm</option>
-              <option value="cold" className="text-gray-800">❄️ Cold</option>
+              <option value="Hot" className="text-gray-800">🔥 Hot</option>
+              <option value="Warm" className="text-gray-800">🌡️ Warm</option>
+              <option value="Cold" className="text-gray-800">❄️ Cold</option>
             </select>
           </div>
         )}
@@ -463,7 +464,7 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
     setIsExporting(true);
     try {
       const filteredLeads = leads.filter(lead => 
-        statusFilter === 'all' || lead.status.toLowerCase() === statusFilter.toLowerCase()
+        statusFilter === 'all' || lead.status === statusFilter
       );
       
       const headers = ["ID", "Name", "Email", "Phone", "Location", "Budget", "Property", "Status", "Assigned To"];
@@ -809,10 +810,10 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
   };
 
   const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'hot': return 'bg-red-100 text-red-800 border-red-200';
-      case 'warm': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'cold': return 'bg-blue-100 text-blue-800 border-blue-200';
+    switch (status) {
+      case 'Hot': return 'bg-red-100 text-red-800 border-red-200';
+      case 'Warm': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'Cold': return 'bg-blue-100 text-blue-800 border-blue-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
@@ -821,7 +822,7 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
     const matchesSearch = lead.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          lead.phone?.includes(searchTerm);
-    const matchesStatus = statusFilter === 'all' || lead.status?.toLowerCase() === statusFilter.toLowerCase();
+    const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -1298,39 +1299,39 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
       )}
     {showForwardDropdown && selectedLeadForForward && (
         <Dialog open={showForwardDropdown} onOpenChange={setShowForwardDropdown}>
-          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-sm w-[95vw] max-h-[85vh] overflow-y-auto mx-4">
             {!forwardSuccess ? (
               <>
-                <DialogHeader className="bg-gradient-to-r from-orange-600 to-red-600 text-white">
-                  <DialogTitle className="flex items-center gap-2">
-                    <ForwardIcon size={20} />
-                    Forward Lead - {selectedLeadForForward.name}
+                <DialogHeader className="bg-gradient-to-r from-orange-600 to-red-600 text-white p-4">
+                  <DialogTitle className="flex items-center gap-2 text-base">
+                    <ForwardIcon size={18} />
+                    <span className="font-semibold">Forward Lead - {selectedLeadForForward.name}</span>
                   </DialogTitle>
                   <DialogDescription className="text-orange-100">
-                    Select an employee to forward this lead to
+                   
                   </DialogDescription>
                 </DialogHeader>
                 
-                <div className="p-4 space-y-4">
+                <div className="p-3 space-y-3">
                   {/* Enhanced Lead Summary */}
-                  <div className="bg-gradient-to-r from-orange-50 to-red-50 p-4 rounded-lg border border-orange-200 shadow-sm">
+                  <div className="bg-gradient-to-r from-orange-50 to-red-50 p-3 rounded-lg border border-orange-200 shadow-sm">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-gradient-to-r from-orange-600 to-red-600 rounded-full flex items-center justify-center shadow-lg">
-                        <span className="text-white text-lg font-bold">{getInitials(selectedLeadForForward.name)}</span>
+                      <div className="w-10 h-10 bg-gradient-to-r from-orange-600 to-red-600 rounded-full flex items-center justify-center shadow-lg">
+                        <span className="text-white text-sm font-bold">{getInitials(selectedLeadForForward.name)}</span>
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900">{selectedLeadForForward.name}</h3>
-                        <p className="text-sm text-gray-600 flex items-center gap-1">
-                          <Phone size={12} />
+                        <h3 className="font-semibold text-gray-900 text-sm">{selectedLeadForForward.name}</h3>
+                        <p className="text-xs text-gray-600 flex items-center gap-1">
+                          <Phone size={10} />
                           {selectedLeadForForward.phone}
                         </p>
-                        <p className="text-sm text-gray-500 flex items-center gap-1">
-                          <Mail size={12} />
+                        <p className="text-xs text-gray-500 flex items-center gap-1">
+                          <Mail size={10} />
                           {selectedLeadForForward.email}
                         </p>
                         {selectedLeadForForward.budget && (
-                          <p className="text-sm text-gray-500 flex items-center gap-1">
-                            <DollarSign size={12} />
+                          <p className="text-xs text-gray-500 flex items-center gap-1">
+                            <DollarSign size={10} />
                             Budget: {selectedLeadForForward.budget}
                           </p>
                         )}
@@ -1340,13 +1341,29 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
 
                   {/* Enhanced Employee Selection */}
                   <div className="space-y-3">
-                    <h4 className="font-semibold text-gray-900 flex items-center gap-2">
-                      <Users size={18} className="text-orange-600" />
+                    <h4 className="font-semibold text-gray-900 flex items-center gap-2 text-sm">
+                      <Users size={16} className="text-orange-600" />
                       Select Employee to Forward
                     </h4>
                     
+                    {/* Search Input */}
+                    <div className="mb-3">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="Search employees..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        />
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                          <Search size={16} className="text-gray-400" />
+                        </div>
+                      </div>
+                    </div>
+                    
                     {assignableUsers.length > 0 ? (
-                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                      <div className="space-y-3 max-h-48 overflow-y-auto">
                         {assignableUsers
                           .filter(user => {
                             // Filter employees that can be forwarded to based on role hierarchy
@@ -1360,36 +1377,33 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
                               "crm_admin": ["head-admin"],
                             };
                             const possibleRoles = forwardHierarchy[currentUserRole];
-                            return possibleRoles && possibleRoles.includes(user.role);
+                            return possibleRoles && possibleRoles.includes(user.role) && 
+                                   (user.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                    user.email.toLowerCase().includes(searchQuery.toLowerCase()));
                           })
                           .map((employee) => (
                           <div
                             key={employee._id}
                             onClick={() => handleEmployeeSelect(employee)}
                             className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 transform hover:scale-102 ${
-                              selectedEmployee?._id === employee._id
+                              selectedEmployee?._id === employee._id || selectedEmployees.some(emp => emp._id === employee._id)
                                 ? 'bg-gradient-to-r from-orange-100 to-red-100 border-orange-300 ring-2 ring-orange-500 shadow-md'
                                 : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:shadow-sm'
                             }`}
                           >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-sm">
-                                  <span className="text-white text-sm font-bold">{getInitials(employee.name)}</span>
-                                </div>
-                                <div>
-                                  <p className="font-medium text-gray-900">{employee.name}</p>
-                                  <p className="text-xs text-gray-500">{employee.email}</p>
-                                </div>
+                            <div className="flex flex-col items-center gap-3">
+                              <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-sm">
+                                <span className="text-white text-sm font-bold">{getInitials(employee.name)}</span>
                               </div>
-                              <div className="text-right">
-                                <Badge className={`text-xs font-medium shadow-sm ${
+                              <div className="text-center">
+                                <p className="font-medium text-gray-900 text-sm">{employee.name}</p>
+                                <Badge className={`text-xs font-medium shadow-sm mt-1 ${
                                   employee.role === 'employee' ? 'bg-blue-100 text-blue-800 border-blue-200' :
                                   employee.role === 'sales_head' ? 'bg-green-100 text-green-800 border-green-200' :
                                   employee.role === 'team-leader' ? 'bg-purple-100 text-purple-800 border-purple-200' :
                                   'bg-gray-100 text-gray-800 border-gray-200'
                                 }`}>
-                                  {employee.role.replace('_', ' ').toUpperCase()}
+                                  BD {employee.role.replace('_', ' ').toUpperCase()}
                                 </Badge>
                               </div>
                             </div>
@@ -1406,30 +1420,30 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
                   </div>
 
                   {/* Enhanced Action Buttons */}
-                  <div className="flex gap-3 pt-4 border-t">
+                  <div className="flex gap-2 pt-3 border-t">
                     <button
                       onClick={() => {
                         setShowForwardDropdown(false);
                         setSelectedEmployee(null);
                       }}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200 font-medium"
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200 font-medium text-sm"
                     >
-                      <X size={16} />
+                      <X size={14} />
                       <span>Cancel</span>
                     </button>
                     <button
                       onClick={confirmForward}
                       disabled={!selectedEmployee || forwardingLead}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-lg hover:from-orange-700 hover:to-red-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-lg hover:from-orange-700 hover:to-red-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg hover:shadow-xl transform hover:scale-105 text-sm"
                     >
                       {forwardingLead ? (
                         <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
                           <span>Forwarding...</span>
                         </>
                       ) : (
                         <>
-                          <ForwardIcon size={16} />
+                          <ForwardIcon size={14} />
                           <span>Forward Lead</span>
                         </>
                       )}
@@ -1439,21 +1453,21 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
               </>
             ) : (
               /* Success State */
-              <div className="p-6 text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                  <CheckCircle size={32} className="text-white" />
+              <div className="p-4 text-center">
+                <div className="w-14 h-14 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg">
+                  <CheckCircle size={28} className="text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Lead Forwarded Successfully!</h3>
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200 mb-4">
-                  <p className="text-gray-700 font-medium mb-2">
+                <h3 className="text-lg font-bold text-gray-900 mb-2">Lead Forwarded Successfully!</h3>
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-3 rounded-lg border border-green-200 mb-3">
+                  <p className="text-gray-700 font-medium mb-2 text-sm">
                     <span className="text-orange-600 font-semibold">{forwardedLeadData?.leadName}</span> has been assigned to
                   </p>
                   <div className="flex items-center justify-center gap-2">
-                    <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
+                    <div className="w-6 h-6 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
                       <span className="text-white text-xs font-bold">{getInitials(forwardedLeadData?.employeeName)}</span>
                     </div>
                     <div>
-                      <p className="font-semibold text-gray-900">{forwardedLeadData?.employeeName}</p>
+                      <p className="font-semibold text-gray-900 text-sm">{forwardedLeadData?.employeeName}</p>
                       <Badge className="text-xs bg-blue-100 text-blue-800 border-blue-200">
                         {forwardedLeadData?.employeeRole?.replace('_', ' ').toUpperCase()}
                       </Badge>
