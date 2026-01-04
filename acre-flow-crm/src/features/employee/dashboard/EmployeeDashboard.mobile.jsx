@@ -32,6 +32,47 @@ const BDDashboardMobile = () => {
   const [showTaskDetails, setShowTaskDetails] = useState(false);
   const currentUserId = localStorage.getItem('userId');
 
+  // Get role-specific dashboard title
+  const getDashboardTitle = () => {
+    switch (userRole) {
+      case 'super-admin':
+        return 'Super Admin Dashboard';
+      case 'head-admin':
+      case 'head':
+        return 'Head Dashboard';
+      case 'team-leader':
+        return 'Team Leader Dashboard';
+      case 'employee':
+        return 'Employee Dashboard';
+      default:
+        return 'BD Dashboard';
+    }
+  };
+
+  // Get role-specific dashboard description
+  const getDashboardDescription = () => {
+    switch (userRole) {
+      case 'super-admin':
+        return 'Manage entire system and all users';
+      case 'head-admin':
+      case 'head':
+        return 'Manage teams and performance';
+      case 'team-leader':
+        return 'Lead your team to success';
+      case 'employee':
+        return 'Track your performance and tasks';
+      default:
+        return 'Business Development Center';
+    }
+  };
+
+  // Banner images from S3
+  const bannerImages = [
+    'https://100acress-media-bucket.s3.ap-south-1.amazonaws.com/small-banners/1766217374273-max-antara-361.webp'
+  ];
+  
+  const [currentBannerIndex] = useState(0);
+
   useEffect(() => {
     const s = io('https://bcrm.100acress.com');
     setSocket(s);
@@ -284,33 +325,56 @@ const BDDashboardMobile = () => {
   };
 
   const renderMobileHeader = () => (
-    <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 shadow-lg">
-      <div className="p-4">
+    <div className="relative">
+      {/* Header Section - Above Banner */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="p-2 rounded-lg bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 transition-all duration-200 transform hover:scale-105"
+              className="p-2 rounded-lg bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 transition-all duration-200"
             >
               {showMobileMenu ? <X size={20} /> : <Menu size={20} />}
             </button>
             <div>
-              <h1 className="text-lg font-bold text-white flex items-center gap-2">
-                <Award className="w-5 h-5 text-yellow-300" />
-                BD Dashboard
-              </h1>
-              <p className="text-xs text-blue-100">Business Development Center</p>
+              <h1 className="text-lg font-bold text-white">{getDashboardTitle()}</h1>
+              {/* <p className="text-xs text-blue-100">Mobile Dashboard</p> */}
             </div>
           </div>
-          <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center border-3 border-white shadow-lg transform hover:scale-105 transition-all duration-200">
-            <span className="text-white text-lg font-bold">{getInitials(bdData.name)}</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate('/edit-profile')}
+              className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-white/30 hover:bg-white/30 transition-all duration-200 overflow-hidden"
+            >
+              {localStorage.getItem('userProfileImage') ? (
+                <img
+                  src={localStorage.getItem('userProfileImage')}
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User size={18} className="text-white" />
+              )}
+            </button>
           </div>
         </div>
       </div>
-      
-      {/* Performance indicator bar */}
-      <div className="bg-gradient-to-r from-green-500 to-emerald-600 h-1">
-        <div className="h-full bg-white/30 animate-pulse" style={{width: `${taskStatusCounts.completed > 0 ? (taskStatusCounts.completed / (taskStatusCounts.completed + taskStatusCounts.pending)) * 100 : 10}%`}}></div>
+
+      {/* Banner Section */}
+      <div className="relative h-32 overflow-hidden">
+        <img 
+          src={bannerImages[currentBannerIndex]} 
+          alt="Dashboard Banner"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+        
+        {/* Banner Text Overlay */}
+        {/* <div className="absolute bottom-4 left-4 right-4">
+          <h2 className="text-white text-xl font-bold drop-shadow-lg">
+            {getDashboardDescription()}
+          </h2>
+        </div> */}
       </div>
     </div>
   );
