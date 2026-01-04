@@ -9,7 +9,6 @@ const AddEditUserModalMobile = ({ isOpen, onClose, onSuccess, user = null }) => 
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
     phone: '',
     role: 'employee',
     department: '',
@@ -26,7 +25,6 @@ const AddEditUserModalMobile = ({ isOpen, onClose, onSuccess, user = null }) => 
     if (user && isOpen) {
       setFormData({
         name: user.name || '',
-        email: user.email || '',
         phone: user.phone || '',
         role: user.role || 'employee',
         department: user.department || '',
@@ -38,7 +36,6 @@ const AddEditUserModalMobile = ({ isOpen, onClose, onSuccess, user = null }) => 
       // Reset form for new user
       setFormData({
         name: '',
-        email: '',
         phone: '',
         role: 'employee',
         department: '',
@@ -54,12 +51,6 @@ const AddEditUserModalMobile = ({ isOpen, onClose, onSuccess, user = null }) => 
 
     if (!formData.name.trim()) {
       newErrors.name = 'Name is required';
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
     }
 
     if (!formData.phone.trim()) {
@@ -100,7 +91,6 @@ const AddEditUserModalMobile = ({ isOpen, onClose, onSuccess, user = null }) => 
       const payload = user 
         ? {
             name: formData.name,
-            email: formData.email,
             phone: formData.phone,
             role: formData.role,
             department: formData.department,
@@ -108,7 +98,6 @@ const AddEditUserModalMobile = ({ isOpen, onClose, onSuccess, user = null }) => 
           }
         : {
             name: formData.name,
-            email: formData.email,
             phone: formData.phone,
             role: formData.role,
             department: formData.department,
@@ -212,29 +201,6 @@ const AddEditUserModalMobile = ({ isOpen, onClose, onSuccess, user = null }) => 
             </div>
             {errors.name && (
               <p className="text-red-500 text-xs mt-1">{errors.name}</p>
-            )}
-          </div>
-
-          {/* Email Field */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email Address <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.email ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Enter email address"
-                disabled={!!user}
-              />
-            </div>
-            {errors.email && (
-              <p className="text-red-500 text-xs mt-1">{errors.email}</p>
             )}
           </div>
 

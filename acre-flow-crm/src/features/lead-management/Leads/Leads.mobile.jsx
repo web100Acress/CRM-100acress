@@ -4,7 +4,7 @@ import { Search, Filter, RefreshCw, Menu, X, Home, Settings, LogOut, BarChart3, 
 import MobileSidebar from '@/layout/MobileSidebar';
 import { Badge } from '@/layout/badge';
 import { Card, CardContent } from '@/layout/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/layout/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/layout/dialog';
 import { Button } from '@/layout/button';
 import { useToast } from '@/hooks/use-toast';
 import FollowUpModal from '@/features/employee/follow-up/FollowUpModal';
@@ -14,6 +14,7 @@ import LeadAdvancedOptionsMobile from '@/layout/LeadAdvancedOptions.mobile';
 
 const LeadsMobile = ({ userRole = 'employee' }) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('all-leads');
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -616,72 +617,34 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
   const fetchAssignmentChain = async (leadId) => {
     setChainLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      // Find the lead in the existing leads data
+      const lead = leads.find(l => (l._id || l.id) === leadId);
       
-      // Fetch assignment chain from API
-      const response = await fetch(`https://bcrm.100acress.com/api/leads/${leadId}/assignment-chain`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setAssignmentChain(data.chain || []);
+      if (lead && lead.assignmentChain) {
+        // Use existing assignment chain from lead data
+        setAssignmentChain(lead.assignmentChain);
       } else {
-        console.log('Assignment chain API not available, using mock data');
-        // Mock data for testing since API doesn't exist yet
-        const mockChain = [
-          {
-            id: 1,
-            name: 'Boss',
-            role: 'super-admin',
-            assignedTo: 'Test',
-            assignedToRole: 'employee',
-            assignedAt: '2026-01-01T12:30:46.000Z',
-            action: 'created',
-            notes: 'Lead created and assigned to employee'
-          },
-          {
-            id: 2,
-            name: 'Test',
-            role: 'employee',
-            assignedTo: null,
-            assignedToRole: null,
-            assignedAt: '2026-01-01T12:30:46.000Z',
-            action: 'currently_assigned',
-            notes: 'Currently handling this lead'
+        // Try to fetch from API as fallback
+        const token = localStorage.getItem('token');
+        
+        const response = await fetch(`https://bcrm.100acress.com/api/leads/${leadId}/assignment-chain`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
-        ];
-        setAssignmentChain(mockChain);
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setAssignmentChain(data.chain || []);
+        } else {
+          console.log('Assignment chain API not available');
+          setAssignmentChain([]);
+        }
       }
     } catch (error) {
-      console.log('Error fetching assignment chain, using mock data:', error);
-      // Mock data as fallback
-      const mockChain = [
-        {
-          id: 1,
-          name: 'Boss',
-          role: 'super-admin',
-          assignedTo: 'Test',
-          assignedToRole: 'employee',
-          assignedAt: '2026-01-01T12:30:46.000Z',
-          action: 'created',
-          notes: 'Lead created and assigned to employee'
-        },
-        {
-          id: 2,
-          name: 'Test',
-          role: 'employee',
-          assignedTo: null,
-          assignedToRole: null,
-          assignedAt: '2026-01-01T12:30:46.000Z',
-          action: 'currently_assigned',
-          notes: 'Currently handling this lead'
-        }
-      ];
-      setAssignmentChain(mockChain);
+      console.log('Error fetching assignment chain:', error);
+      setAssignmentChain([]);
     } finally {
       setChainLoading(false);
     }
@@ -742,7 +705,7 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <button
+                    {/* <button
                       onClick={() => {
                         setSelectedLeadForSettings(lead);
                         setShowSettings(true);
@@ -750,8 +713,8 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
                       className="bg-white/20 backdrop-blur-sm rounded-lg px-3 py-2 hover:bg-white/30 transition-colors"
                     >
                       <p className="text-white font-semibold text-sm">Lead Status</p>
-                      {/* <p className="text-blue-100 text-xs">View Options</p> */}
-                    </button>
+                      <p className="text-blue-100 text-xs">View Options</p>
+                    </button> */}
                     <button
                       onClick={() => {
                         setSelectedLeadForChain(lead);
@@ -908,6 +871,9 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
           <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Lead Details</DialogTitle>
+              <DialogDescription>
+                View detailed information about this lead
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="text-center">
@@ -967,20 +933,18 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
               <DialogTitle className="flex items-center justify-between">
                 <span className="flex items-center gap-2">
                   <Activity size={20} />
-                  Assignment Chain - {selectedLeadForChain.name}
+                  Assign Chain - {selectedLeadForChain.name}
                 </span>
-                <button
-                  onClick={() => setShowAssignmentChain(false)}
-                  className="p-1 rounded-full hover:bg-white/20 transition-colors"
-                >
-                  <X size={20} />
-                </button>
+                
               </DialogTitle>
+              <DialogDescription>
+                View the complete assignment history and chain for this lead
+              </DialogDescription>
             </DialogHeader>
             
             <div className="p-4 space-y-4">
               {/* Lead Summary */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
+              {/* <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
                     <span className="text-white text-lg font-bold">{getInitials(selectedLeadForChain.name)}</span>
@@ -991,7 +955,7 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
                     <p className="text-sm text-gray-500">{selectedLeadForChain.email}</p>
                   </div>
                 </div>
-              </div>
+              </div> */}
 
               {/* Assignment Chain */}
               <div className="space-y-3">
@@ -1001,39 +965,43 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
                 </h4>
                 
                 {/* Real assignment chain data */}
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
-                    <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-white text-xs font-bold">1</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <p className="font-medium text-gray-900">Boss 👤</p>
-                        <p className="text-xs text-gray-500">super-admin</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-xs text-gray-600">→ Test (employee)</p>
-                        <p className="text-xs text-gray-400">⏰ 1/1/2026, 12:30:46 PM</p>
-                      </div>
-                    </div>
+                {chainLoading ? (
+                  <div className="flex justify-center items-center py-8">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                    <p className="ml-2 text-gray-500">Loading assignment chain...</p>
                   </div>
-
-                  <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-white text-xs font-bold">2</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <p className="font-medium text-gray-900">Test �</p>
-                        <p className="text-xs text-gray-500">employee</p>
+                ) : assignmentChain.length > 0 ? (
+                  assignmentChain.map((chain, index) => (
+                    <div key={chain.id || index} className={`flex items-start gap-3 p-3 ${index === 0 ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'} rounded-lg border`}>
+                      <div className={`w-8 h-8 ${index === 0 ? 'bg-green-600' : 'bg-blue-600'} rounded-full flex items-center justify-center flex-shrink-0`}>
+                        <span className="text-white text-xs font-bold">{index + 1}</span>
                       </div>
-                      <div className="space-y-1">
-                        <p className="text-xs text-gray-600">— Currently Assigned —</p>
-                        <p className="text-xs text-gray-400">⏰ 1/1/2026, 12:30:46 PM</p>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium text-gray-900">{chain.name} 👤</p>
+                          <p className="text-xs text-gray-500">{chain.role}</p>
+                        </div>
+                        <div className="space-y-1">
+                          {chain.assignedTo ? (
+                            <p className="text-xs text-gray-600">→ {chain.assignedTo} ({chain.assignedToRole})</p>
+                          ) : (
+                            <p className="text-xs text-gray-600">— Currently Assigned —</p>
+                          )}
+                          <p className="text-xs text-gray-400">⏰ {new Date(chain.assignedAt).toLocaleDateString()}, {new Date(chain.assignedAt).toLocaleTimeString()}</p>
+                          {chain.notes && (
+                            <p className="text-xs text-gray-500 italic">📝 {chain.notes}</p>
+                          )}
+                        </div>
                       </div>
                     </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <Users size={40} className="text-gray-300 mx-auto mb-2" />
+                    <p className="text-gray-500">No assignment chain data available</p>
+                    <p className="text-xs text-gray-400 mt-1">This lead might not have been assigned yet</p>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Action Buttons */}
