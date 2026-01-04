@@ -705,8 +705,8 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
                       }}
                       className="bg-white/20 backdrop-blur-sm rounded-lg px-3 py-2 hover:bg-white/30 transition-colors"
                     >
-                      <p className="text-white font-semibold text-sm">⚙️ Settings</p>
-                      <p className="text-blue-100 text-xs">View Options</p>
+                      <p className="text-white font-semibold text-sm">Lead status</p>
+                      {/* <p className="text-blue-100 text-xs">View Options</p> */}
                     </button>
                     <button
                       onClick={() => {
@@ -717,7 +717,7 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
                       className="mt-2 w-full bg-white/20 backdrop-blur-sm text-white rounded-lg px-3 py-2 text-xs font-medium hover:bg-white/30 transition-colors flex items-center justify-center gap-1"
                     >
                       <Activity size={12} />
-                      Track Status
+                      Lead Chain
                     </button>
                   </div>
                 </div>
