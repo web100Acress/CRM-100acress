@@ -261,7 +261,7 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
 
           {/* Account */}
           <div className="p-4 border-t bg-gradient-to-b from-gray-50 to-white">
-            <div className="mb-4 p-3 bg-white rounded-lg shadow-sm border border-gray-100">
+            {/* <div className="mb-4 p-3 bg-white rounded-lg shadow-sm border border-gray-100">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-md">
                   <span className="text-white font-bold text-lg">
@@ -281,7 +281,7 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
                   </div>
                 </div>
               </div>
-            </div>
+            </div> */}
             
             <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Account</h4>
             <nav className="space-y-2">
