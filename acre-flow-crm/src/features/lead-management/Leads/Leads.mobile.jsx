@@ -82,6 +82,22 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
     fetchStats();
   }, []);
 
+  // Handle visibility change to detect when user returns from phone call
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && callStatus === 'connected') {
+        // User returned to app while call is connected, likely ended the call
+        endCall();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [callStatus, callData, callDuration]);
+
   // Helper function to get initials from name
   const getInitials = (name) => {
     const s = (name || '').trim();
@@ -485,7 +501,10 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
       setCallStatus('connecting');
       setCallDuration(0);
       
-      // Simulate connection
+      // Actually make the phone call
+      window.location.href = `tel:${phone}`;
+      
+      // Simulate connection after 2 seconds
       setTimeout(() => {
         console.log('Call connected');
         setCallStatus('connected');
@@ -532,10 +551,25 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
         status: callDuration >= 3 ? 'completed' : 'missed'
       });
       
+      // Close popup and redirect back to leads section
       setShowCallPopup(false);
       setCallData(null);
       setCallDuration(0);
       setCallStatus('connecting');
+      
+      // Redirect back to leads section
+      setTimeout(() => {
+        // Scroll to the lead that was called
+        const leadElement = document.getElementById(`lead-${callData.leadId}`);
+        if (leadElement) {
+          leadElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Highlight the lead briefly
+          leadElement.classList.add('ring-2', 'ring-green-500', 'ring-offset-2');
+          setTimeout(() => {
+            leadElement.classList.remove('ring-2', 'ring-green-500', 'ring-offset-2');
+          }, 2000);
+        }
+      }, 500);
     }, 1000);
   };
 
@@ -688,7 +722,7 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
       {/* Leads List */}
       <div className="p-4 space-y-4">
         {filteredLeads.map((lead) => (
-          <Card key={lead._id || lead.id} className="shadow-lg hover:shadow-xl transition-all duration-300 border-0 overflow-hidden">
+          <Card key={lead._id || lead.id} id={`lead-${lead._id || lead.id}`} className="shadow-lg hover:shadow-xl transition-all duration-300 border-0 overflow-hidden">
             <CardContent className="p-0">
               {/* Lead Header with Gradient */}
               <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 relative">
