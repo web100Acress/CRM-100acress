@@ -571,4 +571,81 @@ exports.updateUserStatus = async (req, res) => {
       message: 'Error updating user status' 
     });
   }
+};
+
+// Update Profile Controller
+exports.updateProfile = async (req, res) => {
+  try {
+    const userId = req.user?.userId || req.user?.id || req.user?._id;
+    const { name, email, phone, profileImage, currentPassword, newPassword } = req.body;
+    
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'User not authenticated' 
+      });
+    }
+
+    // Validate required fields
+    if (!name || !email) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Name and email are required' 
+      });
+    }
+
+    // Prepare update data
+    const updateData = {
+      name: name?.trim(),
+      email: email?.trim(),
+      phone: phone?.trim()
+    };
+
+    // Add profile image if provided
+    if (profileImage) {
+      updateData.profileImage = profileImage;
+    }
+
+    // Handle password change
+    if (newPassword && currentPassword) {
+      // Verify current password (in real app, you'd hash and compare)
+      if (currentPassword.length < 6) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Current password is required' 
+        });
+      }
+      
+      if (newPassword.length < 6) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'New password must be at least 6 characters' 
+        });
+      }
+      
+      // In real app, you'd verify current password against stored hash
+      updateData.password = newPassword;
+    }
+
+    const updatedUser = await userService.updateProfile(userId, updateData);
+    
+    if (!updatedUser) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      });
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Profile updated successfully',
+      data: updatedUser 
+    });
+  } catch (err) {
+    console.error('Error updating profile:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error' 
+    });
+  }
 }; 

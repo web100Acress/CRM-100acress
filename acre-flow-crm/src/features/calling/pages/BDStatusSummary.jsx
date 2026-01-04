@@ -14,6 +14,12 @@ export default function BDStatusSummary() {
   const [isMobile, setIsMobile] = useState(false);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [forceMobile, setForceMobile] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [bdSummary, setBdSummary] = useState([]);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedBD, setSelectedBD] = useState(null);
+  const [bdDetails, setBdDetails] = useState(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
   
   // Detect mobile device and handle window resize
   useEffect(() => {
@@ -55,7 +61,7 @@ export default function BDStatusSummary() {
   console.log('📱 BDStatusSummaryMobile component loaded:', !!BDStatusSummaryMobile);
   
   // Force mobile view for testing - remove this in production
-  const forceTestMobile = true; // Set to false to disable
+  const forceTestMobile = false; // Set to false to disable
   
   // Return mobile component for mobile devices
   if (shouldUseMobile || forceTestMobile) {
@@ -75,13 +81,6 @@ export default function BDStatusSummary() {
   } else {
     console.log('🖥️ Using Desktop View');
   }
-  
-  const [loading, setLoading] = useState(true);
-  const [bdSummary, setBdSummary] = useState([]);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [selectedBD, setSelectedBD] = useState(null);
-  const [bdDetails, setBdDetails] = useState(null);
-  const [detailsLoading, setDetailsLoading] = useState(false);
 
   const fetchBDSummary = async () => {
     setLoading(true);

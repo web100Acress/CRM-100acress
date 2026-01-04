@@ -12,5 +12,6 @@ router.patch('/:id', auth, userController.updateUser);
 router.patch('/:id/modules', auth, userController.updateUserModules);
 router.put('/:id/status', auth, userController.updateUserStatus);
 router.delete('/:id', auth, userController.deleteUser);
+router.put('/profile', auth, userController.updateProfile);
 
 module.exports = router;
