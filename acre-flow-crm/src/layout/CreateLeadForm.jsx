@@ -19,6 +19,12 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
   const [assignableUsers, setAssignableUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast(); // Initialize useToast
+  const [currentUserRole, setCurrentUserRole] = useState('');
+
+  useEffect(() => {
+    const userRole = localStorage.getItem('userRole');
+    setCurrentUserRole(userRole);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -50,10 +56,22 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const json = await response.json();
-      setAssignableUsers(json.data || []);
+      let users = json.data || [];
+      
+      // Filter users based on current user role
+      if (currentUserRole === 'super-admin') {
+        // Super admin can only assign to head-admin users
+        users = users.filter(user => user.role === 'head-admin');
+      } else {
+        // Other roles can assign to all users (or implement your logic)
+        // For now, keep all users for other roles
+      }
+      
+      setAssignableUsers(users);
+      
       // Pre-select the first assignable user if any, otherwise keep unassigned
-      if (json.data && json.data.length > 0) {
-        setFormData(prev => ({ ...prev, assignedTo: json.data[0]._id }));
+      if (users.length > 0) {
+        setFormData(prev => ({ ...prev, assignedTo: users[0]._id }));
       } else {
         setFormData(prev => ({ ...prev, assignedTo: '' }));
       }
@@ -128,26 +146,24 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
   };
 
   const budgetOptions = [
-    '₹20L - ₹30L',
-    '₹30L - ₹45L',
-    '₹45L - ₹60L',
-    '₹60L - ₹80L',
-    '₹80L - ₹1Cr',
-    '₹1Cr - ₹1.5Cr',
-    '₹1.5Cr+'
+    'Under ₹1 Cr',
+    '₹1 Cr - ₹5 Cr',
+    '₹5 Cr - ₹10 Cr',
+    '₹10 Cr - ₹20 Cr',
+    '₹20 Cr - ₹50 Cr',
+    'Above ₹50 Cr'
   ];
 
   const propertyOptions = [
-    '1BHK Apartment',
-    '2BHK Apartment',
-    '2BHK Flat',
-    '3BHK Apartment',
-    '3BHK Flat',
-    '4BHK Apartment',
-    '4BHK Villa',
-    'Villa',
-    'Independent House',
-    'Plot'
+    'SCO Plots',
+    'Luxury Villas',
+    'Plots In Gurugram',
+    'Residential Projects',
+    'Independent Floors',
+    'Commercial Projects',
+    'Farm Houses',
+    'Industrial Projects',
+    'Senior Living'
   ];
 
   const statusOptions = [
@@ -187,7 +203,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
               className="form-input"
             />
           </div>
-          <div className="form-group">
+          {/* <div className="form-group">
             <label htmlFor="email">Email <span className="required">*</span></label>
             <input
               id="email"
@@ -199,7 +215,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
               required
               className="form-input"
             />
-          </div>
+          </div> */}
 
           <div className="form-group">
             <label htmlFor="phone">Phone Number <span className="required">*</span></label>
@@ -273,7 +289,12 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
             </select>
           </div>
           <div className="form-group">
-            <label htmlFor="assignedTo">Assign To</label>
+            <label htmlFor="assignedTo">
+              Assign To 
+              {currentUserRole === 'super-admin' && (
+                <span className="text-xs text-gray-500 ml-2">(Only HODs)</span>
+              )}
+            </label>
             <select
               id="assignedTo"
               name="assignedTo"
@@ -284,10 +305,15 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
               <option value="">Unassigned</option>
               {assignableUsers.map((user) => (
                 <option key={user._id} value={user._id}>
-                  {user.name} ({user.role})
+                  {user.name} ({user.role === 'head-admin' ? 'HOD' : user.role})
                 </option>
               ))}
             </select>
+            {currentUserRole === 'super-admin' && assignableUsers.length === 0 && (
+              <p className="text-xs text-gray-500 mt-1">
+                No HODs available to assign leads to
+              </p>
+            )}
           </div>
         </form>
 

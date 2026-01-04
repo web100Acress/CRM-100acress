@@ -195,7 +195,7 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
             </button>
             <div>
               <h1 className="text-lg font-bold text-white">BD Status Summary</h1>
-              <p className="text-xs text-blue-100">Business Development Analytics</p>
+              {/* <p className="text-xs text-blue-100">Business Development Analytics</p> */}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -216,14 +216,14 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
         
         {/* Banner Text Overlay */}
-        <div className="absolute bottom-4 left-4 right-4">
+        {/* <div className="absolute bottom-4 left-4 right-4">
           <h2 className="text-white text-xl font-bold drop-shadow-lg">
             Business Development Performance
           </h2>
           <p className="text-white/90 text-sm drop-shadow-md">
             Track BD performance and lead conversion
           </p>
-        </div>
+        </div> */}
       </div>
 
       {/* Stats Cards */}

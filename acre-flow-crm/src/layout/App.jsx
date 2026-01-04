@@ -37,7 +37,7 @@ import ViewPropertyAdmin from "@/features/admin/components/ViewPropertyAdmin";
 
 import CallLogs from "@/features/lead-management/CallLogs/CallLogs.container";
 import CallingSettings from '@/features/lead-management/CallingSettings/CallingSettings.container';
-import BDStatusSummary from '@/features/lead-management/BDStatusSummary/BDStatusSummary.container';
+import BDStatusSummary from '@/features/calling/pages/BDStatusSummary';
 import EmailCenter from '@/features/lead-management/EmailCenter/EmailCenter.container';
 import WhatsAppLogs from "@/features/lead-management/WhatsAppLogs/WhatsAppLogs.container";
 
@@ -65,6 +65,7 @@ import ShortSetting from '@/pages/ShortSetting/ShortSetting.container';
 import BackToTopButton from '@/pages/BackToTopButton/BackToTopButton.container';
 import ActivityDashboard from '@/pages/ActivityDashboard/ActivityDashboard.container';
 import EmployeeDashboard from '@/features/employee/dashboard/EmployeeDashboard';
+import EditProfileMobile from '@/pages/EditProfile/EditProfile.mobile';
 
 // Import Blog Components (temporarily disabled)
 // import BlogDashboard from "@/features/blog/pages/BlogDashboard";
@@ -571,6 +572,7 @@ const App = () => {
               }
             />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
+            <Route path="/edit-profile" element={isLoggedIn ? <EditProfileMobile /> : <Navigate to="/login" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

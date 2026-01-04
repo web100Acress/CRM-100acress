@@ -58,6 +58,14 @@ const updateUserStatus = async (id, status) => {
   );
 };
 
+const updateProfile = async (userId, updateData) => {
+  return await User.findByIdAndUpdate(
+    userId, 
+    updateData, 
+    { new: true, runValidators: true }
+  );
+};
+
 module.exports = {
   createUser,
   getUsers,
@@ -67,4 +75,5 @@ module.exports = {
   setResetToken,
   resetPassword,
   updateUserStatus,
+  updateProfile
 };
