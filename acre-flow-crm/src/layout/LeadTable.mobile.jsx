@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Eye, MessageSquare, Phone, Mail, MapPin, Plus, Trash2, ArrowRight, UserCheck, PhoneCall, Calendar, Clock, Filter, Edit, MoreVertical, Settings, PieChart } from 'lucide-react';
+import { Search, Eye, MessageSquare, Phone, Mail, MapPin, Plus, Trash2, ArrowRight, UserCheck, PhoneCall, Calendar, Clock, Filter, Edit, MoreVertical, Settings, PieChart, ArrowRight as ForwardIcon } from 'lucide-react';
 import { Badge } from '@/layout/badge';
 import { Card, CardContent } from '@/layout/card';
 import { Button } from '@/layout/button';
@@ -20,8 +20,12 @@ const LeadTableMobile = ({ userRole }) => {
   const [selectedLeadForAdvanced, setSelectedLeadForAdvanced] = useState(null);
   const [showAdvancedLeadInfo, setShowAdvancedLeadInfo] = useState(false);
   const [callHistory, setCallHistory] = useState({});
+  const [forwardingLead, setForwardingLead] = useState(null);
+  const [assignableUsers, setAssignableUsers] = useState([]);
   const { toast } = useToast();
   const leadsPerPage = 10;
+  const currentUserId = localStorage.getItem("userId");
+  const currentUserRole = localStorage.getItem("userRole");
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -47,7 +51,27 @@ const LeadTableMobile = ({ userRole }) => {
       }
     };
 
+    const fetchAssignableUsers = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(
+          "https://bcrm.100acress.com/api/leads/assignable-users",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        const json = await response.json();
+        setAssignableUsers(json.data || []);
+      } catch (error) {
+        console.error("Error fetching assignable users:", error);
+      }
+    };
+
     fetchLeads();
+    fetchAssignableUsers();
   }, [toast]);
 
   const filteredLeads = leadsList.filter((lead) => {
@@ -242,6 +266,98 @@ const LeadTableMobile = ({ userRole }) => {
         status: "error",
       });
     }
+  };
+
+  const handleForwardLead = async (leadId) => {
+    try {
+      setForwardingLead(leadId);
+      const token = localStorage.getItem("token");
+      
+      console.log('Attempting to forward lead:', leadId);
+      console.log('Token:', token ? 'Present' : 'Missing');
+      
+      const res = await fetch(
+        `https://bcrm.100acress.com/api/leads/${leadId}/forward`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({}),
+        }
+      );
+
+      console.log('Response status:', res.status);
+      console.log('Response ok:', res.ok);
+      
+      let data;
+      try {
+        data = await res.json();
+        console.log('Response data:', data);
+      } catch (parseError) {
+        console.error('Error parsing response:', parseError);
+        const text = await res.text();
+        console.error('Response text:', text);
+        throw new Error('Invalid response from server');
+      }
+      
+      if (res.ok) {
+        // Refresh the leads list
+        const leadsResponse = await fetch("https://bcrm.100acress.com/api/leads", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        const leadsJson = await leadsResponse.json();
+        setLeadsList(leadsJson.data || []);
+        toast({
+          title: "Success",
+          description: data.message || "Lead forwarded successfully",
+          status: "success",
+        });
+      } else {
+        console.error('Forward failed:', data);
+        toast({
+          title: "Error",
+          description: data.message || data.error || "Failed to forward lead",
+          status: "error",
+        });
+      }
+    } catch (err) {
+      console.error('Forward lead error:', err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to forward lead",
+        status: "error",
+      });
+    } finally {
+      setForwardingLead(null);
+    }
+  };
+
+  const canForwardLead = (lead) => {
+    // Only the current assignee can forward the lead
+    if (lead.assignedTo !== currentUserId) return false;
+
+    // Define forwarding hierarchy - only BD and team-leader can forward
+    const forwardHierarchy = {
+      "super-admin": ["head-admin"],
+      "head-admin": ["sales_head", "employee"], // head-admin can forward to sales_head and employee
+      "sales_head": ["employee"], // sales_head (BD) can forward to employee
+      "team-leader": ["employee"], // team-leader can forward to employee
+      "admin": ["sales_head"],
+      "boss": ["head-admin"],
+      "crm_admin": ["head-admin"],
+    };
+
+    const possibleRoles = forwardHierarchy[currentUserRole];
+    
+    if (!possibleRoles) return false;
+    
+    // Check if there are any assignable users with the target roles
+    return assignableUsers.some((user) => possibleRoles.includes(user.role));
   };
 
   const paginatedLeads = filteredLeads.slice(
@@ -452,6 +568,21 @@ const LeadTableMobile = ({ userRole }) => {
                           <span className="text-sm">Advanced Options</span>
                         </button>
                       </div>
+                      {canForwardLead(lead) && (
+                        <div className="border-t border-gray-100">
+                          <button
+                            onClick={() => { handleForwardLead(lead._id); setShowActions(null); }}
+                            disabled={forwardingLead === lead._id}
+                            className="w-full text-left px-3 py-2 hover:bg-purple-50 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Forward to next level"
+                          >
+                            <ForwardIcon size={14} />
+                            <span className="text-sm">
+                              {forwardingLead === lead._id ? "Forwarding..." : "Forward Lead"}
+                            </span>
+                          </button>
+                        </div>
+                      )}
                       <div className="border-t border-gray-100">
                         <button
                           onClick={() => { handleDelete(lead); setShowActions(null); }}
@@ -521,6 +652,19 @@ const LeadTableMobile = ({ userRole }) => {
                   <Eye size={16} />
                   <span className="text-sm">View</span>
                 </button>
+                {canForwardLead(lead) && (
+                  <button
+                    onClick={() => handleForwardLead(lead._id)}
+                    disabled={forwardingLead === lead._id}
+                    className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Forward to next level"
+                  >
+                    <ForwardIcon size={16} />
+                    <span className="text-sm">
+                      {forwardingLead === lead._id ? "..." : "Forward"}
+                    </span>
+                  </button>
+                )}
               </div>
             </CardContent>
           </Card>

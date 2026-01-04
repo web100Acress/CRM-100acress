@@ -167,7 +167,7 @@ const LeadTable = ({ userRole }) => {
   }, []);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const leadsPerPage = window.innerWidth <= 480 ? 30 : 20;
+  const leadsPerPage = window.innerWidth <= 480 ? 30 : 100;
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -696,6 +696,10 @@ const LeadTable = ({ userRole }) => {
     try {
       setForwardingLead(leadId);
       const token = localStorage.getItem("token");
+      
+      console.log('Attempting to forward lead:', leadId);
+      console.log('Token:', token ? 'Present' : 'Missing');
+      
       const res = await fetch(
         `https://bcrm.100acress.com/api/leads/${leadId}/forward`,
         {
@@ -704,11 +708,24 @@ const LeadTable = ({ userRole }) => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ action: "forward" }),
+          body: JSON.stringify({}),
         }
       );
 
-      const data = await res.json();
+      console.log('Response status:', res.status);
+      console.log('Response ok:', res.ok);
+      
+      let data;
+      try {
+        data = await res.json();
+        console.log('Response data:', data);
+      } catch (parseError) {
+        console.error('Error parsing response:', parseError);
+        const text = await res.text();
+        console.error('Response text:', text);
+        throw new Error('Invalid response from server');
+      }
+      
       if (res.ok) {
         // Refresh the leads list
         const leadsResponse = await fetch("https://bcrm.100acress.com/api/leads", {
@@ -721,10 +738,12 @@ const LeadTable = ({ userRole }) => {
         setLeadsList(leadsJson.data || []);
         alert(data.message || "Lead forwarded successfully");
       } else {
-        alert(data.message || "Failed to forward lead");
+        console.error('Forward failed:', data);
+        alert(data.message || data.error || "Failed to forward lead");
       }
     } catch (err) {
-      alert("Error: " + err.message);
+      console.error('Forward lead error:', err);
+      alert(err.message || "Failed to forward lead");
     } finally {
       setForwardingLead(null);
     }
@@ -737,19 +756,22 @@ const LeadTable = ({ userRole }) => {
     // Only the current assignee can forward the lead
     if (lead.assignedTo !== currentUserId) return false;
 
-    // Define forwarding hierarchy for new roles
+    // Define forwarding hierarchy - only BD and team-leader can forward
     const forwardHierarchy = {
-      "boss": "head-admin",
-      "head-admin": "team-leader", 
-      "team-leader": "employee",
-      "admin": "team-leader",
-      "super-admin": "boss",
-      "crm_admin": "head-admin",
+      "super-admin": ["head-admin"],
+      "head-admin": ["employee", "employee"], // head-admin can forward to sales_head and employee
+   // sales_head (BD) can forward to employee
+      "team-leader": ["employee"], // team-leader can forward to employee
+      "boss": ["head-admin"],
+     
     };
 
-    const nextRole = forwardHierarchy[currentUserRole];
-
-    return nextRole && assignableUsers.some((user) => user.role === nextRole);
+    const possibleRoles = forwardHierarchy[currentUserRole];
+    
+    if (!possibleRoles) return false;
+    
+    // Check if there are any assignable users with the target roles
+    return assignableUsers.some((user) => possibleRoles.includes(user.role));
   };
 
   const canAssignToSelf = (lead) => {
