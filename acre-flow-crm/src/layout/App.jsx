@@ -65,6 +65,8 @@ import ShortSetting from '@/pages/ShortSetting/ShortSetting.container';
 import BackToTopButton from '@/pages/BackToTopButton/BackToTopButton.container';
 import ActivityDashboard from '@/pages/ActivityDashboard/ActivityDashboard.container';
 import EmployeeDashboard from '@/features/employee/dashboard/EmployeeDashboard';
+import EmployeeDashboardMobile from '@/features/employee/dashboard/EmployeeDashboard.mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import EditProfileMobile from '@/pages/EditProfile/EditProfile.mobile';
 
 // Import Blog Components (temporarily disabled)
@@ -87,6 +89,7 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const [isDeveloperLoggedIn, setIsDeveloperLoggedIn] = useState(false);
+  const isMobile = useIsMobile();
 
   const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
 
@@ -539,7 +542,7 @@ const App = () => {
               path="/employee-dashboard"
               element={
                 isLoggedIn && (userRole === "employee" || userRole === "user") ? (
-                  <EmployeeDashboard />
+                  isMobile ? <EmployeeDashboardMobile /> : <EmployeeDashboard />
                 ) : (
                   <Navigate to="/login" replace />
                 )
