@@ -1113,6 +1113,29 @@ const BlogWriteModal = () => {
     }
   };
 
+  /** Process valid file after all validations pass */
+  const processValidFile = (file, objUrl) => {
+    // Revoke previous object URL if exists
+    if (frontPreviewObjUrl) {
+      URL.revokeObjectURL(frontPreviewObjUrl);
+    }
+    
+    // Set states
+    setFrontImage(file);
+    setFrontPreviewObjUrl(objUrl);
+    setFrontImagePreview(objUrl);
+    
+    // Auto-set meta title from filename if empty
+    if (!metaTitle) {
+      const fileName = file.name.replace(/\.[^/.]+$/, ''); // Remove extension
+      const formattedName = fileName
+        .replace(/[-_]/g, ' ') // Replace underscores and dashes with spaces
+        .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+        .trim();
+      setMetaTitle(formattedName);
+    }
+  };
+
   /** Featured image change - handles both file upload and URL */
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
@@ -1138,28 +1161,48 @@ const BlogWriteModal = () => {
       return;
     }
 
-    // Revoke previous object URL if exists
-    if (frontPreviewObjUrl) {
-      URL.revokeObjectURL(frontPreviewObjUrl);
-    }
-
-    // Create object URL for preview
+    // Check image dimensions and aspect ratio (1200x628 = 300:157)
+    const img = new Image();
+    img.onload = function() {
+      const expectedWidth = 1200;
+      const expectedHeight = 628;
+      const tolerance = 5; // Allow 5px tolerance
+      
+      if (Math.abs(this.width - expectedWidth) > tolerance || Math.abs(this.height - expectedHeight) > tolerance) {
+        messageApi.error(`Image must be exactly ${expectedWidth} × ${expectedHeight} pixels (Current: ${this.width} × ${this.height})`);
+        // Reset the file input
+        e.target.value = '';
+        return;
+      }
+      
+      // Calculate aspect ratio
+      const expectedRatio = expectedWidth / expectedHeight;
+      const actualRatio = this.width / this.height;
+      const ratioTolerance = 0.01; // 1% tolerance
+      
+      if (Math.abs(actualRatio - expectedRatio) > ratioTolerance) {
+        messageApi.error(`Image aspect ratio must be ${expectedWidth}:${expectedHeight} (300:157). Current ratio is ${this.width}:${this.height}`);
+        // Reset the file input
+        e.target.value = '';
+        return;
+      }
+      
+      // If all validations pass, proceed with file processing
+      const objUrl = URL.createObjectURL(file);
+      processValidFile(file, objUrl);
+    };
+    
+    img.onerror = function() {
+      messageApi.error('Failed to load image. Please try a different file.');
+      e.target.value = '';
+    };
+    
+    // Create object URL for preview and validation
     const objUrl = URL.createObjectURL(file);
+    img.src = objUrl;
     
-    // Set states
-    setFrontImage(file);
-    setFrontPreviewObjUrl(objUrl);
-    setFrontImagePreview(objUrl);
-    
-    // Auto-set meta title from filename if empty
-    if (!metaTitle) {
-      const fileName = file.name.replace(/\.[^/.]+$/, ''); // Remove extension
-      const formattedName = fileName
-        .replace(/[-_]/g, ' ') // Replace underscores and dashes with spaces
-        .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-        .trim();
-      setMetaTitle(formattedName);
-    }
+    // Don't process file yet - wait for validation
+    return;
   };
 
   /** Insert image into Quill at cursor by URL */
@@ -1373,15 +1416,31 @@ const BlogWriteModal = () => {
           duration: 0,
         });
 
-        const res = await api100acress.put(`/blog/update/${blogId}`, formDataAPI);
-
-        messageApi.destroy('updateloading');
-        if (res.status === 200) {
-          messageApi.success('Blog updated successfully');
-          resetForm();
-          navigate('/seo/blogs');
-        } else {
-          messageApi.error('Error updating blog');
+        try {
+          const res = await api100acress.put(`/blog/update/${blogId}`, formDataAPI);
+          
+          messageApi.destroy('updateloading');
+          
+          // Check for successful response (status 200-299)
+          if (res.status >= 200 && res.status < 300) {
+            messageApi.success({
+              content: 'Blog updated successfully!',
+              duration: 3,
+            });
+            resetForm();
+            // Add a small delay before navigation to allow the toast to show
+            setTimeout(() => {
+              navigate('/seo/blogs');
+            }, 500);
+          } else {
+            messageApi.error({
+              content: 'Error updating blog. Please try again.',
+              duration: 3,
+            });
+          }
+        } catch (updateError) {
+          messageApi.destroy('updateloading');
+          throw updateError; // Re-throw to be caught by outer catch
         }
       } else {
         messageApi.open({
