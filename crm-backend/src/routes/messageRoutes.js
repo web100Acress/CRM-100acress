@@ -98,13 +98,40 @@ router.post('/send', auth, async (req, res) => {
 // Get conversation between two users
 router.get('/conversation/:userId', auth, async (req, res) => {
   try {
-    const currentUserId = req.user._id || req.user.userId;
+    console.log('Auth user object:', req.user);
+    
+    const currentUserId = req.user._id || req.user.userId || req.user.id;
     const otherUserId = req.params.userId;
+    
+    console.log('User ID extraction:', {
+      _id: req.user?._id,
+      userId: req.user?.userId,
+      id: req.user?.id,
+      finalCurrentUserId: currentUserId
+    });
+    
+    if (!currentUserId) {
+      console.error('Current user ID is missing!');
+      return res.status(401).json({
+        success: false,
+        message: 'User not authenticated properly'
+      });
+    }
+    
+    // Convert otherUserId to ObjectId if it's a string
+    const mongoose = require('mongoose');
+    const otherUserObjectId = typeof otherUserId === 'string' ? 
+      new mongoose.Types.ObjectId(otherUserId) : otherUserId;
+
+    console.log('Fetching conversation:', {
+      currentUserId,
+      otherUserId: otherUserObjectId
+    });
 
     const messages = await Message.find({
       $or: [
-        { senderId: currentUserId, recipientId: otherUserId },
-        { senderId: otherUserId, recipientId: currentUserId }
+        { senderId: currentUserId, recipientId: otherUserObjectId },
+        { senderId: otherUserObjectId, recipientId: currentUserId }
       ]
     }).sort({ timestamp: 1 });
 

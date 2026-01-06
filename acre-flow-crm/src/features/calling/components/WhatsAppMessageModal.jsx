@@ -93,6 +93,13 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
   const handleSendMessage = async () => {
     if (!message.trim() || isSending) return;
 
+    console.log('Recipient data:', recipient);
+    console.log('Recipient ID fields:', {
+      _id: recipient?._id,
+      bdId: recipient?.bdId,
+      id: recipient?.id
+    });
+
     const newMessage = {
       id: Date.now(),
       text: message.trim(),
@@ -115,7 +122,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          recipientId: recipient._id,
+          recipientId: recipient._id || recipient.bdId || recipient.id,
           recipientEmail: recipient.email,
           recipientName: recipient.name,
           message: message.trim()
