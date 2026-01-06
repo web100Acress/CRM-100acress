@@ -34,6 +34,7 @@ import MobileSidebar from '@/layout/MobileSidebar';
 import { Badge } from '@/layout/badge';
 import { Card, CardContent } from '@/layout/card';
 import { useToast } from '@/hooks/use-toast';
+import WhatsAppMessageModal from "../components/WhatsAppMessageModal";
 
 const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
   const navigate = useNavigate();
@@ -47,6 +48,8 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
   const [showFilters, setShowFilters] = useState(false);
   const [rightMenuOpen, setRightMenuOpen] = useState(false);
   const [activityInterval, setActivityInterval] = useState(null);
+  const [messageModalVisible, setMessageModalVisible] = useState(false);
+  const [messageRecipient, setMessageRecipient] = useState(null);
   const [stats, setStats] = useState({
     totalBDs: 0,
     activeBDs: 0,
@@ -350,6 +353,16 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
     }
   };
 
+  const handleMessageOpen = (bd) => {
+    setMessageRecipient(bd);
+    setMessageModalVisible(true);
+  };
+
+  const handleMessageClose = () => {
+    setMessageModalVisible(false);
+    setMessageRecipient(null);
+  };
+
   const filteredBDs = bdSummary.filter(bd => 
     bd.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     bd.email?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -611,13 +624,7 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
                   <span>View Details</span>
                 </button>
                 <button
-                  onClick={() => {
-                    // Message functionality
-                    toast({
-                      title: "Message",
-                      description: `Opening message for ${bd.name}`,
-                    });
-                  }}
+                  onClick={() => handleMessageOpen(bd)}
                   className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
                 >
                   <MessageSquare size={14} />
@@ -917,6 +924,13 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
           </button>
         </div>
       </div>
+
+      {/* WhatsApp Message Modal */}
+      <WhatsAppMessageModal
+        isOpen={messageModalVisible}
+        onClose={handleMessageClose}
+        recipient={messageRecipient}
+      />
     </div>
   );
 };
