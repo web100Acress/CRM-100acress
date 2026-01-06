@@ -107,7 +107,8 @@ router.get('/conversation/:userId', auth, async (req, res) => {
       _id: req.user?._id,
       userId: req.user?.userId,
       id: req.user?.id,
-      finalCurrentUserId: currentUserId
+      finalCurrentUserId: currentUserId,
+      otherUserIdParam: otherUserId
     });
     
     if (!currentUserId) {
@@ -118,20 +119,22 @@ router.get('/conversation/:userId', auth, async (req, res) => {
       });
     }
     
-    // Convert otherUserId to ObjectId if it's a string
+    // Convert both IDs to ObjectId if they're strings
     const mongoose = require('mongoose');
+    const currentUserObjectId = typeof currentUserId === 'string' ? 
+      new mongoose.Types.ObjectId(currentUserId) : currentUserId;
     const otherUserObjectId = typeof otherUserId === 'string' ? 
       new mongoose.Types.ObjectId(otherUserId) : otherUserId;
 
     console.log('Fetching conversation:', {
-      currentUserId,
-      otherUserId: otherUserObjectId
+      currentUserObjectId,
+      otherUserObjectId
     });
 
     const messages = await Message.find({
       $or: [
-        { senderId: currentUserId, recipientId: otherUserObjectId },
-        { senderId: otherUserObjectId, recipientId: currentUserId }
+        { senderId: currentUserObjectId, recipientId: otherUserObjectId },
+        { senderId: otherUserObjectId, recipientId: currentUserObjectId }
       ]
     }).sort({ timestamp: 1 });
 
