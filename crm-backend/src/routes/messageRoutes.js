@@ -98,33 +98,36 @@ router.post('/send', auth, async (req, res) => {
 // Get conversation between two users
 router.get('/conversation/:userId', auth, async (req, res) => {
   try {
-    console.log('Auth user object:', req.user);
-    
-    const currentUserId = req.user._id || req.user.userId || req.user.id;
-    const otherUserId = req.params.userId;
+    const currentUserId = req.user.id; // Use req.user.id as per logs
+    const { userId: otherUserId } = req.params;
     
     console.log('User ID extraction:', {
-      _id: req.user?._id,
-      userId: req.user?.userId,
-      id: req.user?.id,
-      finalCurrentUserId: currentUserId,
+      currentUserId,
       otherUserIdParam: otherUserId
     });
     
-    if (!currentUserId) {
-      console.error('Current user ID is missing!');
-      return res.status(401).json({
+    // Validate otherUserId
+    if (!otherUserId || otherUserId === "undefined") {
+      console.error('Other user ID is missing or undefined!');
+      return res.status(400).json({
         success: false,
-        message: 'User not authenticated properly'
+        message: 'Other user ID is required'
       });
     }
     
-    // Convert both IDs to ObjectId if they're strings
+    // Validate ObjectIds
     const mongoose = require('mongoose');
-    const currentUserObjectId = typeof currentUserId === 'string' ? 
-      new mongoose.Types.ObjectId(currentUserId) : currentUserId;
-    const otherUserObjectId = typeof otherUserId === 'string' ? 
-      new mongoose.Types.ObjectId(otherUserId) : otherUserId;
+    if (!mongoose.Types.ObjectId.isValid(currentUserId) || !mongoose.Types.ObjectId.isValid(otherUserId)) {
+      console.error('Invalid user ID format!');
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid user ID format'
+      });
+    }
+    
+    // Convert to ObjectIds
+    const currentUserObjectId = new mongoose.Types.ObjectId(currentUserId);
+    const otherUserObjectId = new mongoose.Types.ObjectId(otherUserId);
 
     console.log('Fetching conversation:', {
       currentUserObjectId,
