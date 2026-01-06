@@ -6,21 +6,56 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
   const [messages, setMessages] = useState([]);
   const [isSending, setIsSending] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [assignableUsers, setAssignableUsers] = useState([]);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
   const recipientId = recipient?._id || recipient?.bdId || recipient?.id;
+
+  useEffect(() => {
+    const fetchAssignableUsers = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('https://bcrm.100acress.com/api/leads/assignable-users', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        const json = await response.json();
+        setAssignableUsers(Array.isArray(json?.data) ? json.data : []);
+      } catch (error) {
+        console.error('Error fetching assignable users:', error);
+        setAssignableUsers([]);
+      }
+    };
+
+    if (isOpen) fetchAssignableUsers();
+  }, [isOpen]);
+
+  const resolvedRecipient = (() => {
+    if (!recipientId) return recipient;
+    const fromAssignable = assignableUsers.find((u) => String(u?._id) === String(recipientId));
+    return fromAssignable ? { ...recipient, ...fromAssignable } : recipient;
+  })();
+
   const recipientDisplayName =
-    recipient?.name || recipient?.recipientName || recipient?.fullName || recipient?.username || recipient?.email || 'Chat';
+    resolvedRecipient?.name ||
+    resolvedRecipient?.userName ||
+    resolvedRecipient?.recipientName ||
+    resolvedRecipient?.fullName ||
+    resolvedRecipient?.username ||
+    resolvedRecipient?.email ||
+    'Chat';
   const roleLabel = (() => {
-    const r = String(recipient?.role || recipient?.userRole || '').toLowerCase();
+    const r = String(resolvedRecipient?.role || resolvedRecipient?.userRole || recipient?.role || recipient?.userRole || '').toLowerCase();
     if (r === 'super-admin') return 'Super Admin';
     if (r === 'head-admin' || r === 'head') return 'Head Admin';
     if (r === 'team-leader') return 'Team Leader';
     if (r === 'boss') return 'Boss';
     return null;
   })();
-  const recipientHeaderTitle = roleLabel || recipientDisplayName;
+  const recipientHeaderTitle = recipientDisplayName;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -143,8 +178,8 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
         },
         body: JSON.stringify({
           recipientId: recipient._id || recipient.bdId || recipient.id,
-          recipientEmail: recipient.email,
-          recipientName: recipient.name || recipient.recipientName || recipient.fullName || recipient.username || recipient.email,
+          recipientEmail: resolvedRecipient?.email || recipient.email,
+          recipientName: recipientDisplayName,
           message: message.trim()
         })
       });
@@ -256,7 +291,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
             </div>
             <div>
               <h3 className="font-bold text-base leading-tight">{recipientHeaderTitle}</h3>
-              <p className="text-xs text-green-100 opacity-90">Click to view profile</p>
+              <p className="text-xs text-green-100 opacity-90">{roleLabel || 'Click to view profile'}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
