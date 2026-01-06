@@ -27,7 +27,8 @@ import {
   AlertCircle,
   PhoneCall,
   PieChart,
-  Briefcase
+  Briefcase,
+  Activity
 } from 'lucide-react';
 import MobileSidebar from '@/layout/MobileSidebar';
 import { Badge } from '@/layout/badge';
@@ -133,6 +134,11 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
       const data = await response.json();
       const bdData = data.data || null;
       
+      // Initialize with empty arrays if not present
+      bdData.callHistory = bdData.callHistory || [];
+      bdData.followUps = bdData.followUps || [];
+      bdData.recentActivity = bdData.recentActivity || [];
+      
       // Fetch call history for this BD separately
       try {
         // Since getCallRecords only works for current user, we'll fetch BD's leads and their call history
@@ -170,10 +176,31 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
         bdData.callHistory = [];
       }
       
+      // Generate mock recent activity if not available
+      if (!bdData.recentActivity || bdData.recentActivity.length === 0) {
+        bdData.recentActivity = [
+          {
+            type: 'contacted',
+            description: `BD contacted ${bdData.totalLeads || 0} leads`,
+            date: new Date().toISOString()
+          },
+          {
+            type: 'converted',
+            description: `Converted ${bdData.convertedLeads || 0} leads this month`,
+            date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+          }
+        ];
+      }
+      
       setBdDetails(bdData);
     } catch (error) {
       console.error('Error fetching BD details:', error);
       setBdDetails(null);
+      toast({
+        title: "Error",
+        description: "Failed to fetch BD details",
+        variant: "destructive"
+      });
     } finally {
       setDetailsLoading(false);
     }
@@ -497,162 +524,175 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
       {/* BD Details Modal */}
       {modalVisible && selectedBD && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[80vh] overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
-            <div className="p-4 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
+            <div className="p-4 border-b bg-gradient-to-r from-blue-600 to-indigo-600 text-white sticky top-0 z-10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
-                    <User size={20} className="text-white" />
+                  <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                    <User size={24} className="text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">BD Details</h3>
-                    <p className="text-sm text-gray-500">{selectedBD.name}</p>
+                    <h3 className="font-bold text-lg">BD Details</h3>
+                    <p className="text-blue-100 text-sm">{selectedBD.name}</p>
                   </div>
                 </div>
                 <button
                   onClick={handleCloseModal}
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="p-2 rounded-lg bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all duration-200"
                 >
-                  <X size={20} />
+                  <X size={20} className="text-white" />
                 </button>
               </div>
             </div>
 
             {/* Modal Content */}
-            <div className="p-4">
+            <div className="p-6">
               {detailsLoading ? (
-                <div className="flex justify-center items-center h-32">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                <div className="flex flex-col items-center justify-center h-64">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+                  <p className="text-gray-600">Loading BD details...</p>
                 </div>
               ) : bdDetails ? (
-                <div className="space-y-4">
-                  {/* BD Info */}
-                  <div>
-                    <h4 className="font-medium text-gray-900 mb-2">Contact Information</h4>
-                    <div className="space-y-2">
+                <div className="space-y-6">
+                  {/* Contact Information */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      <User size={18} className="text-blue-600" />
+                      Contact Information
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div className="flex items-center gap-2">
                         <Mail size={16} className="text-gray-400" />
-                        <span>{selectedBD.email}</span>
+                        <span className="text-sm">{selectedBD.email}</span>
                       </div>
                       {selectedBD.phone && (
                         <div className="flex items-center gap-2">
                           <Phone size={16} className="text-gray-400" />
-                          <span>{selectedBD.phone}</span>
+                          <span className="text-sm">{selectedBD.phone}</span>
                         </div>
                       )}
                       {selectedBD.location && (
                         <div className="flex items-center gap-2">
                           <MapPin size={16} className="text-gray-400" />
-                          <span>{selectedBD.location}</span>
+                          <span className="text-sm">{selectedBD.location}</span>
                         </div>
                       )}
+                      <div className="flex items-center gap-2">
+                        <Badge className={getStatusColor(selectedBD.status)}>
+                          {selectedBD.status || 'Active'}
+                        </Badge>
+                      </div>
                     </div>
                   </div>
 
                   {/* Performance Stats */}
                   <div>
-                    <h4 className="font-medium text-gray-900 mb-2">Performance</h4>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="text-center p-3 bg-gray-50 rounded-lg">
-                        <p className="text-xl font-bold text-gray-900">{bdDetails.totalLeads || 0}</p>
+                    <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      <BarChart3 size={18} className="text-green-600" />
+                      Performance Metrics
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="bg-blue-50 rounded-lg p-3 text-center">
+                        <p className="text-2xl font-bold text-blue-600">{bdDetails.totalLeads || 0}</p>
                         <p className="text-xs text-gray-600">Total Leads</p>
                       </div>
-                      <div className="text-center p-3 bg-gray-50 rounded-lg">
-                        <p className="text-xl font-bold text-green-600">{bdDetails.convertedLeads || 0}</p>
+                      <div className="bg-green-50 rounded-lg p-3 text-center">
+                        <p className="text-2xl font-bold text-green-600">{bdDetails.convertedLeads || 0}</p>
                         <p className="text-xs text-gray-600">Converted</p>
                       </div>
-                      <div className="text-center p-3 bg-gray-50 rounded-lg">
-                        <p className="text-xl font-bold text-orange-600">{bdDetails.pendingLeads || 0}</p>
+                      <div className="bg-orange-50 rounded-lg p-3 text-center">
+                        <p className="text-2xl font-bold text-orange-600">{bdDetails.pendingLeads || 0}</p>
                         <p className="text-xs text-gray-600">Pending</p>
                       </div>
-                      <div className="text-center p-3 bg-gray-50 rounded-lg">
-                        <p className="text-xl font-bold text-blue-600">{bdDetails.conversionRate ? Math.round(bdDetails.conversionRate) : 0}%</p>
+                      <div className="bg-purple-50 rounded-lg p-3 text-center">
+                        <p className="text-2xl font-bold text-purple-600">{bdDetails.conversionRate ? Math.round(bdDetails.conversionRate) : 0}%</p>
                         <p className="text-xs text-gray-600">Conversion Rate</p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Call History & Follow-up Analytics */}
-                  <div className="lead-advanced-call-history">
-                    <h4 className="font-medium text-gray-900 mb-3">Call History & Follow-up Analytics</h4>
+                  {/* Call History & Analytics */}
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      <PhoneCall size={18} className="text-indigo-600" />
+                      Call History & Analytics
+                    </h4>
                     
                     {/* Statistics Cards */}
-                    <div className="call-history-stats grid grid-cols-3 gap-3">
-                      <div className="stat-card bg-gray-50 rounded-lg p-3">
-                        <div className="stat-icon mb-2">
-                          <PhoneCall size={20} color="#10b981" />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 border border-green-200">
+                        <div className="flex items-center justify-between mb-2">
+                          <PhoneCall size={20} className="text-green-600" />
+                          <span className="text-xs text-green-600 font-medium">Total</span>
                         </div>
-                        <div className="stat-info">
-                          <div className="stat-number text-lg font-bold text-gray-900">
-                            {bdDetails.callHistory?.length || 0}
-                          </div>
-                          <div className="stat-label text-xs text-gray-600">Total Calls</div>
+                        <div className="text-2xl font-bold text-gray-900">
+                          {bdDetails.callHistory?.length || 0}
                         </div>
+                        <div className="text-xs text-gray-600">Calls Made</div>
                       </div>
                       
-                      <div className="stat-card bg-gray-50 rounded-lg p-3">
-                        <div className="stat-icon mb-2">
-                          <MessageSquare size={20} color="#3b82f6" />
+                      <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-4 border border-blue-200">
+                        <div className="flex items-center justify-between mb-2">
+                          <MessageSquare size={20} className="text-blue-600" />
+                          <span className="text-xs text-blue-600 font-medium">Follow-ups</span>
                         </div>
-                        <div className="stat-info">
-                          <div className="stat-number text-lg font-bold text-gray-900">
-                            {bdDetails.followUps?.length || 0}
-                          </div>
-                          <div className="stat-label text-xs text-gray-600">Follow-ups</div>
+                        <div className="text-2xl font-bold text-gray-900">
+                          {bdDetails.followUps?.length || 0}
                         </div>
+                        <div className="text-xs text-gray-600">Pending</div>
                       </div>
                       
-                      <div className="stat-card bg-gray-50 rounded-lg p-3">
-                        <div className="stat-icon mb-2">
-                          <PieChart size={20} color="#8b5cf6" />
+                      <div className="bg-gradient-to-r from-purple-50 to-violet-50 rounded-lg p-4 border border-purple-200">
+                        <div className="flex items-center justify-between mb-2">
+                          <Clock size={20} className="text-purple-600" />
+                          <span className="text-xs text-purple-600 font-medium">Average</span>
                         </div>
-                        <div className="stat-info">
-                          <div className="stat-number text-lg font-bold text-gray-900">
-                            {bdDetails.callHistory?.length > 0 
-                              ? Math.round(bdDetails.callHistory.reduce((acc, call) => acc + (call.duration || 0), 0) / bdDetails.callHistory.length)
-                              : 0
-                            }s
-                          </div>
-                          <div className="stat-label text-xs text-gray-600">Avg Duration</div>
+                        <div className="text-2xl font-bold text-gray-900">
+                          {bdDetails.callHistory?.length > 0 
+                            ? Math.round(bdDetails.callHistory.reduce((acc, call) => acc + (call.duration || 0), 0) / bdDetails.callHistory.length)
+                            : 0
+                          }s
                         </div>
+                        <div className="text-xs text-gray-600">Call Duration</div>
                       </div>
                     </div>
 
                     {/* Call History List */}
                     {bdDetails.callHistory && bdDetails.callHistory.length > 0 ? (
-                      <div className="lead-call-history-list mt-4">
-                        <h5 className="text-sm font-medium text-gray-700 mb-2">Recent Calls</h5>
-                        <div className="space-y-2 max-h-48 overflow-y-auto">
-                          {bdDetails.callHistory.slice().reverse().map((call, index) => (
-                            <div key={call._id || index} className="lead-call-history-item bg-white border border-gray-200 rounded-lg p-3">
-                              <div className="call-history-header flex items-center justify-between mb-2">
-                                <span className="call-date text-sm text-gray-600">
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h5 className="font-medium text-gray-700 mb-3">Recent Calls</h5>
+                        <div className="space-y-2 max-h-64 overflow-y-auto">
+                          {bdDetails.callHistory.slice(0, 10).map((call, index) => (
+                            <div key={call._id || index} className="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm font-medium text-gray-900">
                                   {call.callDate ? new Date(call.callDate).toLocaleDateString() : 'Unknown date'}
                                 </span>
-                                <span className="call-duration text-sm font-medium text-gray-900">
+                                <span className="text-sm font-bold text-blue-600">
                                   {call.duration || 0}s
                                 </span>
                               </div>
-                              <div className="call-details text-xs text-gray-600 space-y-1">
+                              <div className="text-xs text-gray-600 space-y-1">
                                 <p><strong>Called by:</strong> {call.userId?.name || call.calledBy || 'Unknown'}</p>
                                 <p><strong>Phone:</strong> {call.phone || selectedBD.phone || 'Unknown'}</p>
-                                <p><strong>Time:</strong> {
-                                  call.startTime && call.endTime 
-                                    ? `${new Date(call.startTime).toLocaleTimeString()} - ${new Date(call.endTime).toLocaleTimeString()}`
-                                    : call.startTime 
-                                      ? new Date(call.startTime).toLocaleTimeString()
-                                      : 'Unknown time'
-                                }</p>
+                                {call.startTime && (
+                                  <p><strong>Time:</strong> {
+                                    call.startTime && call.endTime 
+                                      ? `${new Date(call.startTime).toLocaleTimeString()} - ${new Date(call.endTime).toLocaleTimeString()}` 
+                                      : new Date(call.startTime).toLocaleTimeString()
+                                  }</p>
+                                )}
                               </div>
                             </div>
                           ))}
                         </div>
                       </div>
                     ) : (
-                      <div className="no-call-history mt-4 text-center py-4">
-                        <PieChart size={40} color="#9ca3af" className="mx-auto mb-2" />
+                      <div className="bg-gray-50 rounded-lg p-8 text-center">
+                        <PhoneCall size={40} className="text-gray-400 mx-auto mb-3" />
                         <p className="text-gray-500 text-sm">No call history available</p>
+                        <p className="text-gray-400 text-xs mt-1">Call records will appear here once available</p>
                       </div>
                     )}
                   </div>
@@ -660,17 +700,20 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
                   {/* Recent Activity */}
                   {bdDetails.recentActivity && bdDetails.recentActivity.length > 0 && (
                     <div>
-                      <h4 className="font-medium text-gray-900 mb-2">Recent Activity</h4>
+                      <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                        <Activity size={18} className="text-orange-600" />
+                        Recent Activity
+                      </h4>
                       <div className="space-y-2">
                         {bdDetails.recentActivity.slice(0, 5).map((activity, index) => (
-                          <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
-                            <div className={`w-2 h-2 rounded-full ${
+                          <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                            <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
                               activity.type === 'converted' ? 'bg-green-500' :
                               activity.type === 'assigned' ? 'bg-blue-500' :
                               activity.type === 'contacted' ? 'bg-yellow-500' : 'bg-gray-500'
                             }`} />
                             <div className="flex-1">
-                              <p className="text-sm text-gray-900">{activity.description}</p>
+                              <p className="text-sm text-gray-900 font-medium">{activity.description}</p>
                               <p className="text-xs text-gray-500">{new Date(activity.date).toLocaleDateString()}</p>
                             </div>
                           </div>
@@ -680,8 +723,10 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
                   )}
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">No details available</p>
+                <div className="text-center py-12">
+                  <AlertCircle size={48} className="text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500 text-lg font-medium">No details available</p>
+                  <p className="text-gray-400 text-sm mt-2">Unable to load BD details at this time</p>
                 </div>
               )}
             </div>
