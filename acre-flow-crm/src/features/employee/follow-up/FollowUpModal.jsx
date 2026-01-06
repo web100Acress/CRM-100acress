@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { X, Send } from "lucide-react";
-import ReactDOM from "react-dom";
 import { ENDPOINTS } from "@/api/endpoints";
+import { Dialog, DialogContent } from "@/layout/dialog";
 import './FollowUpModal.css';
 
 const FollowUpModal = ({ lead, onClose, userRole }) => {
@@ -63,22 +63,18 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
     }
   };
 
-  return ReactDOM.createPortal(
-    <>
-      {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/40 z-40" />
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl shadow-2xl border border-gray-200 p-0">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition z-10"
+        >
+          <X className="h-4 w-4" />
+        </button>
 
-      {/* Modal Container */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center">
-        <div className="relative w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl bg-white shadow-2xl mx-4 p-6">
-          <button
-            type="button"
-            onClick={onClose}
-            className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition"
-          >
-            <X className="h-4 w-4" />
-          </button>
-
+        <div className="p-6">
           <h2 className="mb-6 text-center text-2xl font-semibold text-blue-700">Follow-up</h2>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -172,9 +168,8 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
             </button>
           </form>
         </div>
-      </div>
-    </>,
-    document.body
+      </DialogContent>
+    </Dialog>
   );
 };
 

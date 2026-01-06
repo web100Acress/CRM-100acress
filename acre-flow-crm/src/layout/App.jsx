@@ -94,13 +94,23 @@ const App = () => {
   const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
 
   const handleLogout = () => {
-    localStorage.removeItem("isLoggedIn");
-    localStorage.removeItem("userRole");
-    localStorage.removeItem("token");
-    localStorage.removeItem("isDeveloperLoggedIn");
+    // Clear all authentication-related localStorage items
+    const authKeys = [
+      "isLoggedIn", "userRole", "token", "myToken",
+      "isDeveloperLoggedIn", "isAdminLoggedIn", "isHRLoggedIn", 
+      "isSalesHeadLoggedIn", "isBlogLoggedIn", "isHrFinanceLoggedIn",
+      "userEmail", "userName", "userId", "sourceSystem",
+      "allowedModules", "permissions", "userDepartment",
+      "originalRole", "isActivityLoggedIn", "currentActivitySession",
+      "activeActivitySessions"
+    ];
+    
+    authKeys.forEach(key => localStorage.removeItem(key));
+    
     setIsLoggedIn(false);
     setUserRole("employee");
     setIsDeveloperLoggedIn(false);
+    
     // Redirect to login page
     window.location.href = "/login";
   };
@@ -109,6 +119,31 @@ const App = () => {
     const checkAuthStatus = () => {
       const loggedIn = localStorage.getItem("isLoggedIn") === "true";
       const role = localStorage.getItem("userRole") || "employee";
+      
+      // Check token expiration
+      const token = localStorage.getItem("token");
+      const myToken = localStorage.getItem("myToken");
+      
+      if (token || myToken) {
+        try {
+          // Decode JWT to check expiration
+          const jwt = require('jsonwebtoken');
+          const decoded = jwt.decode(token || myToken);
+          
+          if (decoded && decoded.exp) {
+            const currentTime = Date.now() / 1000; // Convert to seconds
+            const isExpired = decoded.exp < currentTime;
+            
+            if (isExpired) {
+              console.log("Token expired, logging out...");
+              handleLogout();
+              return;
+            }
+          }
+        } catch (error) {
+          console.log("Error checking token expiration:", error);
+        }
+      }
 
       const developerLoggedIn =
         localStorage.getItem("isDeveloperLoggedIn") === "true";
@@ -116,14 +151,17 @@ const App = () => {
       setIsLoggedIn(loggedIn);
       setUserRole(role);
       setIsDeveloperLoggedIn(developerLoggedIn);
-
       setIsLoading(false);
     };
 
     checkAuthStatus();
-
+    
+    // Check token expiration every minute
+    const expirationCheckInterval = setInterval(checkAuthStatus, 60 * 1000);
+    
     window.addEventListener("storage", checkAuthStatus);
     return () => {
+      clearInterval(expirationCheckInterval);
       window.removeEventListener("storage", checkAuthStatus);
     };
   }, []);

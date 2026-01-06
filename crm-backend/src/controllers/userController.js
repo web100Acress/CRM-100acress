@@ -1,5 +1,6 @@
 const userService = require('../services/userService');
 const { sendMail } = require('../services/emailService');
+const { uploadProfileImage } = require('../middlewares/upload.middleware');
 
 async function sendWelcomeEmail({ email, password, name, role }) {
   const roleDisplayMap = {
@@ -643,6 +644,57 @@ exports.updateProfile = async (req, res) => {
     });
   } catch (err) {
     console.error('Error updating profile:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error' 
+    });
+  }
+};
+
+// Upload Profile Image Controller
+exports.uploadProfileImage = async (req, res) => {
+  try {
+    const userId = req.user?.userId || req.user?.id || req.user?._id;
+    
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'User not authenticated' 
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No file uploaded' 
+      });
+    }
+
+    // Convert buffer to base64 string
+    const base64Image = req.file.buffer.toString('base64');
+    const mimeType = req.file.mimetype;
+    const profileImage = `data:${mimeType};base64,${base64Image}`;
+
+    // Update user profile with new image
+    const updatedUser = await userService.updateProfile(userId, { profileImage });
+    
+    if (!updatedUser) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      });
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Profile image uploaded successfully',
+      data: { 
+        profileImage: profileImage,
+        user: updatedUser
+      } 
+    });
+  } catch (err) {
+    console.error('Error uploading profile image:', err);
     res.status(500).json({ 
       success: false, 
       message: 'Internal server error' 

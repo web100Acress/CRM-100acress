@@ -216,7 +216,7 @@ const EditProfileMobile = () => {
     fileInputRef.current?.click();
   };
 
-  const handleImageChange = (event) => {
+  const handleImageChange = async (event) => {
     const file = event.target.files[0];
     if (file) {
       // Validate file type
@@ -239,22 +239,63 @@ const EditProfileMobile = () => {
         return;
       }
 
-      // Read and display the image
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const imageUrl = e.target.result;
-        setProfileImage(imageUrl);
+      try {
+        setSaving(true);
+        setSyncStatus('syncing');
+
+        const token = localStorage.getItem('token');
         
-        // Save to localStorage for persistence
-        localStorage.setItem('userProfileImage', imageUrl);
+        // Create FormData for file upload
+        const formData = new FormData();
+        formData.append('profileImage', file);
+
+        // Upload to server
+        const response = await fetch('http://localhost:5001/api/users/profile-image', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to upload profile image');
+        }
+
+        const result = await response.json();
+        
+        // Update state with server response
+        setProfileImage(result.data.profileImage);
+        
+        // Update localStorage
+        localStorage.setItem('userProfileImage', result.data.profileImage);
         
         toast({
           title: "Image Updated",
-          description: "Profile picture updated successfully",
+          description: "Profile picture uploaded successfully",
           variant: "success"
         });
-      };
-      reader.readAsDataURL(file);
+      } catch (error) {
+        console.error('Error uploading profile image:', error);
+        toast({
+          title: "Upload Failed",
+          description: error.message || "Failed to upload profile picture",
+          variant: "destructive"
+        });
+        
+        // Fallback to local storage if server upload fails
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const imageUrl = e.target.result;
+          setProfileImage(imageUrl);
+          localStorage.setItem('userProfileImage', imageUrl);
+        };
+        reader.readAsDataURL(file);
+      } finally {
+        setSaving(false);
+        setSyncStatus('synced');
+      }
     }
   };
 

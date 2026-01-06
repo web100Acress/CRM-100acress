@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  User, Mail, Phone, Shield, Building2, Users, Ticket, Eye, Target, CheckCircle, TrendingUp, Briefcase, Menu, X, Home, BarChart3, Calendar, Clock, ArrowRight, PhoneCall, MessageSquare, MapPin, Star, Award, Bell, Settings, LogOut, ChevronRight, Activity, FileText, DollarSign, TrendingDown, AlertCircle
+  User, Mail, Phone, Shield, Building2, Users, Ticket, Eye, Target, CheckCircle, TrendingUp, Briefcase, Menu, X, Home, BarChart3, Calendar, Clock, ArrowRight, PhoneCall, MessageSquare, MapPin, Star, Award, Bell, Settings, LogOut, ChevronRight, Activity, FileText, DollarSign, TrendingDown, AlertCircle, Search
 } from 'lucide-react';
 import { Badge } from '@/layout/badge';
 import { Card, CardContent } from '@/layout/card';
@@ -30,6 +30,7 @@ const BDDashboardMobile = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [showTaskDetails, setShowTaskDetails] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const currentUserId = localStorage.getItem('userId');
 
   // Get role-specific dashboard title
@@ -143,6 +144,20 @@ const BDDashboardMobile = () => {
     };
   }, [socket, currentUserId]);
 
+  // Listen for dashboard refresh events when lead status is updated
+  useEffect(() => {
+    const handleDashboardRefresh = () => {
+      console.log('Dashboard refresh event received, fetching updated leads...');
+      fetchBDLeads();
+    };
+
+    window.addEventListener('dashboard-refresh', handleDashboardRefresh);
+
+    return () => {
+      window.removeEventListener('dashboard-refresh', handleDashboardRefresh);
+    };
+  }, []);
+
   // Real-time leads fetching
   const fetchBDLeads = async () => {
     try {
@@ -161,8 +176,8 @@ const BDDashboardMobile = () => {
         ...prev,
         myLeads: myLeads,
         myTasks: myLeads.length,
-        pendingTasks: myLeads.filter(lead => lead.status === 'pending').length,
-        completedTasks: myLeads.filter(lead => lead.status === 'completed').length
+        pendingTasks: myLeads.filter(lead => lead.workProgress !== 'done' && lead.workProgress !== 'inprogress').length,
+        completedTasks: myLeads.filter(lead => lead.workProgress === 'done').length
       }));
       
     } catch (error) {
@@ -188,8 +203,8 @@ const BDDashboardMobile = () => {
 
         // Determine status based on work progress and last contact
         let status = 'Pending';
-        if (lead.workProgress === 'completed') status = 'Completed';
-        else if (lead.workProgress === 'in-progress') status = 'Today';
+        if (lead.workProgress === 'done') status = 'Completed';
+        else if (lead.workProgress === 'inprogress') status = 'Today';
         else if (lead.lastContact) {
           const daysSinceContact = Math.floor((Date.now() - new Date(lead.lastContact)) / (1000 * 60 * 60 * 24));
           if (daysSinceContact <= 1) status = 'Today';
@@ -217,6 +232,24 @@ const BDDashboardMobile = () => {
     return [];
   }, [dashboardStats.myLeads]);
 
+  // Filter tasks based on search query
+  const filteredTasks = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return myTasks;
+    }
+    
+    const query = searchQuery.toLowerCase();
+    return myTasks.filter(task => 
+      task.name.toLowerCase().includes(query) ||
+      task.email?.toLowerCase().includes(query) ||
+      task.phone?.includes(query) ||
+      task.budget?.toLowerCase().includes(query) ||
+      task.location?.toLowerCase().includes(query) ||
+      task.priority.toLowerCase().includes(query) ||
+      task.status.toLowerCase().includes(query)
+    );
+  }, [myTasks, searchQuery]);
+
   const bdData = {
     name: localStorage.getItem('userName') || 'BD',
     email: localStorage.getItem('userEmail') || 'bd@100acres.com',
@@ -238,17 +271,13 @@ const BDDashboardMobile = () => {
     const leads = dashboardStats.myLeads || [];
     
     const pending = leads.filter(lead => {
-      if (lead.workProgress === 'completed') return false;
-      if (lead.workProgress === 'in-progress') return false;
-      if (lead.lastContact) {
-        const daysSinceContact = Math.floor((Date.now() - new Date(lead.lastContact)) / (1000 * 60 * 60 * 24));
-        return daysSinceContact > 3;
-      }
+      if (lead.workProgress === 'done') return false;
+      if (lead.workProgress === 'inprogress') return false;
       return true;
     }).length;
 
     const today = leads.filter(lead => {
-      if (lead.workProgress === 'in-progress') return true;
+      if (lead.workProgress === 'inprogress') return true;
       if (lead.lastContact) {
         const daysSinceContact = Math.floor((Date.now() - new Date(lead.lastContact)) / (1000 * 60 * 60 * 24));
         return daysSinceContact <= 1;
@@ -257,7 +286,7 @@ const BDDashboardMobile = () => {
     }).length;
 
     const thisWeek = leads.filter(lead => {
-      if (lead.workProgress === 'in-progress') return false;
+      if (lead.workProgress === 'inprogress') return false;
       if (lead.lastContact) {
         const daysSinceContact = Math.floor((Date.now() - new Date(lead.lastContact)) / (1000 * 60 * 60 * 24));
         return daysSinceContact > 1 && daysSinceContact <= 7;
@@ -265,7 +294,7 @@ const BDDashboardMobile = () => {
       return false;
     }).length;
 
-    const completed = leads.filter(lead => lead.workProgress === 'completed').length;
+    const completed = leads.filter(lead => lead.workProgress === 'done').length;
 
     return { pending, today, thisWeek, completed };
   };
@@ -392,7 +421,7 @@ const BDDashboardMobile = () => {
       />
 
       {/* Main Content */}
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-4 pb-20 md:pb-4">
         {/* Enhanced Stats Cards */}
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 shadow-lg transform hover:scale-105 transition-all duration-200 border border-blue-200">
@@ -525,9 +554,29 @@ const BDDashboardMobile = () => {
             </Badge>
           </div>
           
-          {myTasks.length > 0 ? (
+          {/* Search Bar */}
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+            <input
+              type="text"
+              placeholder="Search tasks by name, email, phone, budget, location..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+          
+          {filteredTasks.length > 0 ? (
             <div className="space-y-3">
-              {myTasks.slice(0, 5).map((task, index) => (
+              {filteredTasks.slice(0, 5).map((task, index) => (
                 <div
                   key={index}
                   onClick={() => handleTaskClick(task)}
@@ -560,7 +609,14 @@ const BDDashboardMobile = () => {
                   </div>
                 </div>
               ))}
-              {myTasks.length > 5 && (
+              {searchQuery ? (
+                <button
+                  onClick={() => navigate('/leads')}
+                  className="w-full mt-3 text-center text-sm text-blue-600 hover:text-blue-700 font-medium py-2 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                >
+                  View All Results ({filteredTasks.length} found)
+                </button>
+              ) : myTasks.length > 5 && (
                 <button
                   onClick={() => navigate('/leads')}
                   className="w-full mt-3 text-center text-sm text-blue-600 hover:text-blue-700 font-medium py-2 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
@@ -572,8 +628,17 @@ const BDDashboardMobile = () => {
           ) : (
             <div className="text-center py-8">
               <Briefcase size={48} className="text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500 font-medium">No tasks assigned yet</p>
-              <p className="text-sm text-gray-400 mt-1">Your assigned tasks will appear here</p>
+              {searchQuery ? (
+                <>
+                  <p className="text-gray-500 font-medium">No results found</p>
+                  <p className="text-sm text-gray-400 mt-1">Try adjusting your search terms</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-gray-500 font-medium">No tasks assigned yet</p>
+                  <p className="text-sm text-gray-400 mt-1">Your assigned tasks will appear here</p>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -677,6 +742,59 @@ const BDDashboardMobile = () => {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Mobile Bottom Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg md:hidden">
+        <div className="flex justify-around items-center py-2">
+          <button
+            onClick={() => navigate('/employee-dashboard')}
+            className="flex flex-col items-center p-2 text-blue-600 hover:text-blue-700 transition-colors"
+          >
+            <Home size={20} />
+            <span className="text-xs mt-1">Home</span>
+          </button>
+          
+          <button
+            onClick={() => navigate('/leads')}
+            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <Briefcase size={20} />
+            <span className="text-xs mt-1">Tasks</span>
+          </button>
+          
+          <button
+            onClick={() => navigate('/reports')}
+            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <BarChart3 size={20} />
+            <span className="text-xs mt-1">Reports</span>
+          </button>
+          
+          <button
+            onClick={() => navigate('/calendar')}
+            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <Calendar size={20} />
+            <span className="text-xs mt-1">Calendar</span>
+          </button>
+          
+          <button
+            onClick={() => navigate('/team')}
+            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <Users size={20} />
+            <span className="text-xs mt-1">Team</span>
+          </button>
+          
+          <button
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <Menu size={20} />
+            <span className="text-xs mt-1">Menu</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

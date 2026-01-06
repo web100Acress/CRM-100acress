@@ -6,27 +6,26 @@ export function useDashboardStats(userRole, userId) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      if (!userRole || !userId) {
-        setLoading(false);
-        return;
-      }
+  const fetchStats = async () => {
+    if (!userRole || !userId) {
+      setLoading(false);
+      return;
+    }
 
-      try {
-        setLoading(true);
-        setError(null);
+    try {
+      setLoading(true);
+      setError(null);
 
-        // Fetch leads for the user
-        const leadsResponse = await http.get('/api/leads');
-        const leads = leadsResponse.data || [];
+      // Fetch leads for the user
+      const leadsResponse = await http.get('/api/leads');
+      const leads = leadsResponse.data || [];
 
-        // Fetch all users for team stats
-        const usersResponse = await http.get('/api/users');
-        const users = usersResponse.data || [];
+      // Fetch all users for team stats
+      const usersResponse = await http.get('/api/users');
+      const users = usersResponse.data || [];
 
-        // Calculate stats based on role
-        let calculatedStats = {};
+      // Calculate stats based on role
+      let calculatedStats = {};
 
         switch (userRole) {
           case 'super-admin':
@@ -34,7 +33,7 @@ export function useDashboardStats(userRole, userId) {
             calculatedStats = {
               totalLeads: leads.length,
               activeUsers: users.filter(u => u.isActive !== false).length,
-              openTickets: leads.filter(l => l.status !== 'Closed').length,
+              openTickets: leads.filter(l => l.workProgress !== 'done').length,
               monthlyRevenue: leads.reduce((sum, l) => sum + (l.value || 0), 0)
             };
             break;
@@ -57,9 +56,9 @@ export function useDashboardStats(userRole, userId) {
             calculatedStats = {
               managedLeads: managedLeads.length,
               totalTeams: teams,
-              pendingApprovals: managedLeads.filter(l => l.status === 'Pending').length,
+              pendingApprovals: managedLeads.filter(l => l.workProgress === 'pending').length,
               overallConversion: leads.length > 0 ? 
-                Math.round((leads.filter(l => l.status === 'Converted').length / leads.length) * 100) : 0
+                Math.round((leads.filter(l => l.workProgress === 'done').length / leads.length) * 100) : 0
             };
             break;
 
@@ -72,7 +71,7 @@ export function useDashboardStats(userRole, userId) {
             calculatedStats = {
               myTeamLeads: teamLeads.length,
               teamSize: teamSize + 1, // +1 for the team leader
-              myPendingTasks: teamLeads.filter(l => l.status === 'In Progress').length,
+              myPendingTasks: teamLeads.filter(l => l.workProgress === 'inprogress').length,
               teamTargetAchieved: teamLeads.reduce((sum, l) => sum + (l.value || 0), 0)
             };
             break;
@@ -87,9 +86,9 @@ export function useDashboardStats(userRole, userId) {
                 const followUpDate = new Date(l.nextFollowUp);
                 return followUpDate.toDateString() === today.toDateString();
               }).length,
-              myOpenTickets: assignedLeads.filter(l => l.status !== 'Closed').length,
+              myOpenTickets: assignedLeads.filter(l => l.workProgress !== 'done').length,
               monthlyTargetProgress: assignedLeads.length > 0 ? 
-                Math.round((assignedLeads.filter(l => l.status === 'Converted').length / assignedLeads.length) * 100) : 0
+                Math.round((assignedLeads.filter(l => l.workProgress === 'done').length / assignedLeads.length) * 100) : 0
             };
             break;
 
@@ -106,8 +105,6 @@ export function useDashboardStats(userRole, userId) {
       } catch (err) {
         console.error('Error fetching dashboard stats:', err);
         setError(err.message || 'Failed to fetch dashboard stats');
-        
-        // Set fallback stats on error
         setStats({
           totalLeads: 0,
           activeUsers: 0,
@@ -123,7 +120,20 @@ export function useDashboardStats(userRole, userId) {
       }
     };
 
+    useEffect(() => {
+    // Initial fetch
     fetchStats();
+
+    // Listen for dashboard refresh events
+    const handleRefresh = () => {
+      fetchStats();
+    };
+
+    window.addEventListener('dashboard-refresh', handleRefresh);
+
+    return () => {
+      window.removeEventListener('dashboard-refresh', handleRefresh);
+    };
   }, [userRole, userId]);
 
   return { stats, loading, error };

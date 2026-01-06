@@ -158,17 +158,56 @@ const BlogEdit = () => {
   function handleFileChange(event) {
     const input = event.target;
     if (input.files && input.files[0]) {
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        setViewDetails((prevValues) => ({
-          ...prevValues,
-          frontImage: {
-            file: input.files[0],
-            url: e.target.result,
-          },
-        }));
+      const file = input.files[0];
+      
+      // Check image dimensions and aspect ratio (1200x628 = 300:157)
+      const img = new Image();
+      img.onload = function() {
+        const expectedWidth = 1200;
+        const expectedHeight = 628;
+        const tolerance = 5; // Allow 5px tolerance
+        
+        if (Math.abs(this.width - expectedWidth) > tolerance || Math.abs(this.height - expectedHeight) > tolerance) {
+          message.error(`Image must be exactly ${expectedWidth} × ${expectedHeight} pixels (Current: ${this.width} × ${this.height})`);
+          // Reset the file input
+          input.value = '';
+          return;
+        }
+        
+        // Calculate aspect ratio
+        const expectedRatio = expectedWidth / expectedHeight;
+        const actualRatio = this.width / this.height;
+        const ratioTolerance = 0.01; // 1% tolerance
+        
+        if (Math.abs(actualRatio - expectedRatio) > ratioTolerance) {
+          message.error(`Image aspect ratio must be ${expectedWidth}:${expectedHeight} (300:157). Current ratio is ${this.width}:${this.height}`);
+          // Reset the file input
+          input.value = '';
+          return;
+        }
+        
+        // If all validations pass, proceed with file processing
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          setViewDetails((prevValues) => ({
+            ...prevValues,
+            frontImage: {
+              file: file,
+              url: e.target.result,
+            },
+          }));
+        };
+        reader.readAsDataURL(file);
       };
-      reader.readAsDataURL(input.files[0]);
+      
+      img.onerror = function() {
+        message.error('Failed to load image. Please try a different file.');
+        input.value = '';
+      };
+      
+      // Create object URL for validation
+      const objUrl = URL.createObjectURL(file);
+      img.src = objUrl;
     }
   }
 
