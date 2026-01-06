@@ -47,13 +47,21 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
         const data = await response.json();
         if (data.success) {
           // Format messages for display
-          const formattedMessages = data.data.map(msg => ({
-            id: msg._id,
-            text: msg.message,
-            sender: msg.senderId === getCurrentUserId() ? 'me' : 'other',
-            timestamp: new Date(msg.timestamp),
-            status: msg.status
-          }));
+          const currentUserId = getCurrentUserId();
+          console.log('Current user ID for comparison:', currentUserId);
+          
+          const formattedMessages = data.data.map(msg => {
+            const isMe = msg.senderId === currentUserId;
+            console.log(`Message: ${msg.message.substring(0, 20)}... | Sender: ${msg.senderId} | IsMe: ${isMe}`);
+            
+            return {
+              id: msg._id,
+              text: msg.message,
+              sender: isMe ? 'me' : 'other',
+              timestamp: new Date(msg.timestamp),
+              status: msg.status
+            };
+          });
           setMessages(formattedMessages);
         }
       } else {
@@ -72,6 +80,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
+        console.log('Current user ID from token:', payload.userId);
         return payload.userId;
       } catch (error) {
         console.error('Error parsing token:', error);
@@ -92,53 +101,66 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
       status: 'sent'
     };
 
+    // Add message to local state immediately
     setMessages(prev => [...prev, newMessage]);
     setMessage('');
     setIsSending(true);
 
     try {
-      // Send message to backend
       const token = localStorage.getItem('token');
       const response = await fetch('https://bcrm.100acress.com/api/messages/send', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          recipientId: recipient?._id || recipient?.bdId,
-          recipientEmail: recipient?.email,
-          message: message.trim(),
-          recipientName: recipient?.name
+          recipientId: recipient._id,
+          recipientEmail: recipient.email,
+          recipientName: recipient.name,
+          message: message.trim()
         })
       });
 
-      if (response.ok) {
+      const data = await response.json();
+      
+      if (data.success) {
         // Update message status to delivered
-        setMessages(prev => prev.map(msg => 
-          msg.id === newMessage.id ? { ...msg, status: 'delivered' } : msg
-        ));
-
-        // Simulate received message after 2 seconds
+        setMessages(prev => 
+          prev.map(msg => 
+            msg.id === newMessage.id 
+              ? { ...msg, status: 'delivered', id: data.data.id }
+              : msg
+          )
+        );
+        
+        // Refresh conversation to get the complete chat
         setTimeout(() => {
-          const autoReply = {
-            id: Date.now() + 1,
-            text: `Thank you for your message! I'll get back to you soon. - ${recipient?.name}`,
-            sender: 'other',
-            timestamp: new Date(),
-            status: 'received'
-          };
-          setMessages(prev => [...prev, autoReply]);
-        }, 2000);
+          fetchConversation();
+        }, 500);
+        
+        // toast({
+        //   title: "Success",
+        //   description: "Message sent successfully",
+        // });
       } else {
-        throw new Error('Failed to send message');
+        // Remove message if failed
+        setMessages(prev => prev.filter(msg => msg.id !== newMessage.id));
+        // toast({
+        //   title: "Error",
+        //   description: data.message || "Failed to send message",
+        //   variant: "destructive"
+        // });
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      // Update message status to failed
-      setMessages(prev => prev.map(msg => 
-        msg.id === newMessage.id ? { ...msg, status: 'failed' } : msg
-      ));
+      // Remove message if failed
+      setMessages(prev => prev.filter(msg => msg.id !== newMessage.id));
+      // toast({
+      //   title: "Error",
+      //   description: "Failed to send message",
+      //   variant: "destructive"
+      // });
     } finally {
       setIsSending(false);
     }

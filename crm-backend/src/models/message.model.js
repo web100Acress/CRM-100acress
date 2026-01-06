@@ -6,10 +6,20 @@ const messageSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  senderRole: {
+    type: String,
+    enum: ['admin', 'super-admin', 'BD', 'employee', 'manager'],
+    default: 'BD'
+  },
   recipientId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
+  },
+  recipientRole: {
+    type: String,
+    enum: ['admin', 'super-admin', 'BD', 'employee', 'manager'],
+    default: 'BD'
   },
   recipientEmail: {
     type: String,

@@ -9,9 +9,14 @@ router.post('/send', auth, async (req, res) => {
     const { recipientId, recipientEmail, recipientName, message } = req.body;
     const senderId = req.user._id || req.user.userId;
     
+    // Convert recipientId to ObjectId if it's a string
+    const mongoose = require('mongoose');
+    const recipientObjectId = typeof recipientId === 'string' ? 
+      new mongoose.Types.ObjectId(recipientId) : recipientId;
+    
     console.log('Message request:', {
       senderId,
-      recipientId,
+      recipientId: recipientObjectId,
       recipientEmail,
       recipientName,
       message: message?.substring(0, 50) + '...'
@@ -26,7 +31,7 @@ router.post('/send', auth, async (req, res) => {
       });
     }
 
-    if (!recipientId || !message || !recipientName) {
+    if (!recipientObjectId || !message || !recipientName) {
       return res.status(400).json({
         success: false,
         message: 'Missing required fields: recipientId, recipientName, and message are required'
@@ -36,7 +41,9 @@ router.post('/send', auth, async (req, res) => {
     // Create new message
     const newMessage = new Message({
       senderId,
-      recipientId,
+      senderRole: req.user.role || 'BD',
+      recipientId: recipientObjectId,
+      recipientRole: 'BD', // Default to BD for recipients
       recipientEmail,
       recipientName,
       message,
