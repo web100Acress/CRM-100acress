@@ -7,9 +7,25 @@ const auth = require('../middlewares/auth');
 router.post('/send', auth, async (req, res) => {
   try {
     const { recipientId, recipientEmail, recipientName, message } = req.body;
-    const senderId = req.user.userId;
+    const senderId = req.user._id || req.user.userId;
+    
+    console.log('Message request:', {
+      senderId,
+      recipientId,
+      recipientEmail,
+      recipientName,
+      message: message?.substring(0, 50) + '...'
+    });
 
     // Validate required fields
+    if (!senderId) {
+      console.error('Sender ID is missing from req.user:', req.user);
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication failed: User ID not found'
+      });
+    }
+
     if (!recipientId || !message || !recipientName) {
       return res.status(400).json({
         success: false,
@@ -29,11 +45,22 @@ router.post('/send', auth, async (req, res) => {
       direction: 'outgoing'
     });
 
+    console.log('Creating message:', {
+      _id: newMessage._id,
+      senderId: newMessage.senderId,
+      recipientId: newMessage.recipientId
+    });
+
     await newMessage.save();
 
     // Update message status to delivered
     newMessage.status = 'delivered';
     await newMessage.save();
+
+    console.log('Message saved successfully:', {
+      id: newMessage._id,
+      status: newMessage.status
+    });
 
     res.status(201).json({
       success: true,
