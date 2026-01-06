@@ -10,6 +10,17 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
   const inputRef = useRef(null);
 
   const recipientId = recipient?._id || recipient?.bdId || recipient?.id;
+  const recipientDisplayName =
+    recipient?.name || recipient?.recipientName || recipient?.fullName || recipient?.username || recipient?.email || 'Chat';
+  const roleLabel = (() => {
+    const r = String(recipient?.role || recipient?.userRole || '').toLowerCase();
+    if (r === 'super-admin') return 'Super Admin';
+    if (r === 'head-admin' || r === 'head') return 'Head Admin';
+    if (r === 'team-leader') return 'Team Leader';
+    if (r === 'boss') return 'Boss';
+    return null;
+  })();
+  const recipientHeaderTitle = roleLabel || recipientDisplayName;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -133,7 +144,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
         body: JSON.stringify({
           recipientId: recipient._id || recipient.bdId || recipient.id,
           recipientEmail: recipient.email,
-          recipientName: recipient.name,
+          recipientName: recipient.name || recipient.recipientName || recipient.fullName || recipient.username || recipient.email,
           message: message.trim()
         })
       });
@@ -228,17 +239,23 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
               {recipient?.profileImage ? (
                 <img 
                   src={recipient.profileImage} 
-                  alt={recipient?.name}
+                  alt={recipientHeaderTitle}
                   className="w-full h-full object-cover"
                 />
               ) : (
                 <span className="text-sm font-bold">
-                  {recipient?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'UN'}
+                  {recipientHeaderTitle
+                    .split(' ')
+                    .map((n) => n?.[0])
+                    .filter(Boolean)
+                    .join('')
+                    .toUpperCase()
+                    .slice(0, 2) || 'UN'}
                 </span>
               )}
             </div>
             <div>
-              <h3 className="font-bold text-base leading-tight">{recipient?.name || 'Unknown'}</h3>
+              <h3 className="font-bold text-base leading-tight">{recipientHeaderTitle}</h3>
               <p className="text-xs text-green-100 opacity-90">Click to view profile</p>
             </div>
           </div>

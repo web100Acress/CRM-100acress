@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, RefreshCw, Menu, X, Home, Settings, LogOut, BarChart3, Plus, Phone, Mail, MessageSquare, Eye, User, Users, MapPin, UserCheck, Download, Trash2, ArrowRight, PhoneCall, PieChart, Calendar, Clock, TrendingUp, Activity, Target, Award, CheckCircle, XCircle, Building2, DollarSign, Mic, Volume2, Video, Edit, ArrowRight as ForwardIcon, Briefcase } from 'lucide-react';
+import { Search, Filter, RefreshCw, Menu, X, Home, Settings, LogOut, BarChart3, Plus, Phone, Mail, MessageSquare, MessageCircle, Eye, User, Users, MapPin, UserCheck, Download, Trash2, ArrowRight, PhoneCall, PieChart, Calendar, Clock, TrendingUp, Activity, Target, Award, CheckCircle, XCircle, Building2, DollarSign, Mic, Volume2, Video, Edit, ArrowRight as ForwardIcon, Briefcase } from 'lucide-react';
 import MobileSidebar from '@/layout/MobileSidebar';
 import { Badge } from '@/layout/badge';
 import { Card, CardContent } from '@/layout/card';
@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/layout/button';
 import { useToast } from '@/hooks/use-toast';
 import FollowUpModal from '@/features/employee/follow-up/FollowUpModal';
+import WhatsAppMessageModal from '@/features/calling/components/WhatsAppMessageModal';
 import CreateLeadFormMobile from '@/layout/CreateLeadForm.mobile';
 import LeadTableMobile from '@/layout/LeadTable.mobile';
 import LeadAdvancedOptionsMobile from '@/layout/LeadAdvancedOptions.mobile';
@@ -56,6 +57,8 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
   const [selectedEmployees, setSelectedEmployees] = useState([]);
   const [forwardSuccess, setForwardSuccess] = useState(false);
   const [forwardedLeadData, setForwardedLeadData] = useState(null);
+  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
+  const [whatsAppRecipient, setWhatsAppRecipient] = useState(null);
   const currentUserId = localStorage.getItem("userId");
   const currentUserRole = localStorage.getItem("userRole");
 
@@ -646,6 +649,42 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
     setShowLeadDetails(true);
   };
 
+  const handleWhatsAppChat = (lead) => {
+    const users = Array.isArray(assignableUsers) ? assignableUsers : [];
+    const byRole = (role) => users.find((u) => u?.role === role || u?.userRole === role);
+
+    const assignedUserId = lead?.assignedTo;
+    const assignedUser = assignedUserId
+      ? users.find((u) => String(u?._id) === String(assignedUserId))
+      : null;
+
+    const recipientUser =
+      (assignedUser && String(assignedUser?._id) !== String(currentUserId) ? assignedUser : null) ||
+      byRole('team-leader') ||
+      byRole('head-admin') ||
+      byRole('head') ||
+      byRole('super-admin') ||
+      users[0];
+
+    if (!recipientUser?._id) {
+      toast({
+        title: 'Error',
+        description: 'No chat recipient available',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setWhatsAppRecipient({
+      _id: recipientUser._id,
+      id: recipientUser._id,
+      name: recipientUser.name || recipientUser.userName || recipientUser.email || 'User',
+      email: recipientUser.email || recipientUser.userEmail || '',
+      role: recipientUser.role || recipientUser.userRole
+    });
+    setShowWhatsAppModal(true);
+  };
+
   const handleStatusUpdate = (lead) => {
     setSelectedLeadForStatus(lead);
     setShowStatusUpdate(true);
@@ -1000,7 +1039,7 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
                 </div>
 
                 {/* Enhanced Action Buttons */}
-                <div className="grid grid-cols-4 gap-2">
+                <div className={`grid ${currentUserRole === 'employee' ? 'grid-cols-4' : 'grid-cols-4'} gap-2`}>
                   <button
                     onClick={() => handleCallLead(lead.phone, lead._id, lead.name)}
                     className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200 shadow-md hover:shadow-lg"
@@ -1008,6 +1047,16 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
                     <PhoneCall size={18} />
                     <span className="text-xs mt-1 font-medium">Call</span>
                   </button>
+                  {currentUserRole === 'employee' && (
+                    <button
+                      onClick={() => handleWhatsAppChat(lead)}
+                      className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                      title="WhatsApp"
+                    >
+                      <MessageCircle size={18} />
+                      <span className="text-xs mt-1 font-medium">WhatsApp</span>
+                    </button>
+                  )}
                   <button
                     onClick={() => handleFollowUp(lead)}
                     className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-all duration-200 shadow-md hover:shadow-lg"
@@ -1175,6 +1224,17 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
             </div>
           </DialogContent>
         </Dialog>
+      )}
+
+      {showWhatsAppModal && whatsAppRecipient && (
+        <WhatsAppMessageModal
+          isOpen={showWhatsAppModal}
+          onClose={() => {
+            setShowWhatsAppModal(false);
+            setWhatsAppRecipient(null);
+          }}
+          recipient={whatsAppRecipient}
+        />
       )}
     {showAssignmentChain && selectedLeadForChain && (
         <Dialog open={showAssignmentChain} onOpenChange={setShowAssignmentChain}>
