@@ -11,10 +11,11 @@ const userSchema = new mongoose.Schema({
     permissions: [String],
     allowedModules: { type: [String], default: [] },
     status: { type: String, enum: ['active', 'inactive'], default: 'active' },
+    profileImage: { type: String, default: null },
     lastLogin: { type: Date },
     createdAt: { type: Date, default: Date.now },
     resetPasswordToken: String,
     resetPasswordExpires: Date,
-  });
+});
 
-module.exports = mongoose.model('User', userSchema); 
+module.exports = mongoose.model('User', userSchema);

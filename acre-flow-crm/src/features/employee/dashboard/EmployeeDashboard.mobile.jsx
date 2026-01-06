@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  User, Mail, Phone, Shield, Building2, Users, Ticket, Eye, Target, CheckCircle, TrendingUp, Briefcase, Menu, X, Home, BarChart3, Calendar, Clock, ArrowRight, PhoneCall, MessageSquare, MapPin, Star, Award, Bell, Settings, LogOut, ChevronRight, Activity, FileText, DollarSign, TrendingDown, AlertCircle
+  User, Mail, Phone, Shield, Building2, Users, Ticket, Eye, Target, CheckCircle, TrendingUp, Briefcase, Menu, X, Home, BarChart3, Calendar, Clock, ArrowRight, PhoneCall, MessageSquare, MapPin, Star, Award, Bell, Settings, LogOut, ChevronRight, Activity, FileText, DollarSign, TrendingDown, AlertCircle, Search
 } from 'lucide-react';
 import { Badge } from '@/layout/badge';
 import { Card, CardContent } from '@/layout/card';
@@ -30,6 +30,7 @@ const BDDashboardMobile = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [showTaskDetails, setShowTaskDetails] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const currentUserId = localStorage.getItem('userId');
 
   // Get role-specific dashboard title
@@ -230,6 +231,24 @@ const BDDashboardMobile = () => {
     // Return empty array if no real data - no fallback static data
     return [];
   }, [dashboardStats.myLeads]);
+
+  // Filter tasks based on search query
+  const filteredTasks = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return myTasks;
+    }
+    
+    const query = searchQuery.toLowerCase();
+    return myTasks.filter(task => 
+      task.name.toLowerCase().includes(query) ||
+      task.email?.toLowerCase().includes(query) ||
+      task.phone?.includes(query) ||
+      task.budget?.toLowerCase().includes(query) ||
+      task.location?.toLowerCase().includes(query) ||
+      task.priority.toLowerCase().includes(query) ||
+      task.status.toLowerCase().includes(query)
+    );
+  }, [myTasks, searchQuery]);
 
   const bdData = {
     name: localStorage.getItem('userName') || 'BD',
@@ -535,9 +554,29 @@ const BDDashboardMobile = () => {
             </Badge>
           </div>
           
-          {myTasks.length > 0 ? (
+          {/* Search Bar */}
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+            <input
+              type="text"
+              placeholder="Search tasks by name, email, phone, budget, location..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+          
+          {filteredTasks.length > 0 ? (
             <div className="space-y-3">
-              {myTasks.slice(0, 5).map((task, index) => (
+              {filteredTasks.slice(0, 5).map((task, index) => (
                 <div
                   key={index}
                   onClick={() => handleTaskClick(task)}
@@ -570,7 +609,14 @@ const BDDashboardMobile = () => {
                   </div>
                 </div>
               ))}
-              {myTasks.length > 5 && (
+              {searchQuery ? (
+                <button
+                  onClick={() => navigate('/leads')}
+                  className="w-full mt-3 text-center text-sm text-blue-600 hover:text-blue-700 font-medium py-2 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                >
+                  View All Results ({filteredTasks.length} found)
+                </button>
+              ) : myTasks.length > 5 && (
                 <button
                   onClick={() => navigate('/leads')}
                   className="w-full mt-3 text-center text-sm text-blue-600 hover:text-blue-700 font-medium py-2 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
@@ -582,8 +628,17 @@ const BDDashboardMobile = () => {
           ) : (
             <div className="text-center py-8">
               <Briefcase size={48} className="text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500 font-medium">No tasks assigned yet</p>
-              <p className="text-sm text-gray-400 mt-1">Your assigned tasks will appear here</p>
+              {searchQuery ? (
+                <>
+                  <p className="text-gray-500 font-medium">No results found</p>
+                  <p className="text-sm text-gray-400 mt-1">Try adjusting your search terms</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-gray-500 font-medium">No tasks assigned yet</p>
+                  <p className="text-sm text-gray-400 mt-1">Your assigned tasks will appear here</p>
+                </>
+              )}
             </div>
           )}
         </div>
