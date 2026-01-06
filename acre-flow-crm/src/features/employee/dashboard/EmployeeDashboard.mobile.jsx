@@ -143,6 +143,20 @@ const BDDashboardMobile = () => {
     };
   }, [socket, currentUserId]);
 
+  // Listen for dashboard refresh events when lead status is updated
+  useEffect(() => {
+    const handleDashboardRefresh = () => {
+      console.log('Dashboard refresh event received, fetching updated leads...');
+      fetchBDLeads();
+    };
+
+    window.addEventListener('dashboard-refresh', handleDashboardRefresh);
+
+    return () => {
+      window.removeEventListener('dashboard-refresh', handleDashboardRefresh);
+    };
+  }, []);
+
   // Real-time leads fetching
   const fetchBDLeads = async () => {
     try {
@@ -161,8 +175,8 @@ const BDDashboardMobile = () => {
         ...prev,
         myLeads: myLeads,
         myTasks: myLeads.length,
-        pendingTasks: myLeads.filter(lead => lead.status === 'pending').length,
-        completedTasks: myLeads.filter(lead => lead.status === 'completed').length
+        pendingTasks: myLeads.filter(lead => lead.workProgress !== 'done' && lead.workProgress !== 'inprogress').length,
+        completedTasks: myLeads.filter(lead => lead.workProgress === 'done').length
       }));
       
     } catch (error) {
@@ -188,8 +202,8 @@ const BDDashboardMobile = () => {
 
         // Determine status based on work progress and last contact
         let status = 'Pending';
-        if (lead.workProgress === 'completed') status = 'Completed';
-        else if (lead.workProgress === 'in-progress') status = 'Today';
+        if (lead.workProgress === 'done') status = 'Completed';
+        else if (lead.workProgress === 'inprogress') status = 'Today';
         else if (lead.lastContact) {
           const daysSinceContact = Math.floor((Date.now() - new Date(lead.lastContact)) / (1000 * 60 * 60 * 24));
           if (daysSinceContact <= 1) status = 'Today';
@@ -238,17 +252,13 @@ const BDDashboardMobile = () => {
     const leads = dashboardStats.myLeads || [];
     
     const pending = leads.filter(lead => {
-      if (lead.workProgress === 'completed') return false;
-      if (lead.workProgress === 'in-progress') return false;
-      if (lead.lastContact) {
-        const daysSinceContact = Math.floor((Date.now() - new Date(lead.lastContact)) / (1000 * 60 * 60 * 24));
-        return daysSinceContact > 3;
-      }
+      if (lead.workProgress === 'done') return false;
+      if (lead.workProgress === 'inprogress') return false;
       return true;
     }).length;
 
     const today = leads.filter(lead => {
-      if (lead.workProgress === 'in-progress') return true;
+      if (lead.workProgress === 'inprogress') return true;
       if (lead.lastContact) {
         const daysSinceContact = Math.floor((Date.now() - new Date(lead.lastContact)) / (1000 * 60 * 60 * 24));
         return daysSinceContact <= 1;
@@ -257,7 +267,7 @@ const BDDashboardMobile = () => {
     }).length;
 
     const thisWeek = leads.filter(lead => {
-      if (lead.workProgress === 'in-progress') return false;
+      if (lead.workProgress === 'inprogress') return false;
       if (lead.lastContact) {
         const daysSinceContact = Math.floor((Date.now() - new Date(lead.lastContact)) / (1000 * 60 * 60 * 24));
         return daysSinceContact > 1 && daysSinceContact <= 7;
