@@ -48,19 +48,15 @@ app.use(cors(corsOptions));
 
 // Custom OPTIONS preflight handler to fix CORS issues
 app.options('*', (req, res, next) => {
-  const origin = req.headers.origin;
+  const origin = req.headers.origin || req.headers.referer?.split('/')[0] || '*';
   
-  // Check if origin is allowed
-  if (!origin || allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin || '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Max-Age', '600');
-    res.status(204).send();
-  } else {
-    res.status(403).json({ message: 'CORS policy violation' });
-  }
+  // Always allow the origin for development
+  res.header('Access-Control-Allow-Origin', origin);
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Max-Age', '600');
+  res.status(200).send();
 });
 
 // Preflight (backup)
