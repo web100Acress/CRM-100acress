@@ -31,11 +31,70 @@ const WhatsAppChatPage = () => {
   const [loading, setLoading] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [isAtBottom, setIsAtBottom] = useState(true);
+  const [assignableUsers, setAssignableUsers] = useState([]);
 
   const messagesContainerRef = useRef(null);
   const messagesEndRef = useRef(null);
 
   const userRole = localStorage.getItem('userRole') || 'employee';
+
+  const getRoleLabel = (role) => {
+    if (!role) return null;
+    const r = String(role).toLowerCase();
+    if (r === 'super-admin') return 'Super Admin';
+    if (r === 'head-admin' || r === 'head') return 'Head Admin';
+    if (r === 'team-leader') return 'Team Leader';
+    if (r === 'boss') return 'Boss';
+    return null;
+  };
+
+  const resolveUser = (u) => {
+    const id = u?._id || u?.id || u?.bdId;
+    if (!id) return u;
+    const fromAssignable = assignableUsers.find((au) => String(au?._id) === String(id));
+    if (!fromAssignable) return u;
+    return {
+      ...u,
+      ...fromAssignable,
+      _id: id,
+      id,
+      role: u?.role || u?.userRole || fromAssignable?.role || fromAssignable?.userRole
+    };
+  };
+
+  const getUserDisplayName = (u) => {
+    const resolved = resolveUser(u);
+    // Always prefer real name over role for title
+    const name = (
+      resolved?.name ||
+      resolved?.userName ||
+      resolved?.recipientName ||
+      resolved?.fullName ||
+      resolved?.username ||
+      resolved?.email ||
+      'Chat'
+    );
+    // If name is 'Test' or generic, try to use email part
+    if (!name || name.toLowerCase() === 'test' || name === 'Chat') {
+      const email = resolved?.email || resolved?.recipientEmail;
+      if (email) {
+        const parts = email.split('@')[0];
+        return parts.charAt(0).toUpperCase() + parts.slice(1);
+      }
+    }
+    return name;
+  };
+
+  const getUserSubtitle = (u) => {
+    const resolved = resolveUser(u);
+    const roleLabel = getRoleLabel(resolved?.role || resolved?.userRole);
+    return roleLabel ? `${roleLabel} • Online` : 'Online';
+  };
+
+  const getUserDisplayEmail = (u) => {
+    const resolved = resolveUser(u);
+    return resolved?.recipientEmail || resolved?.email || '';
+  };
 
   const getCurrentUserId = () => {
     const token = localStorage.getItem('token');
@@ -49,6 +108,23 @@ const WhatsAppChatPage = () => {
   };
 
   const isManagement = userRole === 'super-admin' || userRole === 'head-admin';
+
+  const fetchAssignableUsers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('https://bcrm.100acress.com/api/leads/assignable-users', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const json = await response.json();
+      setAssignableUsers(Array.isArray(json?.data) ? json.data : []);
+    } catch (error) {
+      console.error('Error fetching assignable users:', error);
+      setAssignableUsers([]);
+    }
+  };
 
   // Mobile Header Component (from EmployeeDashboard)
   const renderMobileHeader = () => (
@@ -153,7 +229,18 @@ const WhatsAppChatPage = () => {
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          setMessages(data.data);
+          const currentUserId = getCurrentUserId();
+          const formatted = data.data.map(msg => {
+            const isMe = String(msg.senderId) === String(currentUserId);
+            let senderName = null;
+            if (!isMe) {
+              // Try to find sender in assignable-users
+              const sender = assignableUsers.find((u) => String(u?._id) === String(msg.senderId));
+              senderName = sender?.name || sender?.userName || sender?.email || null;
+            }
+            return { ...msg, senderName };
+          });
+          setMessages(formatted);
         }
       }
     } catch (error) {
@@ -177,8 +264,8 @@ const WhatsAppChatPage = () => {
         },
         body: JSON.stringify({
           recipientId: selectedUser._id,
-          recipientEmail: selectedUser.recipientEmail,
-          recipientName: selectedUser.recipientName,
+          recipientEmail: getUserDisplayEmail(selectedUser),
+          recipientName: getUserDisplayName(selectedUser),
           message: newMessage.trim()
         })
       });
@@ -194,11 +281,12 @@ const WhatsAppChatPage = () => {
 
   // Filter users based on search
   const filteredUsers = chatUsers.filter(user =>
-    user.recipientName?.toLowerCase().includes(searchTerm.toLowerCase())
+    getUserDisplayName(user)?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   useEffect(() => {
     fetchChatUsers();
+    fetchAssignableUsers();
   }, []);
 
   useEffect(() => {
@@ -287,11 +375,16 @@ const WhatsAppChatPage = () => {
                   >
                     <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center">
                       <span className="text-white font-semibold">
-                        {user.recipientName?.charAt(0) || 'U'}
+                        {getUserDisplayName(user)?.charAt(0) || 'U'}
                       </span>
                     </div>
                     <div className="flex-1 text-left">
-                      <p className="font-medium text-gray-900">{user.recipientName}</p>
+                      <p className="font-medium text-gray-900">{(() => {
+                        const name = getUserDisplayName(user);
+                        console.log('Chat list user:', user);
+                        console.log('Resolved name:', name);
+                        return name;
+                      })()}</p>
                       <p className="text-sm text-gray-500 truncate">
                         {user.lastMessage?.message || 'Start conversation'}
                       </p>
@@ -330,12 +423,12 @@ const WhatsAppChatPage = () => {
                   </button>
                   <div className="w-10 h-10 bg-green-700 rounded-full flex items-center justify-center">
                     <span className="text-white font-semibold">
-                      {selectedUser.recipientName?.charAt(0) || 'U'}
+                      {getUserDisplayName(selectedUser)?.charAt(0) || 'U'}
                     </span>
                   </div>
                   <div>
-                    <p className="font-medium text-white">{selectedUser.recipientName}</p>
-                    <p className="text-xs text-green-100">Online</p>
+                    <p className="font-medium text-white">{getUserDisplayName(selectedUser)}</p>
+                    <p className="text-xs text-green-100">{getUserSubtitle(selectedUser) || 'Online'}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -380,6 +473,17 @@ const WhatsAppChatPage = () => {
                                 : 'bg-white text-gray-800 border border-gray-200'
                             }`}
                           >
+                            {!isMe && (
+                              <p className="text-xs font-semibold text-gray-500 mb-1">
+                                {(() => {
+                                  const senderName = msg.senderName;
+                                  if (senderName) return senderName;
+                                  const senderId = msg.senderId;
+                                  const sender = assignableUsers.find((u) => String(u?._id) === String(senderId));
+                                  return sender?.name || sender?.userName || sender?.email || 'User';
+                                })()}
+                              </p>
+                            )}
                             <p className="text-sm">{msg.message}</p>
                             <p className={`text-xs mt-1 ${isMe ? 'text-green-100' : 'text-gray-500'}`}>
                               {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
