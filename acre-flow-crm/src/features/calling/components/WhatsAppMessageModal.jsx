@@ -26,13 +26,20 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
   // Fetch conversation history when modal opens
   useEffect(() => {
     if (isOpen && recipient?._id) {
+      console.log('Fetching conversation for recipient:', recipient._id);
       fetchConversation();
     } else if (isOpen) {
+      console.log('Recipient ID missing:', recipient);
       setMessages([]);
     }
   }, [isOpen, recipient]);
 
   const fetchConversation = async () => {
+    if (!recipient?._id || recipient._id === 'undefined') {
+      console.error('Invalid recipient ID:', recipient?._id);
+      return;
+    }
+    
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
