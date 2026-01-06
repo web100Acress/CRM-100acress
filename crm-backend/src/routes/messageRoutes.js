@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const Message = require('../models/message.model');
-const { protect } = require('../middlewares/auth');
+const auth = require('../middlewares/auth');
 
 // Send a message
-router.post('/send', protect, async (req, res) => {
+router.post('/send', auth, async (req, res) => {
   try {
     const { recipientId, recipientEmail, recipientName, message } = req.body;
     const senderId = req.user.userId;
@@ -62,9 +62,9 @@ router.post('/send', protect, async (req, res) => {
 });
 
 // Get conversation between two users
-router.get('/conversation/:userId', protect, async (req, res) => {
+router.get('/conversation/:userId', auth, async (req, res) => {
   try {
-    const currentUserId = req.user.userId;
+    const currentUserId = req.user._id || req.user.userId;
     const otherUserId = req.params.userId;
 
     const messages = await Message.find({
@@ -90,9 +90,9 @@ router.get('/conversation/:userId', protect, async (req, res) => {
 });
 
 // Get all conversations for current user
-router.get('/conversations', protect, async (req, res) => {
+router.get('/conversations', auth, async (req, res) => {
   try {
-    const currentUserId = req.user.userId;
+    const currentUserId = req.user._id || req.user.userId;
 
     // Get unique conversations with last message
     const conversations = await Message.aggregate([
@@ -157,9 +157,9 @@ router.get('/conversations', protect, async (req, res) => {
 });
 
 // Mark messages as read
-router.put('/read/:conversationId', protect, async (req, res) => {
+router.put('/read/:conversationId', auth, async (req, res) => {
   try {
-    const currentUserId = req.user.userId;
+    const currentUserId = req.user._id || req.user.userId;
     const conversationId = req.params.conversationId;
 
     await Message.updateMany(
