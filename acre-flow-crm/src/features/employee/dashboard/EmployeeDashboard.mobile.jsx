@@ -421,7 +421,7 @@ const BDDashboardMobile = () => {
       />
 
       {/* Main Content */}
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-4 pb-20 md:pb-4">
         {/* Enhanced Stats Cards */}
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 shadow-lg transform hover:scale-105 transition-all duration-200 border border-blue-200">
@@ -742,6 +742,59 @@ const BDDashboardMobile = () => {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Mobile Bottom Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg md:hidden">
+        <div className="flex justify-around items-center py-2">
+          <button
+            onClick={() => navigate('/employee-dashboard')}
+            className="flex flex-col items-center p-2 text-blue-600 hover:text-blue-700 transition-colors"
+          >
+            <Home size={20} />
+            <span className="text-xs mt-1">Home</span>
+          </button>
+          
+          <button
+            onClick={() => navigate('/leads')}
+            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <Briefcase size={20} />
+            <span className="text-xs mt-1">Tasks</span>
+          </button>
+          
+          <button
+            onClick={() => navigate('/reports')}
+            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <BarChart3 size={20} />
+            <span className="text-xs mt-1">Reports</span>
+          </button>
+          
+          <button
+            onClick={() => navigate('/calendar')}
+            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <Calendar size={20} />
+            <span className="text-xs mt-1">Calendar</span>
+          </button>
+          
+          <button
+            onClick={() => navigate('/team')}
+            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <Users size={20} />
+            <span className="text-xs mt-1">Team</span>
+          </button>
+          
+          <button
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <Menu size={20} />
+            <span className="text-xs mt-1">Menu</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

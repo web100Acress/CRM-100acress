@@ -26,7 +26,8 @@ import {
   XCircle,
   AlertCircle,
   PhoneCall,
-  PieChart
+  PieChart,
+  Briefcase
 } from 'lucide-react';
 import MobileSidebar from '@/layout/MobileSidebar';
 import { Badge } from '@/layout/badge';
@@ -390,7 +391,7 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
       {renderMobileHeader()}
       
       {/* BD List */}
-      <div className="p-4 space-y-3">
+      <div className="p-4 space-y-3 pb-20 md:pb-4">
         {filteredBDs.map((bd) => (
           <Card key={bd.bdId} className="shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="p-4">
@@ -687,6 +688,59 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
           </div>
         </div>
       )}
+
+      {/* Mobile Bottom Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg md:hidden">
+        <div className="flex justify-around items-center py-2">
+          <button
+            onClick={() => navigate('/super-admin-dashboard')}
+            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <Home size={20} />
+            <span className="text-xs mt-1">Home</span>
+          </button>
+          
+          <button
+            onClick={() => navigate('/leads')}
+            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <Briefcase size={20} />
+            <span className="text-xs mt-1">Tasks</span>
+          </button>
+          
+          <button
+            onClick={() => navigate('/admin/bd-analytics')}
+            className="flex flex-col items-center p-2 text-blue-600 hover:text-blue-700 transition-colors"
+          >
+            <BarChart3 size={20} />
+            <span className="text-xs mt-1">Analytics</span>
+          </button>
+          
+          <button
+            onClick={() => navigate('/users')}
+            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <Users size={20} />
+            <span className="text-xs mt-1">Users</span>
+          </button>
+          
+          <button
+            onClick={() => navigate('/admin/manage-users')}
+            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <Settings size={20} />
+            <span className="text-xs mt-1">Manage</span>
+          </button>
+          
+          <button
+            onClick={() => setRightMenuOpen(!rightMenuOpen)}
+            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <Menu size={20} />
+            <span className="text-xs mt-1">Menu</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

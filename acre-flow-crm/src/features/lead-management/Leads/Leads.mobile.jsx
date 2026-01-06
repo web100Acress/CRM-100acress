@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, RefreshCw, Menu, X, Home, Settings, LogOut, BarChart3, Plus, Phone, Mail, MessageSquare, Eye, User, Users, MapPin, UserCheck, Download, Trash2, ArrowRight, PhoneCall, PieChart, Calendar, Clock, TrendingUp, Activity, Target, Award, CheckCircle, XCircle, Building2, DollarSign, Mic, Volume2, Video, Edit, ArrowRight as ForwardIcon } from 'lucide-react';
+import { Search, Filter, RefreshCw, Menu, X, Home, Settings, LogOut, BarChart3, Plus, Phone, Mail, MessageSquare, Eye, User, Users, MapPin, UserCheck, Download, Trash2, ArrowRight, PhoneCall, PieChart, Calendar, Clock, TrendingUp, Activity, Target, Award, CheckCircle, XCircle, Building2, DollarSign, Mic, Volume2, Video, Edit, ArrowRight as ForwardIcon, Briefcase } from 'lucide-react';
 import MobileSidebar from '@/layout/MobileSidebar';
 import { Badge } from '@/layout/badge';
 import { Card, CardContent } from '@/layout/card';
@@ -906,7 +906,7 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
       {renderMobileHeader()}
       
       {/* Leads List */}
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-4 pb-20 md:pb-4">
         {filteredLeads.map((lead) => (
           <Card key={lead._id || lead.id} id={`lead-${lead._id || lead.id}`} className="shadow-lg hover:shadow-xl transition-all duration-300 border-0 overflow-hidden">
             <CardContent className="p-0">
@@ -1733,6 +1733,59 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
         </DialogContent>
       </Dialog>
     )}
+
+    {/* Mobile Bottom Navigation */}
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg md:hidden">
+      <div className="flex justify-around items-center py-2">
+        <button
+          onClick={() => navigate('/dashboard')}
+          className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+        >
+          <Home size={20} />
+          <span className="text-xs mt-1">Home</span>
+        </button>
+        
+        <button
+          onClick={() => navigate('/leads')}
+          className="flex flex-col items-center p-2 text-blue-600 hover:text-blue-700 transition-colors"
+        >
+          <Briefcase size={20} />
+          <span className="text-xs mt-1">Tasks</span>
+        </button>
+        
+        <button
+          onClick={() => navigate('/reports')}
+          className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+        >
+          <BarChart3 size={20} />
+          <span className="text-xs mt-1">Reports</span>
+        </button>
+        
+        <button
+          onClick={() => navigate('/calendar')}
+          className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+        >
+          <Calendar size={20} />
+          <span className="text-xs mt-1">Calendar</span>
+        </button>
+        
+        <button
+          onClick={() => navigate('/team')}
+          className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+        >
+          <Users size={20} />
+          <span className="text-xs mt-1">Team</span>
+        </button>
+        
+        <button
+          onClick={() => setRightMenuOpen(!rightMenuOpen)}
+          className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+        >
+          <Menu size={20} />
+          <span className="text-xs mt-1">Menu</span>
+        </button>
+      </div>
+    </div>
   </div>
   );
 };

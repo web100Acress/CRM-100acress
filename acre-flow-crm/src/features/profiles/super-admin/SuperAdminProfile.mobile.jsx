@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import '@/styles/SuperAdminProfile.css';
 
 import {
-  User, Mail, Phone, Shield, Building2, Users, Ticket, Eye, TrendingUp, Activity, PieChart, Calendar, Clock, BarChart3, Settings
+  User, Mail, Phone, Shield, Building2, Users, Ticket, Eye, TrendingUp, Activity, PieChart, Calendar, Clock, BarChart3, Settings, Home, Briefcase, Menu
 } from 'lucide-react';
 
 import { Badge } from '@/layout/badge';
@@ -14,6 +14,7 @@ import io from 'socket.io-client';
 const SuperAdminProfileMobile = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   const [dashboardStats, setDashboardStats] = useState({
     totalUsers: 0,
@@ -172,41 +173,111 @@ const SuperAdminProfileMobile = () => {
     <div className="space-y-4">
       {/* Mobile Stats Cards */}
       <div className="grid grid-cols-2 gap-3">
-        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-blue-100 text-xs font-medium">Total Users</p>
-                <p className="text-2xl font-bold mt-1">{dashboardStats.totalUsers}</p>
-                <div className="flex items-center gap-1 mt-2">
-                  <TrendingUp size={12} className="text-blue-200" />
-                  <span className="text-xs text-blue-200">+12%</span>
+        <button
+          onClick={() => navigate('/users')}
+          className="bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg rounded-lg p-0 hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105"
+        >
+          <Card className="bg-transparent border-0 shadow-none">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-blue-100 text-xs font-medium">Total Users</p>
+                  <p className="text-2xl font-bold mt-1">{dashboardStats.totalUsers}</p>
+                  <div className="flex items-center gap-1 mt-2">
+                    <TrendingUp size={12} className="text-blue-200" />
+                    <span className="text-xs text-blue-200">+12%</span>
+                  </div>
+                </div>
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                  <Users size={20} className="text-white" />
                 </div>
               </div>
-              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                <Users size={20} className="text-white" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </button>
         
-        <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-green-100 text-xs font-medium">Active Leads</p>
-                <p className="text-2xl font-bold mt-1">{dashboardStats.activeLeads}</p>
-                <div className="flex items-center gap-1 mt-2">
-                  <TrendingUp size={12} className="text-green-200" />
-                  <span className="text-xs text-green-200">+8%</span>
+        <button
+          onClick={() => navigate('/leads')}
+          className="bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg rounded-lg p-0 hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-105"
+        >
+          <Card className="bg-transparent border-0 shadow-none">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-green-100 text-xs font-medium">Active Leads</p>
+                  <p className="text-2xl font-bold mt-1">{dashboardStats.activeLeads}</p>
+                  <div className="flex items-center gap-1 mt-2">
+                    <TrendingUp size={12} className="text-green-200" />
+                    <span className="text-xs text-green-200">+8%</span>
+                  </div>
+                </div>
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                  <Activity size={20} className="text-white" />
                 </div>
               </div>
-              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                <Activity size={20} className="text-white" />
-              </div>
+            </CardContent>
+          </Card>
+        </button>
+      </div>
+
+      {/* Enhanced Quick Actions */}
+      <div className="bg-white rounded-xl shadow-lg p-4 border border-gray-100">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <Activity className="w-5 h-5 text-blue-600" />
+            Quick Actions
+          </h3>
+          <Settings className="w-5 h-5 text-gray-400" />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => navigate('/leads')}
+            className="group relative overflow-hidden bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl p-4 hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg"
+          >
+            <div className="absolute inset-0 bg-white/10 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+            <div className="relative z-10 flex flex-col items-center">
+              <Users size={24} className="mb-2 transform group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-medium">Create Lead</span>
+              <span className="text-xs text-blue-100 mt-1">New</span>
             </div>
-          </CardContent>
-        </Card>
+          </button>
+          
+          <button
+            onClick={() => navigate('/users/manage')}
+            className="group relative overflow-hidden bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl p-4 hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg"
+          >
+            <div className="absolute inset-0 bg-white/10 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+            <div className="relative z-10 flex flex-col items-center">
+              <Settings size={24} className="mb-2 transform group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-medium">Manage User</span>
+              <span className="text-xs text-green-100 mt-1">Admin</span>
+            </div>
+          </button>
+          
+          <button
+            onClick={() => navigate('/users')}
+            className="group relative overflow-hidden bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl p-4 hover:from-orange-600 hover:to-orange-700 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg"
+          >
+            <div className="absolute inset-0 bg-white/10 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+            <div className="relative z-10 flex flex-col items-center">
+              <Eye size={24} className="mb-2 transform group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-medium">View User</span>
+              <span className="text-xs text-orange-100 mt-1">List</span>
+            </div>
+          </button>
+          
+          <button
+            onClick={() => navigate('/admin/bd-analytics')}
+            className="group relative overflow-hidden bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl p-4 hover:from-purple-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg"
+          >
+            <div className="absolute inset-0 bg-white/10 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+            <div className="relative z-10 flex flex-col items-center">
+              <BarChart3 size={24} className="mb-2 transform group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-medium">BD Analytics</span>
+              <span className="text-xs text-purple-100 mt-1">Reports</span>
+            </div>
+          </button>
+        </div>
       </div>
 
       {/* Lead Status Chart */}
@@ -441,12 +512,69 @@ const SuperAdminProfileMobile = () => {
   );
 
   return (
-    <MobileLayout userRole="super-admin" activeTab={activeTab} setActiveTab={setActiveTab}>
-      {activeTab === 'overview' && renderOverviewTab()}
-      {activeTab === 'users' && renderUsersTab()}
-      {activeTab === 'leads' && renderLeadsTab()}
-      {activeTab === 'settings' && renderSettingsTab()}
-    </MobileLayout>
+    <div className="min-h-screen bg-gray-50">
+      <div className="pb-20 md:pb-0">
+        <MobileLayout userRole="super-admin" activeTab={activeTab} setActiveTab={setActiveTab}>
+          {activeTab === 'overview' && renderOverviewTab()}
+          {activeTab === 'users' && renderUsersTab()}
+          {activeTab === 'leads' && renderLeadsTab()}
+          {activeTab === 'settings' && renderSettingsTab()}
+        </MobileLayout>
+      </div>
+
+      {/* Mobile Bottom Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg md:hidden">
+        <div className="flex justify-around items-center py-2">
+          <button
+            onClick={() => navigate('/super-admin-dashboard')}
+            className="flex flex-col items-center p-2 text-blue-600 hover:text-blue-700 transition-colors"
+          >
+            <Home size={20} />
+            <span className="text-xs mt-1">Home</span>
+          </button>
+          
+          <button
+            onClick={() => navigate('/leads')}
+            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <Briefcase size={20} />
+            <span className="text-xs mt-1">Tasks</span>
+          </button>
+          
+          <button
+            onClick={() => navigate('/admin/bd-analytics')}
+            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <BarChart3 size={20} />
+            <span className="text-xs mt-1">Reports</span>
+          </button>
+          
+          <button
+            onClick={() => navigate('/users')}
+            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <Users size={20} />
+            <span className="text-xs mt-1">Users</span>
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('settings')}
+            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <Settings size={20} />
+            <span className="text-xs mt-1">Settings</span>
+          </button>
+          
+          <button
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <Menu size={20} />
+            <span className="text-xs mt-1">Menu</span>
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
 
