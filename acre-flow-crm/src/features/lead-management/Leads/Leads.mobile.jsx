@@ -657,18 +657,18 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
       
       // Use localhost for development, change back to production when ready
       const apiUrl = process.env.NODE_ENV === 'development' 
-        ? `http://localhost:5001/api/leads/${selectedLeadForStatus._id}/status`
-        : `https://bcrm.100acress.com/api/leads/${selectedLeadForStatus._id}/status`;
+        ? `http://localhost:5001/api/leads/${selectedLeadForStatus._id}`
+        : `https://bcrm.100acress.com/api/leads/${selectedLeadForStatus._id}`;
       
       const response = await fetch(
         apiUrl,
         {
-          method: "PATCH",
+          method: "PUT",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ status: newStatus })
+          body: JSON.stringify({ workProgress: newStatus })
         }
       );
 
@@ -677,10 +677,16 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
         setLeads(prevLeads => 
           prevLeads.map(lead => 
             lead._id === selectedLeadForStatus._id 
-              ? { ...lead, status: newStatus }
+              ? { ...lead, workProgress: newStatus }
               : lead
           )
         );
+        
+        // Update selected lead for status
+        setSelectedLeadForStatus(prev => ({ ...prev, workProgress: newStatus }));
+        
+        // Trigger dashboard refresh
+        window.dispatchEvent(new CustomEvent('dashboard-refresh'));
         
         toast({
           title: "Status Updated",
@@ -1172,95 +1178,149 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
       )}
     {showAssignmentChain && selectedLeadForChain && (
         <Dialog open={showAssignmentChain} onOpenChange={setShowAssignmentChain}>
-          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-            <DialogHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
-              <DialogTitle className="flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <Activity size={20} />
-                  Assign Chain - {selectedLeadForChain.name}
-                </span>
-                
-              </DialogTitle>
-              <DialogDescription>
-                View the complete assignment history and chain for this lead
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="p-4 space-y-4">
+  <DialogContent
+    hideCloseButton
+    className="max-w-md max-h-[90vh] overflow-hidden rounded-2xl p-0 shadow-2xl border border-gray-200"
+  >
+    {/* Header */}
+    <div className="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-5 py-5 text-white">
+      <div className="flex items-center gap-3">
+        <div className="bg-white/20 p-2 rounded-lg">
+          <Activity size={18} />
+        </div>
+        <div>
+          <h2 className="text-lg font-semibold leading-tight">
+            Assignment Chain
+          </h2>
+          <p className="text-xs text-white/80 truncate max-w-[220px]">
+            {selectedLeadForChain.name}
+          </p>
+        </div>
+      </div>
 
-              {/* Assignment Chain */}
-              <div className="space-y-3">
-                <h4 className="font-semibold text-gray-900 flex items-center gap-2">
-                  <Users size={18} />
-                  Assignment Chain
-                </h4>
-                
-                {/* Real assignment chain data */}
-                {chainLoading ? (
-                  <div className="flex justify-center items-center py-8">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                    <p className="ml-2 text-gray-500">Loading assignment chain...</p>
-                  </div>
-                ) : assignmentChain.length > 0 ? (
-                  assignmentChain.map((chain, index) => (
-                    <div key={chain.id || index} className={`flex items-start gap-3 p-3 ${index === 0 ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'} rounded-lg border`}>
-                      <div className={`w-8 h-8 ${index === 0 ? 'bg-green-600' : 'bg-blue-600'} rounded-full flex items-center justify-center flex-shrink-0`}>
-                        <span className="text-white text-xs font-bold">{index + 1}</span>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <p className="font-medium text-gray-900">{chain.name} 👤</p>
-                          <p className="text-xs text-gray-500">{chain.role}</p>
-                        </div>
-                        <div className="space-y-1">
-                          {chain.assignedTo ? (
-                            <p className="text-xs text-gray-600">→ {chain.assignedTo} ({chain.assignedToRole})</p>
-                          ) : (
-                            <p className="text-xs text-gray-600">— Currently Assigned —</p>
-                          )}
-                          <p className="text-xs text-gray-400">⏰ {new Date(chain.assignedAt).toLocaleDateString()}, {new Date(chain.assignedAt).toLocaleTimeString()}</p>
-                          {chain.notes && (
-                            <p className="text-xs text-gray-500 italic">📝 {chain.notes}</p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))
+      {/* Close */}
+      <button
+        onClick={() => setShowAssignmentChain(false)}
+        className="absolute top-4 right-4 rounded-full bg-white/20 hover:bg-white/30 p-2 transition"
+      >
+        <X size={16} strokeWidth={2.5} />
+      </button>
+    </div>
+
+    {/* Body */}
+    <div className="p-4 space-y-4 overflow-y-auto max-h-[calc(90vh-90px)]">
+      <div className="flex items-center gap-2 text-gray-800">
+        <Users size={18} />
+        <h4 className="font-semibold">Assignment Timeline</h4>
+      </div>
+
+      {/* Loading */}
+      {chainLoading ? (
+        <div className="flex items-center justify-center py-10 gap-3">
+          <div className="animate-spin h-6 w-6 rounded-full border-2 border-blue-600 border-t-transparent" />
+          <span className="text-sm text-gray-500">
+            Loading assignment chain...
+          </span>
+        </div>
+      ) : assignmentChain.length > 0 ? (
+        <div className="space-y-3">
+          {assignmentChain.map((chain, index) => (
+            <div
+              key={chain.id || index}
+              className="group flex gap-3 rounded-xl border bg-white p-3 shadow-sm hover:shadow-md transition"
+            >
+              {/* Index */}
+              <div
+                className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold text-white ${
+                  index === 0 ? "bg-green-600" : "bg-blue-600"
+                }`}
+              >
+                {index + 1}
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 space-y-1">
+                <div className="flex justify-between items-center">
+                  <p className="font-medium text-gray-900">
+                    {chain.name}
+                  </p>
+                  <span className="text-[11px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                    {chain.role}
+                  </span>
+                </div>
+
+                {chain.assignedTo ? (
+                  <p className="text-xs text-gray-600">
+                    Assigned to{" "}
+                    <span className="font-medium">
+                      {chain.assignedTo}
+                    </span>{" "}
+                    ({chain.assignedToRole})
+                  </p>
                 ) : (
-                  <div className="text-center py-8">
-                    <Users size={40} className="text-gray-300 mx-auto mb-2" />
-                    <p className="text-gray-500">No assignment chain data available</p>
-                    <p className="text-xs text-gray-400 mt-1">This lead might not have been assigned yet</p>
-                  </div>
+                  <p className="text-xs text-green-600 font-medium">
+                    Currently Assigned
+                  </p>
+                )}
+
+                <p className="text-[11px] text-gray-400">
+                  {new Date(chain.assignedAt).toLocaleDateString()} •{" "}
+                  {new Date(chain.assignedAt).toLocaleTimeString()}
+                </p>
+
+                {chain.notes && (
+                  <p className="text-xs italic text-gray-500 bg-gray-50 rounded-md px-2 py-1">
+                    {chain.notes}
+                  </p>
                 )}
               </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-3 pt-4 border-t">
-                <button
-                  onClick={() => {
-                    setShowAssignmentChain(false);
-                    handleCallLead(selectedLeadForChain.phone, selectedLeadForChain._id, selectedLeadForChain.name);
-                  }}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  <PhoneCall size={16} />
-                  <span>Call Now</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setShowAssignmentChain(false);
-                    handleFollowUp(selectedLeadForChain);
-                  }}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <MessageSquare size={16} />
-                  <span>Follow Up</span>
-                </button>
-              </div>
             </div>
-          </DialogContent>
-        </Dialog>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-10">
+          <Users size={40} className="mx-auto text-gray-300 mb-2" />
+          <p className="text-gray-500 font-medium">
+            No assignment chain found
+          </p>
+          <p className="text-xs text-gray-400">
+            This lead hasn’t been assigned yet
+          </p>
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="pt-4 border-t flex gap-3">
+        <button
+          onClick={() => {
+            setShowAssignmentChain(false);
+            handleCallLead(
+              selectedLeadForChain.phone,
+              selectedLeadForChain._id,
+              selectedLeadForChain.name
+            );
+          }}
+          className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-green-600 py-2.5 text-white font-medium hover:bg-green-700 transition"
+        >
+          <PhoneCall size={16} />
+          Call Now
+        </button>
+
+        <button
+          onClick={() => {
+            setShowAssignmentChain(false);
+            handleFollowUp(selectedLeadForChain);
+          }}
+          className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-2.5 text-white font-medium hover:bg-blue-700 transition"
+        >
+          <MessageSquare size={16} />
+          Follow Up
+        </button>
+      </div>
+    </div>
+  </DialogContent>
+</Dialog>
+
       )}
     {showSettings && selectedLeadForSettings && (
         <LeadAdvancedOptionsMobile
@@ -1286,86 +1346,103 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
     {showCallPopup && callData && (
         <>
           {console.log('Rendering call popup with data:', callData)}
-          <Dialog open={showCallPopup} onOpenChange={setShowCallPopup}>
-            <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto p-0">
-              {/* Call Header */}
-              <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-4">
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-3">
-                    <PhoneCall size={32} className="text-white animate-pulse" />
-                  </div>
-                  <h3 className="text-lg font-semibold">{callData.leadName}</h3>
-                  <p className="text-green-100">{callData.phone}</p>
-                  <div className="mt-2">
-                    <Badge className={`${
-                      callStatus === 'connecting' ? 'bg-yellow-500' :
-                      callStatus === 'connected' ? 'bg-green-500' :
-                      'bg-red-500'
-                    } text-white border-0`}>
-                      {callStatus === 'connecting' ? '🔄 Connecting...' :
-                       callStatus === 'connected' ? '📞 Connected' :
-                       '📞 Call Ended'}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
+        <Dialog open={showCallPopup} onOpenChange={setShowCallPopup}>
+  <DialogContent className="max-w-sm max-h-[90vh] p-0 overflow-hidden rounded-2xl shadow-2xl border border-gray-200">
+    
+    {/* Header */}
+    <div className="relative bg-gradient-to-br from-green-600 via-emerald-600 to-teal-600 px-5 py-6 text-white">
+      <div className="text-center">
+        <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-inner">
+          <PhoneCall size={30} className="animate-pulse" />
+        </div>
 
-              {/* Call Body */}
-              <div className="p-6 text-center">
-                {/* Duration Display */}
-                <div className="mb-6">
-                  <p className="text-3xl font-bold text-gray-900">
-                    {formatDuration(callDuration)}
-                  </p>
-                  <p className="text-sm text-gray-500">Call Duration</p>
-                </div>
+        <h3 className="text-lg font-semibold leading-tight">
+          {callData.leadName}
+        </h3>
+        <p className="text-sm text-green-100">{callData.phone}</p>
 
-                {/* Call Actions */}
-                <div className="flex justify-center gap-4">
-                  {callStatus === 'connected' ? (
-                    <button
-                      onClick={endCall}
-                      className="w-16 h-16 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center text-white transition-colors shadow-lg"
-                    >
-                      <Phone size={24} className="rotate-135" />
-                    </button>
-                  ) : callStatus === 'connecting' ? (
-                    <button
-                      onClick={endCall}
-                      className="w-16 h-16 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center text-white transition-colors shadow-lg"
-                    >
-                      <X size={24} />
-                    </button>
-                  ) : (
-                    <div className="space-y-3">
-                      <p className="text-gray-600">Call Completed</p>
-                      <button
-                        onClick={() => setShowCallPopup(false)}
-                        className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                      >
-                        Close
-                      </button>
-                    </div>
-                  )}
-                </div>
+        <div className="mt-3 flex justify-center">
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-medium text-white ${
+              callStatus === "connecting"
+                ? "bg-yellow-500"
+                : callStatus === "connected"
+                ? "bg-green-500"
+                : "bg-red-500"
+            }`}
+          >
+            {callStatus === "connecting"
+              ? "🔄 Connecting"
+              : callStatus === "connected"
+              ? "📞 Connected"
+              : "📴 Call Ended"}
+          </span>
+        </div>
+      </div>
+    </div>
 
-                {/* Additional Options */}
-                {callStatus === 'connected' && (
-                  <div className="flex justify-center gap-4 mt-6">
-                    <button className="p-3 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors">
-                      <Mic size={20} className="text-gray-600" />
-                    </button>
-                    <button className="p-3 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors">
-                      <Volume2 size={20} className="text-gray-600" />
-                    </button>
-                    <button className="p-3 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors">
-                      <Video size={20} className="text-gray-600" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            </DialogContent>
-          </Dialog>
+    {/* Body */}
+    <div className="p-6 text-center">
+      
+      {/* Duration */}
+      <div className="mb-6">
+        <p className="text-3xl font-bold text-gray-900 tracking-wide">
+          {formatDuration(callDuration)}
+        </p>
+        <p className="text-xs uppercase tracking-wider text-gray-500">
+          Call Duration
+        </p>
+      </div>
+
+      {/* Main Action */}
+      <div className="flex justify-center">
+        {callStatus === "connected" ? (
+          <button
+            onClick={endCall}
+            className="flex h-16 w-16 items-center justify-center rounded-full bg-red-600 text-white shadow-xl transition hover:bg-red-700"
+          >
+            <Phone size={24} className="rotate-135" />
+          </button>
+        ) : callStatus === "connecting" ? (
+          <button
+            onClick={endCall}
+            className="flex h-16 w-16 items-center justify-center rounded-full bg-red-600 text-white shadow-xl transition hover:bg-red-700"
+          >
+            <X size={24} />
+          </button>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm font-medium text-gray-600">
+              Call Completed
+            </p>
+            <button
+              onClick={() => setShowCallPopup(false)}
+              className="rounded-xl bg-blue-600 px-6 py-2 text-white transition hover:bg-blue-700"
+            >
+              Close
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Controls */}
+      {callStatus === "connected" && (
+        <div className="mt-6 flex justify-center gap-4">
+          <button className="rounded-full bg-gray-100 p-3 transition hover:bg-gray-200">
+            <Mic size={18} className="text-gray-600" />
+          </button>
+          <button className="rounded-full bg-gray-100 p-3 transition hover:bg-gray-200">
+            <Volume2 size={18} className="text-gray-600" />
+          </button>
+          <button className="rounded-full bg-gray-100 p-3 transition hover:bg-gray-200">
+            <Video size={18} className="text-gray-600" />
+          </button>
+        </div>
+      )}
+    </div>
+  </DialogContent>
+</Dialog>
+
         </>
       )}
     {showForwardDropdown && selectedLeadForForward && (
@@ -1564,12 +1641,7 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
             <DialogTitle className="flex items-center gap-2 text-base">
               <Edit size={18} />
               <span className="font-semibold">Update Lead Status</span>
-              <button
-                onClick={() => setShowStatusUpdate(false)}
-                className="p-1 rounded-full hover:bg-white/20 transition-colors"
-              >
-                <X size={18} />
-              </button>
+             
             </DialogTitle>
             <DialogDescription className="text-amber-100">
               Update the status for {selectedLeadForStatus.name}
@@ -1593,12 +1665,12 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
 
             {/* Status Options */}
             <div className="space-y-2">
-              <h4 className="font-semibold text-gray-900 text-sm">Select New Status</h4>
+              <h4 className="font-semibold text-gray-900 text-sm">Select Work Progress</h4>
               <div className="grid grid-cols-2 gap-2">
                 <button
-                  onClick={() => updateLeadStatus('Pending')}
+                  onClick={() => updateLeadStatus('pending')}
                   className={`p-3 rounded-lg border transition-all duration-200 ${
-                    selectedLeadForStatus.status === 'Pending'
+                    selectedLeadForStatus.workProgress === 'pending'
                       ? 'bg-yellow-100 border-yellow-200 text-yellow-800'
                       : 'bg-white border-gray-200 text-gray-700 hover:bg-yellow-50 hover:border-yellow-300'
                   }`}
@@ -1610,23 +1682,23 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
                 </button>
                 
                 <button
-                  onClick={() => updateLeadStatus('Processing')}
+                  onClick={() => updateLeadStatus('inprogress')}
                   className={`p-3 rounded-lg border transition-all duration-200 ${
-                    selectedLeadForStatus.status === 'Processing'
+                    selectedLeadForStatus.workProgress === 'inprogress'
                       ? 'bg-blue-100 border-blue-200 text-blue-800'
                       : 'bg-white border-gray-200 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
                   }`}
                 >
                   <div className="text-center">
                     <span className="text-base mb-1">🔄</span>
-                    <p className="text-xs font-medium">Processing</p>
+                    <p className="text-xs font-medium">In Progress</p>
                   </div>
                 </button>
                 
                 <button
-                  onClick={() => updateLeadStatus('Done')}
+                  onClick={() => updateLeadStatus('done')}
                   className={`p-3 rounded-lg border transition-all duration-200 ${
-                    selectedLeadForStatus.status === 'Done'
+                    selectedLeadForStatus.workProgress === 'done'
                       ? 'bg-green-100 border-green-200 text-green-800'
                       : 'bg-white border-gray-200 text-gray-700 hover:bg-green-50 hover:border-green-300'
                   }`}
@@ -1649,12 +1721,12 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
               </button>
               <button
                 onClick={() => {
-                  updateLeadStatus(selectedLeadForStatus.status);
+                  updateLeadStatus(selectedLeadForStatus.workProgress);
                   setShowStatusUpdate(false);
                 }}
                 className="flex-1 h-10 bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 text-sm"
               >
-                Update Status
+                Update Progress
               </button>
             </div>
           </div>

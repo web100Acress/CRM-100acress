@@ -265,7 +265,7 @@ const BDDashboardMobile = () => {
       return false;
     }).length;
 
-    const completed = leads.filter(lead => lead.workProgress === 'completed').length;
+    const completed = leads.filter(lead => lead.workProgress === 'done').length;
 
     return { pending, today, thisWeek, completed };
   };
