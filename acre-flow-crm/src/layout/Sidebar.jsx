@@ -98,11 +98,13 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
       { path: '/', icon: Home, label: 'Dashboard' },
       { path: '/leads', icon: Building2, label: 'Assigned Leads' },
       { path: '/calls', icon: PhoneCall, label: 'Call Logs' },
+      { path: '/whatsapp-chat', icon: MessageCircle, label: 'Management Chat' },
     ],
     employee: [
       { path: '/employee-dashboard', icon: Home, label: 'Dashboard' },
       { path: '/leads', icon: Building2, label: 'My Leads' },
       { path: '/calls', icon: PhoneCall, label: 'Call Logs' },
+      { path: '/whatsapp-chat', icon: MessageCircle, label: 'Management Chat' },
     ]
   };
 
