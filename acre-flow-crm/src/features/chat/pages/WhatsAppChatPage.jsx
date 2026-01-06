@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MobileSidebar from '@/layout/MobileSidebar';
 import {
@@ -30,6 +30,10 @@ const WhatsAppChatPage = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+
+  const messagesContainerRef = useRef(null);
+  const messagesEndRef = useRef(null);
 
   const userRole = localStorage.getItem('userRole') || 'employee';
 
@@ -209,9 +213,29 @@ const WhatsAppChatPage = () => {
     return () => clearInterval(interval);
   }, [selectedUser]);
 
+  useEffect(() => {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+
+    const onScroll = () => {
+      const threshold = 24;
+      const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
+      setIsAtBottom(atBottom);
+    };
+
+    el.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [selectedUser]);
+
+  useEffect(() => {
+    if (!selectedUser) return;
+    if (!isAtBottom) return;
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, selectedUser, isAtBottom]);
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Custom Mobile Header */}
+    <div className="h-screen bg-gray-50 overflow-hidden flex flex-col">
       {renderMobileHeader()}
       
       {/* Mobile Sidebar Menu */}
@@ -224,11 +248,11 @@ const WhatsAppChatPage = () => {
       )}
       
       {/* WhatsApp Chat Content */}
-      <div className="flex flex-col lg:flex-row pt-2 pb-32 md:pb-0">
+      <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
         {/* Chat List - Mobile & Desktop */}
-        <div className={`${selectedUser ? 'hidden lg:block' : 'block'} lg:w-1/3 bg-white border-r border-gray-200`}>
+        <div className={`${selectedUser ? 'hidden lg:block' : 'flex'} lg:w-1/3 bg-white border-r border-gray-200 flex-col overflow-hidden`}>
           {/* Search Bar */}
-          <div className="p-4 border-b">
+          <div className="sticky top-0 z-20 bg-white p-3 border-b">
             <div className="relative">
               <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
@@ -242,7 +266,7 @@ const WhatsAppChatPage = () => {
           </div>
 
           {/* Users List */}
-          <div className="overflow-y-auto h-[calc(100vh-200px)]">
+          <div className="flex-1 overflow-y-auto">
             {filteredUsers.length === 0 ? (
               <div className="text-center py-8">
                 <MessageCircle size={48} className="text-gray-300 mx-auto mb-3" />
@@ -292,7 +316,7 @@ const WhatsAppChatPage = () => {
         </div>
 
         {/* Chat Area - Mobile & Desktop */}
-        <div className={`${selectedUser ? 'block' : 'hidden lg:block'} lg:flex-1 flex flex-col bg-white`}>
+        <div className={`${selectedUser ? 'flex' : 'hidden lg:flex'} lg:flex-1 flex-col bg-white overflow-hidden`}>
           {selectedUser ? (
             <>
               {/* Chat Header */}
@@ -328,7 +352,7 @@ const WhatsAppChatPage = () => {
               </div>
 
               {/* Messages Area */}
-              <div className="flex-1 overflow-y-auto p-4 pb-28 md:pb-4 bg-gray-50">
+              <div ref={messagesContainerRef} className="flex-1 overflow-y-auto overscroll-contain p-2 pb-44 md:p-3 md:pb-3 bg-gray-50">
                 {loading ? (
                   <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
@@ -364,12 +388,13 @@ const WhatsAppChatPage = () => {
                         </div>
                       );
                     })}
+                    <div ref={messagesEndRef} />
                   </div>
                 )}
               </div>
 
               {/* Message Input */}
-              <div className="bg-[#F0F2F5] border-t border-gray-200 px-2 py-1 md:static fixed left-0 right-0 bottom-16 z-40">
+              <div className="bg-[#F0F2F5] border-t border-gray-200 px-2 py-1 fixed left-0 right-0 bottom-20 z-40 md:static md:z-auto">
                 <div className="flex items-center gap-1.5">
                   <button
                     type="button"
