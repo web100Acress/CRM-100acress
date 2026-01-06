@@ -9,6 +9,8 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
+  const recipientId = recipient?._id || recipient?.bdId || recipient?.id;
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -25,25 +27,25 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
 
   // Fetch conversation history when modal opens
   useEffect(() => {
-    if (isOpen && recipient?._id) {
-      console.log('Fetching conversation for recipient:', recipient._id);
+    if (isOpen && recipientId) {
+      console.log('Fetching conversation for recipient:', recipientId);
       fetchConversation();
     } else if (isOpen) {
       console.log('Recipient ID missing:', recipient);
       setMessages([]);
     }
-  }, [isOpen, recipient]);
+  }, [isOpen, recipientId, recipient]);
 
   const fetchConversation = async () => {
-    if (!recipient?._id || recipient._id === 'undefined') {
-      console.error('Invalid recipient ID:', recipient?._id);
+    if (!recipientId || recipientId === 'undefined') {
+      console.error('Invalid recipient ID:', recipientId);
       return;
     }
     
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://bcrm.100acress.com/api/messages/conversation/${recipient._id}`, {
+      const response = await fetch(`https://bcrm.100acress.com/api/messages/conversation/${recipientId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

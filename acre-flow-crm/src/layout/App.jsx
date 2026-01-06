@@ -68,6 +68,7 @@ import EmployeeDashboard from '@/features/employee/dashboard/EmployeeDashboard';
 import EmployeeDashboardMobile from '@/features/employee/dashboard/EmployeeDashboard.mobile';
 import { useIsMobile } from '@/hooks/use-mobile';
 import EditProfileMobile from '@/pages/EditProfile/EditProfile.mobile';
+import WhatsAppChatPage from '@/features/chat/pages/WhatsAppChatPage';
 
 // Import Blog Components (temporarily disabled)
 // import BlogDashboard from "@/features/blog/pages/BlogDashboard";
@@ -460,6 +461,9 @@ const App = () => {
             
             {/* Activity Routes */}
             <Route path="/activity-dashboard" element={<ActivityDashboard />} />
+
+            {/* WhatsApp Chat Routes */}
+            <Route path="/whatsapp-chat" element={isLoggedIn && (userRole === 'employee' || userRole === 'team-leader' || userRole === 'super-admin' || userRole === 'head-admin' || userRole === 'bd') ? <WhatsAppChatPage /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
 
             {/* Blog Routes - Temporarily Disabled
             <Route
