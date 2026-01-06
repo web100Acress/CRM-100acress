@@ -72,11 +72,12 @@ module.exports = async (req, res, next) => {
         
         req.user = {
           _id: acressUser._id,
+          userId: acressUser._id, // Add both for compatibility
           email: acressUser.email,
           name: acressUser.name,
           role: acressUser.mappedRole || mapAcressRoleToCRM(acressUser.role) || 'user',
           sourceSystem: '100acress',
-          originalRole: acressUser.role, // Keep original role for reference
+          originalRole: acressUser.role // Keep original role for reference
         };
         
         console.log('Final req.user:', req.user);
