@@ -159,7 +159,7 @@ router.get('/conversation/:userId', auth, async (req, res) => {
       ]
     }).sort({ timestamp: 1 });
 
-    // Simplified: Return messages without sender details for now
+    // Return messages with basic sender info
     const messagesWithBasicDetails = messages.map(msg => ({
       ...msg.toObject(),
       senderName: 'Unknown', // Will be populated later
@@ -168,15 +168,22 @@ router.get('/conversation/:userId', auth, async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: messagesWithSenderDetails
+      data: messagesWithBasicDetails
     });
 
   } catch (error) {
     console.error('Error fetching conversation:', error);
+    console.error('Full error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      code: error.code
+    });
     res.status(500).json({
       success: false,
       message: 'Failed to fetch conversation',
-      error: error.message
+      error: error.message,
+      details: error.stack
     });
   }
 });
