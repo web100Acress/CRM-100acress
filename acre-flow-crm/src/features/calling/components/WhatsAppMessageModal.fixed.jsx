@@ -301,98 +301,98 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
   // Fetch conversation history with debouncing
   const fetchConversation = useCallback(async () => {
     const finalRecipientId = resolvedRecipient?._id || recipientId;
+    const currentUserId = getCurrentUserId();
     
     if (!finalRecipientId || finalRecipientId === 'undefined') {
         console.error('Invalid recipient ID:', finalRecipientId);
         return;
-        }
+    }
     
     console.log('Fetching conversation for recipient:', finalRecipientId);
+    console.log('Current user ID:', currentUserId);
     setLoading(true);
+    
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://bcrm.100acress.com/api/messages/conversation/${finalRecipientId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      console.log('Conversation response status:', response.status);
       
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Conversation data:', data);
-        
-        if (data.success && data.data) {
-          const currentUserId = getCurrentUserId();
-          console.log('Current user ID:', currentUserId);
-          
-          const formattedMessages = data.data.map(msg => {
-            const isMe = msg.senderId === currentUserId;
-            
-            return {
-              id: msg._id,
-              text: msg.message,
-              sender: isMe ? 'me' : 'other',
-              senderName: isMe ? 'You' : (msg.senderName || resolvedRecipient?.name || 'Unknown'),
-              senderRole: msg.senderRole,
-              timestamp: new Date(msg.timestamp),
-              status: msg.status
-            };
-          });
-          
-          console.log('Formatted messages:', formattedMessages);
-          setMessages(formattedMessages);
-        } else {
-          console.log('No messages found or API returned no data');
-          setMessages([]);
-        }
-      } else {
-        console.error('Failed to fetch conversation:', response.statusText);
-        // Try to fetch messages the other way around
-        try {
-          const currentUserId = getCurrentUserId();
-          const reverseResponse = await fetch(`https://bcrm.100acress.com/api/messages/conversation/${currentUserId}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-          
-          if (reverseResponse.ok) {
-            const reverseData = await reverseResponse.json();
-            console.log('Reverse conversation data:', reverseData);
-            
-            if (reverseData.success && reverseData.data) {
-              const filteredMessages = reverseData.data.filter(msg => 
-                msg.recipientId === finalRecipientId || msg.senderId === finalRecipientId
-              );
-              
-              const formattedMessages = filteredMessages.map(msg => {
-                const isMe = msg.senderId === currentUserId;
-                
-                return {
-                  id: msg._id,
-                  text: msg.message,
-                  sender: isMe ? 'me' : 'other',
-                  senderName: isMe ? 'You' : (msg.senderName || resolvedRecipient?.name || 'Unknown'),
-                  senderRole: msg.senderRole,
-                  timestamp: new Date(msg.timestamp),
-                  status: msg.status
-                };
-              });
-              
-              console.log('Filtered messages:', formattedMessages);
-              setMessages(formattedMessages);
-            }
+      // Try to fetch from both users' perspectives to get all messages
+      const [conversation1, conversation2] = await Promise.all([
+        fetch(`https://bcrm.100acress.com/api/messages/conversation/${finalRecipientId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
-        } catch (reverseError) {
-          console.error('Reverse fetch also failed:', reverseError);
+        }),
+        fetch(`https://bcrm.100acress.com/api/messages/conversation/${currentUserId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+      ]);
+
+      console.log('Conversation 1 response status:', conversation1.status);
+      console.log('Conversation 2 response status:', conversation2.status);
+      
+      let allMessages = [];
+      
+      // Get messages from recipient's conversation
+      if (conversation1.ok) {
+        const data1 = await conversation1.json();
+        console.log('Conversation 1 data:', data1);
+        
+        if (data1.success && data1.data) {
+          allMessages = allMessages.concat(data1.data);
         }
       }
+      
+      // Get messages from current user's conversation
+      if (conversation2.ok) {
+        const data2 = await conversation2.json();
+        console.log('Conversation 2 data:', data2);
+        
+        if (data2.success && data2.data) {
+          allMessages = allMessages.concat(data2.data);
+        }
+      }
+      
+      // Filter messages to only show between these two users
+      const filteredMessages = allMessages.filter(msg => 
+        (msg.senderId === currentUserId && msg.recipientId === finalRecipientId) ||
+        (msg.senderId === finalRecipientId && msg.recipientId === currentUserId)
+      );
+      
+      console.log('All messages between users:', filteredMessages);
+      
+      // Remove duplicates by message ID and sort by timestamp
+      const uniqueMessages = filteredMessages.filter((msg, index, self) =>
+        index === self.findIndex((m) => m._id === msg._id)
+      );
+      
+      uniqueMessages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      
+      console.log('Unique sorted messages:', uniqueMessages);
+      
+      const formattedMessages = uniqueMessages.map(msg => {
+        const isMe = msg.senderId === currentUserId;
+        
+        return {
+          id: msg._id,
+          text: msg.message,
+          sender: isMe ? 'me' : 'other',
+          senderName: isMe ? 'You' : (msg.senderName || resolvedRecipient?.name || 'Unknown'),
+          senderRole: msg.senderRole,
+          timestamp: new Date(msg.timestamp),
+          status: msg.status
+        };
+      });
+      
+      console.log('Formatted messages:', formattedMessages);
+      setMessages(formattedMessages);
+      
     } catch (error) {
       console.error('Error fetching conversation:', error);
+      setMessages([]);
     } finally {
       setLoading(false);
     }
@@ -403,17 +403,13 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
     if (isOpen && resolvedRecipient?._id) {
       console.log('Modal opened, fetching conversation...');
       fetchConversation();
-      // Also fetch after a short delay to ensure we get latest messages
-      const timeout1 = setTimeout(() => {
+      // Set up periodic refresh to ensure messages sync
+      const interval = setInterval(() => {
         fetchConversation();
-      }, 1000);
-      const timeout2 = setTimeout(() => {
-        fetchConversation();
-      }, 3000);
+      }, 3000); // Refresh every 3 seconds
       
       return () => {
-        clearTimeout(timeout1);
-        clearTimeout(timeout2);
+        clearInterval(interval);
       };
     } else if (isOpen) {
       console.log('Modal opened but no recipient resolved');
@@ -455,6 +451,8 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
         senderRole: getValidSenderRole(currentUserRole)
       };
       
+      console.log('Sending message:', requestBody);
+      
       const response = await fetch('https://bcrm.100acress.com/api/messages/send', {
         method: 'POST',
         headers: {
@@ -465,6 +463,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
       });
 
       const data = await response.json();
+      console.log('Message send response:', data);
       
       if (data.success) {
         console.log('Message sent successfully:', data);
@@ -477,14 +476,16 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
           )
         );
         
-        // Refresh conversation immediately and then again after a delay
+        // Immediate refresh to ensure message appears
         fetchConversation();
+        
+        // Additional refreshes to ensure both users see the message
         setTimeout(() => {
           fetchConversation();
-        }, 500);
+        }, 1000);
         setTimeout(() => {
           fetchConversation();
-        }, 1500);
+        }, 3000);
       } else {
         console.error('Failed to send message:', data);
         // Remove message if send failed
@@ -560,6 +561,16 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
                   ID: {resolvedRecipient?._id ? `${resolvedRecipient._id.slice(0, 8)}...` : recipientId?.slice(0, 8)}
                 </p>
               )}
+              {/* Manual refresh button */}
+              <button 
+                onClick={() => {
+                  console.log('Manual refresh triggered');
+                  fetchConversation();
+                }}
+                className="text-xs bg-blue-500 text-white px-2 py-1 rounded mt-1 hover:bg-blue-600"
+              >
+                Refresh Messages
+              </button>
             </div>
           </div>
           <div className="flex items-center space-x-2">
@@ -617,27 +628,27 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
               {messages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`flex ${msg.sender === 'me' ? 'justify-start' : 'justify-end'}`}
+                  className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
                     className={`max-w-xs px-4 py-2 rounded-lg ${
                       msg.sender === 'me'
-                        ? 'bg-gray-200 text-gray-800 border'
-                        : 'bg-green-600 text-white'
+                        ? 'bg-green-600 text-white'
+                        : 'bg-gray-200 text-gray-800 border'
                     }`}
                   >
                     {/* Show sender name for messages from others */}
-                    {msg.sender === 'me' && (
+                    {msg.sender === 'other' && msg.senderName && (
                       <p className="text-xs font-semibold mb-1 text-gray-600">
                         {msg.senderName}
                       </p>
                     )}
                     <p className="text-sm">{msg.text}</p>
                     <p className={`text-xs mt-1 ${
-                      msg.sender === 'me' ? 'text-gray-500' : 'text-green-100'
+                      msg.sender === 'me' ? 'text-green-100' : 'text-gray-500'
                     }`}>
                       {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      {msg.sender === 'other' && (
+                      {msg.sender === 'me' && (
                         <span className="ml-1">
                           {msg.status === 'sent' ? '✓' : '✓✓'}
                         </span>
