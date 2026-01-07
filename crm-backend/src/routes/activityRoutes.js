@@ -36,4 +36,7 @@ router.get('/thoughts/department/:department', activityController.getThoughtsByD
 router.post('/thoughts/:thoughtId/reply', activityController.addReplyToThought);
 router.post('/thoughts/:thoughtId/like', activityController.likeThought);
 
+// User-specific activity data
+router.get('/', activityController.getUserActivity);
+
 module.exports = router;
