@@ -898,6 +898,10 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         });
         const leadsJson = await leadsResponse.json();
         setLeads(leadsJson.data || []);
+        
+        // Get the assigned user details
+        const assignedUser = assignableUsers.find(u => u._id === selectedEmployeeId);
+        
         toast({
           title: "Success",
           description: data.message || "Lead forwarded successfully",
@@ -908,9 +912,28 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         setForwardSuccess(true);
         setForwardedLeadData({
           leadName: selectedLeadForForward?.name,
-          employeeName: assignableUsers.find(u => u._id === selectedEmployeeId)?.name,
-          employeeRole: assignableUsers.find(u => u._id === selectedEmployeeId)?.role
+          employeeName: assignedUser?.name,
+          employeeRole: assignedUser?.role
         });
+        
+        // Auto-open WhatsApp chat with the assigned user
+        if (assignedUser) {
+          console.log('Auto-opening WhatsApp chat with assigned user:', assignedUser);
+          
+          // Set the recipient for WhatsApp chat
+          setWhatsAppRecipient({
+            _id: assignedUser._id,
+            id: assignedUser._id,
+            name: assignedUser.name || assignedUser.userName || assignedUser.email || 'User',
+            email: assignedUser.email || assignedUser.userEmail || '',
+            role: assignedUser.role || assignedUser.userRole
+          });
+          
+          // Open WhatsApp modal after a short delay
+          setTimeout(() => {
+            setShowWhatsAppModal(true);
+          }, 1000);
+        }
         
         // Close dropdown and reset selection after delay
         setTimeout(() => {
@@ -919,7 +942,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
           setSelectedEmployee(null);
           setForwardSuccess(false);
           setForwardedLeadData(null);
-        }, 2000);
+        }, 3000); // Increased delay to allow WhatsApp modal to be seen
       } else {
         console.error('Forward failed:', data);
         toast({
