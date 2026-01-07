@@ -57,8 +57,11 @@ const LoginMobile = () => {
       case "it_infrastructure":
         window.location.href = "/it-infrastructure";
         break;
-      case "super-admin":
+      case "boss":
         window.location.href = "/super-admin-dashboard";
+        break;
+      case "hod":
+        window.location.href = "/head-admin-dashboard";
         break;
       case "head-admin":
       case "head admin":
@@ -68,10 +71,7 @@ const LoginMobile = () => {
       case "team leader":
         window.location.href = "/team-leader-dashboard";
         break;
-      case "boss":
-        window.location.href = "/admin-dashboard";
-        break;
-      case "employee":
+      case "bd":
       case "user":
         window.location.href = "/employee-dashboard";
         break;

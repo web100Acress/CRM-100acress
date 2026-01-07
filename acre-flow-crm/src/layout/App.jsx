@@ -258,12 +258,14 @@ const App = () => {
               path="/"
               element={
                 isLoggedIn ? (
-                  userRole === "super-admin" ? (
+                  userRole === "boss" ? (
                     <Navigate to="/super-admin-dashboard" replace />
-                  ) : userRole === "head-admin" ? (
+                  ) : userRole === "hod" ? (
                     <Navigate to="/head-admin-dashboard" replace />
                   ) : userRole === "team-leader" ? (
                     <Navigate to="/team-leader-dashboard" replace />
+                  ) : userRole === "bd" ? (
+                    <Navigate to="/employee-dashboard" replace />
                   ) : userRole === "developer" ? (
                     <Navigate to="/developer-dashboard" replace />
                   ) : (
@@ -289,7 +291,7 @@ const App = () => {
             <Route
               path="/calling-settings"
               element={
-                isLoggedIn && userRole === "super-admin" ? (
+                isLoggedIn && userRole === "boss" ? (
                   <CallingSettings userRole={userRole} />
                 ) : (
                   <Navigate to="/" replace />
@@ -300,7 +302,7 @@ const App = () => {
             <Route
               path="/email"
               element={
-                isLoggedIn && userRole === "super-admin" ? (
+                isLoggedIn && userRole === "boss" ? (
                   <EmailCenter userRole={userRole} />
                 ) : (
                   <Navigate to="/" replace />
@@ -311,7 +313,7 @@ const App = () => {
             <Route
               path="/whatsapp"
               element={
-                isLoggedIn && userRole === "super-admin" ? (
+                isLoggedIn && userRole === "boss" ? (
                   <WhatsAppLogs userRole={userRole} />
                 ) : (
                   <Navigate to="/" replace />
@@ -341,7 +343,7 @@ const App = () => {
             <Route
               path="/create-admin"
               element={
-                isLoggedIn && userRole === "super-admin" ? (
+                isLoggedIn && userRole === "boss" ? (
                   <CreateUser userRole={userRole} userType="admin" />
                 ) : (
                   <Navigate to="/" replace />
@@ -351,7 +353,7 @@ const App = () => {
             <Route
               path="/create-leader"
               element={
-                isLoggedIn && userRole === "head-admin" ? (
+                isLoggedIn && userRole === "hod" ? (
                   <CreateUser userRole={userRole} userType="leader" />
                 ) : (
                   <Navigate to="/" replace />
@@ -372,7 +374,7 @@ const App = () => {
             <Route
               path="/users"
               element={
-                isLoggedIn && userRole === "super-admin" ? (
+                isLoggedIn && userRole === "boss" ? (
                   <UserManagement userRole={userRole} />
                 ) : (
                   <Navigate to="/" replace />
@@ -382,7 +384,7 @@ const App = () => {
             <Route
               path="/settings"
               element={
-                isLoggedIn && userRole === "super-admin" ? (
+                isLoggedIn && userRole === "boss" ? (
                   <Settings userRole={userRole} />
                 ) : (
                   <Navigate to="/" replace />
@@ -392,7 +394,7 @@ const App = () => {
             <Route
               path="/developer"
               element={
-                (isLoggedIn && userRole === "super-admin") ||
+                (isLoggedIn && userRole === "boss") ||
                 isDeveloperLoggedIn ? (
                   <Developer userRole={userRole} />
                 ) : (
@@ -421,8 +423,8 @@ const App = () => {
             <Route path="/hr/leave-management" element={isLoggedIn && hasModule('HR') && hasPermission('hr.leave_management') ? <LeaveManagement /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
             <Route path="/hr/onboarding" element={isLoggedIn && hasModule('HR') && hasPermission('hr.onboarding') ? <Onboarding /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
 
-            {/* BD Analytics Route for super-admin and head-admin */}
-            <Route path="/admin/bd-analytics" element={isLoggedIn && (userRole === "super-admin" || userRole === "head-admin") ? <BDStatusSummary /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            {/* BD Analytics Route for boss and hod */}
+            <Route path="/admin/bd-analytics" element={isLoggedIn && (userRole === "boss" || userRole === "hod") ? <BDStatusSummary /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
             <Route path="/hr/offboarding" element={isLoggedIn && hasModule('HR') && hasPermission('hr.offboarding') ? <Offboarding /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
             <Route path="/upload-documents/:token" element={<CandidateDocumentUpload />} />
             <Route path="/blog-dashboard" element={isLoggedIn && hasModule('Blog') && hasPermission('blog.dashboard') ? <BlogDashboard /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
@@ -463,7 +465,7 @@ const App = () => {
             <Route path="/activity-dashboard" element={<ActivityDashboard />} />
 
             {/* WhatsApp Chat Routes */}
-            <Route path="/whatsapp-chat" element={isLoggedIn && (userRole === 'employee' || userRole === 'team-leader' || userRole === 'super-admin' || userRole === 'head-admin' || userRole === 'bd') ? <WhatsAppChatPage /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+            <Route path="/whatsapp-chat" element={isLoggedIn && (userRole === 'bd' || userRole === 'team-leader' || userRole === 'boss' || userRole === 'hod') ? <WhatsAppChatPage /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
 
             {/* Blog Routes - Temporarily Disabled
             <Route
@@ -553,7 +555,7 @@ const App = () => {
             <Route
               path="/super-admin-dashboard"
               element={
-                isLoggedIn && userRole === "super-admin" ? (
+                isLoggedIn && userRole === "boss" ? (
                   <Dashboard userRole={userRole} />
                 ) : (
                   <Navigate to="/login" replace />
@@ -563,7 +565,7 @@ const App = () => {
             <Route
               path="/head-admin-dashboard"
               element={
-                isLoggedIn && userRole === "head-admin" ? (
+                isLoggedIn && userRole === "hod" ? (
                   <Dashboard userRole={userRole} />
                 ) : (
                   <Navigate to="/login" replace />
@@ -583,7 +585,7 @@ const App = () => {
             <Route
               path="/employee-dashboard"
               element={
-                isLoggedIn && (userRole === "employee" || userRole === "user") ? (
+                isLoggedIn && (userRole === "bd" || userRole === "user") ? (
                   isMobile ? <EmployeeDashboardMobile /> : <EmployeeDashboard />
                 ) : (
                   <Navigate to="/login" replace />
@@ -593,7 +595,7 @@ const App = () => {
             <Route
               path="/team"
               element={
-                isLoggedIn && userRole === "head-admin" ? (
+                isLoggedIn && userRole === "hod" ? (
                   <div className="p-6">
                     <h1 className="text-2xl font-bold">Team Management</h1>
                     <p>Team management interface coming soon...</p>

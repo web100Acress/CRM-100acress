@@ -18,11 +18,16 @@ const DashboardLayout = ({ children, userRole = "employee" }) => {
 
   const getRoleTitle = (role) => {
     switch (role) {
-      case "super-admin": return "BOSS";
+      case "boss":
+      case "super-admin":
+        return "BOSS";
+      case "hod":
       case "head-admin":
       case "head": return "Head";
       case "team-leader": return "Team Leader";
-      case "employee": return "Employee";
+      case "bd":
+      case "employee":
+        return "BD";
       default: return "User";
     }
   };

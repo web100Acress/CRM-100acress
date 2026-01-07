@@ -217,6 +217,12 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
       { path: '/sales-head-dashboard', icon: Home, label: 'Sales Dashboard', permission: 'sales.dashboard' },
       { path: '/leads', icon: Building2, label: 'Leads', permission: 'sales.leads' },
     ],
+    hod: [
+      { path: '/', icon: Home, label: 'Dashboard' },
+      { path: '/leads', icon: Building2, label: 'My Leads' },
+      // { path: '/calls', icon: PhoneCall, label: 'Call Logs' },
+      // { path: '/admin/bd-analytics', icon: BarChart3, label: 'BD Analytics' },
+    ],
     'head-admin': [
       { path: '/', icon: Home, label: 'Dashboard' },
       { path: '/leads', icon: Building2, label: 'My Leads' },
@@ -247,7 +253,7 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
 
   // For team-leader, employee, and super-admin, always use role-specific navigation
   const navItems =
-    userRole === 'team-leader' || userRole === 'bd' || userRole === 'boss' || userRole === 'head-admin'
+    userRole === 'team-leader' || userRole === 'bd' || userRole === 'boss' || userRole === 'hod' || userRole === 'head-admin'
       ? (navigationItems[userRole] || navigationItems['bd'])
       : (filteredModuleNav.length > 0 ? filteredModuleNav : (navigationItems[userRole] || navigationItems['bd']));
 
@@ -371,7 +377,7 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
           </div> */}
 
           {/* WhatsApp Chat Section - Employee & Team Leader Only */}
-          {(userRole === 'employee' || userRole === 'team-leader') && (
+          {(userRole === 'bd' || userRole === 'employee' || userRole === 'team-leader') && (
             <div className="p-4 border-t">
               <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Quick Chat</h4>
               <button
