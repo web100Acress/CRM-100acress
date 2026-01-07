@@ -2268,9 +2268,11 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
           <span className="text-xs mt-1">Menu</span>
         </button>
       </div>
+      </div>
     </div>
-  </div>
+    </div>
   );
+};
 };
 
 export default LeadsMobile;
