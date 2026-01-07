@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import store from "@/store";
 import '@/styles/dark-mode.css';
 import { ThemeProvider } from "@/context/ThemeContext";
+import { jwtDecode } from "jwt-decode";
 import Dashboard from "@/pages/Dashboard/Dashboard.container";
 import Leads from "@/features/lead-management/Leads/Leads.container";
 import Tickets from "@/pages/Tickets/Tickets.container";
@@ -128,8 +129,7 @@ const App = () => {
       if (token || myToken) {
         try {
           // Decode JWT to check expiration
-          const jwt = require('jsonwebtoken');
-          const decoded = jwt.decode(token || myToken);
+          const decoded = jwtDecode(token || myToken);
           
           if (decoded && decoded.exp) {
             const currentTime = Date.now() / 1000; // Convert to seconds
