@@ -189,6 +189,10 @@ exports.updateNotes = async (req, res, next) => {
     const { id } = req.params;
     const { text, tags, disposition } = req.body || {};
 
+    if (!id) {
+      return res.status(400).json({ success: false, message: 'Call log ID is required' });
+    }
+
     const callLog = await CallLog.findById(id);
     if (!callLog) {
       return res.status(404).json({ success: false, message: 'Call log not found' });
@@ -212,6 +216,82 @@ exports.updateNotes = async (req, res, next) => {
 
     return res.json({ success: true, data: callLog });
   } catch (err) {
+    next(err);
+  }
+};
+
+// Get call records for a specific user
+exports.getUserCalls = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    
+    if (!userId) {
+      return res.status(400).json({ success: false, message: 'User ID is required' });
+    }
+
+    console.log(`Fetching calls for user: ${userId}`);
+
+    // Use direct MongoDB connection to access callrecords collection
+    const mongoose = require('mongoose');
+    const db = mongoose.connection.db;
+    const callrecords = db.collection('callrecords');
+
+    // Try both string and ObjectId
+    const { ObjectId } = mongoose.Types;
+    let callLogs = [];
+
+    try {
+      // Try with ObjectId first
+      callLogs = await callrecords.find({ 
+        userId: new ObjectId(userId)
+      }).sort({ createdAt: -1 }).toArray();
+      console.log(`ObjectId search found ${callLogs.length} records`);
+    } catch (err) {
+      console.log(`ObjectId search failed, trying string: ${err.message}`);
+    }
+
+    if (callLogs.length === 0) {
+      // Try with string
+      callLogs = await callrecords.find({ 
+        userId: userId
+      }).sort({ createdAt: -1 }).toArray();
+      console.log(`String search found ${callLogs.length} records`);
+    }
+
+    // Debug: Show one record structure
+    if (callLogs.length > 0) {
+      console.log(`Sample record:`, JSON.stringify(callLogs[0], null, 2));
+    }
+
+    console.log(`Found ${callLogs.length} call logs for user ${userId}`);
+
+    // Transform data to match expected format
+    const transformedCalls = callLogs.map(call => ({
+      _id: call._id,
+      callDate: call.callDate || call.createdAt,
+      startTime: call.startTime,
+      endTime: call.endTime,
+      duration: call.duration || 0,
+      phone: call.phone,
+      leadPhone: call.phone, // Phone is already the lead phone
+      leadName: call.leadName || 'Unknown Lead',
+      leadId: call.leadId,
+      userId: call.userId,
+      calledBy: 'Test', // Since we don't have user info
+      status: call.status,
+      direction: call.type || 'outbound'
+    }));
+
+    console.log(`Transformed ${transformedCalls.length} calls for user ${userId}`);
+
+    return res.json({ 
+      success: true, 
+      data: transformedCalls,
+      count: transformedCalls.length
+    });
+
+  } catch (err) {
+    console.error('Error fetching user calls:', err);
     next(err);
   }
 };
