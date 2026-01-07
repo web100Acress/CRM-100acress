@@ -42,7 +42,7 @@ const WhatsAppChatPage = () => {
     if (!role) return null;
     const r = String(role).toLowerCase();
     if (r === 'super-admin') return 'Super Admin';
-    if (r === 'head-admin' || r === 'head') return 'Head Admin';
+    if (r === 'head-admin' || r === 'head') return 'HOD';
     if (r === 'team-leader') return 'Team Leader';
     if (r === 'boss') return 'Boss';
     return null;
@@ -563,7 +563,7 @@ const WhatsAppChatPage = () => {
                     <p className="text-xs text-gray-500">For urgent matters</p>
                   </div>
                   <div className="bg-white p-3 rounded-lg border border-gray-200">
-                    <p className="text-sm font-medium text-gray-900">👔 Head Admin</p>
+                    <p className="text-sm font-medium text-gray-900">👔 HOD</p>
                     <p className="text-xs text-gray-500">Department issues</p>
                   </div>
                   <div className="bg-white p-3 rounded-lg border border-gray-200">

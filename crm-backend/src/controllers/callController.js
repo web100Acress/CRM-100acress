@@ -30,7 +30,7 @@ async function getLeadIdsForUser(user) {
   if (!user) return [];
 
   const role = (user.role || '').toLowerCase();
-  if (role === 'super-admin' || role === 'head-admin') {
+  if (role === 'boss' || role === 'hod') {
     return null; // means all
   }
 
@@ -105,7 +105,7 @@ exports.endCall = async (req, res, next) => {
     }
 
     const role = (req.user?.role || '').toLowerCase();
-    const isAdmin = role === 'super-admin' || role === 'head-admin';
+    const isAdmin = role === 'boss' || role === 'hod';
     const isOwner = callLog.assignedUserId?.toString() === req.user?._id?.toString();
 
     if (!isAdmin && !isOwner) {
@@ -168,7 +168,7 @@ exports.getLogs = async (req, res, next) => {
     if (status) baseQuery.status = status;
     if (phoneNumber) baseQuery.phoneNumber = phoneNumber;
 
-    if (role === 'super-admin' || role === 'head-admin') {
+    if (role === 'boss' || role === 'hod') {
       if (assignedUserId) baseQuery.assignedUserId = assignedUserId;
     } else if (role === 'team-leader') {
       const leadIds = await getLeadIdsForUser(req.user);
@@ -199,7 +199,7 @@ exports.updateNotes = async (req, res, next) => {
     }
 
     const role = (req.user?.role || '').toLowerCase();
-    const isAdmin = role === 'super-admin' || role === 'head-admin';
+    const isAdmin = role === 'boss' || role === 'hod';
     const isOwner = callLog.assignedUserId?.toString() === req.user?._id?.toString();
 
     if (!isAdmin && !isOwner) {

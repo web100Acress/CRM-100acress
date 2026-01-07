@@ -101,10 +101,10 @@ const HeadAdminProfileMobile = () => {
   }, []);
 
   const headAdminData = {
-    name: localStorage.getItem('userName') || 'Head Administrator',
-    email: localStorage.getItem('userEmail') || 'headadmin@100acres.com',
+    name: localStorage.getItem('userName') || 'HOD',
+    email: localStorage.getItem('userEmail') || 'hod@100acres.com',
     phone: '+91 9876543211',
-    role: 'Head Admin',
+    role: 'HOD',
     company: '100acres.com',
     joinDate: '2024-01-15',
     permissions: [

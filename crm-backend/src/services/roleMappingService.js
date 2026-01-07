@@ -42,7 +42,7 @@ const mapAcressRoleToCRM = (acressRole) => {
  * @returns {boolean}
  */
 const hasAdminAccess = (role) => {
-  const adminRoles = ['admin', 'superadmin', 'super-admin', 'head-admin', 'crm_admin'];
+  const adminRoles = ['admin', 'superadmin', 'boss', 'hod', 'crm_admin'];
   return adminRoles.includes(role?.toLowerCase());
 };
 

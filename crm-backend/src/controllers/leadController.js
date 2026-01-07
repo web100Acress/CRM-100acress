@@ -2,7 +2,7 @@ const leadService = require('../services/leadService');
 const User = require('../models/userModel');
 
 // Role hierarchy levels (lower index = higher level)
-const roleLevels = ['super-admin', 'head-admin', 'team-leader', 'employee'];
+const roleLevels = ['boss', 'hod', 'team-leader', 'bd'];
 
 async function isValidAssignment(requesterRole, assigneeId, requesterId) {
   if (!assigneeId) return false;
@@ -13,9 +13,9 @@ async function isValidAssignment(requesterRole, assigneeId, requesterId) {
   const requesterLevel = roleLevels.indexOf(requesterRole);
   const assigneeLevel = roleLevels.indexOf(assignee.role);
 
-  // Allow self-assignment for team-leader and employee
+  // Allow self-assignment for team-leader and bd
   if (
-    (requesterRole === 'team-leader' || requesterRole === 'employee') &&
+    (requesterRole === 'team-leader' || requesterRole === 'bd') &&
     assigneeId === requesterId
   ) {
     return true;

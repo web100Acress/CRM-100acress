@@ -1010,6 +1010,35 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
             <CardContent className="p-0">
               {/* Lead Header with Gradient */}
               <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 relative">
+                {/* Forwarded By Badge - Show at top */}
+                {lead.assignmentChain && lead.assignmentChain.length > 0 && (
+                  (() => {
+                    console.log('AssignmentChain for lead', lead.name, ':', lead.assignmentChain);
+                    const firstAssignment = lead.assignmentChain[0];
+                    console.log('First assignment:', firstAssignment);
+                    console.log('All keys in first assignment:', Object.keys(firstAssignment || {}));
+                    
+                    // Try multiple possible field names for the forwarder's name
+                    const assignedByName = 
+                      firstAssignment?.assignedBy?.name || 
+                      firstAssignment?.assignedByUser?.name ||
+                      firstAssignment?.forwardedBy?.name ||
+                      firstAssignment?.fromUser?.name ||
+                      firstAssignment?.sender?.name ||
+                      firstAssignment?.assignedByName ||
+                      firstAssignment?.forwarderName ||
+                      firstAssignment?.name ||
+                      'Admin';
+                    
+                    console.log('Assigned by name:', assignedByName);
+                    return (
+                      <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                        <ForwardIcon size={12} />
+                        Forwarded by {assignedByName}
+                      </div>
+                    );
+                  })()
+                )}
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-white/30 shadow-lg">
@@ -1025,7 +1054,7 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right ">
                     {/* <button
                       onClick={() => {
                         setSelectedLeadForSettings(lead);
@@ -1042,7 +1071,7 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
                         setShowAssignmentChain(true);
                         fetchAssignmentChain(lead._id || lead.id);
                       }}
-                      className="mt-2 w-full bg-white/20 backdrop-blur-sm text-white rounded-lg px-3 py-2 text-xs font-medium hover:bg-white/30 transition-colors flex items-center justify-center gap-1"
+                      className="mt-6 w-full bg-white/20 backdrop-blur-sm text-white rounded-lg px-3 py-2 text-xs font-medium hover:bg-white/30 transition-colors flex items-center justify-center gap-1"
                     >
                       <Activity size={12} />
                       Lead Chain

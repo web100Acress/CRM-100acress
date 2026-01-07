@@ -6,13 +6,14 @@ const { requireAnyRole } = require('../middlewares/roleAccess');
 const emailController = require('../controllers/emailController');
 const emailTemplateController = require('../controllers/emailTemplateController');
 
-router.get('/templates', auth, requireAnyRole(['super-admin']), emailTemplateController.listTemplates);
-router.post('/templates', auth, requireAnyRole(['super-admin']), emailTemplateController.createTemplate);
-router.put('/templates/:id', auth, requireAnyRole(['super-admin']), emailTemplateController.updateTemplate);
-router.delete('/templates/:id', auth, requireAnyRole(['super-admin']), emailTemplateController.deleteTemplate);
+router.get('/templates', auth, requireAnyRole(['boss']), emailTemplateController.listTemplates);
+router.post('/templates', auth, requireAnyRole(['boss']), emailTemplateController.createTemplate);
+router.put('/templates/:id', auth, requireAnyRole(['boss']), emailTemplateController.updateTemplate);
+router.delete('/templates/:id', auth, requireAnyRole(['boss']), emailTemplateController.deleteTemplate);
 
-router.get('/messages', auth, requireAnyRole(['super-admin']), emailController.listEmails);
-router.post('/send', auth, requireAnyRole(['super-admin']), emailController.sendEmail);
+router.get('/messages', auth, requireAnyRole(['boss']), emailController.listEmails);
+router.post('/send', auth, requireAnyRole(['boss']), emailController.sendEmail);
+
 
 router.get('/track/:trackingId.gif', emailController.trackOpenPixel);
 

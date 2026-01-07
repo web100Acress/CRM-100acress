@@ -3,14 +3,13 @@ const User = require('../models/userModel');
 
 // Role hierarchy for lead forwarding
 const roleHierarchy = {
-  'super-admin': 'head-admin',
-  'head-admin': 'sales_head',
-  'sales_head': 'employee',
-  'team-leader': 'employee',
+  'boss': 'hod',
+  'hod': 'sales_head',
+  'sales_head': 'bd',
+  'team-leader': 'bd',
   'admin': 'sales_head',
-  'boss': 'head-admin',
-  'crm_admin': 'head-admin',
-  'employee': null // Employee is the final level
+  'crm_admin': 'hod',
+  'bd': null // BD is the final level
 };
 
 const createLead = async (leadData, creator) => {
@@ -46,7 +45,7 @@ const getLeads = async () => {
 };
 
 const getLeadsForUser = async (user) => {
-  if (user.role === 'super-admin') {
+  if (user.role === 'boss') {
     return await Lead.find();
   }
   return await Lead.find({ 'assignmentChain.userId': user._id.toString() });
@@ -107,13 +106,12 @@ const forwardLead = async (leadId, currentUserId, action = 'forward', selectedEm
     
     // Validate that the selected employee is in the correct role hierarchy
     const forwardHierarchy = {
-      "super-admin": ["head-admin"],
-      "head-admin": ["sales_head", "employee"],
-      "sales_head": ["employee"],
-      "team-leader": ["employee"],
+      "boss": ["hod"],
+      "hod": ["sales_head", "bd"],
+      "sales_head": ["bd"],
+      "team-leader": ["bd"],
       "admin": ["sales_head"],
-      "boss": ["head-admin"],
-      "crm_admin": ["head-admin"],
+      "crm_admin": ["hod"],
     };
     
     const possibleRoles = forwardHierarchy[currentUser.role];
@@ -176,9 +174,9 @@ const getNextAssignableUsers = async (currentUserRole) => {
 const getBDSummary = async () => {
   console.log('🔍 Fetching BD Summary...');
   
-  // Include all roles that can have leads assigned (employee, team-leader, etc.)
+  // Include all roles that can have leads assigned (bd, team-leader, etc.)
   const bds = await User.find({ 
-    role: { $in: ['employee', 'team-leader', 'head-admin', 'admin', 'crm_admin'] }
+    role: { $in: ['bd', 'team-leader', 'hod', 'admin', 'crm_admin'] }
   });
   console.log(`👥 Found ${bds.length} users with lead assignment roles`);
   
@@ -240,20 +238,20 @@ const getBDDetails = async (bdId) => {
 const getAssignableUsers = async (currentUserRole, currentUserId) => {
   // If team-leader, return all employees and self
   if (currentUserRole === 'team-leader') {
-    const employees = await User.find({ role: 'employee' });
+    const employees = await User.find({ role: 'bd' });
     const self = await User.findById(currentUserId);
     return self ? [...employees, self] : employees;
   }
 
-  // If employee, only self
-  if (currentUserRole === 'employee') {
+  // If bd, only self
+  if (currentUserRole === 'bd') {
     const self = await User.findById(currentUserId);
     return self ? [self] : [];
   }
 
   // For super-admin and head-admin, return all users at lower levels
   const users = [];
-  const roleLevels = ['super-admin', 'head-admin', 'team-leader', 'employee'];
+  const roleLevels = ['boss', 'hod', 'team-leader', 'bd'];
   const currentUserLevel = roleLevels.indexOf(currentUserRole);
   const assignableRoles = roleLevels.slice(currentUserLevel + 1); // +1 to exclude current level
   for (const role of assignableRoles) {
