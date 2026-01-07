@@ -16,15 +16,20 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
   // Function to convert role to valid enum value
   const getValidSenderRole = (role) => {
     const roleMap = {
-      'head-admin': 'head_admin',
-      'head': 'head_admin', 
-      'hod': 'head_admin',
+      'head-admin': 'hod',
+      'head': 'hod',
+      'head_admin': 'hod',
+      'hod': 'hod',
       'boss': 'boss',
-      'team-leader': 'team_leader',
+      'super-admin': 'boss',
+      'team-leader': 'team-leader',
+      'team_leader': 'team-leader',
       'sales_head': 'sales_head',
       'admin': 'admin',
       'crm_admin': 'crm_admin',
-      'bd': 'bd'
+      'bd': 'bd',
+      'employee': 'bd',
+      'BD': 'bd'
     };
     return roleMap[role] || 'bd';
   };
