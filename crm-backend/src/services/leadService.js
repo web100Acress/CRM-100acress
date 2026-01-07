@@ -176,9 +176,11 @@ const getNextAssignableUsers = async (currentUserRole) => {
 const getBDSummary = async () => {
   console.log('🔍 Fetching BD Summary...');
   
-  // Only employees
-  const bds = await User.find({ role: 'employee' });
-  console.log(`👥 Found ${bds.length} employees`);
+  // Include all roles that can have leads assigned (employee, team-leader, etc.)
+  const bds = await User.find({ 
+    role: { $in: ['employee', 'team-leader', 'head-admin', 'admin', 'crm_admin'] }
+  });
+  console.log(`👥 Found ${bds.length} users with lead assignment roles`);
   
   const leads = await Lead.find().sort({ createdAt: -1 }); // Get all leads, sorted by newest first
   console.log(`📋 Found ${leads.length} total leads`);
