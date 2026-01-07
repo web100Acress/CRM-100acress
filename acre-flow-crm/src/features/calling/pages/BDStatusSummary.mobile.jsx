@@ -126,7 +126,7 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
       const activityEndpoints = [
         `https://bcrm.100acress.com/api/leads/activity?userId=${bdId}`,
         `https://bcrm.100acress.com/api/activities?userId=${bdId}`,
-        `https://bcrm.100acress.com/api/activity?userId=${bdId}`
+        `https://bcrm.100acress.com/api/activity/user-activity?userId=${bdId}`
       ];
       
       let activityData = null;
@@ -236,7 +236,7 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
         const activityEndpoints = [
           `https://bcrm.100acress.com/api/leads/activity?userId=${bdId}`,
           `https://bcrm.100acress.com/api/activities?userId=${bdId}`,
-          `https://bcrm.100acress.com/api/activity?userId=${bdId}`
+          `https://bcrm.100acress.com/api/activity/user-activity?userId=${bdId}`
         ];
         
         let activityData = null;
