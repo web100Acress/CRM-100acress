@@ -21,7 +21,13 @@ const HeadAdminProfileMobile = () => {
     pendingApprovals: 0,
     overallConversion: 0,
     teamMembers: [],
-    recentActivities: []
+    recentActivities: [],
+    recentLeads: [],
+    assignedLeads: 0,
+    unassignedLeads: 0,
+    hotLeads: 0,
+    warmLeads: 0,
+    coldLeads: 0
   });
 
   const [socket, setSocket] = useState(null);
@@ -65,18 +71,16 @@ const HeadAdminProfileMobile = () => {
     const fetchMobileHeadAdminData = async () => {
       try {
         const token = localStorage.getItem('token');
-        
-        // Fetch team members with mobile optimization
-        const teamResponse = await fetch('https://bcrm.100acress.com/api/team-members?limit=15', {
+ 
+        const usersResponse = await fetch('https://bcrm.100acress.com/api/users', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         });
-        const teamData = await teamResponse.json();
-        
-        // Fetch managed leads
-        const leadsResponse = await fetch('https://bcrm.100acress.com/api/leads/managed?limit=20', {
+        const usersData = await usersResponse.json();
+
+        const leadsResponse = await fetch('https://bcrm.100acress.com/api/leads', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -84,12 +88,26 @@ const HeadAdminProfileMobile = () => {
         });
         const leadsData = await leadsResponse.json();
 
+        const leads = Array.isArray(leadsData?.data) ? leadsData.data : [];
+        const recentLeads = leads.slice(0, 10);
+        const assignedLeads = leads.filter((l) => l?.assignedTo && l.assignedTo !== 'Unassigned').length;
+        const unassignedLeads = leads.length - assignedLeads;
+        const hotLeads = leads.filter((l) => (l?.status || '').toLowerCase() === 'hot').length;
+        const warmLeads = leads.filter((l) => (l?.status || '').toLowerCase() === 'warm').length;
+        const coldLeads = leads.filter((l) => (l?.status || '').toLowerCase() === 'cold').length;
+
         setDashboardStats(prev => ({
           ...prev,
-          teamMembers: teamData.data || [],
-          managedLeads: leadsData.data?.length || 0,
-          totalTeams: teamData.data?.length || 0,
-          overallConversion: Math.floor(Math.random() * 30) + 70 // Mock conversion rate
+          teamMembers: usersData.data || [],
+          managedLeads: leads.length,
+          totalTeams: usersData.data?.length || 0,
+          overallConversion: prev.overallConversion,
+          recentLeads,
+          assignedLeads,
+          unassignedLeads,
+          hotLeads,
+          warmLeads,
+          coldLeads,
         }));
 
       } catch (error) {
@@ -159,6 +177,52 @@ const HeadAdminProfileMobile = () => {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
+        <Card className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs opacity-80">Assigned</p>
+                <p className="text-2xl font-bold">{dashboardStats.assignedLeads}</p>
+              </div>
+              <Users size={24} className="opacity-50" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-r from-slate-500 to-slate-600 text-white">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs opacity-80">Unassigned</p>
+                <p className="text-2xl font-bold">{dashboardStats.unassignedLeads}</p>
+              </div>
+              <Activity size={24} className="opacity-50" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-3 gap-3">
+        <Card className="bg-gradient-to-r from-red-500 to-red-600 text-white">
+          <CardContent className="p-3">
+            <p className="text-xs opacity-80">Hot</p>
+            <p className="text-xl font-bold">{dashboardStats.hotLeads}</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-r from-amber-500 to-amber-600 text-white">
+          <CardContent className="p-3">
+            <p className="text-xs opacity-80">Warm</p>
+            <p className="text-xl font-bold">{dashboardStats.warmLeads}</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-r from-sky-500 to-sky-600 text-white">
+          <CardContent className="p-3">
+            <p className="text-xs opacity-80">Cold</p>
+            <p className="text-xl font-bold">{dashboardStats.coldLeads}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
         <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -188,21 +252,21 @@ const HeadAdminProfileMobile = () => {
         <CardContent className="p-4">
           <h3 className="font-semibold text-gray-900 mb-3">Quick Actions</h3>
           <div className="grid grid-cols-2 gap-2">
-            <button className="p-3 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors">
+            <button onClick={() => setActiveTab('team')} className="p-3 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors">
               <Users size={18} className="mx-auto mb-1" />
               <span className="text-xs block">View Team</span>
             </button>
-            <button className="p-3 bg-pink-50 text-pink-600 rounded-lg hover:bg-pink-100 transition-colors">
+            <button onClick={() => setActiveTab('leads')} className="p-3 bg-pink-50 text-pink-600 rounded-lg hover:bg-pink-100 transition-colors">
               <Ticket size={18} className="mx-auto mb-1" />
               <span className="text-xs block">New Lead</span>
             </button>
-            <button className="p-3 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors">
+            <button onClick={() => setActiveTab('approvals')} className="p-3 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors">
               <Target size={18} className="mx-auto mb-1" />
               <span className="text-xs block">Approvals</span>
             </button>
-            <button className="p-3 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors">
+            <button onClick={() => setActiveTab('settings')} className="p-3 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors">
               <BarChart3 size={18} className="mx-auto mb-1" />
-              <span className="text-xs block">Reports</span>
+              <span className="text-xs block">Settings</span>
             </button>
           </div>
         </CardContent>
@@ -241,16 +305,16 @@ const HeadAdminProfileMobile = () => {
     <div className="space-y-3">
       <h2 className="text-lg font-semibold text-gray-900">Managed Leads</h2>
       <div className="space-y-2">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <Card key={i} className="hover:shadow-md transition-shadow">
+        {dashboardStats.recentLeads.map((lead) => (
+          <Card key={lead._id || lead.id} className="hover:shadow-md transition-shadow">
             <CardContent className="p-3">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="font-medium text-gray-900">Lead #{i}</p>
-                  <Badge variant="outline">In Progress</Badge>
+                  <p className="font-medium text-gray-900">{lead.name || 'Lead'}</p>
+                  <Badge variant="outline">{lead.status || 'New'}</Badge>
                 </div>
-                <p className="text-sm text-gray-600">client{i}@example.com</p>
-                <p className="text-xs text-gray-500">Assigned to Team Member {i}</p>
+                <p className="text-sm text-gray-600">{lead.email || lead.phone || ''}</p>
+                <p className="text-xs text-gray-500">{lead.property || ''}</p>
               </div>
             </CardContent>
           </Card>
@@ -320,7 +384,7 @@ const HeadAdminProfileMobile = () => {
   );
 
   return (
-    <MobileLayout userRole="head-admin" activeTab={activeTab} setActiveTab={setActiveTab}>
+    <MobileLayout userRole="hod" activeTab={activeTab} setActiveTab={setActiveTab}>
       {activeTab === 'overview' && renderOverviewTab()}
       {activeTab === 'team' && renderTeamTab()}
       {activeTab === 'leads' && renderLeadsTab()}
