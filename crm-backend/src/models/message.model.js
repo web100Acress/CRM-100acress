@@ -8,8 +8,8 @@ const messageSchema = new mongoose.Schema({
   },
   senderRole: {
     type: String,
-    enum: ['admin', 'boss', 'hod', 'team-leader', 'sales_head', 'bd', 'crm_admin', 'manager', 'BD'],
-    default: 'BD'
+    enum: ['boss', 'hod', 'team-leader', 'bd'],
+    default: 'bd'
   },
   recipientId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -18,8 +18,8 @@ const messageSchema = new mongoose.Schema({
   },
   recipientRole: {
     type: String,
-    enum: ['admin', 'boss', 'hod', 'team-leader', 'sales_head', 'bd', 'crm_admin', 'manager', 'BD'],
-    default: 'BD'
+    enum: ['boss', 'hod', 'team-leader', 'bd'],
+    default: 'bd'
   },
   recipientEmail: {
     type: String,
@@ -64,6 +64,23 @@ const messageSchema = new mongoose.Schema({
   }
 }, {
   timestamps: true
+});
+
+const normalizeRole = (role) => {
+  const r = String(role || '').trim();
+  const key = r.toLowerCase();
+  if (key === 'boss' || key === 'super-admin') return 'boss';
+  if (key === 'hod' || key === 'head-admin' || key === 'head' || key === 'head_admin') return 'hod';
+  if (key === 'team-leader' || key === 'team_leader') return 'team-leader';
+  if (key === 'bd' || key === 'employee' || key === 'bd ') return 'bd';
+  if (r === 'BD') return 'bd';
+  return key;
+};
+
+messageSchema.pre('validate', function (next) {
+  if (this.senderRole) this.senderRole = normalizeRole(this.senderRole);
+  if (this.recipientRole) this.recipientRole = normalizeRole(this.recipientRole);
+  next();
 });
 
 // Indexes for better performance

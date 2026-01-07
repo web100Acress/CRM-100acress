@@ -21,7 +21,13 @@ const HeadAdminProfile = () => {
     pendingApprovals: 0,
     overallConversion: 0,
     teamMembers: [],
-    recentActivities: []
+    recentActivities: [],
+    leads: [],
+    assignedLeads: 0,
+    unassignedLeads: 0,
+    hotLeads: 0,
+    warmLeads: 0,
+    coldLeads: 0
   });
 
   const [socket, setSocket] = useState(null);
@@ -65,6 +71,13 @@ const HeadAdminProfile = () => {
           },
         });
         const leadsData = await leadsResponse.json();
+        const leads = Array.isArray(leadsData.data) ? leadsData.data : [];
+
+        const assignedLeads = leads.filter((l) => l?.assignedTo && l.assignedTo !== 'Unassigned').length;
+        const unassignedLeads = leads.length - assignedLeads;
+        const hotLeads = leads.filter((l) => (l?.status || '').toLowerCase() === 'hot').length;
+        const warmLeads = leads.filter((l) => (l?.status || '').toLowerCase() === 'warm').length;
+        const coldLeads = leads.filter((l) => (l?.status || '').toLowerCase() === 'cold').length;
 
         // Fetch users (team members)
         const usersResponse = await fetch('https://bcrm.100acress.com/api/users', {
@@ -78,9 +91,15 @@ const HeadAdminProfile = () => {
         // Update dashboard stats
         setDashboardStats(prev => ({
           ...prev,
-          managedLeads: leadsData.data?.length || 0,
+          managedLeads: leads.length,
           totalTeams: Math.ceil((usersData.data?.length || 0) / 5), // Assuming 5 members per team
-          teamMembers: usersData.data || []
+          teamMembers: usersData.data || [],
+          leads,
+          assignedLeads,
+          unassignedLeads,
+          hotLeads,
+          warmLeads,
+          coldLeads
         }));
 
       } catch (error) {
@@ -111,24 +130,41 @@ const HeadAdminProfile = () => {
   const teamPerformance = useMemo(() => {
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const map = new Map(days.map((d) => [d, 0]));
-    
-    // Simulate team performance data
-    days.forEach((day, index) => {
-      map.set(day, Math.floor(Math.random() * 20) + 10);
+
+    const leads = Array.isArray(dashboardStats.leads) ? dashboardStats.leads : [];
+    leads.forEach((lead) => {
+      const v = lead?.createdAt || lead?.updatedAt || lead?.created_at || lead?.updated_at;
+      if (!v) return;
+      const dt = new Date(v);
+      if (!Number.isFinite(dt.getTime())) return;
+      const day = dt.toLocaleDateString('en-US', { weekday: 'short' });
+      if (map.has(day)) map.set(day, (map.get(day) || 0) + 1);
     });
-    
+
     return days.map((d) => ({ day: d, value: map.get(d) || 0 }));
-  }, []);
+  }, [dashboardStats.leads]);
 
   const topPerformers = useMemo(() => {
-    return [
-      { name: 'Rahul Kumar', count: 45 },
-      { name: 'Priya Sharma', count: 38 },
-      { name: 'Amit Singh', count: 32 },
-      { name: 'Neha Patel', count: 28 },
-      { name: 'Vikram Reddy', count: 25 }
-    ];
-  }, []);
+    const users = Array.isArray(dashboardStats.teamMembers) ? dashboardStats.teamMembers : [];
+    const leads = Array.isArray(dashboardStats.leads) ? dashboardStats.leads : [];
+
+    const idToUser = new Map(users.map((u) => [String(u?._id || u?.id), u]));
+    const counts = new Map();
+
+    leads.forEach((lead) => {
+      const assignedTo = lead?.assignedTo;
+      if (!assignedTo || assignedTo === 'Unassigned') return;
+      const key = String(assignedTo);
+      counts.set(key, (counts.get(key) || 0) + 1);
+    });
+
+    const list = Array.from(counts.entries()).map(([id, count]) => {
+      const u = idToUser.get(id);
+      return { name: u?.name || u?.userName || 'User', count };
+    });
+
+    return list.sort((a, b) => b.count - a.count).slice(0, 5);
+  }, [dashboardStats.teamMembers, dashboardStats.leads]);
 
   const getInitials = (name) => {
     const s = (name || '').trim();

@@ -945,6 +945,36 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     return users.some((u) => possibleRoles.includes(u?.role || u?.userRole));
   };
 
+  const isAssignedLead = (lead) => {
+    return !!(lead?.assignedTo && lead.assignedTo !== 'Unassigned');
+  };
+
+  const isBossToHodLead = (lead) => {
+    const chain = Array.isArray(lead?.assignmentChain) ? lead.assignmentChain : [];
+    if (chain.length === 0) return false;
+
+    const first = chain[0] || {};
+    const fromRole =
+      first?.assignedBy?.role ||
+      first?.assignedByUser?.role ||
+      first?.forwardedBy?.role ||
+      first?.fromUser?.role ||
+      first?.sender?.role ||
+      first?.assignedByRole ||
+      first?.fromRole;
+    const toRole =
+      first?.assignedTo?.role ||
+      first?.assignedToUser?.role ||
+      first?.toUser?.role ||
+      first?.receiver?.role ||
+      first?.assignedToRole ||
+      first?.toRole;
+
+    const from = (fromRole || '').toString();
+    const to = (toRole || '').toString();
+    return (from === 'boss' || from === 'super-admin') && (to === 'hod' || to === 'head-admin');
+  };
+
   const confirmForward = () => {
     if (selectedLeadForForward && selectedEmployee) {
       handleForwardLead(selectedLeadForForward._id, selectedEmployee._id);
@@ -1002,6 +1032,13 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                          lead.phone?.includes(searchTerm);
     const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
     return matchesSearch && matchesStatus;
+  }).sort((a, b) => {
+    const getTime = (l) => {
+      const v = l?.updatedAt || l?.createdAt || l?.updated_at || l?.created_at || l?.date;
+      const t = v ? new Date(v).getTime() : 0;
+      return Number.isFinite(t) ? t : 0;
+    };
+    return getTime(b) - getTime(a);
   });
 
   if (loading) {
@@ -1152,7 +1189,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                     <span className="text-xs mt-1 font-medium">Call</span>
                   </button>
                   {/* WhatsApp button for forwarded leads */}
-                  {lead.assignedTo && lead.assignedTo !== 'Unassigned' && lead.assignedTo !== currentUserId && (
+                  {isAssignedLead(lead) && String(lead.assignedTo) !== String(currentUserId) && !((currentUserRole === 'hod' || currentUserRole === 'head-admin') && isBossToHodLead(lead)) && (
                     <button
                       onClick={() => handleWhatsAppChat(lead)}
                       className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-lg hover:from-green-600 hover:to-teal-600 transition-all duration-200 shadow-md hover:shadow-lg"
@@ -1176,7 +1213,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                     <Eye size={18} />
                     <span className="text-xs mt-1 font-medium">Details</span>
                   </button>
-                  {canForwardLead(lead) && (
+                  {canForwardLead(lead) && !((currentUserRole === 'hod' || currentUserRole === 'head-admin') && !isBossToHodLead(lead)) && (
                     <button
                       onClick={() => handleForwardClick(lead)}
                       disabled={forwardingLead === lead._id}
