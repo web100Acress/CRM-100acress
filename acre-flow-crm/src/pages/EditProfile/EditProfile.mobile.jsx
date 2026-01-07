@@ -250,7 +250,11 @@ const EditProfileMobile = () => {
         formData.append('profileImage', file);
 
         // Upload to server
-        const response = await fetch('http://localhost:5001/api/users/profile-image', {
+        const apiUrl = process.env.NODE_ENV === 'development'
+          ? 'http://localhost:5001/api/users/profile-image'
+          : 'https://bcrm.100acress.com/api/users/profile-image';
+
+        const response = await fetch(apiUrl, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
