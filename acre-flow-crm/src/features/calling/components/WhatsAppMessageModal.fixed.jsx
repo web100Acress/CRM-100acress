@@ -350,6 +350,27 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
 
   if (!isOpen) return null;
 
+  // Check if recipient is valid
+  if (!recipient || (!recipient._id && !recipient.id && !recipient.bdId)) {
+    console.error('No valid recipient provided to WhatsAppMessageModal:', recipient);
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg w-full max-w-md p-6">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Chat Unavailable</h3>
+            <p className="text-gray-600 mb-4">No chat recipient available. Please contact your administrator.</p>
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg w-full max-w-md h-[600px] flex flex-col">
