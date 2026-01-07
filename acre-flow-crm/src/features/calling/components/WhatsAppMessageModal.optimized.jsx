@@ -7,7 +7,6 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
   const [isSending, setIsSending] = useState(false);
   const [loading, setLoading] = useState(false);
   const [assignableUsers, setAssignableUsers] = useState([]);
-  const [allUsers, setAllUsers] = useState([]);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -37,30 +36,6 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
 
   const recipientId = recipient?._id || recipient?.bdId || recipient?.id;
 
-  // Fetch all users for better recipient resolution
-  useEffect(() => {
-    const fetchAllUsers = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch('https://bcrm.100acress.com/api/users', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        const json = await response.json();
-        setAllUsers(Array.isArray(json?.data) ? json.data : []);
-      } catch (error) {
-        console.error('Error fetching all users:', error);
-        setAllUsers([]);
-      }
-    };
-
-    if (isOpen && allUsers.length === 0) {
-      fetchAllUsers();
-    }
-  }, [isOpen, allUsers.length]);
-
   // Fetch assignable users only when modal opens
   useEffect(() => {
     const fetchAssignableUsers = async () => {
@@ -85,84 +60,21 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
     }
   }, [isOpen, assignableUsers.length]);
 
-  // Enhanced recipient resolution for BD users
+  // Resolve recipient with memoization
   const resolvedRecipient = React.useMemo(() => {
-    console.log('Resolving recipient:', { recipient, recipientId, currentUserRole });
-    
-    // If recipient already has all the data, return as is
     if (recipient && recipient.name && recipient.email) {
-      console.log('Recipient already has complete data');
       return recipient;
     }
     
-    // Try to find in assignable users first
     if (recipientId && assignableUsers.length > 0) {
       const fromAssignable = assignableUsers.find((u) => String(u?._id) === String(recipientId));
       if (fromAssignable) {
-        console.log('Found recipient in assignable users:', fromAssignable);
         return { ...recipient, ...fromAssignable };
       }
     }
     
-    // Try to find in all users
-    if (recipientId && allUsers.length > 0) {
-      const fromAllUsers = allUsers.find((u) => String(u?._id) === String(recipientId));
-      if (fromAllUsers) {
-        console.log('Found recipient in all users:', fromAllUsers);
-        return { ...recipient, ...fromAllUsers };
-      }
-    }
-    
-    // For BD users: if no recipient found, find HOD or Boss
-    if (currentUserRole === 'bd' || currentUserRole === 'employee') {
-      console.log('BD user: Looking for HOD or Boss');
-      
-      // Try assignable users first
-      const hodInAssignable = assignableUsers.find(u => 
-        u.role === 'hod' || u.role === 'head-admin' || u.role === 'head'
-      );
-      if (hodInAssignable) {
-        console.log('Found HOD in assignable users:', hodInAssignable);
-        return { ...recipient, ...hodInAssignable };
-      }
-      
-      // Try all users
-      const hodInAllUsers = allUsers.find(u => 
-        u.role === 'hod' || u.role === 'head-admin' || u.role === 'head'
-      );
-      if (hodInAllUsers) {
-        console.log('Found HOD in all users:', hodInAllUsers);
-        return { ...recipient, ...hodInAllUsers };
-      }
-      
-      // Look for Boss
-      const bossInAssignable = assignableUsers.find(u => 
-        u.role === 'boss' || u.role === 'super-admin'
-      );
-      if (bossInAssignable) {
-        console.log('Found Boss in assignable users:', bossInAssignable);
-        return { ...recipient, ...bossInAssignable };
-      }
-      
-      const bossInAllUsers = allUsers.find(u => 
-        u.role === 'boss' || u.role === 'super-admin'
-      );
-      if (bossInAllUsers) {
-        console.log('Found Boss in all users:', bossInAllUsers);
-        return { ...recipient, ...bossInAllUsers };
-      }
-      
-      // Last resort: any available user
-      const anyUser = assignableUsers[0] || allUsers[0];
-      if (anyUser) {
-        console.log('Using any available user:', anyUser);
-        return { ...recipient, ...anyUser };
-      }
-    }
-    
-    console.log('Using recipient as-is');
     return recipient;
-  }, [recipient, recipientId, currentUserRole, assignableUsers, allUsers]);
+  }, [recipient, recipientId, assignableUsers]);
 
   const recipientDisplayName = React.useMemo(() => 
     resolvedRecipient?.name ||
@@ -200,17 +112,14 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
 
   // Fetch conversation history with debouncing
   const fetchConversation = useCallback(async () => {
-    const finalRecipientId = resolvedRecipient?._id || recipientId;
-    
-    if (!finalRecipientId || finalRecipientId === 'undefined') {
-      console.error('Invalid recipient ID:', finalRecipientId);
+    if (!recipientId || recipientId === 'undefined') {
       return;
     }
     
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://bcrm.100acress.com/api/messages/conversation/${finalRecipientId}`, {
+      const response = await fetch(`https://bcrm.100acress.com/api/messages/conversation/${recipientId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -245,16 +154,16 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
     } finally {
       setLoading(false);
     }
-  }, [resolvedRecipient, recipientId]);
+  }, [recipientId]);
 
   // Fetch conversation when modal opens
   useEffect(() => {
-    if (isOpen && resolvedRecipient?._id) {
+    if (isOpen && recipientId) {
       fetchConversation();
     } else if (isOpen) {
       setMessages([]);
     }
-  }, [isOpen, resolvedRecipient, fetchConversation]);
+  }, [isOpen, recipientId, fetchConversation]);
 
   const getCurrentUserId = useCallback(() => {
     const token = localStorage.getItem('token');
@@ -271,13 +180,6 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
 
   const handleSendMessage = useCallback(async () => {
     if (!message.trim() || isSending) return;
-
-    const finalRecipientId = resolvedRecipient?._id || recipientId;
-    
-    if (!finalRecipientId) {
-      console.error('No valid recipient found');
-      return;
-    }
 
     const newMessage = {
       id: Date.now(),
@@ -296,8 +198,8 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
       const token = localStorage.getItem('token');
       
       const requestBody = {
-        recipientId: finalRecipientId,
-        recipientEmail: resolvedRecipient?.email || recipient?.email,
+        recipientId: recipient._id || recipient.bdId || recipient.id,
+        recipientEmail: resolvedRecipient?.email || recipient.email,
         recipientName: recipientDisplayName,
         message: message.trim(),
         senderRole: getValidSenderRole(currentUserRole)
@@ -339,7 +241,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
     } finally {
       setIsSending(false);
     }
-  }, [message, isSending, recipient, resolvedRecipient, recipientId, recipientDisplayName, currentUserRole, getValidSenderRole, fetchConversation]);
+  }, [message, isSending, recipient, resolvedRecipient, recipientDisplayName, currentUserRole, getValidSenderRole, fetchConversation]);
 
   const handleKeyPress = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {

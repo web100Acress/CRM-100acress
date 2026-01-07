@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Send, Phone, Video, MoreVertical, Smile, Paperclip } from 'lucide-react';
+import { X, Send, Phone, Video, MoreVertical, Smile, Paperclip, RefreshCw } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
+  const { toast } = useToast();
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [isSending, setIsSending] = useState(false);
@@ -13,6 +15,19 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
 
   // Get current user's role
   const currentUserRole = localStorage.getItem('userRole') || localStorage.getItem('role') || 'bd';
+
+  const getCurrentUserId = useCallback(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.userId || payload.id || payload._id;
+      } catch (error) {
+        console.error('Error parsing token:', error);
+      }
+    }
+    return localStorage.getItem('userId') || localStorage.getItem('id');
+  }, []);
 
   // Function to convert role to valid enum value
   const getValidSenderRole = useCallback((role) => {
@@ -160,20 +175,105 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
       }
     }
     
+    // For HOD/Boss users: if no recipient found, try to find assigned user
+    if (currentUserRole === 'hod' || currentUserRole === 'head-admin' || currentUserRole === 'boss' || currentUserRole === 'super-admin') {
+      console.log('HOD/Boss: Looking for assigned user');
+      
+      // Try to find any BD/employee user
+      const bdUser = assignableUsers.find(u => 
+        u.role === 'bd' || u.role === 'employee'
+      ) || allUsers.find(u => 
+        u.role === 'bd' || u.role === 'employee'
+      );
+      
+      if (bdUser) {
+        console.log('Found BD user:', bdUser);
+        return { ...recipient, ...bdUser };
+      }
+      
+      // Last resort: any available user
+      const anyUser = assignableUsers[0] || allUsers[0];
+      if (anyUser) {
+        console.log('Using any available user:', anyUser);
+        return { ...recipient, ...anyUser };
+      }
+    }
+    
     console.log('Using recipient as-is');
     return recipient;
   }, [recipient, recipientId, currentUserRole, assignableUsers, allUsers]);
 
-  const recipientDisplayName = React.useMemo(() => 
-    resolvedRecipient?.name ||
-    resolvedRecipient?.userName ||
-    resolvedRecipient?.recipientName ||
-    resolvedRecipient?.fullName ||
-    resolvedRecipient?.username ||
-    resolvedRecipient?.email ||
-    'Chat',
-    [resolvedRecipient]
-  );
+  const recipientDisplayName = React.useMemo(() => {
+    // Get current user info
+    const currentUserId = getCurrentUserId();
+    const currentUserRole = localStorage.getItem('userRole') || localStorage.getItem('role');
+    
+    console.log('Current user:', { id: currentUserId, role: currentUserRole });
+    console.log('Recipient data:', recipient);
+    console.log('Resolved recipient:', resolvedRecipient);
+    
+    // For BD/employee users (like Test): show who assigned/forwarded the lead
+    if (currentUserRole === 'bd' || currentUserRole === 'employee') {
+      // Priority: forwarded by name first, then assigned by name
+      if (recipient?.forwardedByName) {
+        console.log('BD user: Using forwarded by name:', recipient.forwardedByName);
+        return recipient.forwardedByName;
+      }
+      
+      if (recipient?.assignedByName) {
+        console.log('BD user: Using assigned by name:', recipient.assignedByName);
+        return recipient.assignedByName;
+      }
+    }
+    
+    // For HOD/Boss users: show the assigned user's name
+    if (currentUserRole === 'hod' || currentUserRole === 'head-admin' || currentUserRole === 'boss' || currentUserRole === 'super-admin') {
+      // Get the recipient name (the person we're chatting with - assigned user)
+      let name = resolvedRecipient?.name ||
+                 resolvedRecipient?.userName ||
+                 resolvedRecipient?.recipientName ||
+                 resolvedRecipient?.fullName ||
+                 resolvedRecipient?.username ||
+                 recipient?.name ||
+                 recipient?.userName ||
+                 recipient?.recipientName ||
+                 recipient?.fullName ||
+                 recipient?.username;
+      
+      if (name) {
+        console.log('HOD/Boss user: Using assigned user name:', name);
+        return name;
+      }
+    }
+    
+    // Fallback: get any available name
+    let name = resolvedRecipient?.name ||
+               resolvedRecipient?.userName ||
+               resolvedRecipient?.recipientName ||
+               resolvedRecipient?.fullName ||
+               resolvedRecipient?.username ||
+               recipient?.name ||
+               recipient?.userName ||
+               recipient?.recipientName ||
+               recipient?.fullName ||
+               recipient?.username;
+    
+    // If still no name, use role-based default
+    if (!name) {
+      const role = String(resolvedRecipient?.role || resolvedRecipient?.userRole || recipient?.role || recipient?.userRole || '').toLowerCase();
+      if (role === 'boss' || role === 'super-admin') name = 'Boss';
+      else if (role === 'hod' || role === 'head-admin' || role === 'head') name = 'HOD';
+      else if (role === 'team-leader') name = 'Team Leader';
+      else if (role === 'bd' || role === 'employee') name = 'BD';
+      else name = 'User';
+    }
+    
+    // Final fallback
+    if (!name) name = 'Chat';
+    
+    console.log('Final recipient display name:', name);
+    return name;
+  }, [resolvedRecipient, recipient]);
 
   const roleLabel = React.useMemo(() => {
     const r = String(resolvedRecipient?.role || resolvedRecipient?.userRole || recipient?.role || recipient?.userRole || '').toLowerCase();
@@ -201,47 +301,98 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
   // Fetch conversation history with debouncing
   const fetchConversation = useCallback(async () => {
     const finalRecipientId = resolvedRecipient?._id || recipientId;
+    const currentUserId = getCurrentUserId();
     
     if (!finalRecipientId || finalRecipientId === 'undefined') {
-      console.error('Invalid recipient ID:', finalRecipientId);
-      return;
+        console.error('Invalid recipient ID:', finalRecipientId);
+        return;
     }
     
+    console.log('Fetching conversation for recipient:', finalRecipientId);
+    console.log('Current user ID:', currentUserId);
     setLoading(true);
+    
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://bcrm.100acress.com/api/messages/conversation/${finalRecipientId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      
+      // Try to fetch from both users' perspectives to get all messages
+      const [conversation1, conversation2] = await Promise.all([
+        fetch(`https://bcrm.100acress.com/api/messages/conversation/${finalRecipientId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }),
+        fetch(`https://bcrm.100acress.com/api/messages/conversation/${currentUserId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+      ]);
 
-      if (response.ok) {
-        const data = await response.json();
+      console.log('Conversation 1 response status:', conversation1.status);
+      console.log('Conversation 2 response status:', conversation2.status);
+      
+      let allMessages = [];
+      
+      // Get messages from recipient's conversation
+      if (conversation1.ok) {
+        const data1 = await conversation1.json();
+        console.log('Conversation 1 data:', data1);
         
-        if (data.success && data.data) {
-          const currentUserId = getCurrentUserId();
-          
-          const formattedMessages = data.data.map(msg => {
-            const isMe = msg.senderId === currentUserId;
-            
-            return {
-              id: msg._id,
-              text: msg.message,
-              sender: isMe ? 'me' : 'other',
-              senderName: isMe ? 'You' : (msg.senderName || 'Unknown'),
-              senderRole: msg.senderRole,
-              timestamp: new Date(msg.timestamp),
-              status: msg.status
-            };
-          });
-          
-          setMessages(formattedMessages);
+        if (data1.success && data1.data) {
+          allMessages = allMessages.concat(data1.data);
         }
       }
+      
+      // Get messages from current user's conversation
+      if (conversation2.ok) {
+        const data2 = await conversation2.json();
+        console.log('Conversation 2 data:', data2);
+        
+        if (data2.success && data2.data) {
+          allMessages = allMessages.concat(data2.data);
+        }
+      }
+      
+      // Filter messages to only show between these two users
+      const filteredMessages = allMessages.filter(msg => 
+        (msg.senderId === currentUserId && msg.recipientId === finalRecipientId) ||
+        (msg.senderId === finalRecipientId && msg.recipientId === currentUserId)
+      );
+      
+      console.log('All messages between users:', filteredMessages);
+      
+      // Remove duplicates by message ID and sort by timestamp
+      const uniqueMessages = filteredMessages.filter((msg, index, self) =>
+        index === self.findIndex((m) => m._id === msg._id)
+      );
+      
+      uniqueMessages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      
+      console.log('Unique sorted messages:', uniqueMessages);
+      
+      const formattedMessages = uniqueMessages.map(msg => {
+        const isMe = msg.senderId === currentUserId;
+        
+        return {
+          id: msg._id,
+          text: msg.message,
+          sender: isMe ? 'me' : 'other',
+          senderName: isMe ? 'You' : (msg.senderName || resolvedRecipient?.name || 'Unknown'),
+          senderRole: msg.senderRole,
+          timestamp: new Date(msg.timestamp),
+          status: msg.status
+        };
+      });
+      
+      console.log('Formatted messages:', formattedMessages);
+      setMessages(formattedMessages);
+      
     } catch (error) {
       console.error('Error fetching conversation:', error);
+      setMessages([]);
     } finally {
       setLoading(false);
     }
@@ -250,24 +401,21 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
   // Fetch conversation when modal opens
   useEffect(() => {
     if (isOpen && resolvedRecipient?._id) {
+      console.log('Modal opened, fetching conversation...');
       fetchConversation();
+      // Set up periodic refresh to ensure messages sync
+      const interval = setInterval(() => {
+        fetchConversation();
+      }, 3000); // Refresh every 3 seconds
+      
+      return () => {
+        clearInterval(interval);
+      };
     } else if (isOpen) {
+      console.log('Modal opened but no recipient resolved');
       setMessages([]);
     }
   }, [isOpen, resolvedRecipient, fetchConversation]);
-
-  const getCurrentUserId = useCallback(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        return payload.userId || payload.id || payload._id;
-      } catch (error) {
-        console.error('Error parsing token:', error);
-      }
-    }
-    return localStorage.getItem('userId') || localStorage.getItem('id');
-  }, []);
 
   const handleSendMessage = useCallback(async () => {
     if (!message.trim() || isSending) return;
@@ -303,6 +451,8 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
         senderRole: getValidSenderRole(currentUserRole)
       };
       
+      console.log('Sending message:', requestBody);
+      
       const response = await fetch('https://bcrm.100acress.com/api/messages/send', {
         method: 'POST',
         headers: {
@@ -313,8 +463,10 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
       });
 
       const data = await response.json();
+      console.log('Message send response:', data);
       
       if (data.success) {
+        console.log('Message sent successfully:', data);
         // Update message status to delivered
         setMessages(prev => 
           prev.map(msg => 
@@ -324,13 +476,25 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
           )
         );
         
-        // Refresh conversation after a short delay
+        // Immediate refresh to ensure message appears
+        fetchConversation();
+        
+        // Additional refreshes to ensure both users see the message
         setTimeout(() => {
           fetchConversation();
-        }, 300);
+        }, 1000);
+        setTimeout(() => {
+          fetchConversation();
+        }, 3000);
       } else {
+        console.error('Failed to send message:', data);
         // Remove message if send failed
         setMessages(prev => prev.filter(msg => msg.id !== newMessage.id));
+        toast({
+          title: 'Message Failed',
+          description: data.message || 'Failed to send message',
+          variant: 'destructive'
+        });
       }
     } catch (error) {
       console.error('Error sending message:', error);
@@ -350,6 +514,27 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
 
   if (!isOpen) return null;
 
+  // Check if recipient is valid
+  if (!recipient || (!recipient._id && !recipient.id && !recipient.bdId)) {
+    console.error('No valid recipient provided to WhatsAppMessageModal:', recipient);
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg w-full max-w-md p-6">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Chat Unavailable</h3>
+            <p className="text-gray-600 mb-4">No chat recipient available. Please contact your administrator.</p>
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg w-full max-w-md h-[600px] flex flex-col">
@@ -364,9 +549,52 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
             <div>
               <h3 className="font-semibold">{recipientDisplayName}</h3>
               {roleLabel && <p className="text-xs opacity-90">{roleLabel}</p>}
+              {/* Show forwarded by info if available */}
+              {recipient?.forwardedByName && (
+                <p className="text-xs opacity-75">
+                  Forwarded by {recipient.forwardedByName}
+                </p>
+              )}
+              {/* Debug info in development */}
+              {process.env.NODE_ENV === 'development' && (
+                <p className="text-xs opacity-70">
+                  ID: {resolvedRecipient?._id ? `${resolvedRecipient._id.slice(0, 8)}...` : recipientId?.slice(0, 8)}
+                </p>
+              )}
+              {/* Manual refresh button */}
+              <button 
+                onClick={() => {
+                  console.log('Manual refresh triggered');
+                  fetchConversation();
+                }}
+                className="text-xs bg-blue-500 text-white px-2 py-1 rounded mt-1 hover:bg-blue-600"
+              >
+                Refresh Messages
+              </button>
             </div>
           </div>
           <div className="flex items-center space-x-2">
+            {/* Debug button for development */}
+            {/* {process.env.NODE_ENV === 'development' && (
+              <button 
+                onClick={() => {
+                  console.log('Debug info:', {
+                    recipient,
+                    resolvedRecipient,
+                    recipientId,
+                    recipientDisplayName,
+                    messages,
+                    assignableUsers: assignableUsers.length,
+                    allUsers: allUsers.length
+                  });
+                  fetchConversation();
+                }}
+                className="p-1 hover:bg-green-700 rounded"
+                title="Debug"
+              >
+                <RefreshCw size={16} />
+              </button>
+            )} */}
             <button className="p-1 hover:bg-green-700 rounded">
               <Phone size={20} />
             </button>
@@ -406,9 +634,15 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
                     className={`max-w-xs px-4 py-2 rounded-lg ${
                       msg.sender === 'me'
                         ? 'bg-green-600 text-white'
-                        : 'bg-white text-gray-800 border'
+                        : 'bg-gray-200 text-gray-800 border'
                     }`}
                   >
+                    {/* Show sender name for messages from others */}
+                    {msg.sender === 'other' && msg.senderName && (
+                      <p className="text-xs font-semibold mb-1 text-gray-600">
+                        {msg.senderName}
+                      </p>
+                    )}
                     <p className="text-sm">{msg.text}</p>
                     <p className={`text-xs mt-1 ${
                       msg.sender === 'me' ? 'text-green-100' : 'text-gray-500'

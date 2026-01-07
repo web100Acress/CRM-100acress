@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/layout/button';
 import { useToast } from '@/hooks/use-toast';
 import FollowUpModal from '@/features/employee/follow-up/FollowUpModal';
-import WhatsAppMessageModal from '@/features/calling/components/WhatsAppMessageModal';
+import WhatsAppMessageModal from '@/features/calling/components/WhatsAppMessageModal.fixed';
 import CreateLeadFormMobile from '@/layout/CreateLeadForm.mobile';
 import LeadTableMobile from '@/layout/LeadTable.mobile';
 import LeadAdvancedOptionsMobile from '@/layout/LeadAdvancedOptions.mobile';
@@ -108,9 +108,31 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
           }
         );
         const json = await response.json();
-        setAssignableUsers(json.data || []);
+        const users = json.data || [];
+        setAssignableUsers(users);
+        console.log('Assignable users fetched:', users);
       } catch (error) {
         console.error("Error fetching assignable users:", error);
+        // Fallback: try to fetch all users
+        try {
+          const token = localStorage.getItem("token");
+          const response = await fetch(
+            "https://bcrm.100acress.com/api/users",
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+          const json = await response.json();
+          const users = json.data || [];
+          setAssignableUsers(users);
+          console.log('Fallback users fetched:', users);
+        } catch (fallbackError) {
+          console.error("Error fetching fallback users:", fallbackError);
+          setAssignableUsers([]);
+        }
       }
     };
 
@@ -519,6 +541,19 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
             <Download size={16} className={isExporting ? 'animate-spin' : ''} />
             <span className="text-sm">Export</span>
           </button>
+          {/* Debug button for WhatsApp issues */}
+          {process.env.NODE_ENV === 'development' && (
+            <button
+              onClick={() => {
+                console.log('Current assignable users:', assignableUsers);
+                fetchAssignableUsers();
+              }}
+              className="flex items-center justify-center gap-2 px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+            >
+              <RefreshCw size={16} />
+              <span className="text-sm">Debug</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -723,60 +758,90 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
 
     let recipientUser = null;
     
+    console.log('WhatsApp chat attempt:', {
+      leadId: lead._id,
+      leadName: lead.name,
+      currentUserRole,
+      currentUserId,
+      assignedTo: lead.assignedTo,
+      assignableUsersCount: users.length,
+      assignmentChain: lead.assignmentChain
+    });
+    
     // If current user is BD/employee and lead is assigned to them
     if ((currentUserRole === 'bd' || currentUserRole === 'employee') && 
         String(lead.assignedTo) === String(currentUserId)) {
       
-      console.log('Assignment chain structure:', lead.assignmentChain);
+      console.log('BD user trying to chat for their assigned lead');
       
-      // Check if lead has assignment chain to find who assigned it
-      if (lead.assignmentChain && lead.assignmentChain.length > 0) {
-        // Get the most recent assignment (last in chain)
-        const lastAssignment = lead.assignmentChain[lead.assignmentChain.length - 1];
-        console.log('Last assignment:', lastAssignment);
-        
-        // Try to find the user who assigned this lead
-        // Check if assignedBy is an object with user details
-        if (lastAssignment?.assignedBy && typeof lastAssignment.assignedBy === 'object') {
-          const assignedById = lastAssignment.assignedBy._id || lastAssignment.assignedBy;
-          recipientUser = users.find((u) => String(u?._id) === String(assignedById));
-          console.log('Found assignedBy in assignment chain:', lastAssignment.assignedBy);
-        }
-        // Check if assignedBy is just an ID string
-        else if (lastAssignment?.assignedBy) {
-          recipientUser = users.find((u) => String(u?._id) === String(lastAssignment.assignedBy));
-          console.log('Looking for assignedBy ID:', lastAssignment.assignedBy);
-        }
-        // If no assignedBy in assignment chain, check the lead's assignedBy field
-        else if (lead.assignedBy) {
-          recipientUser = users.find((u) => String(u?._id) === String(lead.assignedBy));
-          console.log('Looking for lead.assignedBy:', lead.assignedBy);
-        }
-        
-        // If still not found, try to find any HOD/Boss
-        if (!recipientUser) {
-          console.log('Recipient not found, looking for HOD/Boss');
-          recipientUser = byRole('hod') || byRole('head-admin') || byRole('head') || byRole('boss') || byRole('super-admin');
-        }
-      } else {
-        // No assignment chain, find HOD/Boss
-        console.log('No assignment chain, finding HOD/Boss');
-        recipientUser = byRole('hod') || byRole('head-admin') || byRole('head') || byRole('boss') || byRole('super-admin');
+      // For BD users, find HOD or Boss to chat with
+      console.log('Looking for HOD or Boss in assignable users...');
+      
+      // Try to find HOD first
+      recipientUser = byRole('hod') || byRole('head-admin') || byRole('head');
+      
+      if (!recipientUser) {
+        console.log('HOD not found, looking for Boss...');
+        recipientUser = byRole('boss') || byRole('super-admin');
       }
+      
+      if (!recipientUser) {
+        console.log('Boss not found, trying to find from assignment chain...');
+        // Check if lead has assignment chain to find who assigned it
+        if (lead.assignmentChain && lead.assignmentChain.length > 0) {
+          const lastAssignment = lead.assignmentChain[lead.assignmentChain.length - 1];
+          console.log('Last assignment:', lastAssignment);
+          
+          // Try to find the user who assigned this lead
+          if (lastAssignment?.assignedBy) {
+            const assignedById = typeof lastAssignment.assignedBy === 'object' 
+              ? lastAssignment.assignedBy._id || lastAssignment.assignedBy.id
+              : lastAssignment.assignedBy;
+            
+            recipientUser = users.find((u) => String(u?._id) === String(assignedById));
+            console.log('Found assignedBy in assignment chain:', recipientUser);
+          }
+        }
+      }
+      
+      // Last resort - any available user
+      if (!recipientUser && users.length > 0) {
+        console.log('Using any available user as last resort');
+        recipientUser = users[0];
+      }
+      
     } else {
       // For HODs/Boss: chat with the assigned user
+      console.log('HOD/Boss trying to chat with assigned user');
       const assignedUserId = lead?.assignedTo;
       const assignedUser = assignedUserId
         ? users.find((u) => String(u?._id) === String(assignedUserId))
         : null;
       
-      recipientUser = assignedUser || byRole('boss') || byRole('super-admin') || byRole('hod') || byRole('head-admin') || byRole('head') || byRole('team-leader') || byRole('bd') || byRole('employee') || users[0];
+      console.log('Found assigned user:', assignedUser);
+      
+      // If lead is assigned to someone, chat with that person
+      if (assignedUser) {
+        recipientUser = assignedUser;
+      } else {
+        // Fallback: try to find any available user
+        recipientUser = byRole('boss') || byRole('super-admin') || byRole('hod') || byRole('head-admin') || byRole('head') || byRole('team-leader') || byRole('bd') || byRole('employee') || users[0];
+      }
     }
 
+    console.log('Final recipient user:', recipientUser);
+    console.log('Lead assignment info:', { 
+      leadId: lead._id, 
+      assignedTo: lead.assignedTo, 
+      currentUserId,
+      recipientUserId: recipientUser?._id 
+    });
+
     if (!recipientUser?._id) {
+      console.error('No valid recipient found. Available users:', users.map(u => ({ _id: u._id, name: u.name, role: u.role })));
       toast({
         title: 'Error',
-        description: 'No chat recipient available',
+        description: 'No chat recipient available. Please contact admin.',
         variant: 'destructive'
       });
       return;
@@ -795,15 +860,100 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       }
     });
 
+    // Extract forwarded by name from assignment chain
+    let forwardedByName = null;
+    let assignedByName = null;
+    
+    if (lead.assignmentChain && lead.assignmentChain.length > 0) {
+      const firstAssignment = lead.assignmentChain[0];
+      forwardedByName = 
+        firstAssignment?.assignedBy?.name || 
+        firstAssignment?.assignedByUser?.name ||
+        firstAssignment?.forwardedBy?.name ||
+        firstAssignment?.fromUser?.name ||
+        firstAssignment?.sender?.name ||
+        firstAssignment?.assignedByName ||
+        firstAssignment?.forwarderName ||
+        firstAssignment?.name ||
+        null;
+      
+      assignedByName = forwardedByName; // Same person for now
+    }
+    
+    // For BD users (like Test): the recipient should be the person who assigned/forwarded the lead
+    if ((currentUserRole === 'bd' || currentUserRole === 'employee') && 
+        String(lead.assignedTo) === String(currentUserId)) {
+      
+      console.log('BD user (Test) trying to chat - finding who assigned the lead');
+      
+      // Find the person who assigned this lead
+      if (lead.assignmentChain && lead.assignmentChain.length > 0) {
+        const lastAssignment = lead.assignmentChain[lead.assignmentChain.length - 1];
+        console.log('Last assignment:', lastAssignment);
+        
+        if (lastAssignment?.assignedBy) {
+          const assignedById = typeof lastAssignment.assignedBy === 'object' 
+            ? lastAssignment.assignedBy._id || lastAssignment.assignedBy.id
+            : lastAssignment.assignedBy;
+          
+          recipientUser = users.find((u) => String(u?._id) === String(assignedById));
+          console.log('Found assignedBy in assignment chain:', recipientUser);
+        }
+      }
+      
+      // If no assignment chain, find HOD or Boss
+      if (!recipientUser) {
+        recipientUser = byRole('hod') || byRole('head-admin') || byRole('head') ||
+                          byRole('boss') || byRole('super-admin') ||
+                          users[0];
+        console.log('Using HOD/Boss as recipient for BD user:', recipientUser);
+      }
+      
+    } else {
+      // For HODs/Boss: chat with the assigned user
+      console.log('HOD/Boss trying to chat with assigned user');
+      const assignedUserId = lead?.assignedTo;
+      const assignedUser = assignedUserId
+        ? users.find((u) => String(u?._id) === String(assignedUserId))
+        : null;
+      
+      console.log('Found assigned user:', assignedUser);
+      
+      // If lead is assigned to someone, chat with that person
+      if (assignedUser) {
+        recipientUser = assignedUser;
+      } else {
+        // Fallback: try to find any available user
+        recipientUser = byRole('boss') || byRole('super-admin') || byRole('hod') || byRole('head-admin') || byRole('head') || byRole('team-leader') || byRole('bd') || byRole('employee') || users[0];
+      }
+    }
+
     const recipientData = {
       _id: recipientUser._id,
       id: recipientUser._id,
       name: recipientUser.name || recipientUser.userName || recipientUser.email || 'User',
       email: recipientUser.email || recipientUser.userEmail || '',
-      role: recipientUser.role || recipientUser.userRole
+      role: recipientUser.role || recipientUser.userRole,
+      // Add all available data to help with resolution
+      userName: recipientUser.userName,
+      fullName: recipientUser.fullName,
+      userEmail: recipientUser.userEmail,
+      userRole: recipientUser.userRole,
+      // Add forwarded by and assigned by names
+      forwardedByName: forwardedByName,
+      assignedByName: assignedByName, // Use separate assigned by name
+      // Add lead assignment info
+      assignedTo: lead.assignedTo,
+      leadName: lead.name
     };
     
     console.log('Setting WhatsApp recipient:', recipientData);
+    console.log('Recipient name priority check:', {
+      directName: recipientUser.name,
+      userName: recipientUser.userName,
+      email: recipientUser.email,
+      finalName: recipientData.name
+    });
     setWhatsAppRecipient(recipientData);
     setShowWhatsAppModal(true);
   };
