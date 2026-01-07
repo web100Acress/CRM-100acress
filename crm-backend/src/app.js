@@ -9,22 +9,29 @@ const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
   'http://localhost:5000',
+  'http://localhost:5174',
+  'http://localhost:8080',
+  'http://localhost:4173',
   'http://127.0.0.1:5173',
   'http://127.0.0.1:3000',
+  'http://127.0.0.1:5000',
+  'http://127.0.0.1:5174',
+  'http://127.0.0.1:8080',
+  'http://127.0.0.1:4173',
   'https://100acress.com',
   'https://www.100acress.com',  // ✅ added
   'https://api.100acress.com',
   'https://bcrm.100acress.com',
   'http://localhost:3500',
   'https://bcrm.100acress.com',
-  'https://crm.100acress.com'
-  
+  'https://crm.100acress.com',
+  'null' // Allow file:// protocol for local HTML files
 ];
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+    // Allow requests with no origin (like mobile apps, curl requests, or file://)
+    if (!origin || origin === 'null') return callback(null, true);
     
     // Check if the origin is in the allowed list
     if (allowedOrigins.indexOf(origin) === -1) {
