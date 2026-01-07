@@ -324,7 +324,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
         ? 'http://localhost:5001/api/messages'
         : 'https://bcrm.100acress.com/api/messages';
       
-      // Fetch conversation for the specific user pair
+      // Fetch conversation for current user with recipient
       const response = await fetch(`${baseUrl}/conversation/${finalRecipientId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -348,6 +348,9 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
             const currentUserIdStr = String(currentUserId);
             const finalRecipientIdStr = String(finalRecipientId);
             
+            // Show messages where:
+            // 1. Current user sent to recipient
+            // 2. Recipient sent to current user
             const isFromMe = msgSenderId === currentUserIdStr && msgRecipientId === finalRecipientIdStr;
             const isFromOther = msgSenderId === finalRecipientIdStr && msgRecipientId === currentUserIdStr;
             
@@ -376,7 +379,11 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
           });
           
           console.log('Final formatted messages:', formattedMessages.length);
-          console.log('Formatted:', formattedMessages.map(m => ({ text: m.text, sender: m.sender })));
+          console.log('Formatted:', formattedMessages.map(m => ({ 
+            text: m.text, 
+            sender: m.sender,
+            senderName: m.senderName 
+          })));
           
           setMessages(formattedMessages);
         } else {

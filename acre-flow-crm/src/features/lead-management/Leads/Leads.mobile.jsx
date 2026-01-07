@@ -59,22 +59,29 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
   const [forwardedLeadData, setForwardedLeadData] = useState(null);
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
   const [whatsAppRecipient, setWhatsAppRecipient] = useState(null);
-  const currentUserId = localStorage.getItem("userId");
-  const currentUserRole = localStorage.getItem("userRole");
+  const currentUserId = localStorage.getItem('userId');
+  const currentUserRole = localStorage.getItem('userRole');
 
   // Fetch real stats data
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem('token');
         const response = await fetch("https://bcrm.100acress.com/api/leads", {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         });
+        
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
+        
         const json = await response.json();
-        const leads = json.data || [];
+        console.log('API response:', json);
+        
+        const leads = json.data || json.payload || json || [];
+        console.log('Leads extracted:', leads);
         
         // Calculate real stats
         const totalLeads = leads.length;
@@ -97,7 +104,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
 
     const fetchAssignableUsers = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem('token');
         const response = await fetch(
           "https://bcrm.100acress.com/api/leads/assignable-users",
           {
@@ -115,7 +122,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         console.error("Error fetching assignable users:", error);
         // Fallback: try to fetch all users
         try {
-          const token = localStorage.getItem("token");
+          const token = localStorage.getItem('token');
           const response = await fetch(
             "https://bcrm.100acress.com/api/users",
             {
@@ -279,9 +286,10 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       
       if (response.ok) {
         const data = await response.json();
+        console.log('Fetch leads response:', data);
         
         // Sort leads by createdAt (newest first)
-        const sortedLeads = (data.data || []).sort((a, b) => {
+        const sortedLeads = (data.data || data.payload || data || []).sort((a, b) => {
           const dateA = new Date(a.createdAt || 0);
           const dateB = new Date(b.createdAt || 0);
           return dateB - dateA; // Newest first
@@ -901,11 +909,25 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         }
       }
       
-      // If no assignment chain, find HOD or Boss
+      // If no assignment chain, find HOD or Boss (should be Anurag)
       if (!recipientUser) {
-        recipientUser = byRole('hod') || byRole('head-admin') || byRole('head') ||
-                          byRole('boss') || byRole('super-admin') ||
-                          users[0];
+        // Look specifically for Anurag or any HOD/Boss role
+        recipientUser = users.find((u) => 
+          (u?.name?.toLowerCase().includes('anurag')) ||
+          (u?.role === 'hod') || 
+          (u?.role === 'head-admin') || 
+          (u?.role === 'head') ||
+          (u?.role === 'boss') || 
+          (u?.role === 'super-admin')
+        );
+        
+        // If still not found, get first HOD/Boss
+        if (!recipientUser) {
+          recipientUser = byRole('hod') || byRole('head-admin') || byRole('head') ||
+                            byRole('boss') || byRole('super-admin') ||
+                            users[0];
+        }
+        
         console.log('Using HOD/Boss as recipient for BD user:', recipientUser);
       }
       
@@ -919,14 +941,6 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       
       console.log('Found assigned user:', assignedUser);
       
-      // If lead is assigned to someone, chat with that person
-      if (assignedUser) {
-        recipientUser = assignedUser;
-      } else {
-        // Fallback: try to find any available user
-        recipientUser = byRole('boss') || byRole('super-admin') || byRole('hod') || byRole('head-admin') || byRole('head') || byRole('team-leader') || byRole('bd') || byRole('employee') || users[0];
-      }
-    }
 
     const recipientData = {
       _id: recipientUser._id,
@@ -940,20 +954,15 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       userEmail: recipientUser.userEmail,
       userRole: recipientUser.userRole,
       // Add forwarded by and assigned by names
-      forwardedByName: forwardedByName,
-      assignedByName: assignedByName, // Use separate assigned by name
+      forwardedByName: null,
+      assignedByName: null, // Use separate assigned by name
       // Add lead assignment info
       assignedTo: lead.assignedTo,
       leadName: lead.name
     };
     
     console.log('Setting WhatsApp recipient:', recipientData);
-    console.log('Recipient name priority check:', {
-      directName: recipientUser.name,
-      userName: recipientUser.userName,
-      email: recipientUser.email,
-      finalName: recipientData.name
-    });
+    console.log('Current user:', currentUserId, 'will chat with:', recipientUser._id);
     setWhatsAppRecipient(recipientData);
     setShowWhatsAppModal(true);
   };
@@ -965,7 +974,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
 
   const updateLeadStatus = async (newStatus) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem('token');
       
       // Use localhost for development, change back to production when ready
       const apiUrl = process.env.NODE_ENV === 'development' 
@@ -1023,7 +1032,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
   const handleForwardLead = async (leadId, selectedEmployeeId = null) => {
     try {
       setForwardingLead(leadId);
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem('token');
       
       console.log('Attempting to forward lead:', leadId);
       console.log('Token:', token ? 'Present' : 'Missing');
@@ -1326,6 +1335,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     <div className="min-h-screen bg-gray-50">
       {renderMobileHeader()}
       
+      <div className="relative">
       {/* Leads List */}
       <div className="p-4 space-y-4 pb-20 md:pb-4">
         {filteredLeads.map((lead) => (
