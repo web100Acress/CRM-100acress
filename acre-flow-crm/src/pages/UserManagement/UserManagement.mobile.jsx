@@ -398,7 +398,7 @@ const UserManagementMobile = ({ userRole = 'super-admin' }) => {
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Joined:</span>
                   <span className="text-sm font-medium">
-                    {new Date(user.createdAt).toLocaleDateString()}
+                    {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
                   </span>
                 </div>
               </div>

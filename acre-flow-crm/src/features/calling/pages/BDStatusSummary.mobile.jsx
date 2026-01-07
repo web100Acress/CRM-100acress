@@ -610,7 +610,7 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
                 )}
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <Calendar size={14} />
-                  <span>Joined: {new Date(bd.createdAt).toLocaleDateString()}</span>
+                  <span>Joined: {bd.createdAt ? new Date(bd.createdAt).toLocaleDateString() : 'N/A'}</span>
                 </div>
               </div>
 
