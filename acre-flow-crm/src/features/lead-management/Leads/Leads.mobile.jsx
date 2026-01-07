@@ -183,6 +183,32 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
   
   const [currentBannerIndex] = useState(0);
 
+  // Function to check if lead was forwarded by head admin
+  const isForwardedByHeadAdmin = (lead) => {
+    console.log(`Checking lead ${lead._id || lead.id} for head admin forwarding.`);
+    console.log('Lead assignmentChain:', lead.assignmentChain);
+
+    if (!lead.assignmentChain || lead.assignmentChain.length === 0) {
+      console.log('No assignment chain found or chain is empty.');
+      return false;
+    }
+    
+    const result = lead.assignmentChain.some(assignment => {
+      const assignedBy = assignment.assignedBy || assignment.assignedByUser;
+      console.log('Current assignment:', assignment);
+      console.log('Assigned by:', assignedBy);
+      const isHeadAdmin = assignedBy && (
+        assignedBy.role === 'head-admin' || 
+        assignedBy.role === 'head' ||
+        (assignedBy.name && assignedBy.name.toLowerCase().includes('head admin'))
+      );
+      console.log('Is assigned by head admin?', isHeadAdmin);
+      return isHeadAdmin;
+    });
+    console.log(`Final result for lead ${lead._id || lead.id}: ${result}`);
+    return result;
+  };
+
   // Function to get assigned user name
   const getAssignedUserName = (lead) => {
     // Check if assignedTo is already a name (string)
@@ -1080,11 +1106,12 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
                     <PhoneCall size={18} />
                     <span className="text-xs mt-1 font-medium">Call</span>
                   </button>
-                  {(currentUserRole === 'employee' || currentUserRole === 'boss' || currentUserRole === 'super-admin') && (
+                  {/* WhatsApp button for forwarded leads */}
+                  {lead.assignedTo && lead.assignedTo !== 'Unassigned' && lead.assignedTo !== currentUserId && (
                     <button
                       onClick={() => handleWhatsAppChat(lead)}
-                      className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-md hover:shadow-lg"
-                      title="WhatsApp"
+                      className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-lg hover:from-green-600 hover:to-teal-600 transition-all duration-200 shadow-md hover:shadow-lg"
+                      title="WhatsApp (Forwarded Lead)"
                     >
                       <MessageCircle size={18} />
                       <span className="text-xs mt-1 font-medium">WhatsApp</span>
