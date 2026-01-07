@@ -847,12 +847,36 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       }
     });
 
+    // Extract forwarded by name from assignment chain
+    let forwardedByName = null;
+    if (lead.assignmentChain && lead.assignmentChain.length > 0) {
+      const firstAssignment = lead.assignmentChain[0];
+      forwardedByName = 
+        firstAssignment?.assignedBy?.name || 
+        firstAssignment?.assignedByUser?.name ||
+        firstAssignment?.forwardedBy?.name ||
+        firstAssignment?.fromUser?.name ||
+        firstAssignment?.sender?.name ||
+        firstAssignment?.assignedByName ||
+        firstAssignment?.forwarderName ||
+        firstAssignment?.name ||
+        null;
+    }
+
     const recipientData = {
       _id: recipientUser._id,
       id: recipientUser._id,
       name: recipientUser.name || recipientUser.userName || recipientUser.email || 'User',
       email: recipientUser.email || recipientUser.userEmail || '',
-      role: recipientUser.role || recipientUser.userRole
+      role: recipientUser.role || recipientUser.userRole,
+      // Add all available data to help with resolution
+      userName: recipientUser.userName,
+      fullName: recipientUser.fullName,
+      userEmail: recipientUser.userEmail,
+      userRole: recipientUser.userRole,
+      // Add forwarded by and assigned by names
+      forwardedByName: forwardedByName,
+      assignedByName: forwardedByName // Use forwarded by as assigned by for now
     };
     
     console.log('Setting WhatsApp recipient:', recipientData);
