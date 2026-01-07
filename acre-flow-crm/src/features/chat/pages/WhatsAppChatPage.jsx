@@ -36,15 +36,15 @@ const WhatsAppChatPage = () => {
   const messagesContainerRef = useRef(null);
   const messagesEndRef = useRef(null);
 
-  const userRole = localStorage.getItem('userRole') || 'employee';
+  const userRole = localStorage.getItem('userRole') || 'bd';
 
   const getRoleLabel = (role) => {
     if (!role) return null;
     const r = String(role).toLowerCase();
-    if (r === 'super-admin') return 'Super Admin';
-    if (r === 'head-admin' || r === 'head') return 'HOD';
+    if (r === 'boss' || r === 'super-admin') return 'Boss';
+    if (r === 'hod' || r === 'head-admin' || r === 'head') return 'HOD';
     if (r === 'team-leader') return 'Team Leader';
-    if (r === 'boss') return 'Boss';
+    if (r === 'bd' || r === 'employee') return 'BD';
     return null;
   };
 
@@ -107,7 +107,7 @@ const WhatsAppChatPage = () => {
     }
   };
 
-  const isManagement = userRole === 'super-admin' || userRole === 'head-admin';
+  const isManagement = userRole === 'boss' || userRole === 'hod' || userRole === 'super-admin' || userRole === 'head-admin';
 
   const fetchAssignableUsers = async () => {
     try {

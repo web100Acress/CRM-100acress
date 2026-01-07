@@ -145,13 +145,16 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
   // Get role-specific dashboard title
   const getDashboardTitle = () => {
     switch (userRole) {
+      case 'boss':
       case 'super-admin':
         return 'Super Admin Dashboard';
+      case 'hod':
       case 'head-admin':
       case 'head':
         return 'Head Dashboard';
       case 'team-leader':
         return 'Team Leader Dashboard';
+      case 'bd':
       case 'employee':
         return 'Employee Dashboard';
       default:
@@ -162,13 +165,16 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
   // Get role-specific dashboard description
   const getDashboardDescription = () => {
     switch (userRole) {
+      case 'boss':
       case 'super-admin':
         return 'Manage entire system and all users';
+      case 'hod':
       case 'head-admin':
       case 'head':
         return 'Manage teams and performance';
       case 'team-leader':
         return 'Lead your team to success';
+      case 'bd':
       case 'employee':
         return 'Track your performance and tasks';
       default:
@@ -198,6 +204,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       console.log('Current assignment:', assignment);
       console.log('Assigned by:', assignedBy);
       const isHeadAdmin = assignedBy && (
+        assignedBy.role === 'hod' ||
         assignedBy.role === 'head-admin' || 
         assignedBy.role === 'head' ||
         (assignedBy.name && assignedBy.name.toLowerCase().includes('head admin'))
@@ -495,7 +502,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
 
         {/* Action Buttons */}
         <div className="flex gap-2 mt-3">
-          {(userRole === "boss" || userRole === "super-admin" || userRole === "head-admin" || userRole === "admin" || userRole === "crm_admin") && (
+          {(userRole === "boss" || userRole === "super-admin" || userRole === "hod" || userRole === "head-admin" || userRole === "admin" || userRole === "crm_admin") && (
             <button
               onClick={() => setShowCreateLead(true)}
               className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
@@ -719,10 +726,14 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
 
     const recipientUser =
       (assignedUser && String(assignedUser?._id) !== String(currentUserId) ? assignedUser : null) ||
-      byRole('team-leader') ||
+      byRole('boss') ||
+      byRole('super-admin') ||
+      byRole('hod') ||
       byRole('head-admin') ||
       byRole('head') ||
-      byRole('super-admin') ||
+      byRole('team-leader') ||
+      byRole('bd') ||
+      byRole('employee') ||
       users[0];
 
     if (!recipientUser?._id) {
@@ -906,33 +917,38 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     setSelectedEmployee(employee);
   };
 
+  const canForwardLead = (lead) => {
+    // Lead should not be forwarded back to the same user
+    if (lead?.assignedTo && String(lead.assignedTo) === String(currentUserId)) return false;
+
+    const role = (currentUserRole || userRole || '').toString();
+
+    // Define forwarding hierarchy
+    // New roles: boss -> hod -> sales_head -> bd
+    // Backward compatibility: super-admin/head-admin/employee
+    const forwardHierarchy = {
+      'boss': ['hod'],
+      'hod': ['sales_head', 'bd'],
+      'sales_head': ['bd'],
+      'team-leader': ['bd'],
+      'admin': ['sales_head'],
+      'crm_admin': ['hod'],
+      // Backwards compat
+      'super-admin': ['head-admin'],
+      'head-admin': ['sales_head', 'employee'],
+    };
+
+    const possibleRoles = forwardHierarchy[role];
+    if (!possibleRoles || possibleRoles.length === 0) return false;
+
+    const users = Array.isArray(assignableUsers) ? assignableUsers : [];
+    return users.some((u) => possibleRoles.includes(u?.role || u?.userRole));
+  };
+
   const confirmForward = () => {
     if (selectedLeadForForward && selectedEmployee) {
       handleForwardLead(selectedLeadForForward._id, selectedEmployee._id);
     }
-  };
-
-  const canForwardLead = (lead) => {
-    // Only the current assignee can forward the lead
-    if (lead.assignedTo !== currentUserId) return false;
-
-    // Define forwarding hierarchy - only BD and team-leader can forward
-    const forwardHierarchy = {
-      "super-admin": ["head-admin"],
-      "head-admin": ["sales_head", "employee"], // head-admin can forward to sales_head and employee
-      "sales_head": ["employee"], // sales_head (BD) can forward to employee
-      "team-leader": ["employee"], // team-leader can forward to employee
-      "admin": ["sales_head"],
-      "boss": ["head-admin"],
-      "crm_admin": ["head-admin"],
-    };
-
-    const possibleRoles = forwardHierarchy[currentUserRole];
-    
-    if (!possibleRoles) return false;
-    
-    // Check if there are any assignable users with the target roles
-    return assignableUsers.some((user) => possibleRoles.includes(user.role));
   };
 
   const fetchAssignmentChain = async (leadId) => {
@@ -1127,7 +1143,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                 </div>
 
                 {/* Enhanced Action Buttons */}
-                <div className={`grid ${currentUserRole === 'employee' ? 'grid-cols-4' : 'grid-cols-4'} gap-2`}>
+                <div className={`grid ${currentUserRole === 'bd' || currentUserRole === 'employee' ? 'grid-cols-4' : 'grid-cols-4'} gap-2`}>
                   <button
                     onClick={() => handleCallLead(lead.phone, lead._id, lead.name)}
                     className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200 shadow-md hover:shadow-lg"
@@ -1165,7 +1181,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                       onClick={() => handleForwardClick(lead)}
                       disabled={forwardingLead === lead._id}
                       className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Forward to employee"
+                      title="Forward"
                     >
                       <ForwardIcon size={18} />
                       <span className="text-xs mt-1 font-medium">
@@ -1176,7 +1192,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                 </div>
 
                 {/* Status Update Button - Only for Employees */}
-                {(currentUserRole === 'employee' || currentUserRole === 'sales_head' || currentUserRole === 'team-leader') && (
+                {(currentUserRole === 'bd' || currentUserRole === 'employee' || currentUserRole === 'sales_head' || currentUserRole === 'team-leader') && (
                   <div className="mt-3 pt-3 border-t border-gray-100">
                     <button
                       onClick={() => handleStatusUpdate(lead)}
@@ -1667,11 +1683,12 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                             const forwardHierarchy = {
                               "super-admin": ["head-admin"],
                               "head-admin": ["sales_head", "employee"],
-                              "sales_head": ["employee"],
-                              "team-leader": ["employee"],
+                              "boss": ["hod"],
+                              "hod": ["sales_head", "bd"],
+                              "sales_head": ["bd"],
+                              "team-leader": ["bd"],
                               "admin": ["sales_head"],
-                              "boss": ["head-admin"],
-                              "crm_admin": ["head-admin"],
+                              "crm_admin": ["hod"],
                             };
                             const possibleRoles = forwardHierarchy[currentUserRole];
                             return possibleRoles && possibleRoles.includes(user.role) && 
@@ -1695,12 +1712,12 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                               <div className="text-center">
                                 <p className="font-medium text-gray-900 text-sm">{employee.name}</p>
                                 <Badge className={`text-xs font-medium shadow-sm mt-1 ${
-                                  employee.role === 'employee' ? 'bg-blue-100 text-blue-800 border-blue-200' :
+                                  (employee.role === 'bd' || employee.role === 'employee') ? 'bg-blue-100 text-blue-800 border-blue-200' :
                                   employee.role === 'sales_head' ? 'bg-green-100 text-green-800 border-green-200' :
                                   employee.role === 'team-leader' ? 'bg-purple-100 text-purple-800 border-purple-200' :
                                   'bg-gray-100 text-gray-800 border-gray-200'
                                 }`}>
-                                  BD {employee.role.replace('_', ' ').toUpperCase()}
+                                  {(employee.role === 'bd' || employee.role === 'employee') ? 'BD' : employee.role.replace('_', ' ').toUpperCase()}
                                 </Badge>
                               </div>
                             </div>
