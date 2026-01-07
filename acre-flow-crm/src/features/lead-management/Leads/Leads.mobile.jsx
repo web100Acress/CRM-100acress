@@ -186,14 +186,24 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
   // Function to get assigned user name
   const getAssignedUserName = (lead) => {
     // Check if assignedTo is already a name (string)
-    if (typeof lead.assignedTo === 'string' && lead.assignedTo !== 'Unassigned') {
+    if (typeof lead.assignedTo === 'string' && lead.assignedTo !== 'Unassigned' && !lead.assignedTo.match(/^[0-9a-fA-F]{24}$/)) {
       return lead.assignedTo;
     }
     
     // Check assignmentChain for user info
     if (lead.assignmentChain && lead.assignmentChain.length > 0) {
       const currentAssignment = lead.assignmentChain[lead.assignmentChain.length - 1];
-      return currentAssignment?.name || 'Unassigned';
+      if (currentAssignment?.name) {
+        return currentAssignment.name;
+      }
+    }
+    
+    // If assignedTo is a MongoDB ObjectId, look up the user name from assignableUsers
+    if (lead.assignedTo && assignableUsers && assignableUsers.length > 0) {
+      const assignedUser = assignableUsers.find(user => String(user._id) === String(lead.assignedTo));
+      if (assignedUser && assignedUser.name) {
+        return assignedUser.name;
+      }
     }
     
     return 'Unassigned';
