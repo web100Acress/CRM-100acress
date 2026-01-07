@@ -718,23 +718,43 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
   const handleWhatsAppChat = (lead) => {
     const users = Array.isArray(assignableUsers) ? assignableUsers : [];
     const byRole = (role) => users.find((u) => u?.role === role || u?.userRole === role);
+    const currentUserId = localStorage.getItem('userId');
+    const currentUserRole = localStorage.getItem('userRole') || localStorage.getItem('role');
 
-    const assignedUserId = lead?.assignedTo;
-    const assignedUser = assignedUserId
-      ? users.find((u) => String(u?._id) === String(assignedUserId))
-      : null;
-
-    const recipientUser =
-      (assignedUser && String(assignedUser?._id) !== String(currentUserId) ? assignedUser : null) ||
-      byRole('boss') ||
-      byRole('super-admin') ||
-      byRole('hod') ||
-      byRole('head-admin') ||
-      byRole('head') ||
-      byRole('team-leader') ||
-      byRole('bd') ||
-      byRole('employee') ||
-      users[0];
+    let recipientUser = null;
+    
+    // If current user is BD/employee and lead is assigned to them
+    if ((currentUserRole === 'bd' || currentUserRole === 'employee') && 
+        String(lead.assignedTo) === String(currentUserId)) {
+      
+      // Check if lead has assignment chain to find who assigned it
+      if (lead.assignmentChain && lead.assignmentChain.length > 0) {
+        // Get the most recent assignment (last in chain)
+        const lastAssignment = lead.assignmentChain[lead.assignmentChain.length - 1];
+        
+        // Try to find the user who assigned this lead
+        if (lastAssignment?.assignedBy || lastAssignment?.assignedByUser) {
+          const assignedById = lastAssignment.assignedBy?._id || lastAssignment.assignedByUser?._id || lastAssignment.assignedBy;
+          recipientUser = users.find((u) => String(u?._id) === String(assignedById));
+        }
+        
+        // If not found in assignment chain, try to find any HOD/Boss
+        if (!recipientUser) {
+          recipientUser = byRole('hod') || byRole('head-admin') || byRole('head') || byRole('boss') || byRole('super-admin');
+        }
+      } else {
+        // No assignment chain, find HOD/Boss
+        recipientUser = byRole('hod') || byRole('head-admin') || byRole('head') || byRole('boss') || byRole('super-admin');
+      }
+    } else {
+      // For HODs/Boss: chat with the assigned user
+      const assignedUserId = lead?.assignedTo;
+      const assignedUser = assignedUserId
+        ? users.find((u) => String(u?._id) === String(assignedUserId))
+        : null;
+      
+      recipientUser = assignedUser || byRole('boss') || byRole('super-admin') || byRole('hod') || byRole('head-admin') || byRole('head') || byRole('team-leader') || byRole('bd') || byRole('employee') || users[0];
+    }
 
     if (!recipientUser?._id) {
       toast({
@@ -744,6 +764,19 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       });
       return;
     }
+
+    console.log('WhatsApp chat initiated:', {
+      leadId: lead._id,
+      currentUserRole,
+      currentUserId,
+      assignedTo: lead.assignedTo,
+      assignmentChain: lead.assignmentChain,
+      recipientUser: {
+        _id: recipientUser._id,
+        name: recipientUser.name,
+        role: recipientUser.role
+      }
+    });
 
     setWhatsAppRecipient({
       _id: recipientUser._id,
@@ -947,6 +980,46 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
 
   const isAssignedLead = (lead) => {
     return !!(lead?.assignedTo && lead.assignedTo !== 'Unassigned');
+  };
+
+  const isWhatsAppButtonVisible = (lead) => {
+    // For BDs: Show WhatsApp button if lead is assigned to them
+    if (currentUserRole === 'bd' || currentUserRole === 'employee') {
+      const isAssignedToCurrentUser = String(lead.assignedTo) === String(currentUserId);
+      const isVisible = isAssignedLead(lead) && isAssignedToCurrentUser;
+      
+      console.log('WhatsApp button visibility (BD):', {
+        leadId: lead._id,
+        leadName: lead.name,
+        assignedTo: lead.assignedTo,
+        currentUserId,
+        currentUserRole,
+        isAssignedLead: isAssignedLead(lead),
+        isAssignedToCurrentUser,
+        finalVisibility: isVisible
+      });
+      
+      return isVisible;
+    }
+    
+    // For HODs/Boss: Show WhatsApp button for leads assigned to others (not themselves)
+    const isVisible = isAssignedLead(lead) && 
+      String(lead.assignedTo) !== String(currentUserId) && 
+      !((currentUserRole === 'hod' || currentUserRole === 'head-admin') && isBossToHodLead(lead));
+    
+    console.log('WhatsApp button visibility (HOD/Boss):', {
+      leadId: lead._id,
+      leadName: lead.name,
+      assignedTo: lead.assignedTo,
+      currentUserId,
+      currentUserRole,
+      isAssignedLead: isAssignedLead(lead),
+      isNotCurrentUser: String(lead.assignedTo) !== String(currentUserId),
+      isNotBossToHodLead: !((currentUserRole === 'hod' || currentUserRole === 'head-admin') && isBossToHodLead(lead)),
+      finalVisibility: isVisible
+    });
+    
+    return isVisible;
   };
 
   const isBossToHodLead = (lead) => {
@@ -1188,12 +1261,12 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                     <PhoneCall size={18} />
                     <span className="text-xs mt-1 font-medium">Call</span>
                   </button>
-                  {/* WhatsApp button for forwarded leads */}
-                  {isAssignedLead(lead) && String(lead.assignedTo) !== String(currentUserId) && !((currentUserRole === 'hod' || currentUserRole === 'head-admin') && isBossToHodLead(lead)) && (
+                  {/* WhatsApp button for assigned leads */}
+                  {isWhatsAppButtonVisible(lead) && (
                     <button
                       onClick={() => handleWhatsAppChat(lead)}
                       className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-lg hover:from-green-600 hover:to-teal-600 transition-all duration-200 shadow-md hover:shadow-lg"
-                      title="WhatsApp (Forwarded Lead)"
+                      title={currentUserRole === 'bd' || currentUserRole === 'employee' ? "WhatsApp (Your Lead)" : "WhatsApp (Forwarded Lead)"}
                     >
                       <MessageCircle size={18} />
                       <span className="text-xs mt-1 font-medium">WhatsApp</span>

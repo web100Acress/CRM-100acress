@@ -131,12 +131,14 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
           
           const formattedMessages = data.data.map(msg => {
             const isMe = msg.senderId === currentUserId;
-            console.log(`Message: ${msg.message.substring(0, 20)}... | Sender: ${msg.senderId} | IsMe: ${isMe}`);
+            console.log(`Message: ${msg.message.substring(0, 20)}... | Sender: ${msg.senderName || msg.senderId} | IsMe: ${isMe}`);
             
             return {
               id: msg._id,
               text: msg.message,
               sender: isMe ? 'me' : 'other',
+              senderName: isMe ? 'You' : (msg.senderName || 'Unknown'),
+              senderRole: msg.senderRole,
               timestamp: new Date(msg.timestamp),
               status: msg.status
             };
@@ -361,20 +363,37 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
                   className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[70%] px-4 py-2 rounded-2xl ${
+                    className={`max-w-[70%] ${
                       msg.sender === 'me'
-                        ? 'bg-[#DCF8C6] text-gray-800 rounded-br-none'
-                        : 'bg-white text-gray-800 rounded-bl-none'
+                        ? 'flex flex-col items-end'
+                        : 'flex flex-col items-start'
                     }`}
                   >
-                    <p className="text-sm leading-relaxed break-words">{msg.text}</p>
-                    <div className={`flex items-center gap-1 mt-1 ${
-                      msg.sender === 'me' ? 'justify-end' : 'justify-start'
-                    }`}>
-                      <span className="text-xs text-gray-500 leading-none">
-                        {formatTime(msg.timestamp)}
-                      </span>
-                      {msg.sender === 'me' && getStatusIcon(msg.status)}
+                    {/* Show sender name for messages from others */}
+                    {msg.sender === 'other' && msg.senderName && (
+                      <p className="text-xs text-gray-600 mb-1 px-2">
+                        {msg.senderName}
+                        {msg.senderRole && (
+                          <span className="ml-1 text-gray-500">({msg.senderRole})</span>
+                        )}
+                      </p>
+                    )}
+                    <div
+                      className={`px-4 py-2 rounded-2xl ${
+                        msg.sender === 'me'
+                          ? 'bg-[#DCF8C6] text-gray-800 rounded-br-none'
+                          : 'bg-white text-gray-800 rounded-bl-none'
+                      }`}
+                    >
+                      <p className="text-sm leading-relaxed break-words">{msg.text}</p>
+                      <div className={`flex items-center gap-1 mt-1 ${
+                        msg.sender === 'me' ? 'justify-end' : 'justify-start'
+                      }`}>
+                        <span className="text-xs text-gray-500 leading-none">
+                          {formatTime(msg.timestamp)}
+                        </span>
+                        {msg.sender === 'me' && getStatusIcon(msg.status)}
+                      </div>
                     </div>
                   </div>
                 </div>

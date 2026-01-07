@@ -134,6 +134,7 @@ router.get('/conversation/:userId', auth, async (req, res) => {
       otherUserObjectId
     });
 
+    // Fetch messages with sender details
     const messages = await Message.find({
       $or: [
         { senderId: currentUserObjectId, recipientId: otherUserObjectId },
@@ -141,9 +142,39 @@ router.get('/conversation/:userId', auth, async (req, res) => {
       ]
     }).sort({ timestamp: 1 });
 
+    // Get all unique user IDs from messages
+    const userIds = [...new Set(messages.map(msg => 
+      msg.senderId.toString()
+    ))];
+    
+    // Fetch user details for all senders
+    const User = require('../models/user.model');
+    const users = await User.find({ 
+      _id: { $in: userIds } 
+    }).select('_id name userName email role userRole');
+    
+    // Create a map of user ID to user details
+    const userMap = users.reduce((acc, user) => {
+      acc[user._id.toString()] = {
+        name: user.name || user.userName || user.email || 'Unknown',
+        role: user.role || user.userRole || 'Unknown'
+      };
+      return acc;
+    }, {});
+    
+    // Add sender details to each message
+    const messagesWithSenderDetails = messages.map(msg => {
+      const senderDetails = userMap[msg.senderId.toString()] || { name: 'Unknown', role: 'Unknown' };
+      return {
+        ...msg.toObject(),
+        senderName: senderDetails.name,
+        senderRole: senderDetails.role
+      };
+    });
+
     res.status(200).json({
       success: true,
-      data: messages
+      data: messagesWithSenderDetails
     });
 
   } catch (error) {
