@@ -712,3 +712,49 @@ exports.activityDepartmentLogin = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// Get user-specific activity data
+exports.getUserActivity = async (req, res) => {
+  try {
+    const { userId } = req.query;
+    
+    if (!userId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'userId parameter is required' 
+      });
+    }
+
+    console.log('Fetching activity for userId:', userId);
+
+    // Get all activity data for the user
+    const [reports, files, content, thoughts] = await Promise.all([
+      ActivityReport.find({ userId }).sort({ createdAt: -1 }),
+      ActivityFile.find({ userId }).sort({ createdAt: -1 }),
+      ActivityContent.find({ userId }).sort({ createdAt: -1 }),
+      ActivityThought.find({ userId }).sort({ createdAt: -1 })
+    ]);
+
+    const activityData = {
+      success: true,
+      data: {
+        userId,
+        reports: reports || [],
+        files: files || [],
+        content: content || [],
+        thoughts: thoughts || [],
+        totalItems: (reports?.length || 0) + (files?.length || 0) + (content?.length || 0) + (thoughts?.length || 0)
+      }
+    };
+
+    console.log(`Found ${activityData.data.totalItems} activity items for user ${userId}`);
+    res.status(200).json(activityData);
+
+  } catch (error) {
+    console.error('Error fetching user activity:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch activity data: ' + error.message 
+    });
+  }
+};
