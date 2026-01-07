@@ -30,6 +30,60 @@ import {
   Briefcase,
   Activity
 } from 'lucide-react';
+
+// Simple circular chart component
+const CircularChart = ({ percentage, size = 60, strokeWidth = 6, color = '#10b981' }) => {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const strokeDasharray = circumference;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
+  return (
+    <div className="circular-chart-container">
+      <svg width={size} height={size} className="circular-chart">
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="#e5e7eb"
+          strokeWidth={strokeWidth}
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={color}
+          strokeWidth={strokeWidth}
+          strokeDasharray={strokeDasharray}
+          strokeDashoffset={strokeDashoffset}
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          className="circular-chart-progress"
+        />
+        <text
+          x={size / 2}
+          y={size / 2}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          className="circular-chart-text"
+          fontSize="12"
+          fontWeight="600"
+          fill={color}
+        >
+          {percentage}%
+        </text>
+      </svg>
+    </div>
+  );
+};
+
+const formatDuration = (seconds) => {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}m ${remainingSeconds}s`;
+};
+
 import MobileSidebar from '@/layout/MobileSidebar';
 import { Badge } from '@/layout/badge';
 import { Card, CardContent } from '@/layout/card';
@@ -750,87 +804,104 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
                     </div>
                   </div>
 
-                  {/* Call History & Analytics */}
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                      <PhoneCall size={18} className="text-indigo-600" />
-                      Call History & Analytics
-                    </h4>
+                  {/* Call History & Follow-up Analytics */}
+                  <div className="lead-advanced-call-history">
+                    <h4>Call History & Follow-up Analytics</h4>
                     
                     {/* Statistics Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 border border-green-200">
-                        <div className="flex items-center justify-between mb-2">
-                          <PhoneCall size={20} className="text-green-600" />
-                          <span className="text-xs text-green-600 font-medium">Total</span>
+                    <div className="call-history-stats">
+                      <div className="stat-card">
+                        <div className="stat-icon">
+                          <PhoneCall size={20} color="#10b981" />
                         </div>
-                        <div className="text-2xl font-bold text-gray-900">
-                          {bdDetails.callHistory?.length || 0}
+                        <div className="stat-info">
+                          <div className="stat-number">
+                            {bdDetails.callHistory?.length || 0}
+                          </div>
+                          <div className="stat-label">Total Calls</div>
                         </div>
-                        <div className="text-xs text-gray-600">Calls Made</div>
+                        <CircularChart 
+                          percentage={Math.min((bdDetails.callHistory?.length || 0) * 20, 100)} 
+                          size={50} 
+                          strokeWidth={4} 
+                          color="#10b981" 
+                        />
                       </div>
                       
-                      <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-4 border border-blue-200">
-                        <div className="flex items-center justify-between mb-2">
-                          <MessageSquare size={20} className="text-blue-600" />
-                          <span className="text-xs text-blue-600 font-medium">Follow-ups</span>
+                      <div className="stat-card">
+                        <div className="stat-icon">
+                          <MessageSquare size={20} color="#3b82f6" />
                         </div>
-                        <div className="text-2xl font-bold text-gray-900">
-                          {bdDetails.followUps?.length || 0}
+                        <div className="stat-info">
+                          <div className="stat-number">
+                            {bdDetails.followUps?.length || 0}
+                          </div>
+                          <div className="stat-label">Follow-ups</div>
                         </div>
-                        <div className="text-xs text-gray-600">Pending</div>
+                        <CircularChart 
+                          percentage={Math.min((bdDetails.followUps?.length || 0) * 25, 100)} 
+                          size={50} 
+                          strokeWidth={4} 
+                          color="#3b82f6" 
+                        />
                       </div>
                       
-                      <div className="bg-gradient-to-r from-purple-50 to-violet-50 rounded-lg p-4 border border-purple-200">
-                        <div className="flex items-center justify-between mb-2">
-                          <Clock size={20} className="text-purple-600" />
-                          <span className="text-xs text-purple-600 font-medium">Average</span>
+                      <div className="stat-card">
+                        <div className="stat-icon">
+                          <PieChart size={20} color="#8b5cf6" />
                         </div>
-                        <div className="text-2xl font-bold text-gray-900">
-                          {bdDetails.callHistory?.length > 0 
-                            ? Math.round(bdDetails.callHistory.reduce((acc, call) => acc + (call.duration || 0), 0) / bdDetails.callHistory.length)
+                        <div className="stat-info">
+                          <div className="stat-number">
+                            {bdDetails.callHistory?.length > 0 
+                              ? Math.round(bdDetails.callHistory.reduce((acc, call) => acc + (call.duration || 0), 0) / bdDetails.callHistory.length)
+                              : 0
+                            }s
+                          </div>
+                          <div className="stat-label">Avg Duration</div>
+                        </div>
+                        <CircularChart 
+                          percentage={bdDetails.callHistory?.length > 0 
+                            ? Math.min((bdDetails.callHistory.reduce((acc, call) => acc + (call.duration || 0), 0) / bdDetails.callHistory.length) * 2, 100)
                             : 0
-                          }s
-                        </div>
-                        <div className="text-xs text-gray-600">Call Duration</div>
+                          } 
+                          size={50} 
+                          strokeWidth={4} 
+                          color="#8b5cf6" 
+                        />
                       </div>
                     </div>
 
                     {/* Call History List */}
                     {bdDetails.callHistory && bdDetails.callHistory.length > 0 ? (
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <h5 className="font-medium text-gray-700 mb-3">Recent Calls</h5>
-                        <div className="space-y-2 max-h-64 overflow-y-auto">
-                          {bdDetails.callHistory.slice(0, 10).map((call, index) => (
-                            <div key={call._id || index} className="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm font-medium text-gray-900">
-                                  {call.callDate ? new Date(call.callDate).toLocaleDateString() : 'Unknown date'}
-                                </span>
-                                <span className="text-sm font-bold text-blue-600">
-                                  {call.duration || 0}s
-                                </span>
-                              </div>
-                              <div className="text-xs text-gray-600 space-y-1">
-                                <p><strong>Called by:</strong> {call.userId?.name || call.calledBy || 'Unknown'}</p>
-                                <p><strong>Phone:</strong> {call.phone || selectedBD.phone || 'Unknown'}</p>
-                                {call.startTime && (
-                                  <p><strong>Time:</strong> {
-                                    call.startTime && call.endTime 
-                                      ? `${new Date(call.startTime).toLocaleTimeString()} - ${new Date(call.endTime).toLocaleTimeString()}` 
-                                      : new Date(call.startTime).toLocaleTimeString()
-                                  }</p>
-                                )}
-                              </div>
+                      <div className="lead-call-history-list">
+                        {bdDetails.callHistory.map((call, index) => (
+                          <div key={call._id || index} className="lead-call-history-item">
+                            <div className="call-history-header">
+                              <span className="call-date">
+                                {call.callDate ? new Date(call.callDate).toLocaleDateString() : 'Unknown date'}
+                              </span>
+                              <span className="call-duration">
+                                {formatDuration(call.duration || 0)}
+                              </span>
                             </div>
-                          ))}
-                        </div>
+                            <div className="call-details">
+                              <p><strong>Called by:</strong> {call.userId?.name || call.calledBy || 'Unknown'}</p>
+                              <p><strong>Phone:</strong> {call.phone || selectedBD.phone || 'Unknown'}</p>
+                              <p><strong>Time:</strong> {
+                                call.startTime && call.endTime 
+                                  ? `${new Date(call.startTime).toLocaleTimeString()} - ${new Date(call.endTime).toLocaleTimeString()}` 
+                                  : call.startTime 
+                                    ? new Date(call.startTime).toLocaleTimeString()
+                                    : 'Unknown time'
+                              }</p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     ) : (
-                      <div className="bg-gray-50 rounded-lg p-8 text-center">
-                        <PhoneCall size={40} className="text-gray-400 mx-auto mb-3" />
-                        <p className="text-gray-500 text-sm">No call history available</p>
-                        <p className="text-gray-400 text-xs mt-1">Call records will appear here once available</p>
+                      <div className="no-call-history">
+                        <PieChart size={40} color="#9ca3af" />
+                        <p>No call history available for this BD</p>
                       </div>
                     )}
                   </div>
