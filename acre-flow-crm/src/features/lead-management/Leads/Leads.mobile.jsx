@@ -727,23 +727,40 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     if ((currentUserRole === 'bd' || currentUserRole === 'employee') && 
         String(lead.assignedTo) === String(currentUserId)) {
       
+      console.log('Assignment chain structure:', lead.assignmentChain);
+      
       // Check if lead has assignment chain to find who assigned it
       if (lead.assignmentChain && lead.assignmentChain.length > 0) {
         // Get the most recent assignment (last in chain)
         const lastAssignment = lead.assignmentChain[lead.assignmentChain.length - 1];
+        console.log('Last assignment:', lastAssignment);
         
         // Try to find the user who assigned this lead
-        if (lastAssignment?.assignedBy || lastAssignment?.assignedByUser) {
-          const assignedById = lastAssignment.assignedBy?._id || lastAssignment.assignedByUser?._id || lastAssignment.assignedBy;
+        // Check if assignedBy is an object with user details
+        if (lastAssignment?.assignedBy && typeof lastAssignment.assignedBy === 'object') {
+          const assignedById = lastAssignment.assignedBy._id || lastAssignment.assignedBy;
           recipientUser = users.find((u) => String(u?._id) === String(assignedById));
+          console.log('Found assignedBy in assignment chain:', lastAssignment.assignedBy);
+        }
+        // Check if assignedBy is just an ID string
+        else if (lastAssignment?.assignedBy) {
+          recipientUser = users.find((u) => String(u?._id) === String(lastAssignment.assignedBy));
+          console.log('Looking for assignedBy ID:', lastAssignment.assignedBy);
+        }
+        // If no assignedBy in assignment chain, check the lead's assignedBy field
+        else if (lead.assignedBy) {
+          recipientUser = users.find((u) => String(u?._id) === String(lead.assignedBy));
+          console.log('Looking for lead.assignedBy:', lead.assignedBy);
         }
         
-        // If not found in assignment chain, try to find any HOD/Boss
+        // If still not found, try to find any HOD/Boss
         if (!recipientUser) {
+          console.log('Recipient not found, looking for HOD/Boss');
           recipientUser = byRole('hod') || byRole('head-admin') || byRole('head') || byRole('boss') || byRole('super-admin');
         }
       } else {
         // No assignment chain, find HOD/Boss
+        console.log('No assignment chain, finding HOD/Boss');
         recipientUser = byRole('hod') || byRole('head-admin') || byRole('head') || byRole('boss') || byRole('super-admin');
       }
     } else {
@@ -778,13 +795,16 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       }
     });
 
-    setWhatsAppRecipient({
+    const recipientData = {
       _id: recipientUser._id,
       id: recipientUser._id,
       name: recipientUser.name || recipientUser.userName || recipientUser.email || 'User',
       email: recipientUser.email || recipientUser.userEmail || '',
       role: recipientUser.role || recipientUser.userRole
-    });
+    };
+    
+    console.log('Setting WhatsApp recipient:', recipientData);
+    setWhatsAppRecipient(recipientData);
     setShowWhatsAppModal(true);
   };
 
@@ -921,16 +941,20 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
           console.log('Auto-opening WhatsApp chat with assigned user:', assignedUser);
           
           // Set the recipient for WhatsApp chat
-          setWhatsAppRecipient({
+          const recipientData = {
             _id: assignedUser._id,
             id: assignedUser._id,
             name: assignedUser.name || assignedUser.userName || assignedUser.email || 'User',
             email: assignedUser.email || assignedUser.userEmail || '',
             role: assignedUser.role || assignedUser.userRole
-          });
+          };
+          
+          console.log('Setting auto-open WhatsApp recipient:', recipientData);
+          setWhatsAppRecipient(recipientData);
           
           // Open WhatsApp modal after a short delay
           setTimeout(() => {
+            console.log('Opening WhatsApp modal...');
             setShowWhatsAppModal(true);
           }, 1000);
         }

@@ -35,6 +35,10 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
   };
 
   const recipientId = recipient?._id || recipient?.bdId || recipient?.id;
+  
+  // Debug logging
+  console.log('WhatsAppModal - Recipient data:', recipient);
+  console.log('WhatsAppModal - Recipient ID:', recipientId);
 
   useEffect(() => {
     const fetchAssignableUsers = async () => {
@@ -54,13 +58,42 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
       }
     };
 
-    if (isOpen) fetchAssignableUsers();
+    if (isOpen) {
+      console.log('WhatsAppModal is open, fetching assignable users...');
+      fetchAssignableUsers();
+    }
   }, [isOpen]);
 
+  // Log when recipient changes
+  useEffect(() => {
+    console.log('WhatsAppModal - Recipient prop changed:', recipient);
+  }, [recipient]);
+
+  // Log when assignable users change
+  useEffect(() => {
+    console.log('WhatsAppModal - Assignable users updated:', assignableUsers.length);
+  }, [assignableUsers]);
+
   const resolvedRecipient = (() => {
-    if (!recipientId) return recipient;
-    const fromAssignable = assignableUsers.find((u) => String(u?._id) === String(recipientId));
-    return fromAssignable ? { ...recipient, ...fromAssignable } : recipient;
+    console.log('Resolving recipient:', { recipient, recipientId, assignableUsers: assignableUsers.length });
+    
+    // If recipient already has all the data, return as is
+    if (recipient && recipient.name && recipient.email) {
+      console.log('Recipient already has complete data');
+      return recipient;
+    }
+    
+    // Try to find in assignable users
+    if (recipientId && assignableUsers.length > 0) {
+      const fromAssignable = assignableUsers.find((u) => String(u?._id) === String(recipientId));
+      if (fromAssignable) {
+        console.log('Found recipient in assignable users:', fromAssignable);
+        return { ...recipient, ...fromAssignable };
+      }
+    }
+    
+    console.log('Using recipient as-is');
+    return recipient;
   })();
 
   const recipientDisplayName =
