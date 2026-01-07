@@ -14,7 +14,7 @@ const DashboardDesktop = ({ userRole = 'employee' }) => {
     navigate('/create-admin');
   };
 
-  if (userRole === 'super-admin') {
+  if (userRole === 'boss') {
     return (
       <DashboardLayout userRole={userRole}>
         <SuperAdminProfile onCreateAdmin={handleCreateAdmin} />
@@ -22,7 +22,7 @@ const DashboardDesktop = ({ userRole = 'employee' }) => {
     );
   }
 
-  if (userRole === 'head-admin' || userRole === 'head') {
+  if (userRole === 'hod' || userRole === 'head-admin' || userRole === 'head') {
     return (
       <DashboardLayout userRole={userRole}>
         <HeadAdminProfile />
@@ -38,7 +38,7 @@ const DashboardDesktop = ({ userRole = 'employee' }) => {
     );
   }
 
-  if (userRole === 'employee') {
+  if (userRole === 'bd' || userRole === 'employee') {
     return (
       <DashboardLayout userRole={userRole}>
         <EmployeeProfile />
@@ -48,11 +48,13 @@ const DashboardDesktop = ({ userRole = 'employee' }) => {
 
   const getDashboardTitle = () => {
     switch (userRole) {
+      case 'hod':
       case 'head-admin':
       case 'head':
         return 'Head Dashboard';
       case 'team-leader':
         return 'Team Leader Dashboard';
+      case 'bd':
       case 'employee':
         return 'Employee Dashboard';
       default:
@@ -62,11 +64,13 @@ const DashboardDesktop = ({ userRole = 'employee' }) => {
 
   const getDashboardDescription = () => {
     switch (userRole) {
+      case 'hod':
       case 'head-admin':
       case 'head':
         return 'Manage your teams and track performance';
       case 'team-leader':
         return 'Lead your team and track performance';
+      case 'bd':
       case 'employee':
         return 'Your daily tasks and assignments';
       default:

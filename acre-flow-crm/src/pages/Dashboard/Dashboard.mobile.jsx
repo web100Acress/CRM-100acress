@@ -32,13 +32,15 @@ const DashboardMobile = ({ userRole = 'employee' }) => {
   // Get role-specific dashboard title
   const getDashboardTitle = () => {
     switch (userRole) {
-      case 'super-admin':
+      case 'boss':
         return 'Super Admin Dashboard';
+      case 'hod':
       case 'head-admin':
       case 'head':
         return 'Head Dashboard';
       case 'team-leader':
         return 'Team Leader Dashboard';
+      case 'bd':
       case 'employee':
         return 'Employee Dashboard';
       default:
@@ -48,13 +50,15 @@ const DashboardMobile = ({ userRole = 'employee' }) => {
 
   const getDashboardDescription = () => {
     switch (userRole) {
-      case 'super-admin':
+      case 'boss':
         return 'Manage system and all users';
+      case 'hod':
       case 'head-admin':
       case 'head':
         return 'Manage your teams and track performance';
       case 'team-leader':
         return 'Lead your team and track performance';
+      case 'bd':
       case 'employee':
         return 'Your daily tasks and assignments';
       default:
@@ -135,7 +139,7 @@ const DashboardMobile = ({ userRole = 'employee' }) => {
   );
 
   // Show role-specific profile dashboards
-  if (userRole === 'super-admin') {
+  if (userRole === 'boss') {
     return (
       <div className="min-h-screen bg-gray-50">
         {renderMobileHeader()}
@@ -144,7 +148,7 @@ const DashboardMobile = ({ userRole = 'employee' }) => {
     );
   }
 
-  if (userRole === 'head-admin' || userRole === 'head') {
+  if (userRole === 'hod' || userRole === 'head-admin' || userRole === 'head') {
     return (
       <div className="min-h-screen bg-gray-50">
         {renderMobileHeader()}
@@ -162,7 +166,7 @@ const DashboardMobile = ({ userRole = 'employee' }) => {
     );
   }
 
-  if (userRole === 'employee') {
+  if (userRole === 'bd' || userRole === 'employee') {
     return (
       <div className="min-h-screen bg-gray-50">
         {renderMobileHeader()}

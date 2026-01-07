@@ -18,6 +18,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
     const roleMap = {
       'head-admin': 'head_admin',
       'head': 'head_admin', 
+      'hod': 'head_admin',
       'boss': 'boss',
       'team-leader': 'team_leader',
       'sales_head': 'sales_head',
@@ -67,10 +68,10 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
     'Chat';
   const roleLabel = (() => {
     const r = String(resolvedRecipient?.role || resolvedRecipient?.userRole || recipient?.role || recipient?.userRole || '').toLowerCase();
-    if (r === 'super-admin') return 'Super Admin';
-    if (r === 'head-admin' || r === 'head') return 'Head Admin';
+    if (r === 'boss' || r === 'super-admin') return 'Boss';
+    if (r === 'hod' || r === 'head-admin' || r === 'head') return 'HOD';
     if (r === 'team-leader') return 'Team Leader';
-    if (r === 'boss') return 'Boss';
+    if (r === 'bd' || r === 'employee') return 'BD';
     return null;
   })();
   const recipientHeaderTitle = recipientDisplayName;

@@ -3,7 +3,7 @@ import { useResponsive } from '@/hooks/useResponsive';
 import DashboardDesktop from './Dashboard.desktop';
 import DashboardMobile from './Dashboard.mobile';
 
-const DashboardContainer = ({ userRole = 'employee' }) => {
+const DashboardContainer = ({ userRole = 'bd' }) => {
   const { isMobile, isTablet, isDesktop } = useResponsive();
 
   // Render mobile component for mobile and tablet views
