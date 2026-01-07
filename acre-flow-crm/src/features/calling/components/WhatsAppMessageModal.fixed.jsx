@@ -308,87 +308,87 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
         return;
     }
     
-    console.log('Fetching conversation for recipient:', finalRecipientId);
+    console.log('=== FETCHING CONVERSATION ===');
     console.log('Current user ID:', currentUserId);
+    console.log('Recipient ID:', finalRecipientId);
+    console.log('Current user type:', typeof currentUserId);
+    console.log('Recipient ID type:', typeof finalRecipientId);
+    
     setLoading(true);
     
     try {
       const token = localStorage.getItem('token');
       
-      // Try to fetch from both users' perspectives to get all messages
-      const [conversation1, conversation2] = await Promise.all([
-        fetch(`https://bcrm.100acress.com/api/messages/conversation/${finalRecipientId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }),
-        fetch(`https://bcrm.100acress.com/api/messages/conversation/${currentUserId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        })
-      ]);
-
-      console.log('Conversation 1 response status:', conversation1.status);
-      console.log('Conversation 2 response status:', conversation2.status);
+      // Use localhost:5001 for development, production URL for production
+      const baseUrl = process.env.NODE_ENV === 'development' 
+        ? 'http://localhost:5001/api/messages'
+        : 'https://bcrm.100acress.com/api/messages';
       
-      let allMessages = [];
-      
-      // Get messages from recipient's conversation
-      if (conversation1.ok) {
-        const data1 = await conversation1.json();
-        console.log('Conversation 1 data:', data1);
-        
-        if (data1.success && data1.data) {
-          allMessages = allMessages.concat(data1.data);
+      // Fetch conversation for the specific user pair
+      const response = await fetch(`${baseUrl}/conversation/${finalRecipientId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
-      }
-      
-      // Get messages from current user's conversation
-      if (conversation2.ok) {
-        const data2 = await conversation2.json();
-        console.log('Conversation 2 data:', data2);
-        
-        if (data2.success && data2.data) {
-          allMessages = allMessages.concat(data2.data);
-        }
-      }
-      
-      // Filter messages to only show between these two users
-      const filteredMessages = allMessages.filter(msg => 
-        (msg.senderId === currentUserId && msg.recipientId === finalRecipientId) ||
-        (msg.senderId === finalRecipientId && msg.recipientId === currentUserId)
-      );
-      
-      console.log('All messages between users:', filteredMessages);
-      
-      // Remove duplicates by message ID and sort by timestamp
-      const uniqueMessages = filteredMessages.filter((msg, index, self) =>
-        index === self.findIndex((m) => m._id === msg._id)
-      );
-      
-      uniqueMessages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-      
-      console.log('Unique sorted messages:', uniqueMessages);
-      
-      const formattedMessages = uniqueMessages.map(msg => {
-        const isMe = msg.senderId === currentUserId;
-        
-        return {
-          id: msg._id,
-          text: msg.message,
-          sender: isMe ? 'me' : 'other',
-          senderName: isMe ? 'You' : (msg.senderName || resolvedRecipient?.name || 'Unknown'),
-          senderRole: msg.senderRole,
-          timestamp: new Date(msg.timestamp),
-          status: msg.status
-        };
       });
+
+      console.log('Conversation response status:', response.status);
       
-      console.log('Formatted messages:', formattedMessages);
-      setMessages(formattedMessages);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Raw conversation data:', data);
+        
+        if (data.success && data.data) {
+          console.log('Messages from backend:', data.data.length);
+          
+          // Filter messages to only show between these two users
+          const filteredMessages = data.data.filter(msg => {
+            const msgSenderId = String(msg.senderId);
+            const msgRecipientId = String(msg.recipientId);
+            const currentUserIdStr = String(currentUserId);
+            const finalRecipientIdStr = String(finalRecipientId);
+            
+            const isFromMe = msgSenderId === currentUserIdStr && msgRecipientId === finalRecipientIdStr;
+            const isFromOther = msgSenderId === finalRecipientIdStr && msgRecipientId === currentUserIdStr;
+            
+            console.log(`Message: ${msgSenderId} -> ${msgRecipientId} | Keep: ${isFromMe || isFromOther}`);
+            
+            return isFromMe || isFromOther;
+          });
+          
+          console.log('Filtered messages count:', filteredMessages.length);
+          
+          // Sort by timestamp
+          filteredMessages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+          
+          const formattedMessages = filteredMessages.map(msg => {
+            const isMe = String(msg.senderId) === String(currentUserId);
+            
+            return {
+              id: msg._id,
+              text: msg.message,
+              sender: isMe ? 'me' : 'other',
+              senderName: isMe ? 'You' : (msg.senderName || resolvedRecipient?.name || 'Unknown'),
+              senderRole: msg.senderRole,
+              timestamp: new Date(msg.timestamp),
+              status: msg.status
+            };
+          });
+          
+          console.log('Final formatted messages:', formattedMessages.length);
+          console.log('Formatted:', formattedMessages.map(m => ({ text: m.text, sender: m.sender })));
+          
+          setMessages(formattedMessages);
+        } else {
+          console.log('No messages found in backend response');
+          setMessages([]);
+        }
+      } else {
+        console.error('Failed to fetch conversation:', response.statusText);
+        const errorText = await response.text();
+        console.error('Error details:', errorText);
+        setMessages([]);
+      }
       
     } catch (error) {
       console.error('Error fetching conversation:', error);
@@ -453,7 +453,12 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
       
       console.log('Sending message:', requestBody);
       
-      const response = await fetch('https://bcrm.100acress.com/api/messages/send', {
+      // Use localhost:5001 for development, production URL for production
+      const baseUrl = process.env.NODE_ENV === 'development' 
+        ? 'http://localhost:5001/api/messages'
+        : 'https://bcrm.100acress.com/api/messages';
+      
+      const response = await fetch(`${baseUrl}/send`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
