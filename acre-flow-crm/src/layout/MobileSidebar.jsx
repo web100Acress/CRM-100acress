@@ -70,7 +70,7 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
   })();
   const hasPermission = (p) => permissions.length === 0 || permissions.includes(p);
   const hasModule = (m) => allowedModules.length === 0 || allowedModules.includes(m);
-  const isFullAccess = userRole === 'super-admin' || userRole === 'developer' || userRole === 'admin';
+  const isFullAccess = userRole === 'boss' || userRole === 'developer' || userRole === 'admin';
 
   const handleLogout = () => {
     localStorage.clear();
@@ -163,7 +163,7 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
   };
 
   useEffect(() => {
-    if (isOpen && (userRole === 'employee' || userRole === 'team-leader')) {
+    if (isOpen && (userRole === 'bd' || userRole === 'team-leader')) {
       fetchChatUsers();
     }
   }, [isOpen, userRole]);
@@ -181,7 +181,7 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
   }, [chatOpen, selectedUser]);
 
   const navigationItems = {
-    'super-admin': [
+    boss: [
       { path: '/', icon: Home, label: 'Dashboard' },
       { path: '/leads', icon: Building2, label: 'All Leads' },
       // { path: '/calls', icon: PhoneCall, label: 'Call Logs' },
@@ -228,7 +228,7 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
       { path: '/leads', icon: Building2, label: 'Assigned Leads' },
       { path: '/calls', icon: PhoneCall, label: 'Call Logs' },
     ],
-    employee: [
+    bd: [
       { path: '/employee-dashboard', icon: Home, label: 'Dashboard' },
       { path: '/leads', icon: Building2, label: 'My Leads' },
     ]
@@ -236,7 +236,7 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
 
   // Build module-based navigation only for roles that should see cross-module items
   const moduleNav = [];
-  if (userRole !== 'team-leader' && userRole !== 'employee') {
+  if (userRole !== 'team-leader' && userRole !== 'bd') {
     if (isFullAccess || hasModule('Sales')) moduleNav.push(...navigationItems.sales);
     if (isFullAccess || hasModule('HR')) moduleNav.push(...navigationItems.hr);
     if (isFullAccess || hasModule('Blog')) moduleNav.push(...navigationItems.blog);
@@ -247,9 +247,9 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
 
   // For team-leader, employee, and super-admin, always use role-specific navigation
   const navItems =
-    userRole === 'team-leader' || userRole === 'employee' || userRole === 'super-admin' || userRole === 'head-admin'
-      ? (navigationItems[userRole] || navigationItems['employee'])
-      : (filteredModuleNav.length > 0 ? filteredModuleNav : (navigationItems[userRole] || navigationItems['employee']));
+    userRole === 'team-leader' || userRole === 'bd' || userRole === 'boss' || userRole === 'head-admin'
+      ? (navigationItems[userRole] || navigationItems['bd'])
+      : (filteredModuleNav.length > 0 ? filteredModuleNav : (navigationItems[userRole] || navigationItems['bd']));
 
   const badgeCounts = (() => {
     try {

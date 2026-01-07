@@ -62,9 +62,6 @@ const Login = () => {
       case "it_infrastructure":
         window.location.href = "/it-infrastructure";
         break;
-      case "super-admin":
-        window.location.href = "/super-admin-dashboard";
-        break;
       case "head-admin":
       case "head admin":
         window.location.href = "/head-admin-dashboard";
@@ -76,7 +73,7 @@ const Login = () => {
       case "boss":
         window.location.href = "/admin-dashboard";  // Redirect boss to admin dashboard
         break;
-      case "employee":
+      case "bd":
       case "user":
         window.location.href = "/employee-dashboard";  // Redirect employee to employee dashboard
         break;

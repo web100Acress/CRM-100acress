@@ -11,22 +11,21 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
   const inputRef = useRef(null);
 
   // Get current user's role
-  const currentUserRole = localStorage.getItem('userRole') || localStorage.getItem('role') || 'employee';
+  const currentUserRole = localStorage.getItem('userRole') || localStorage.getItem('role') || 'bd';
 
   // Function to convert role to valid enum value
   const getValidSenderRole = (role) => {
     const roleMap = {
       'head-admin': 'head_admin',
       'head': 'head_admin', 
-      'super-admin': 'super_admin',
+      'boss': 'boss',
       'team-leader': 'team_leader',
       'sales_head': 'sales_head',
-      'boss': 'boss',
       'admin': 'admin',
       'crm_admin': 'crm_admin',
-      'employee': 'employee'
+      'bd': 'bd'
     };
-    return roleMap[role] || 'employee';
+    return roleMap[role] || 'bd';
   };
 
   const recipientId = recipient?._id || recipient?.bdId || recipient?.id;

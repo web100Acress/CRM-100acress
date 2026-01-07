@@ -13,7 +13,7 @@ import CreateLeadFormMobile from '@/layout/CreateLeadForm.mobile';
 import LeadTableMobile from '@/layout/LeadTable.mobile';
 import LeadAdvancedOptionsMobile from '@/layout/LeadAdvancedOptions.mobile';
 
-const LeadsMobile = ({ userRole = 'employee' }) => {
+const LeadsMobile = ({ userRole = 'bd' }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('all-leads');
