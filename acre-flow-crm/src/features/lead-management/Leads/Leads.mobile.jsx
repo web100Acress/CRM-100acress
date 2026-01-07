@@ -183,6 +183,22 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
   
   const [currentBannerIndex] = useState(0);
 
+  // Function to get assigned user name
+  const getAssignedUserName = (lead) => {
+    // Check if assignedTo is already a name (string)
+    if (typeof lead.assignedTo === 'string' && lead.assignedTo !== 'Unassigned') {
+      return lead.assignedTo;
+    }
+    
+    // Check assignmentChain for user info
+    if (lead.assignmentChain && lead.assignmentChain.length > 0) {
+      const currentAssignment = lead.assignmentChain[lead.assignmentChain.length - 1];
+      return currentAssignment?.name || 'Unassigned';
+    }
+    
+    return 'Unassigned';
+  };
+
   const fetchLeads = async () => {
     setLoading(true);
     try {
@@ -213,7 +229,6 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
         const coldLeads = sortedLeads?.filter(lead => lead.status === 'Cold').length || 0;
         const warmLeads = sortedLeads?.filter(lead => lead.status === 'Warm').length || 0;
         const hotLeads = sortedLeads?.filter(lead => lead.status === 'Hot').length || 0;
-        
         setStats({
           totalLeads,
           coldLeads,
@@ -1028,7 +1043,7 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
                       <div>
                         <p className="text-xs text-gray-600">Assigned To</p>
                         <p className="text-sm font-medium text-gray-900">
-                          {lead.assignedTo || 'Unassigned'}
+                          {getAssignedUserName(lead)}
                         </p>
                       </div>
                     </div>
