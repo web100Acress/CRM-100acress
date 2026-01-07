@@ -148,6 +148,9 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
+      console.log('Fetching conversation with URL:', `https://bcrm.100acress.com/api/messages/conversation/${recipientId}`);
+      console.log('Token present:', !!token);
+      
       const response = await fetch(`https://bcrm.100acress.com/api/messages/conversation/${recipientId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -155,9 +158,16 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
         }
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
       if (response.ok) {
         const data = await response.json();
+        console.log('Conversation response:', data);
+        
         if (data.success) {
+          console.log('Number of messages:', data.data?.length || 0);
+          
           // Format messages for display
           const currentUserId = getCurrentUserId();
           console.log('Current user ID for comparison:', currentUserId);
@@ -176,10 +186,18 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
               status: msg.status
             };
           });
+          console.log('Setting messages:', formattedMessages);
           setMessages(formattedMessages);
+        } else {
+          console.error('API returned success:false:', data.message);
         }
       } else {
-        console.error('Failed to fetch conversation:', data.message);
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Failed to fetch conversation:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        });
       }
     } catch (error) {
       console.error('Error fetching conversation:', error);
@@ -194,14 +212,22 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
-        console.log('Current user ID from token:', payload.userId);
-        return payload.userId;
+        console.log('Current user ID from token:', {
+          userId: payload.userId,
+          id: payload.id,
+          _id: payload._id
+        });
+        // Try multiple possible ID fields
+        return payload.userId || payload.id || payload._id;
       } catch (error) {
         console.error('Error parsing token:', error);
         return null;
       }
     }
-    return null;
+    // Fallback to localStorage
+    const localStorageId = localStorage.getItem('userId') || localStorage.getItem('id');
+    console.log('Current user ID from localStorage:', localStorageId);
+    return localStorageId;
   };
 
   const handleSendMessage = async () => {

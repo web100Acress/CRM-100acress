@@ -98,12 +98,18 @@ router.post('/send', auth, async (req, res) => {
 // Get conversation between two users
 router.get('/conversation/:userId', auth, async (req, res) => {
   try {
-    const currentUserId = req.user.id; // Use req.user.id as per logs
+    // Try multiple possible user ID fields
+    const currentUserId = req.user.id || req.user._id || req.user.userId || req.user._id.toString();
     const { userId: otherUserId } = req.params;
     
     console.log('User ID extraction:', {
       currentUserId,
-      otherUserIdParam: otherUserId
+      otherUserIdParam: otherUserId,
+      reqUserFields: {
+        id: req.user?.id,
+        _id: req.user?._id,
+        userId: req.user?.userId
+      }
     });
     
     // Validate otherUserId
@@ -118,7 +124,7 @@ router.get('/conversation/:userId', auth, async (req, res) => {
     // Validate ObjectIds
     const mongoose = require('mongoose');
     if (!mongoose.Types.ObjectId.isValid(currentUserId) || !mongoose.Types.ObjectId.isValid(otherUserId)) {
-      console.error('Invalid user ID format!');
+      console.error('Invalid user ID format!', { currentUserId, otherUserId });
       return res.status(400).json({
         success: false,
         message: 'Invalid user ID format'
@@ -134,6 +140,17 @@ router.get('/conversation/:userId', auth, async (req, res) => {
       otherUserObjectId
     });
 
+    // First, let's check if there are any messages at all
+    const allMessages = await Message.find({}).limit(5);
+    console.log('Sample messages in database:', allMessages.length);
+    if (allMessages.length > 0) {
+      console.log('Sample message structure:', {
+        senderId: allMessages[0].senderId,
+        recipientId: allMessages[0].recipientId,
+        message: allMessages[0].message?.substring(0, 50)
+      });
+    }
+
     // Fetch messages with sender details
     const messages = await Message.find({
       $or: [
@@ -142,35 +159,12 @@ router.get('/conversation/:userId', auth, async (req, res) => {
       ]
     }).sort({ timestamp: 1 });
 
-    // Get all unique user IDs from messages
-    const userIds = [...new Set(messages.map(msg => 
-      msg.senderId.toString()
-    ))];
-    
-    // Fetch user details for all senders
-    const User = require('../models/user.model');
-    const users = await User.find({ 
-      _id: { $in: userIds } 
-    }).select('_id name userName email role userRole');
-    
-    // Create a map of user ID to user details
-    const userMap = users.reduce((acc, user) => {
-      acc[user._id.toString()] = {
-        name: user.name || user.userName || user.email || 'Unknown',
-        role: user.role || user.userRole || 'Unknown'
-      };
-      return acc;
-    }, {});
-    
-    // Add sender details to each message
-    const messagesWithSenderDetails = messages.map(msg => {
-      const senderDetails = userMap[msg.senderId.toString()] || { name: 'Unknown', role: 'Unknown' };
-      return {
-        ...msg.toObject(),
-        senderName: senderDetails.name,
-        senderRole: senderDetails.role
-      };
-    });
+    // Simplified: Return messages without sender details for now
+    const messagesWithBasicDetails = messages.map(msg => ({
+      ...msg.toObject(),
+      senderName: 'Unknown', // Will be populated later
+      senderRole: 'Unknown'
+    }));
 
     res.status(200).json({
       success: true,
@@ -279,6 +273,60 @@ router.put('/read/:conversationId', auth, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to mark messages as read',
+      error: error.message
+    });
+  }
+});
+
+// Create a test message (for debugging)
+router.post('/create-test', auth, async (req, res) => {
+  try {
+    const currentUserId = req.user.id || req.user._id || req.user.userId;
+    const { recipientId, message } = req.body;
+    
+    if (!recipientId || !message) {
+      return res.status(400).json({
+        success: false,
+        message: 'recipientId and message are required'
+      });
+    }
+    
+    const Message = require('../models/message.model');
+    const User = require('../models/userModel');
+    
+    // Get recipient details
+    const recipient = await User.findById(recipientId);
+    if (!recipient) {
+      return res.status(404).json({
+        success: false,
+        message: 'Recipient not found'
+      });
+    }
+    
+    // Create test message
+    const newMessage = new Message({
+      senderId: currentUserId,
+      senderRole: req.user.role || 'bd',
+      recipientId: recipientId,
+      recipientRole: recipient.role || 'bd',
+      recipientEmail: recipient.email,
+      recipientName: recipient.name,
+      message: message,
+      timestamp: new Date()
+    });
+    
+    await newMessage.save();
+    
+    res.status(200).json({
+      success: true,
+      message: 'Test message created successfully',
+      data: newMessage
+    });
+  } catch (error) {
+    console.error('Error creating test message:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create test message',
       error: error.message
     });
   }
