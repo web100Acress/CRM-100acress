@@ -249,35 +249,50 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
       
       // Fetch call history for this BD separately
       try {
-        // Since getCallRecords only works for current user, we'll fetch BD's leads and their call history
-        const leadsResponse = await fetch(`https://bcrm.100acress.com/api/leads?assignedTo=${bdId}`, {
+        // Method 1: Try to get call records directly for BD
+        const callResponse = await fetch(`https://bcrm.100acress.com/api/calls/user/${bdId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
         });
         
-        if (leadsResponse.ok) {
-          const leadsData = await leadsResponse.json();
-          const leads = leadsData.data || [];
-          
-          // Collect all call history from BD's leads
-          let allCallHistory = [];
-          
-          for (const lead of leads) {
-            if (lead.callHistory && lead.callHistory.length > 0) {
-              allCallHistory.push(...lead.callHistory);
-            }
-          }
-          
-          // Sort by call date (newest first)
-          allCallHistory.sort((a, b) => new Date(b.callDate || b.createdAt) - new Date(a.callDate || a.createdAt));
-          
-          bdData.callHistory = allCallHistory;
-          console.log(`Found ${allCallHistory.length} calls for BD ${bdId} from ${leads.length} leads`);
+        if (callResponse.ok) {
+          const callData = await callResponse.json();
+          bdData.callHistory = callData.data || callData || [];
+          console.log(`Found ${bdData.callHistory.length} direct calls for BD ${bdId}`);
         } else {
-          console.log('Leads fetch failed, using empty call history');
-          bdData.callHistory = [];
+          // Method 2: Fallback - fetch BD's leads and their call history
+          console.log('Direct call API failed, trying leads-based approach...');
+          const leadsResponse = await fetch(`https://bcrm.100acress.com/api/leads?assignedTo=${bdId}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+          });
+          
+          if (leadsResponse.ok) {
+            const leadsData = await leadsResponse.json();
+            const leads = leadsData.data || [];
+            
+            // Collect all call history from BD's leads
+            let allCallHistory = [];
+            
+            for (const lead of leads) {
+              if (lead.callHistory && lead.callHistory.length > 0) {
+                allCallHistory.push(...lead.callHistory);
+              }
+            }
+            
+            // Sort by call date (newest first)
+            allCallHistory.sort((a, b) => new Date(b.callDate || b.createdAt) - new Date(a.callDate || a.createdAt));
+            
+            bdData.callHistory = allCallHistory;
+            console.log(`Found ${allCallHistory.length} calls for BD ${bdId} from ${leads.length} leads`);
+          } else {
+            console.log('Leads fetch failed, using empty call history');
+            bdData.callHistory = [];
+          }
         }
       } catch (callError) {
         console.log('Error fetching BD call history:', callError);
@@ -886,7 +901,12 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
                             </div>
                             <div className="call-details">
                               <p><strong>Called by:</strong> {call.userId?.name || call.calledBy || 'Unknown'}</p>
-                              <p><strong>Phone:</strong> {call.phone || selectedBD.phone || 'Unknown'}</p>
+                              <p><strong>Phone:</strong> {
+                                (call.leadPhone && call.leadPhone !== '0' && call.leadPhone !== 0) ? call.leadPhone :
+                                (call.phone && call.phone !== '0' && call.phone !== 0) ? call.phone :
+                                (selectedBD.phone && selectedBD.phone !== '0' && selectedBD.phone !== 0) ? selectedBD.phone :
+                                'Not Available'
+                              }</p>
                               <p><strong>Time:</strong> {
                                 call.startTime && call.endTime 
                                   ? `${new Date(call.startTime).toLocaleTimeString()} - ${new Date(call.endTime).toLocaleTimeString()}` 
