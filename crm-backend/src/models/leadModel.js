@@ -36,7 +36,12 @@ const assignmentChainSchema = new mongoose.Schema({
     default: 'assigned'
   },
   completedAt: { type: Date },
-  notes: { type: String }
+  notes: { type: String },
+  assignedBy: {
+    _id: { type: mongoose.Schema.Types.ObjectId },
+    name: { type: String },
+    role: { type: String }
+  }
 }, { _id: false });
 
 const leadSchema = new mongoose.Schema({
