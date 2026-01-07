@@ -150,7 +150,12 @@ const forwardLead = async (leadId, currentUserId, action = 'forward', selectedEm
     role: nextAssignee.role,
     name: nextAssignee.name,
     assignedAt: new Date(),
-    status: 'assigned'
+    status: 'assigned',
+    assignedBy: {
+      _id: currentUser._id,
+      name: currentUser.name,
+      role: currentUser.role
+    }
   });
 
   // Update the assignedTo field
