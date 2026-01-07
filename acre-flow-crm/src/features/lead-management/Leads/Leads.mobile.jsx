@@ -1047,7 +1047,7 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
                     <PhoneCall size={18} />
                     <span className="text-xs mt-1 font-medium">Call</span>
                   </button>
-                  {currentUserRole === 'employee' && (
+                  {(currentUserRole === 'employee' || currentUserRole === 'boss' || currentUserRole === 'super-admin') && (
                     <button
                       onClick={() => handleWhatsAppChat(lead)}
                       className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-md hover:shadow-lg"
