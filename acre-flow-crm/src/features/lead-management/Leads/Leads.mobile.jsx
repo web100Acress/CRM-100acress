@@ -819,10 +819,23 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         : null;
       
       console.log('Found assigned user:', assignedUser);
-      recipientUser = assignedUser || byRole('boss') || byRole('super-admin') || byRole('hod') || byRole('head-admin') || byRole('head') || byRole('team-leader') || byRole('bd') || byRole('employee') || users[0];
+      
+      // If lead is assigned to someone, chat with that person
+      if (assignedUser) {
+        recipientUser = assignedUser;
+      } else {
+        // Fallback: try to find any available user
+        recipientUser = byRole('boss') || byRole('super-admin') || byRole('hod') || byRole('head-admin') || byRole('head') || byRole('team-leader') || byRole('bd') || byRole('employee') || users[0];
+      }
     }
 
     console.log('Final recipient user:', recipientUser);
+    console.log('Lead assignment info:', { 
+      leadId: lead._id, 
+      assignedTo: lead.assignedTo, 
+      currentUserId,
+      recipientUserId: recipientUser?._id 
+    });
 
     if (!recipientUser?._id) {
       console.error('No valid recipient found. Available users:', users.map(u => ({ _id: u._id, name: u.name, role: u.role })));
@@ -849,6 +862,8 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
 
     // Extract forwarded by name from assignment chain
     let forwardedByName = null;
+    let assignedByName = null;
+    
     if (lead.assignmentChain && lead.assignmentChain.length > 0) {
       const firstAssignment = lead.assignmentChain[0];
       forwardedByName = 
@@ -861,6 +876,56 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         firstAssignment?.forwarderName ||
         firstAssignment?.name ||
         null;
+      
+      assignedByName = forwardedByName; // Same person for now
+    }
+    
+    // For BD users (like Test): the recipient should be the person who assigned/forwarded the lead
+    if ((currentUserRole === 'bd' || currentUserRole === 'employee') && 
+        String(lead.assignedTo) === String(currentUserId)) {
+      
+      console.log('BD user (Test) trying to chat - finding who assigned the lead');
+      
+      // Find the person who assigned this lead
+      if (lead.assignmentChain && lead.assignmentChain.length > 0) {
+        const lastAssignment = lead.assignmentChain[lead.assignmentChain.length - 1];
+        console.log('Last assignment:', lastAssignment);
+        
+        if (lastAssignment?.assignedBy) {
+          const assignedById = typeof lastAssignment.assignedBy === 'object' 
+            ? lastAssignment.assignedBy._id || lastAssignment.assignedBy.id
+            : lastAssignment.assignedBy;
+          
+          recipientUser = users.find((u) => String(u?._id) === String(assignedById));
+          console.log('Found assignedBy in assignment chain:', recipientUser);
+        }
+      }
+      
+      // If no assignment chain, find HOD or Boss
+      if (!recipientUser) {
+        recipientUser = byRole('hod') || byRole('head-admin') || byRole('head') ||
+                          byRole('boss') || byRole('super-admin') ||
+                          users[0];
+        console.log('Using HOD/Boss as recipient for BD user:', recipientUser);
+      }
+      
+    } else {
+      // For HODs/Boss: chat with the assigned user
+      console.log('HOD/Boss trying to chat with assigned user');
+      const assignedUserId = lead?.assignedTo;
+      const assignedUser = assignedUserId
+        ? users.find((u) => String(u?._id) === String(assignedUserId))
+        : null;
+      
+      console.log('Found assigned user:', assignedUser);
+      
+      // If lead is assigned to someone, chat with that person
+      if (assignedUser) {
+        recipientUser = assignedUser;
+      } else {
+        // Fallback: try to find any available user
+        recipientUser = byRole('boss') || byRole('super-admin') || byRole('hod') || byRole('head-admin') || byRole('head') || byRole('team-leader') || byRole('bd') || byRole('employee') || users[0];
+      }
     }
 
     const recipientData = {
@@ -876,10 +941,19 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       userRole: recipientUser.userRole,
       // Add forwarded by and assigned by names
       forwardedByName: forwardedByName,
-      assignedByName: forwardedByName // Use forwarded by as assigned by for now
+      assignedByName: assignedByName, // Use separate assigned by name
+      // Add lead assignment info
+      assignedTo: lead.assignedTo,
+      leadName: lead.name
     };
     
     console.log('Setting WhatsApp recipient:', recipientData);
+    console.log('Recipient name priority check:', {
+      directName: recipientUser.name,
+      userName: recipientUser.userName,
+      email: recipientUser.email,
+      finalName: recipientData.name
+    });
     setWhatsAppRecipient(recipientData);
     setShowWhatsAppModal(true);
   };
