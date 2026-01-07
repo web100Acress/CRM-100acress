@@ -1046,13 +1046,13 @@ const DeveloperContent = ({ userRole }) => {
                 <p>Full system access with all administrative privileges</p>
                 <Button 
                   onClick={() => {
-                    localStorage.setItem('userRole', 'super-admin');
+                    localStorage.setItem('userRole', 'boss');
                     localStorage.setItem('isLoggedIn', 'true');
                     window.location.reload();
                   }}
                   className="action-btn admin-btn"
                 >
-                  Switch to Super Admin
+                  Switch to Boss
                 </Button>
               </CardContent>
             </Card>
@@ -1106,13 +1106,13 @@ const DeveloperContent = ({ userRole }) => {
                 <p>Standard employee access with limited permissions</p>
                 <Button 
                   onClick={() => {
-                    localStorage.setItem('userRole', 'employee');
+                    localStorage.setItem('userRole', 'bd');
                     localStorage.setItem('isLoggedIn', 'true');
                     window.location.reload();
                   }}
                   className="action-btn admin-btn"
                 >
-                  Switch to Employee
+                  Switch to BD
                 </Button>
               </CardContent>
             </Card>

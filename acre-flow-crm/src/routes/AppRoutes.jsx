@@ -41,8 +41,8 @@ const RoleBasedRedirect = ({ userRole }) => {
       case 'it_infrastructure':
         navigate('/it-infrastructure', { replace: true });
         break;
-      case 'super-admin':
-        navigate('/super-admin-dashboard', { replace: true });
+      case 'boss':
+        navigate('/admin-dashboard', { replace: true });
         break;
       case 'head-admin':
         navigate('/head-admin-dashboard', { replace: true });
@@ -79,8 +79,8 @@ const AppRoutes = ({ isLoggedIn, userRole, isDeveloperLoggedIn }) => {
         <Route path="user-management" element={<UserManagement />} />
       </Route>
 
-      {/* BD Analytics Route for super-admin and head-admin */}
-      <Route path="/admin/bd-analytics" element={isLoggedIn && (userRole === "super-admin" || userRole === "head-admin") ? <BDStatusSummary /> : <Navigate to="/login" replace />} />
+      {/* BD Analytics Route for boss and hod */}
+      <Route path="/admin/bd-analytics" element={isLoggedIn && (userRole === "boss" || userRole === "hod") ? <BDStatusSummary /> : <Navigate to="/login" replace />} />
 
       {/* Project View Route */}
       <Route path="/Admin/ProjectsView/:pUrl" element={isLoggedIn && (userRole === "admin" || userRole === "sales_head") ? <ProjectView /> : <Navigate to="/login" replace />} />

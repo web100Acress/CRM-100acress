@@ -92,10 +92,10 @@ const HeadAdminProfile = () => {
   }, []);
 
   const headAdminData = {
-    name: localStorage.getItem('userName') || 'Head Administrator',
-    email: localStorage.getItem('userEmail') || 'headadmin@100acres.com',
+    name: localStorage.getItem('userName') || 'HOD',
+    email: localStorage.getItem('userEmail') || 'hod@100acres.com',
     phone: '+91 9876543210',
-    role: 'Head Admin',
+    role: 'HOD',
     company: '100acres.com',
     joinDate: '2024-01-01',
     permissions: [
@@ -142,7 +142,7 @@ const HeadAdminProfile = () => {
       <div className="sa2-topbar">
         <div className="sa2-topbar-title">
           <div className="sa2-topbar-dot" />
-          <span>Head Admin Dashboard</span>
+          <span>HOD Dashboard</span>
         </div>
 
         <div className="sa2-topbar-actions">

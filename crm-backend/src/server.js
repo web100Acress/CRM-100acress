@@ -73,14 +73,14 @@ io.on('connection', (socket) => {
     console.log('[Socket.IO] requestRoleDashboardStats:', { role, userId });
     let stats = {};
 
-    if (role === 'super-admin') {
+    if (role === 'boss') {
       stats = {
         totalLeads: await Lead.countDocuments(),
         activeUsers: await User.countDocuments({ status: 'active' }),
         openTickets: 75,
         monthlyRevenue: 125000000
       };
-    } else if (role === 'head-admin') {
+    } else if (role === 'hod' || role === 'head-admin') {
       stats = {
         managedLeads: await Lead.countDocuments({ managedBy: userId }),
         totalTeams: 8,
@@ -94,7 +94,7 @@ io.on('connection', (socket) => {
         myPendingTasks: 7,
         teamTargetAchieved: 8000000
       };
-    } else if (role === 'employee') {
+    } else if (role === 'bd') {
       stats = {
         assignedLeads: await Lead.countDocuments({ assignedTo: userId }),
         todaysFollowups: 12,

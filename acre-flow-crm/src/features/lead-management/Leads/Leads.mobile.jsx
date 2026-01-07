@@ -13,7 +13,7 @@ import CreateLeadFormMobile from '@/layout/CreateLeadForm.mobile';
 import LeadTableMobile from '@/layout/LeadTable.mobile';
 import LeadAdvancedOptionsMobile from '@/layout/LeadAdvancedOptions.mobile';
 
-const LeadsMobile = ({ userRole = 'employee' }) => {
+const LeadsMobile = ({ userRole = 'bd' }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('all-leads');
@@ -182,6 +182,32 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
   ];
   
   const [currentBannerIndex] = useState(0);
+
+  // Function to check if lead was forwarded by head admin
+  const isForwardedByHeadAdmin = (lead) => {
+    console.log(`Checking lead ${lead._id || lead.id} for head admin forwarding.`);
+    console.log('Lead assignmentChain:', lead.assignmentChain);
+
+    if (!lead.assignmentChain || lead.assignmentChain.length === 0) {
+      console.log('No assignment chain found or chain is empty.');
+      return false;
+    }
+    
+    const result = lead.assignmentChain.some(assignment => {
+      const assignedBy = assignment.assignedBy || assignment.assignedByUser;
+      console.log('Current assignment:', assignment);
+      console.log('Assigned by:', assignedBy);
+      const isHeadAdmin = assignedBy && (
+        assignedBy.role === 'head-admin' || 
+        assignedBy.role === 'head' ||
+        (assignedBy.name && assignedBy.name.toLowerCase().includes('head admin'))
+      );
+      console.log('Is assigned by head admin?', isHeadAdmin);
+      return isHeadAdmin;
+    });
+    console.log(`Final result for lead ${lead._id || lead.id}: ${result}`);
+    return result;
+  };
 
   // Function to get assigned user name
   const getAssignedUserName = (lead) => {
@@ -984,6 +1010,35 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
             <CardContent className="p-0">
               {/* Lead Header with Gradient */}
               <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 relative">
+                {/* Forwarded By Badge - Show at top */}
+                {lead.assignmentChain && lead.assignmentChain.length > 0 && (
+                  (() => {
+                    console.log('AssignmentChain for lead', lead.name, ':', lead.assignmentChain);
+                    const firstAssignment = lead.assignmentChain[0];
+                    console.log('First assignment:', firstAssignment);
+                    console.log('All keys in first assignment:', Object.keys(firstAssignment || {}));
+                    
+                    // Try multiple possible field names for the forwarder's name
+                    const assignedByName = 
+                      firstAssignment?.assignedBy?.name || 
+                      firstAssignment?.assignedByUser?.name ||
+                      firstAssignment?.forwardedBy?.name ||
+                      firstAssignment?.fromUser?.name ||
+                      firstAssignment?.sender?.name ||
+                      firstAssignment?.assignedByName ||
+                      firstAssignment?.forwarderName ||
+                      firstAssignment?.name ||
+                      'Admin';
+                    
+                    console.log('Assigned by name:', assignedByName);
+                    return (
+                      <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                        <ForwardIcon size={12} />
+                        Forwarded by {assignedByName}
+                      </div>
+                    );
+                  })()
+                )}
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-white/30 shadow-lg">
@@ -999,7 +1054,7 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right ">
                     {/* <button
                       onClick={() => {
                         setSelectedLeadForSettings(lead);
@@ -1016,7 +1071,7 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
                         setShowAssignmentChain(true);
                         fetchAssignmentChain(lead._id || lead.id);
                       }}
-                      className="mt-2 w-full bg-white/20 backdrop-blur-sm text-white rounded-lg px-3 py-2 text-xs font-medium hover:bg-white/30 transition-colors flex items-center justify-center gap-1"
+                      className="mt-6 w-full bg-white/20 backdrop-blur-sm text-white rounded-lg px-3 py-2 text-xs font-medium hover:bg-white/30 transition-colors flex items-center justify-center gap-1"
                     >
                       <Activity size={12} />
                       Lead Chain
@@ -1080,11 +1135,12 @@ const LeadsMobile = ({ userRole = 'employee' }) => {
                     <PhoneCall size={18} />
                     <span className="text-xs mt-1 font-medium">Call</span>
                   </button>
-                  {(currentUserRole === 'employee' || currentUserRole === 'boss' || currentUserRole === 'super-admin') && (
+                  {/* WhatsApp button for forwarded leads */}
+                  {lead.assignedTo && lead.assignedTo !== 'Unassigned' && lead.assignedTo !== currentUserId && (
                     <button
                       onClick={() => handleWhatsAppChat(lead)}
-                      className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-md hover:shadow-lg"
-                      title="WhatsApp"
+                      className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-lg hover:from-green-600 hover:to-teal-600 transition-all duration-200 shadow-md hover:shadow-lg"
+                      title="WhatsApp (Forwarded Lead)"
                     >
                       <MessageCircle size={18} />
                       <span className="text-xs mt-1 font-medium">WhatsApp</span>

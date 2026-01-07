@@ -12,7 +12,7 @@ const followUpSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['super-admin', 'head-admin', 'team-leader', 'employee'],
+    enum: ['boss', 'hod', 'team-leader', 'bd'],
     required: true
   },
   timestamp: {

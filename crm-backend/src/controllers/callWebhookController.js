@@ -28,10 +28,10 @@ function mapTwilioStatusToCallStatus(callStatus) {
 }
 
 async function pickDefaultAssignee() {
-  const superAdmin = await User.findOne({ role: 'super-admin' }).lean();
-  if (superAdmin) return superAdmin;
-  const headAdmin = await User.findOne({ role: 'head-admin' }).lean();
-  if (headAdmin) return headAdmin;
+  const boss = await User.findOne({ role: 'boss' }).lean();
+  if (boss) return boss;
+  const hod = await User.findOne({ role: 'hod' }).lean();
+  if (hod) return hod;
   return null;
 }
 

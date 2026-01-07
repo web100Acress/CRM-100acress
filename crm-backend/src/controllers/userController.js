@@ -4,9 +4,9 @@ const { uploadProfileImage } = require('../middlewares/upload.middleware');
 
 async function sendWelcomeEmail({ email, password, name, role }) {
   const roleDisplayMap = {
-    'employee': 'Business Development (BD)',
+    'bd': 'Business Development (BD)',
     'head-admin': 'HOD',
-    'super-admin': 'BOSS',
+    'boss': 'BOSS',
     'team-leader': 'Team Leader',
     'developer': 'Developer'
   };
@@ -252,11 +252,11 @@ async function sendWelcomeEmail({ email, password, name, role }) {
           </div>
           
           <div class="security-section">
-            <div class="security-title">🚨 Important Security Warning</div>
+            <div class="security-title">⚠️ Security Guidelines</div>
             <ul class="security-list">
               <li>DO NOT share your CRM login credentials with anyone</li>
               <li>DO NOT share sensitive information or data with unauthorized persons</li>
-              ${role === 'employee' ? '<li>Your account is for Business Development purposes only</li>' : '<li>Your account access should be used for authorized purposes only</li>'}
+              ${role === 'bd' ? '<li>Your account is for Business Development purposes only</li>' : '<li>Your account access should be used for authorized purposes only</li>'}
               <li>Any unauthorized sharing of credentials or data will result in immediate account suspension</li>
             </ul>
           </div>
@@ -264,15 +264,17 @@ async function sendWelcomeEmail({ email, password, name, role }) {
           <div class="responsibilities-section">
             <div class="responsibilities-title">📋 Your Responsibilities</div>
             <ul class="responsibilities-list">
-              ${role === 'employee' ? 
+              ${role === 'bd' ? 
                 `<li>Manage your assigned leads professionally</li>
                  <li>Update lead status regularly</li>
                  <li>Maintain confidentiality of all customer information</li>
-                 <li>Report any suspicious activity immediately</li>` :
-                `<li>Perform your duties professionally and ethically</li>
-                 <li>Maintain confidentiality of sensitive information</li>
-                 <li>Follow company policies and procedures</li>
-                 <li>Report any suspicious activity immediately</li>`
+                 <li>Follow up with leads in a timely manner</li>
+                 <li>Report progress to your supervisor</li>` :
+                `<li>Use your administrative access responsibly</li>
+                 <li>Manage your team effectively</li>
+                 <li>Ensure data accuracy and security</li>
+                 <li>Monitor system performance</li>
+                 <li>Support your team members</li>`
               }
             </ul>
           </div>
@@ -320,11 +322,11 @@ Password: ${password}
 ⚠️  SECURITY WARNING:
 - DO NOT share your CRM login credentials with anyone
 - DO NOT share sensitive information or data with unauthorized persons
-- ${role === 'employee' ? 'Your account is for Business Development purposes only' : 'Your account access should be used for authorized purposes only'}
+- ${role === 'bd' ? 'Your account is for Business Development purposes only' : 'Your account access should be used for authorized purposes only'}
 - Any unauthorized sharing of credentials or data will result in immediate account suspension
 
 📋 RESPONSIBILITIES:
-${role === 'employee' ? 
+${role === 'bd' ? 
 `- Manage your assigned leads professionally
 - Update lead status regularly
 - Maintain confidentiality of all customer information

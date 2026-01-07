@@ -28,7 +28,7 @@ export function useDashboardStats(userRole, userId) {
       let calculatedStats = {};
 
         switch (userRole) {
-          case 'super-admin':
+          case 'boss':
             
             calculatedStats = {
               totalLeads: leads.length,
@@ -48,7 +48,7 @@ export function useDashboardStats(userRole, userId) {
             
             // Get team members (team-leaders and employees under this head)
             const teamMembers = users.filter(u => 
-              u.role === 'team-leader' || u.role === 'employee'
+              u.role === 'team-leader' || u.role === 'bd'
             );
             
             const teams = new Set(teamMembers.map(u => u.team || 'Unassigned')).size;
@@ -76,7 +76,7 @@ export function useDashboardStats(userRole, userId) {
             };
             break;
 
-          case 'employee':
+          case 'bd':
             const assignedLeads = leads.filter(lead => lead.assignedTo === userId);
             
             calculatedStats = {

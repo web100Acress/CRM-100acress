@@ -10,6 +10,24 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
+  // Get current user's role
+  const currentUserRole = localStorage.getItem('userRole') || localStorage.getItem('role') || 'bd';
+
+  // Function to convert role to valid enum value
+  const getValidSenderRole = (role) => {
+    const roleMap = {
+      'head-admin': 'head_admin',
+      'head': 'head_admin', 
+      'boss': 'boss',
+      'team-leader': 'team_leader',
+      'sales_head': 'sales_head',
+      'admin': 'admin',
+      'crm_admin': 'crm_admin',
+      'bd': 'bd'
+    };
+    return roleMap[role] || 'bd';
+  };
+
   const recipientId = recipient?._id || recipient?.bdId || recipient?.id;
 
   useEffect(() => {
@@ -170,18 +188,28 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
 
     try {
       const token = localStorage.getItem('token');
+      
+      // Debug logging
+      console.log('Current user role from localStorage:', currentUserRole);
+      console.log('Converted sender role:', getValidSenderRole(currentUserRole));
+      
+      const requestBody = {
+        recipientId: recipient._id || recipient.bdId || recipient.id,
+        recipientEmail: resolvedRecipient?.email || recipient.email,
+        recipientName: recipientDisplayName,
+        message: message.trim(),
+        senderRole: getValidSenderRole(currentUserRole)
+      };
+      
+      console.log('Request body being sent:', requestBody);
+      
       const response = await fetch('https://bcrm.100acress.com/api/messages/send', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          recipientId: recipient._id || recipient.bdId || recipient.id,
-          recipientEmail: resolvedRecipient?.email || recipient.email,
-          recipientName: recipientDisplayName,
-          message: message.trim()
-        })
+        body: JSON.stringify(requestBody)
       });
 
       const data = await response.json();

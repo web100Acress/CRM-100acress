@@ -6,7 +6,7 @@ const auth = require('../middlewares/auth');
 // Send a message
 router.post('/send', auth, async (req, res) => {
   try {
-    const { recipientId, recipientEmail, recipientName, message } = req.body;
+    const { recipientId, recipientEmail, recipientName, message, senderRole } = req.body;
     const senderId = req.user._id || req.user.userId;
     
     // Convert recipientId to ObjectId if it's a string
@@ -41,7 +41,7 @@ router.post('/send', auth, async (req, res) => {
     // Create new message
     const newMessage = new Message({
       senderId,
-      senderRole: req.user.role || 'BD',
+      senderRole: senderRole || req.user.role || 'BD',
       recipientId: recipientObjectId,
       recipientRole: 'BD', // Default to BD for recipients
       recipientEmail,

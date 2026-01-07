@@ -86,7 +86,7 @@ const queryClient = new QueryClient();
 
 const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userRole, setUserRole] = useState("employee");
+  const [userRole, setUserRole] = useState("bd");
   const [isLoading, setIsLoading] = useState(true);
 
   const [isDeveloperLoggedIn, setIsDeveloperLoggedIn] = useState(false);
@@ -109,7 +109,7 @@ const App = () => {
     authKeys.forEach(key => localStorage.removeItem(key));
     
     setIsLoggedIn(false);
-    setUserRole("employee");
+    setUserRole("bd");
     setIsDeveloperLoggedIn(false);
     
     // Redirect to login page
@@ -119,7 +119,7 @@ const App = () => {
   useEffect(() => {
     const checkAuthStatus = () => {
       const loggedIn = localStorage.getItem("isLoggedIn") === "true";
-      const role = localStorage.getItem("userRole") || "employee";
+      const role = localStorage.getItem("userRole") || "bd";
       
       // Check token expiration
       const token = localStorage.getItem("token");
@@ -215,7 +215,7 @@ const App = () => {
     }
   })();
 
-  const isFullAccess = userRole === 'super-admin' || userRole === 'developer' || userRole === 'admin';
+  const isFullAccess = userRole === 'boss' || userRole === 'developer' || userRole === 'admin';
   const hasModule = (m) => isFullAccess || allowedModules.length === 0 || allowedModules.includes(m);
   const hasPermission = (p) => isFullAccess || permissions.length === 0 || permissions.includes(p);
   const pickDefaultModuleRoute = () => {

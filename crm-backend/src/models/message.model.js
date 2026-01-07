@@ -8,7 +8,7 @@ const messageSchema = new mongoose.Schema({
   },
   senderRole: {
     type: String,
-    enum: ['admin', 'super-admin', 'BD', 'employee', 'manager'],
+    enum: ['admin', 'boss', 'hod', 'team-leader', 'sales_head', 'bd', 'crm_admin', 'manager', 'BD'],
     default: 'BD'
   },
   recipientId: {
@@ -18,7 +18,7 @@ const messageSchema = new mongoose.Schema({
   },
   recipientRole: {
     type: String,
-    enum: ['admin', 'super-admin', 'BD', 'employee', 'manager'],
+    enum: ['admin', 'boss', 'hod', 'team-leader', 'sales_head', 'bd', 'crm_admin', 'manager', 'BD'],
     default: 'BD'
   },
   recipientEmail: {

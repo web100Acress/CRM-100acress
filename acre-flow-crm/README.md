@@ -256,7 +256,7 @@ const DashboardLayout = ({ children }) => {
 
 ### User Roles
 - **super-admin**: Full system access
-- **head-admin**: Team management
+- **head-admin**: Team management (HOD)
 - **team-leader**: Employee management
 - **employee**: Basic access
 
