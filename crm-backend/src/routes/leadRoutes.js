@@ -26,6 +26,9 @@ router.get('/:id/followups', auth, leadController.getFollowUps);
 // Forward lead to next person in hierarchy
 router.post('/:id/forward', auth, leadController.forwardLead);
 
+// Forward patch (reassign already-forwarded lead)
+router.post('/:id/forward-patch', auth, leadController.forwardPatchLead);
+
 // Save call record
 router.post('/calls', auth, leadController.saveCallRecord);
 

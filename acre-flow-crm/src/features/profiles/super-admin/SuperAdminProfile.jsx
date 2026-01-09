@@ -187,7 +187,7 @@ const SuperAdminProfile = () => {
       <div className="sa2-topbar">
         <div className="sa2-topbar-title">
           <div className="sa2-topbar-dot" />
-          <span>Super Admin Dashboard</span>
+          <span>Boss Dashboard</span>
         </div>
 
         <div className="sa2-topbar-actions">
@@ -246,7 +246,7 @@ const SuperAdminProfile = () => {
 
                 <div className="sa2-hero-bottom">
                   <div>
-                    <div className="sa2-hero-title" style={{color: 'white'}}>100acres CRM</div>
+                    <div className="sa2-hero-title" style={{color: 'white'}}>100acress CRM</div>
                    
                   </div>
                   <button type="button" className="sa2-hero-cta" style={{backgroundColor: 'black', color: 'white'}} onClick={() => navigate('/leads')}>View Leads</button>

@@ -266,6 +266,83 @@ const getAssignableUsers = async (currentUserRole, currentUserId) => {
   return users;
 };
 
+const forwardPatchLead = async (leadId, requesterId, newAssigneeId, reason = '') => {
+  const lead = await Lead.findById(leadId);
+  if (!lead) return null;
+
+  const requester = await User.findById(requesterId);
+  if (!requester) return null;
+
+  const allowedRoles = ['boss', 'hod', 'team-leader'];
+  if (!allowedRoles.includes(String(requester.role))) {
+    throw new Error('Not allowed to forward-patch this lead');
+  }
+
+  if (!newAssigneeId) {
+    throw new Error('New assignee is required');
+  }
+
+  const newAssignee = await User.findById(newAssigneeId);
+  if (!newAssignee) {
+    throw new Error('Selected employee not found');
+  }
+
+  const newRole = String(newAssignee.role || '');
+  if (newRole !== 'bd') {
+    throw new Error('Forward patch can only assign to BD');
+  }
+
+  if (!lead.assignedTo) {
+    throw new Error('Lead is not currently assigned');
+  }
+
+  if (String(lead.assignedTo) === String(newAssigneeId)) {
+    throw new Error('Lead is already assigned to the selected BD');
+  }
+
+  const chain = Array.isArray(lead.assignmentChain) ? lead.assignmentChain : [];
+  const wasForwarded = chain.some((e) => String(e?.status) === 'forwarded');
+  if (!wasForwarded) {
+    throw new Error('Forward patch is only available for already forwarded leads');
+  }
+
+  const currentAssigneeEntryIndex = (() => {
+    for (let i = chain.length - 1; i >= 0; i -= 1) {
+      if (String(chain[i]?.userId) === String(lead.assignedTo) && String(chain[i]?.status) === 'assigned') {
+        return i;
+      }
+    }
+    return -1;
+  })();
+
+  if (currentAssigneeEntryIndex >= 0) {
+    chain[currentAssigneeEntryIndex].status = 'rejected';
+    chain[currentAssigneeEntryIndex].completedAt = new Date();
+    chain[currentAssigneeEntryIndex].notes = reason || 'Reassigned';
+  }
+
+  chain.push({
+    userId: newAssignee._id.toString(),
+    role: newAssignee.role,
+    name: newAssignee.name,
+    assignedAt: new Date(),
+    status: 'assigned',
+    notes: reason || 'Forward patched',
+    assignedBy: {
+      _id: requester._id,
+      name: requester.name,
+      role: requester.role,
+    },
+  });
+
+  lead.assignmentChain = chain;
+  lead.assignedTo = newAssignee._id.toString();
+  lead.assignedBy = requesterId;
+
+  await lead.save();
+  return lead;
+};
+
 const deleteLead = async (id) => {
   return await Lead.findByIdAndDelete(id);
 };
@@ -296,6 +373,7 @@ module.exports = {
   addFollowUp,
   getFollowUps,
   forwardLead,
+  forwardPatchLead,
   getNextAssignableUsers,
   getAssignableUsers,
-}; 
+};

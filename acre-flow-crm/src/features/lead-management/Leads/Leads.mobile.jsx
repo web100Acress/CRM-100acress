@@ -50,6 +50,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
   const [selectedLeadForAdvanced, setSelectedLeadForAdvanced] = useState(null);
   const [isExporting, setIsExporting] = useState(false);
   const [forwardingLead, setForwardingLead] = useState(null);
+  const [patchingLead, setPatchingLead] = useState(null);
   const [assignableUsers, setAssignableUsers] = useState([]);
   const [showForwardDropdown, setShowForwardDropdown] = useState(false);
   const [selectedLeadForForward, setSelectedLeadForForward] = useState(null);
@@ -57,6 +58,10 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
   const [selectedEmployees, setSelectedEmployees] = useState([]);
   const [forwardSuccess, setForwardSuccess] = useState(false);
   const [forwardedLeadData, setForwardedLeadData] = useState(null);
+  const [showForwardPatchDropdown, setShowForwardPatchDropdown] = useState(false);
+  const [selectedLeadForForwardPatch, setSelectedLeadForForwardPatch] = useState(null);
+  const [selectedPatchEmployeeId, setSelectedPatchEmployeeId] = useState('');
+  const [forwardPatchReason, setForwardPatchReason] = useState('');
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
   const [whatsAppRecipient, setWhatsAppRecipient] = useState(null);
   const currentUserId = localStorage.getItem('userId');
@@ -176,7 +181,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     switch (userRole) {
       case 'boss':
       case 'super-admin':
-        return 'Super Admin Dashboard';
+        return 'Boss Dashboard';
       case 'hod':
       case 'head-admin':
       case 'head':
@@ -1260,6 +1265,74 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     }
   };
 
+  const canForwardPatchLead = (lead) => {
+    const role = (currentUserRole || userRole || '').toString();
+    if (!['boss', 'hod', 'team-leader'].includes(role)) return false;
+    if (!lead?.assignedTo) return false;
+
+    const chain = Array.isArray(lead?.assignmentChain) ? lead.assignmentChain : [];
+    const wasForwarded = chain.some((e) => String(e?.status) === 'forwarded');
+    if (!wasForwarded) return false;
+
+    const last = chain.length > 0 ? chain[chain.length - 1] : null;
+    const lastRole = (last?.role || '').toString();
+    if (lastRole !== 'bd' && lastRole !== 'employee') return false;
+
+    const users = Array.isArray(assignableUsers) ? assignableUsers : [];
+    return users.some((u) => (u?.role || u?.userRole) === 'bd' && String(u?._id) !== String(lead.assignedTo));
+  };
+
+  const handleForwardPatchLead = async (leadId, selectedEmployeeId, reason) => {
+    try {
+      setPatchingLead(leadId);
+      const token = localStorage.getItem('token');
+
+      const res = await fetch(
+        `https://bcrm.100acress.com/api/leads/${leadId}/forward-patch`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ selectedEmployee: selectedEmployeeId, reason }),
+        }
+      );
+
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.message || 'Failed to reassign lead');
+      }
+
+      const leadsResponse = await fetch('https://bcrm.100acress.com/api/leads', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const leadsJson = await leadsResponse.json();
+      setLeads(leadsJson.data || []);
+
+      toast({
+        title: 'Success',
+        description: data?.message || 'Lead reassigned successfully',
+      });
+
+      setShowForwardPatchDropdown(false);
+      setSelectedLeadForForwardPatch(null);
+      setSelectedPatchEmployeeId('');
+      setForwardPatchReason('');
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to reassign lead',
+        variant: 'destructive',
+      });
+    } finally {
+      setPatchingLead(null);
+    }
+  };
+
   const fetchAssignmentChain = async (leadId) => {
     setChainLoading(true);
     try {
@@ -1506,6 +1579,25 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                       </span>
                     </button>
                   )}
+
+                  {canForwardPatchLead(lead) && (
+                    <button
+                      onClick={() => {
+                        setSelectedLeadForForwardPatch(lead);
+                        setSelectedPatchEmployeeId('');
+                        setForwardPatchReason('');
+                        setShowForwardPatchDropdown(true);
+                      }}
+                      disabled={patchingLead === lead._id}
+                      className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-orange-600 to-rose-600 text-white rounded-lg hover:from-orange-700 hover:to-rose-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Forward Patch"
+                    >
+                      <ForwardIcon size={18} />
+                      <span className="text-xs mt-1 font-medium">
+                        {patchingLead === lead._id ? "..." : "Patch"}
+                      </span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Status Update Button - Only for Employees */}
@@ -1647,6 +1739,92 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
           </DialogContent>
         </Dialog>
       )}
+
+    {showForwardPatchDropdown && selectedLeadForForwardPatch && (
+      <Dialog open={showForwardPatchDropdown} onOpenChange={setShowForwardPatchDropdown}>
+        <DialogContent className="max-w-sm w-[95vw] max-h-[85vh] overflow-y-auto mx-4">
+          <DialogHeader className="bg-gradient-to-r from-orange-600 to-rose-600 text-white p-4">
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <ForwardIcon size={18} />
+              <span className="font-semibold">Forward Patch - {selectedLeadForForwardPatch.name}</span>
+            </DialogTitle>
+            <DialogDescription className="text-orange-100">
+              Switch this forwarded lead to a different BD
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="p-3 space-y-3">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-900">Select New BD</label>
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                value={selectedPatchEmployeeId}
+                onChange={(e) => setSelectedPatchEmployeeId(e.target.value)}
+              >
+                <option value="">Select BD</option>
+                {assignableUsers
+                  .filter((u) => (u?.role || u?.userRole) === 'bd')
+                  .filter((u) => String(u?._id) !== String(selectedLeadForForwardPatch?.assignedTo))
+                  .map((u) => (
+                    <option key={u._id} value={u._id}>
+                      {u.name} ({u.role})
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-900">Reason (optional)</label>
+              <input
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                value={forwardPatchReason}
+                onChange={(e) => setForwardPatchReason(e.target.value)}
+                placeholder="Reason for switching BD"
+              />
+            </div>
+
+            <div className="flex gap-2 pt-3 border-t">
+              <button
+                onClick={() => {
+                  setShowForwardPatchDropdown(false);
+                  setSelectedLeadForForwardPatch(null);
+                  setSelectedPatchEmployeeId('');
+                  setForwardPatchReason('');
+                }}
+                className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200 font-medium text-sm"
+              >
+                <X size={14} />
+                <span>Cancel</span>
+              </button>
+              <button
+                onClick={() => {
+                  if (!selectedLeadForForwardPatch?._id || !selectedPatchEmployeeId) return;
+                  handleForwardPatchLead(
+                    selectedLeadForForwardPatch._id,
+                    selectedPatchEmployeeId,
+                    forwardPatchReason
+                  );
+                }}
+                disabled={!selectedPatchEmployeeId || !!patchingLead}
+                className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-gradient-to-r from-orange-600 to-rose-600 text-white rounded-lg hover:from-orange-700 hover:to-rose-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg hover:shadow-xl transform hover:scale-105 text-sm"
+              >
+                {patchingLead ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <ForwardIcon size={14} />
+                    <span>Reassign</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    )}
 
       {showWhatsAppModal && whatsAppRecipient && (
         <WhatsAppMessageModal

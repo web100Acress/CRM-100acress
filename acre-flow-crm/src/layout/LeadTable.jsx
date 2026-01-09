@@ -38,6 +38,11 @@ const LeadTable = ({ userRole }) => {
   const [followUpError, setFollowUpError] = useState("");
   const [assignableUsers, setAssignableUsers] = useState([]);
   const [forwardingLead, setForwardingLead] = useState(null);
+  const [patchingLead, setPatchingLead] = useState(null);
+  const [showForwardPatch, setShowForwardPatch] = useState(false);
+  const [selectedLeadForForwardPatch, setSelectedLeadForForwardPatch] = useState(null);
+  const [selectedPatchEmployeeId, setSelectedPatchEmployeeId] = useState('');
+  const [forwardPatchReason, setForwardPatchReason] = useState('');
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
   const prevAssignedLeadIds = useRef(new Set());
@@ -251,6 +256,81 @@ const LeadTable = ({ userRole }) => {
       default:
         return "status-default";
     }
+  };
+
+  const handleForwardPatchLead = async (leadId, selectedEmployeeId, reason) => {
+    try {
+      setPatchingLead(leadId);
+      const token = localStorage.getItem("token");
+
+      const res = await fetch(
+        `https://bcrm.100acress.com/api/leads/${leadId}/forward-patch`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ selectedEmployee: selectedEmployeeId, reason }),
+        }
+      );
+
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        data = null;
+      }
+
+      if (!res.ok) {
+        throw new Error(data?.message || "Failed to reassign lead");
+      }
+
+      const leadsResponse = await fetch("https://bcrm.100acress.com/api/leads", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const leadsJson = await leadsResponse.json();
+      setLeadsList(leadsJson.data || []);
+
+      toast({
+        title: "Success",
+        description: data?.message || "Lead reassigned successfully",
+      });
+
+      setShowForwardPatch(false);
+      setSelectedLeadForForwardPatch(null);
+      setSelectedPatchEmployeeId('');
+      setForwardPatchReason('');
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: err.message || "Failed to reassign lead",
+        variant: "destructive",
+      });
+    } finally {
+      setPatchingLead(null);
+    }
+  };
+
+  const canForwardPatchLead = (lead) => {
+    const currentUserRole = localStorage.getItem("userRole");
+    const role = (currentUserRole || userRole || '').toString();
+    if (!['boss', 'hod', 'team-leader'].includes(role)) return false;
+    if (!lead?.assignedTo) return false;
+
+    const chain = Array.isArray(lead?.assignmentChain) ? lead.assignmentChain : [];
+    const wasForwarded = chain.some((e) => String(e?.status) === 'forwarded');
+    if (!wasForwarded) return false;
+
+    const last = chain.length > 0 ? chain[chain.length - 1] : null;
+    const lastRole = (last?.role || '').toString();
+    if (lastRole !== 'bd' && lastRole !== 'employee') return false;
+
+    const users = Array.isArray(assignableUsers) ? assignableUsers : [];
+    return users.some((u) => (u?.role || u?.userRole) === 'bd' && String(u?._id) !== String(lead.assignedTo));
   };
 
   const handleFollowUp = (lead) => {
@@ -1074,6 +1154,23 @@ const LeadTable = ({ userRole }) => {
                         </>
                       )}
 
+                      {canForwardPatchLead(lead) && (
+                        <button
+                          className="lead-forward-button"
+                          onClick={() => {
+                            setSelectedLeadForForwardPatch(lead);
+                            setSelectedPatchEmployeeId('');
+                            setForwardPatchReason('');
+                            setShowForwardPatch(true);
+                          }}
+                          disabled={patchingLead === lead._id}
+                          title="Forward Patch (Switch BD)"
+                        >
+                          <ArrowRight size={14} />
+                          {patchingLead === lead._id ? "Patching..." : "Forward Patch"}
+                        </button>
+                      )}
+
                       {canAssignToSelf(lead) && (
                         <button
                           className="lead-self-assign-button"
@@ -1803,6 +1900,73 @@ const LeadTable = ({ userRole }) => {
               No assignment chain available for this lead.
             </p>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showForwardPatch} onOpenChange={setShowForwardPatch}>
+        <DialogContent className="lead-dialog-content">
+          <DialogHeader>
+            <DialogTitle className="lead-dialog-title">
+              Forward Patch - {selectedLeadForForwardPatch?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="lead-details-content">
+            <div className="lead-dialog-field">
+              <label className="lead-dialog-label">Select New BD</label>
+              <select
+                className="lead-assignment-select"
+                value={selectedPatchEmployeeId}
+                onChange={(e) => setSelectedPatchEmployeeId(e.target.value)}
+              >
+                <option value="">Select BD</option>
+                {assignableUsers
+                  .filter((u) => (u?.role || u?.userRole) === 'bd')
+                  .filter((u) => String(u?._id) !== String(selectedLeadForForwardPatch?.assignedTo))
+                  .map((u) => (
+                    <option key={u._id} value={u._id}>
+                      {u.name} ({u.role})
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            <div className="lead-dialog-field">
+              <label className="lead-dialog-label">Reason (optional)</label>
+              <input
+                className="lead-details-input"
+                value={forwardPatchReason}
+                onChange={(e) => setForwardPatchReason(e.target.value)}
+                placeholder="Reason for switching BD"
+              />
+            </div>
+          </div>
+
+          <div className="lead-advanced-footer">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowForwardPatch(false);
+                setSelectedLeadForForwardPatch(null);
+                setSelectedPatchEmployeeId('');
+                setForwardPatchReason('');
+              }}
+            >
+              Close
+            </Button>
+            <Button
+              onClick={() => {
+                if (!selectedLeadForForwardPatch?._id || !selectedPatchEmployeeId) return;
+                handleForwardPatchLead(
+                  selectedLeadForForwardPatch._id,
+                  selectedPatchEmployeeId,
+                  forwardPatchReason
+                );
+              }}
+              disabled={!selectedLeadForForwardPatch?._id || !selectedPatchEmployeeId || !!patchingLead}
+            >
+              {patchingLead ? 'Saving...' : 'Reassign'}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

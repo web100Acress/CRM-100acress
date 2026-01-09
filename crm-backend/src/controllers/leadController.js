@@ -229,6 +229,46 @@ exports.forwardLead = async (req, res, next) => {
   }
 };
 
+exports.forwardPatchLead = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { selectedEmployee, reason = '' } = req.body;
+
+    const lead = await leadService.forwardPatchLead(
+      id,
+      req.user._id.toString(),
+      selectedEmployee,
+      reason
+    );
+    if (!lead) {
+      return res.status(404).json({ success: false, message: 'Lead not found' });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: lead,
+      message: 'Lead reassigned successfully',
+    });
+
+    if (io) {
+      const Lead = require('../models/leadModel');
+      const User = require('../models/userModel');
+      const allLeads = await Lead.find();
+      io.emit('leadUpdate', allLeads);
+      const totalUsers = await User.countDocuments();
+      const activeLeads = await Lead.countDocuments({ status: { $ne: 'Closed' } });
+      const leads = await Lead.find();
+      const leadsByStatus = leads.reduce((acc, lead) => {
+        acc[lead.status] = (acc[lead.status] || 0) + 1;
+        return acc;
+      }, {});
+      io.emit('dashboardUpdate', { totalUsers, activeLeads, leadsByStatus });
+    }
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
 // New controller method for getting assignable users
 exports.getAssignableUsers = async (req, res, next) => {
   try {
