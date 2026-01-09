@@ -12,7 +12,7 @@ router.use('/webhooks', require('./callWebhookRoutes'));
 router.use('/whatsapp', require('./whatsappRoutes'));
 router.use('/email', require('./emailRoutes'));
 router.use('/messages', require('./messageRoutes'));
-router.use('/chats', require('./chatRoutes'));
+// router.use('/chats', require('./chatRoutes'));
 router.use('/lead-assignment', require('./leadAssignmentRoutes'));
 router.use('/api-tester', require('./apiTester.routes'));
 
