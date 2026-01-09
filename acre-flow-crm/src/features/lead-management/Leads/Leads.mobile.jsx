@@ -1255,6 +1255,10 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     // Lead should not be forwarded back to the same user
     if (lead?.assignedTo && String(lead.assignedTo) === String(currentUserId)) return false;
 
+    const chain = Array.isArray(lead?.assignmentChain) ? lead.assignmentChain : [];
+    const wasForwarded = chain.some((e) => String(e?.status) === 'forwarded');
+    if (wasForwarded) return false;
+
     const role = (currentUserRole || userRole || '').toString();
 
     // Define forwarding hierarchy
