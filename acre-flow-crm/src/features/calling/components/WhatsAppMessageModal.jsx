@@ -4,10 +4,12 @@ import { useToast } from '@/hooks/use-toast';
 
 const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
   const { toast } = useToast();
+  const [chatId, setChatId] = useState(null);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [isSending, setIsSending] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [creatingChat, setCreatingChat] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -24,22 +26,66 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
     return localStorage.getItem('userId') || localStorage.getItem('id');
   }, []);
 
+  // Find or create chat between current user and recipient
+  const findOrCreateChat = useCallback(async () => {
+    if (!recipient?._id || !recipient?.leadId) return;
+    
+    setCreatingChat(true);
+    try {
+      const token = localStorage.getItem('token');
+      const currentUserId = getCurrentUserId();
+      
+      const response = await fetch('https://bcrm.100acress.com/api/chats/create', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          leadId: recipient.leadId,
+          createdBy: currentUserId,
+          assignedTo: recipient._id
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setChatId(data.data._id);
+          console.log('Chat created/found:', data.data._id);
+        }
+      }
+    } catch (error) {
+      console.error('Error creating chat:', error);
+    } finally {
+      setCreatingChat(false);
+    }
+  }, [recipient, getCurrentUserId]);
+
   const oppositeUser = React.useMemo(() => {
     if (!recipient) return null;
     const myId = getCurrentUserId();
     const recipientId = recipient._id || recipient.bdId || recipient.id;
+    
+    // If recipient is the current user, show "You"
     if (recipientId === myId) {
       return { _id: myId, name: 'You', role: 'Self' };
     }
-    return recipient;
+    
+    // Otherwise, show the recipient's name
+    return {
+      _id: recipientId,
+      name: recipient.name || recipient.userName || recipient.fullName || 'Unknown',
+      role: recipient.role || recipient.userRole || 'User'
+    };
   }, [recipient, getCurrentUserId]);
 
   const fetchMessages = useCallback(async () => {
-    if (!recipient?._id || !recipient?.leadId) return;
+    if (!chatId) return;
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://bcrm.100acress.com/api/chats/messages?chatId=${recipient._id}`, {
+      const response = await fetch(`https://bcrm.100acress.com/api/chats/messages?chatId=${chatId}`, {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
       });
       if (response.ok) {
@@ -60,17 +106,17 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
     } finally {
       setLoading(false);
     }
-  }, [recipient, getCurrentUserId]);
+  }, [chatId, getCurrentUserId]);
 
   const handleSendMessage = useCallback(async () => {
-    if (!message.trim() || isSending || !recipient?._id) return;
+    if (!message.trim() || isSending || !chatId) return;
     setIsSending(true);
     try {
       const token = localStorage.getItem('token');
       const response = await fetch('https://bcrm.100acress.com/api/chats/send', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chatId: recipient._id, message: message.trim(), senderId: getCurrentUserId() })
+        body: JSON.stringify({ chatId: chatId, message: message.trim(), senderId: getCurrentUserId() })
       });
       if (response.ok) {
         const data = await response.json();
@@ -86,7 +132,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
     } finally {
       setIsSending(false);
     }
-  }, [message, isSending, recipient, getCurrentUserId, toast]);
+  }, [message, isSending, chatId, getCurrentUserId, toast]);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -94,7 +140,31 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
 
   useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
   useEffect(() => { if (isOpen && inputRef.current) { inputRef.current.focus(); } }, [isOpen]);
-  useEffect(() => { if (isOpen && recipient?._id) { fetchMessages(); } }, [isOpen, recipient, fetchMessages]);
+  
+  // Find/create chat when modal opens
+  useEffect(() => { 
+    if (isOpen && recipient?._id && recipient?.leadId) { 
+      findOrCreateChat(); 
+    } 
+  }, [isOpen, recipient, findOrCreateChat]);
+  
+  // Reset when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setChatId(null);
+      setMessages([]);
+      setMessage('');
+      setCreatingChat(false);
+      setLoading(false);
+    }
+  }, [isOpen]);
+  
+  // Fetch messages when chatId is available
+  useEffect(() => { 
+    if (chatId) { 
+      fetchMessages(); 
+    } 
+  }, [chatId, fetchMessages]);
 
   if (!isOpen || !recipient) return null;
 
@@ -119,11 +189,20 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
           </div>
         </div>
         <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
-          {loading ? (
-            <div className="flex items-center justify-center h-full"><div className="text-gray-500">Loading messages...</div></div>
+          {creatingChat ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-gray-500">Creating chat...</div>
+            </div>
+          ) : loading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-gray-500">Loading messages...</div>
+            </div>
           ) : messages.length === 0 ? (
             <div className="flex items-center justify-center h-full">
-              <div className="text-gray-500 text-center"><p>No messages yet</p><p className="text-sm mt-2">Start a conversation!</p></div>
+              <div className="text-gray-500 text-center">
+                <p>No messages yet</p>
+                <p className="text-sm mt-2">Start a conversation!</p>
+              </div>
             </div>
           ) : (
             <div className="space-y-2">
