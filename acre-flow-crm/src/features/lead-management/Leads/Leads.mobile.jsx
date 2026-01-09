@@ -941,7 +941,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       
       console.log('Found assigned user:', assignedUser);
       
-
+    }
     const recipientData = {
       _id: recipientUser._id,
       id: recipientUser._id,
@@ -2217,6 +2217,8 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       </Dialog>
     )}
 
+    </div>
+
     {/* Mobile Bottom Navigation */}
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg md:hidden">
       <div className="flex justify-around items-center py-2">
@@ -2268,11 +2270,8 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
           <span className="text-xs mt-1">Menu</span>
         </button>
       </div>
-      </div>
     </div>
     </div>
   );
 };
-};
-
 export default LeadsMobile;
