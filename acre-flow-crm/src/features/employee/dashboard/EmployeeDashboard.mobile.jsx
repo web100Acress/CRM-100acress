@@ -108,6 +108,7 @@ const BDDashboardMobile = () => {
         toast({
           title: "New Lead Assigned",
           description: `${data.name} has been assigned to you`,
+          duration: 8000,
         });
         
         setDashboardStats(prev => ({

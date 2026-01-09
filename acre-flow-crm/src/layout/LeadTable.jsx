@@ -194,6 +194,7 @@ const LeadTable = ({ userRole }) => {
               title: "New Lead Assigned",
               description: `You have been assigned a new lead: ${lead.name}`,
               status: "info",
+              duration: 8000,
             });
           }
         });
