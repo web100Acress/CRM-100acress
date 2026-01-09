@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Send, Phone, Video, MoreVertical, Smile, Paperclip } from 'lucide-react';
+import { X, Send, Phone, Video, MoreVertical, Smile, Paperclip, Search, MessageCircle, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-const WhatsAppMessageModal = ({ isOpen, onClose, chat }) => {
+const WhatsAppChat = ({ chat, isOpen, onClose }) => {
   const { toast } = useToast();
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
@@ -27,23 +27,17 @@ const WhatsAppMessageModal = ({ isOpen, onClose, chat }) => {
 
   const myId = getCurrentUserId();
 
-  // 🧠 BUSINESS RULE: Find opposite user
+  // 🎯 WHATSAPP LOGIC: Find opposite user
   const oppositeUser = React.useMemo(() => {
     if (!chat?.participants || chat.participants.length !== 2) {
-      console.error('❌ Invalid chat participants');
       return null;
     }
 
-    console.log('👉 My ID:', myId);
-    console.log('👉 Chat users:', chat.participants);
-
     const opposite = chat.participants.find(u => u._id !== myId);
-    
-    console.log('👉 Opposite user:', opposite);
     return opposite;
   }, [chat, myId]);
 
-  // Fetch messages
+  // Fetch messages for this chat
   const fetchMessages = useCallback(async () => {
     if (!chat?._id) return;
 
@@ -61,10 +55,10 @@ const WhatsAppMessageModal = ({ isOpen, onClose, chat }) => {
         const data = await response.json();
         if (data.success) {
           const formattedMessages = data.data.map(msg => ({
-            id: msg._id,
+            id: msg._id || Math.random().toString(),
             text: msg.message,
-            sender: msg.senderId === myId ? 'me' : 'other',
-            senderName: msg.senderId === myId ? 'You' : msg.senderId.name,
+            sender: msg.senderId._id === myId ? 'me' : 'other',
+            senderName: msg.senderId._id === myId ? 'You' : msg.senderId.name,
             timestamp: new Date(msg.timestamp)
           }));
           setMessages(formattedMessages);
@@ -84,7 +78,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, chat }) => {
     setIsSending(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://bcrm.100acress.com/api/chats/send-message', {
+      const response = await fetch('https://bcrm.100acress.com/api/chats/send', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -103,7 +97,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, chat }) => {
           setMessage('');
           // Add message to local state immediately
           const newMsg = {
-            id: data.data._id,
+            id: Math.random().toString(),
             text: message.trim(),
             sender: 'me',
             senderName: 'You',
@@ -122,7 +116,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, chat }) => {
     } finally {
       setIsSending(false);
     }
-  }, [message, isSending, chat, myId]);
+  }, [message, isSending, chat, myId, toast]);
 
   // Auto-scroll to bottom
   const scrollToBottom = useCallback(() => {
@@ -151,7 +145,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, chat }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg w-full max-w-md h-[600px] flex flex-col">
-        {/* Header */}
+        {/* WhatsApp Header */}
         <div className="bg-green-600 text-white p-4 rounded-t-lg flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
@@ -160,7 +154,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, chat }) => {
               </span>
             </div>
             <div>
-              {/* ✅ HEADER LOGIC: Opposite user ka naam */}
+              {/* ✅ WHATSAPP HEADER: Opposite user + Lead info */}
               <h3 className="font-semibold">{oppositeUser?.name || 'Unknown'}</h3>
               <p className="text-xs opacity-90">
                 {oppositeUser?.role || 'User'} • Lead: {chat.leadId?.name || 'Unknown'}
@@ -183,7 +177,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, chat }) => {
           </div>
         </div>
 
-        {/* Messages */}
+        {/* WhatsApp Messages */}
         <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
           {loading ? (
             <div className="flex items-center justify-center h-full">
@@ -217,7 +211,9 @@ const WhatsAppMessageModal = ({ isOpen, onClose, chat }) => {
                       </p>
                     )}
                     <p className="text-sm">{msg.text}</p>
-                    <p className="text-xs mt-1 text-gray-500">
+                    <p className={`text-xs mt-1 ${
+                      msg.sender === 'me' ? 'text-green-100' : 'text-gray-500'
+                    }`}>
                       {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
@@ -228,7 +224,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, chat }) => {
           )}
         </div>
 
-        {/* Input */}
+        {/* WhatsApp Input */}
         <div className="p-4 border-t bg-white rounded-b-lg">
           <div className="flex items-center space-x-2">
             <button className="p-2 text-gray-500 hover:text-gray-700">
@@ -270,4 +266,4 @@ const WhatsAppMessageModal = ({ isOpen, onClose, chat }) => {
   );
 };
 
-export default WhatsAppMessageModal;
+export default WhatsAppChat;

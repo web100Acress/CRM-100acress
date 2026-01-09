@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/layout/button';
 import { useToast } from '@/hooks/use-toast';
 import FollowUpModal from '@/features/employee/follow-up/FollowUpModal';
-import WhatsAppMessageModal from '@/features/calling/components/WhatsAppMessageModal.fixed';
+import WhatsAppMessageModal from '@/features/calling/components/WhatsAppMessageModal';
 import CreateLeadFormMobile from '@/layout/CreateLeadForm.mobile';
 import LeadTableMobile from '@/layout/LeadTable.mobile';
 import LeadAdvancedOptionsMobile from '@/layout/LeadAdvancedOptions.mobile';
