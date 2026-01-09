@@ -855,7 +855,6 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
 
   const handleWhatsAppChat = (lead) => {
     const users = Array.isArray(assignableUsers) ? assignableUsers : [];
-    const byRole = (role) => users.find((u) => u?.role === role || u?.userRole === role);
     const currentUserId = localStorage.getItem('userId');
     const currentUserRole = localStorage.getItem('userRole') || localStorage.getItem('role');
 
@@ -874,90 +873,30 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
 
     let recipientUser = null;
     
-    console.log('WhatsApp chat attempt:', {
-      leadId: lead._id,
-      leadName: lead.name,
-      currentUserRole,
-      currentUserId,
-      assignedTo: lead.assignedTo,
-      assignableUsersCount: users.length,
-      assignmentChain: lead.assignmentChain
-    });
-    
-    // If current user is BD/employee and lead is assigned to them
-    if ((currentUserRole === 'bd' || currentUserRole === 'employee') && 
-        String(lead.assignedTo) === String(currentUserId)) {
-      
-      console.log('BD user trying to chat for their assigned lead');
-      
-      // For BD users, find HOD or Boss to chat with
-      console.log('Looking for HOD or Boss in assignable users...');
-      
-      // Filter out current user from available users
-      const otherUsers = users.filter(u => String(u._id) !== String(currentUserId));
-      
-      // Try to find HOD first (excluding current user)
-      recipientUser = otherUsers.find(u => ['hod', 'head-admin', 'head'].includes(u.role));
-      
-      if (!recipientUser) {
-        console.log('HOD not found, looking for Boss...');
-        recipientUser = otherUsers.find(u => ['boss', 'super-admin'].includes(u.role));
-      }
-      
-      if (!recipientUser) {
-        console.log('Boss not found, trying to find from assignment chain...');
-        // Check if lead has assignment chain to find who assigned it
-        if (lead.assignmentChain && lead.assignmentChain.length > 0) {
-          const lastAssignment = lead.assignmentChain[lead.assignmentChain.length - 1];
-          console.log('Last assignment:', lastAssignment);
-          
-          // Try to find the user who assigned this lead (excluding current user)
-          if (lastAssignment?.assignedBy) {
-            const assignedById = typeof lastAssignment.assignedBy === 'object' 
-              ? lastAssignment.assignedBy._id || lastAssignment.assignedBy.id
-              : lastAssignment.assignedBy;
-            
-            // Only select if it's not the current user
-            if (String(assignedById) !== String(currentUserId)) {
-              recipientUser = users.find((u) => String(u?._id) === String(assignedById));
-              console.log('Found assignedBy in assignment chain:', recipientUser);
-            }
+    // 🔥 HIERARCHY-BASED RECIPIENT SELECTION
+    if (currentUserRole === 'bd' || currentUserRole === 'employee') {
+      // BD user logic
+      if (lead.assignedTo === currentUserId) {
+        // Lead assigned to current BD -> Find HOD who forwarded
+        console.log('🔍 BD user with assigned lead - looking for HOD...');
+        const forwarder = lead.assignmentChain?.[0]?.assignedBy;
+        if (forwarder && forwarder._id && forwarder._id !== currentUserId) {
+          recipientUser = users.find(u => String(u._id) === String(forwarder._id));
+          console.log('✅ Found HOD for chat:', recipientUser);
+        }
+        
+        // If no HOD found, try any available HOD
+        if (!recipientUser) {
+          const availableHods = users.filter(u => u.role === 'hod' && String(u._id) !== currentUserId);
+          if (availableHods.length > 0) {
+            recipientUser = availableHods[0];
+            console.log('✅ Using available HOD:', recipientUser);
           }
         }
-      }
-      
-      // Last resort - any available user (excluding current user)
-      if (!recipientUser && users.length > 0) {
-        console.log('Using any available user as last resort (excluding current user)');
-        const availableUsers = users.filter(u => String(u._id) !== String(currentUserId));
-        if (availableUsers.length > 0) {
-          recipientUser = availableUsers[0];
-        } else {
-          console.error('❌ NO VALID RECIPIENT FOUND - Only current user available');
-          toast({
-            title: 'Error',
-            description: 'No other users available to chat with. Please contact admin.',
-            variant: 'destructive'
-          });
-          return;
-        }
-      }
-      
-    } else {
-      // For HODs/Boss: chat with the assigned user
-      console.log('HOD/Boss trying to chat with assigned user');
-      const assignedUserId = lead?.assignedTo;
-      const assignedUser = assignedUserId
-        ? users.find((u) => String(u?._id) === String(assignedUserId))
-        : null;
-      
-      console.log('Found assigned user:', assignedUser);
-      
-      // If lead is assigned to someone, chat with that person
-      if (assignedUser) {
-        recipientUser = assignedUser;
       } else {
-        // Fallback: try to find any available user (excluding current user)
+        // Lead assigned to someone else -> Chat with assigned user
+        recipientUser = users.find(u => String(u._id) === String(lead.assignedTo));
+        console.log('✅ Found assigned user for chat:', recipientUser);
         const availableUsers = users.filter(u => String(u._id) !== String(currentUserId));
         recipientUser = availableUsers.find(u => ['boss', 'super-admin', 'hod', 'head-admin', 'head', 'team-leader'].includes(u.role)) || availableUsers[0];
       }
@@ -1205,6 +1144,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     try {
       setForwardingLead(leadId);
       const token = localStorage.getItem('token');
+      const currentUserName = localStorage.getItem('userName') || localStorage.getItem('name') || 'Current User';
       
       console.log('Attempting to forward lead:', leadId);
       console.log('Token:', token ? 'Present' : 'Missing');

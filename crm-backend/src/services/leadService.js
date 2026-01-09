@@ -265,10 +265,13 @@ const getAssignableUsers = async (currentUserRole, currentUserId) => {
     return self ? [...employees, self] : employees;
   }
 
-  // If bd, only self
+  // If bd, include HOD users for chat hierarchy
   if (currentUserRole === 'bd') {
     const self = await User.findById(currentUserId);
-    return self ? [self] : [];
+    const hods = await User.find({ role: 'hod' });
+    const teamLeaders = await User.find({ role: 'team-leader' });
+    const allUsers = [...hods, ...teamLeaders];
+    return self ? [...allUsers, self] : allUsers;
   }
 
   // For super-admin and head-admin, return all users at lower levels
