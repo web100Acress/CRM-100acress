@@ -87,7 +87,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
         senderName: recipient.name
       });
       
-      const response = await fetch('http://localhost:5001/api/chats/create', {
+      const response = await fetch('https://bcrm.100acress.com/api/chats/create', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -148,7 +148,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5001/api/chats/messages?chatId=${chatId}`, {
+      const response = await fetch(`https://bcrm.100acress.com/api/chats/messages?chatId=${chatId}`, {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
       });
       if (response.ok) {
@@ -176,7 +176,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
     setIsSending(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5001/api/chats/send', {
+      const response = await fetch('https://bcrm.100acress.com/api/chats/send', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ chatId: chatId, message: message.trim(), senderId: getCurrentUserId() })
@@ -268,13 +268,23 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
               </div>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="flex flex-col space-y-3 h-full">
               {messages.map((msg) => (
-                <div key={msg.id} className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-xs px-4 py-2 rounded-lg ${msg.sender === 'me' ? 'bg-green-600 text-white' : 'bg-white text-gray-800 border'}`}>
-                    {msg.sender === 'other' && <p className="text-xs font-semibold mb-1 text-gray-600">{msg.senderName}</p>}
-                    <p className="text-sm">{msg.text}</p>
-                    <p className={`text-xs mt-1 ${msg.sender === 'me' ? 'text-green-100' : 'text-gray-500'}`}>{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                <div key={msg.id} className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'} w-full`}>
+                  <div className={`max-w-[70%] px-4 py-2 rounded-2xl ${
+                    msg.sender === 'me' 
+                      ? 'bg-green-600 text-white' 
+                      : 'bg-white text-gray-800 border border-gray-200'
+                  }`}>
+                    {msg.sender === 'other' && (
+                      <p className="text-xs font-semibold mb-1 text-gray-600">{msg.senderName}</p>
+                    )}
+                    <p className="text-sm break-words">{msg.text}</p>
+                    <p className={`text-xs mt-1 ${
+                      msg.sender === 'me' ? 'text-green-100' : 'text-gray-500'
+                    }`}>
+                      {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
                   </div>
                 </div>
               ))}
