@@ -12,6 +12,7 @@ router.use('/webhooks', require('./callWebhookRoutes'));
 router.use('/whatsapp', require('./whatsappRoutes'));
 router.use('/email', require('./emailRoutes'));
 router.use('/messages', require('./messageRoutes'));
+router.use('/chats', require('./chatRoutes'));
 router.use('/api-tester', require('./apiTester.routes'));
 
 module.exports = router;

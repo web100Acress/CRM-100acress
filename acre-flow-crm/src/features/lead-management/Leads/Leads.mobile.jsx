@@ -1663,7 +1663,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                     <Eye size={18} />
                     <span className="text-xs mt-1 font-medium">Details</span>
                   </button>
-                  {canForwardLead(lead) && !((currentUserRole === 'hod' || currentUserRole === 'head-admin') && !isBossToHodLead(lead)) && (
+                  {canForwardLead(lead) && (
                     <button
                       onClick={() => handleForwardClick(lead)}
                       disabled={forwardingLead === lead._id}
