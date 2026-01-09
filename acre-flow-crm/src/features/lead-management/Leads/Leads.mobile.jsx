@@ -940,15 +940,27 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         } else {
           console.log('❌ No valid assigner found or self-chat detected');
           
-          // Fallback: Try to find any HOD or TL user
-          const fallbackUsers = users.filter(u => 
-            (u.role === 'hod' || u.role === 'team-leader' || u.role === 'tl') && 
-            String(u._id) !== String(currentUser._id)
-          );
+          // Fallback: Try to find the user who created this lead
+          let fallbackUser = null;
           
-          if (fallbackUsers.length > 0) {
-            allowedUsers = [fallbackUsers[0]];
-            console.log('✅ Fallback: Using HOD/TL user:', fallbackUsers[0]);
+          // Strategy 1: Try lead.createdBy
+          if (lead.createdBy && String(lead.createdBy._id) !== String(currentUser._id)) {
+            fallbackUser = lead.createdBy;
+            console.log('✅ Fallback: Using lead.createdBy:', fallbackUser);
+          }
+          
+          // Strategy 2: Try to find any user who is not current user
+          if (!fallbackUser) {
+            const otherUsers = users.filter(u => String(u._id) !== String(currentUser._id));
+            if (otherUsers.length > 0) {
+              fallbackUser = otherUsers[0];
+              console.log('✅ Fallback: Using first available user:', fallbackUser);
+            }
+          }
+          
+          if (fallbackUser) {
+            allowedUsers = [fallbackUser];
+            console.log('✅ Final fallback user selected:', fallbackUser);
           }
         }
       } else {

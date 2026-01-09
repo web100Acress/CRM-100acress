@@ -26,7 +26,8 @@ exports.createOrGetChat = async (req, res, next) => {
     let chat = await Chat.findOne({
       leadId,
       participants: { $all: [createdBy, assignedTo] }
-    }).populate('participants', 'name role email');
+    }).populate('participants', 'name role email')
+      .populate('messages.senderId', 'name role email');
 
     if (!chat) {
       // Create new WhatsApp-style chat
@@ -41,8 +42,9 @@ exports.createOrGetChat = async (req, res, next) => {
       });
       await chat.save();
       
-      // Populate participants
+      // Populate participants and messages
       await chat.populate('participants', 'name role email');
+      await chat.populate('messages.senderId', 'name role email');
     }
 
     res.status(200).json({ 
@@ -106,7 +108,7 @@ exports.sendMessage = async (req, res, next) => {
 
     // Populate and return
     await chat.populate('participants', 'name role email');
-    await chat.populate('messages.senderId', 'name');
+    await chat.populate('messages.senderId', 'name role email');
 
     res.status(201).json({ 
       success: true, 
@@ -151,7 +153,7 @@ exports.getChatMessages = async (req, res, next) => {
     // Get chat with populated messages
     const populatedChat = await Chat.findById(chatId)
       .populate('participants', 'name role email')
-      .populate('messages.senderId', 'name');
+      .populate('messages.senderId', 'name role email');
 
     res.status(200).json({ 
       success: true, 
