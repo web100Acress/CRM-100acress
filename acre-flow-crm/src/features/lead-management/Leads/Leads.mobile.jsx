@@ -871,41 +871,150 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       currentUserRole
     });
 
-    let recipientUser = null;
-    
-    // 🔥 HIERARCHY-BASED RECIPIENT SELECTION
-    if (currentUserRole === 'bd' || currentUserRole === 'employee') {
-      // BD user logic
-      if (lead.assignedTo === currentUserId) {
-        // Lead assigned to current BD -> Find HOD who forwarded
-        console.log('🔍 BD user with assigned lead - looking for HOD...');
-        const forwarder = lead.assignmentChain?.[0]?.assignedBy;
-        if (forwarder && forwarder._id && forwarder._id !== currentUserId) {
-          recipientUser = users.find(u => String(u._id) === String(forwarder._id));
-          console.log('✅ Found HOD for chat:', recipientUser);
+    // 🔍 LEAD CHAIN ANALYSIS
+    console.log('🔍 LEAD CHAIN STRUCTURE:', {
+      leadId: lead._id,
+      leadName: lead.name,
+      assignedTo: lead.assignedTo,
+      assignmentChain: lead.assignmentChain,
+      assignmentChainLength: lead.assignmentChain?.length || 0,
+      firstAssignment: lead.assignmentChain?.[0],
+      createdBy: lead.createdBy,
+      allLeadProperties: Object.keys(lead)
+    });
+
+    // 🔥 SIMPLE DIRECT CHAT - Assigner ↔ Assigned User Only
+    function getDirectChatUsers({ currentUser, lead }) {
+      // Find who assigned this lead
+      const assignedUser = users.find(u => String(u._id) === String(lead.assignedTo));
+      
+      // Find who assigned this lead (from assignment chain) - multiple fallback strategies
+      let assignerUser = null;
+      
+      // Strategy 1: Try assignmentChain[0].assignedBy
+      if (lead.assignmentChain?.[0]?.assignedBy) {
+        assignerUser = lead.assignmentChain[0].assignedBy;
+      }
+      
+      // Strategy 2: Try assignmentChain[0].fromUser
+      if (!assignerUser && lead.assignmentChain?.[0]?.fromUser) {
+        assignerUser = lead.assignmentChain[0].fromUser;
+      }
+      
+      // Strategy 3: Try assignmentChain[0].sender
+      if (!assignerUser && lead.assignmentChain?.[0]?.sender) {
+        assignerUser = lead.assignmentChain[0].sender;
+      }
+      
+      // Strategy 4: Find first user in assignment chain who is not the assigned user
+      if (!assignerUser && lead.assignmentChain) {
+        for (const assignment of lead.assignmentChain) {
+          if (assignment.assignedBy && String(assignment.assignedBy._id) !== String(lead.assignedTo)) {
+            assignerUser = assignment.assignedBy;
+            break;
+          }
         }
-        
-        // If no HOD found, try any available HOD
-        if (!recipientUser) {
-          const availableHods = users.filter(u => u.role === 'hod' && String(u._id) !== currentUserId);
-          if (availableHods.length > 0) {
-            recipientUser = availableHods[0];
-            console.log('✅ Using available HOD:', recipientUser);
+      }
+      
+      console.log('🔍 DIRECT CHAT ANALYSIS:', {
+        currentUser: currentUser._id,
+        currentUserRole: currentUser.role,
+        leadAssignedTo: lead.assignedTo,
+        assignedUser: assignedUser,
+        assignerUser: assignerUser,
+        assignmentChain: lead.assignmentChain,
+        firstAssignment: lead.assignmentChain?.[0],
+        usersLength: users.length,
+        usersList: users.map(u => ({ _id: u._id, name: u.name, role: u.role }))
+      });
+      
+      // Current user can chat with:
+      let allowedUsers = [];
+      
+      if (String(currentUser._id) === String(lead.assignedTo)) {
+        // Current user is assigned user → Can chat with assigner
+        console.log('🔍 Current user is assigned user, looking for assigner...');
+        if (assignerUser && String(assignerUser._id) !== String(currentUser._id)) {
+          allowedUsers = [assignerUser];
+          console.log('✅ Found assigner:', assignerUser);
+        } else {
+          console.log('❌ No valid assigner found or self-chat detected');
+          
+          // Fallback: Try to find any HOD or TL user
+          const fallbackUsers = users.filter(u => 
+            (u.role === 'hod' || u.role === 'team-leader' || u.role === 'tl') && 
+            String(u._id) !== String(currentUser._id)
+          );
+          
+          if (fallbackUsers.length > 0) {
+            allowedUsers = [fallbackUsers[0]];
+            console.log('✅ Fallback: Using HOD/TL user:', fallbackUsers[0]);
           }
         }
       } else {
-        // Lead assigned to someone else -> Chat with assigned user
-        recipientUser = users.find(u => String(u._id) === String(lead.assignedTo));
-        console.log('✅ Found assigned user for chat:', recipientUser);
+        // Current user is assigner → Can chat with assigned user
+        console.log('🔍 Current user is assigner, looking for assigned user...');
+        if (assignedUser && String(assignedUser._id) !== String(currentUser._id)) {
+          allowedUsers = [assignedUser];
+          console.log('✅ Found assigned user:', assignedUser);
+        } else {
+          console.log('❌ No valid assigned user found or self-chat detected');
+        }
       }
-    } else {
-      // HOD/Boss logic - Chat with assigned user
-      console.log('🔍 HOD/Boss trying to chat with assigned user');
-      recipientUser = users.find(u => String(u._id) === String(lead.assignedTo));
-      console.log('✅ HOD/Boss found assigned user:', recipientUser);
+      
+      console.log('🔍 FINAL ALLOWED USERS:', allowedUsers);
+      return allowedUsers;
     }
 
-    console.log('Final recipient user:', recipientUser);
+    // Get current user object
+    const currentUser = {
+      _id: currentUserId,
+      role: currentUserRole
+    };
+
+    // Get allowed recipients based on direct assignment
+    const recipients = getDirectChatUsers({ currentUser, lead });
+    
+    // Map recipients to user objects
+    const validRecipients = recipients
+      .map(recipient => {
+        if (typeof recipient === 'string') {
+          // Find user by ID
+          return users.find(u => String(u._id) === String(recipient));
+        } else if (recipient && recipient._id) {
+          // Already a user object
+          return recipient;
+        }
+        return null;
+      })
+      .filter(Boolean)
+      .filter(u => String(u._id) !== String(currentUserId)); // Remove self
+
+    console.log('🔍 Role-based recipients:', {
+      currentUserRole,
+      recipients,
+      validRecipients: validRecipients.map(u => ({ _id: u._id, name: u.name, role: u.role }))
+    });
+
+    if (validRecipients.length === 0) {
+      console.error('❌ NO VALID RECIPIENT FOUND - Role matrix returned empty');
+      toast({
+        title: 'Error',
+        description: 'No valid recipient found based on your role permissions.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Use first valid recipient
+    const recipientUser = validRecipients[0];
+    
+    console.log('✅ Final recipient selected:', {
+      _id: recipientUser._id,
+      name: recipientUser.name,
+      role: recipientUser.role
+    });
+
     console.log('🔍 DETAILED DEBUG - Lead Assignment Analysis:', { 
       leadId: lead._id, 
       leadName: lead.name,
@@ -919,7 +1028,6 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     });
 
     // 🚫 Self-assignment validation with robust ID comparison
-    // Handle different ID types (string, ObjectId, number)
     const normalizeId = (id) => {
       if (!id) return null;
       if (typeof id === 'string') return id;
