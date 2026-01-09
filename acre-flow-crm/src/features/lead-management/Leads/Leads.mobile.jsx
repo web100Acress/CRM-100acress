@@ -79,7 +79,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     const fetchStats = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch("http://localhost:5001/api/leads", {
+        const response = await fetch("https://bcrm.100acress.com/api/leads", {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -118,7 +118,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       try {
         const token = localStorage.getItem('token');
         const response = await fetch(
-          "http://localhost:5001/api/leads/assignable-users",
+          "https://bcrm.100acress.com/api/leads/assignable-users",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -136,7 +136,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         try {
           const token = localStorage.getItem('token');
           const response = await fetch(
-            "http://localhost:5001/api/users",
+            "https://bcrm.100acress.com/api/users",
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -207,7 +207,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     try {
       setSwapBdLeadsLoading(true);
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5001/api/leads/bd-status/${bdId}`, {
+      const res = await fetch(`https://bcrm.100acress.com/api/leads/bd-status/${bdId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -241,7 +241,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       setPatchingLead(leadId);
       const token = localStorage.getItem('token');
 
-      const res = await fetch(`http://localhost:5001/api/leads/${leadId}/forward-swap`, {
+      const res = await fetch(`https://bcrm.100acress.com/api/leads/${leadId}/forward-swap`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -255,7 +255,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         throw new Error(data?.message || 'Failed to swap leads');
       }
 
-      const leadsResponse = await fetch('http://localhost:5001/api/leads', {
+      const leadsResponse = await fetch('https://bcrm.100acress.com/api/leads', {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -372,7 +372,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       const token = localStorage.getItem('token');
       
       // Use production API
-      const response = await fetch('http://localhost:5001/api/leads', {
+      const response = await fetch('https://bcrm.100acress.com/api/leads', {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
