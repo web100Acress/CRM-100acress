@@ -102,9 +102,17 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
       
       if (response.ok) {
         const data = await response.json();
+        console.log('🔍 Chat creation response:', data);
         if (data.success) {
           setChatId(data.data._id);
           console.log('Chat created/found:', data.data._id);
+          
+          // Check if chat has any initial messages
+          if (data.data.messages && data.data.messages.length > 0) {
+            console.log('🔍 Chat has initial messages:', data.data.messages);
+          } else {
+            console.log('🔍 Chat has no initial messages');
+          }
         }
       } else {
         // Handle backend error responses
@@ -153,14 +161,29 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
       });
       if (response.ok) {
         const data = await response.json();
+        console.log('🔍 Messages API Response:', data);
         if (data.success) {
-          const formattedMessages = data.data.map(msg => ({
-            id: msg._id || Math.random().toString(),
-            text: msg.message,
-            sender: msg.senderId === getCurrentUserId() ? 'me' : 'other',
-            senderName: msg.senderId === getCurrentUserId() ? 'You' : (msg.senderId?.name || 'Unknown'),
-            timestamp: new Date(msg.timestamp)
-          }));
+          const currentUserId = getCurrentUserId();
+          console.log('🔍 Current user ID:', currentUserId);
+          const formattedMessages = data.data.map(msg => {
+            const senderIdStr = String(msg.senderId?._id || msg.senderId);
+            const isMe = senderIdStr === String(currentUserId);
+            console.log('🔍 Message:', {
+              originalSenderId: msg.senderId,
+              senderIdStr: senderIdStr,
+              currentUserId: currentUserId,
+              isMe: isMe,
+              senderName: msg.senderId?.name || 'Unknown'
+            });
+            return {
+              id: msg._id || Math.random().toString(),
+              text: msg.message,
+              sender: isMe ? 'me' : 'other',
+              senderName: isMe ? 'You' : (msg.senderId?.name || 'Unknown'),
+              timestamp: new Date(msg.timestamp)
+            };
+          });
+          console.log('🔍 Formatted messages:', formattedMessages);
           setMessages(formattedMessages);
         }
       }
@@ -228,6 +251,46 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
       fetchMessages(); 
     } 
   }, [chatId, fetchMessages]);
+  
+  // Send welcome message if chat is empty
+  useEffect(() => {
+    if (chatId && messages.length === 0 && !loading && !creatingChat) {
+      const sendWelcomeMessage = async () => {
+        try {
+          const token = localStorage.getItem('token');
+          const currentUserId = getCurrentUserId();
+          const welcomeMessage = `Hi ${recipient?.name || 'there'}! I'm contacting you regarding the lead: ${recipient?.leadName || 'N/A'}`;
+          
+          const response = await fetch('https://bcrm.100acress.com/api/chats/send', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+              chatId: chatId, 
+              message: welcomeMessage, 
+              senderId: currentUserId 
+            })
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+              console.log('✅ Welcome message sent');
+              // Refresh messages after sending welcome
+              setTimeout(() => fetchMessages(), 500);
+            }
+          }
+        } catch (error) {
+          console.error('Error sending welcome message:', error);
+        }
+      };
+      
+      // Only send welcome if this is a newly created chat (no messages)
+      sendWelcomeMessage();
+    }
+  }, [chatId, messages.length, loading, creatingChat, recipient, fetchMessages]);
 
   if (!isOpen || !recipient) return null;
 
