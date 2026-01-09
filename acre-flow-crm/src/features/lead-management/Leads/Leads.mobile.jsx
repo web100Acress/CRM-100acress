@@ -79,7 +79,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     const fetchStats = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch("https://bcrm.100acress.com/api/leads", {
+        const response = await fetch("http://localhost:5001/api/leads", {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -118,7 +118,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       try {
         const token = localStorage.getItem('token');
         const response = await fetch(
-          "https://bcrm.100acress.com/api/leads/assignable-users",
+          "http://localhost:5001/api/leads/assignable-users",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -136,7 +136,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         try {
           const token = localStorage.getItem('token');
           const response = await fetch(
-            "https://bcrm.100acress.com/api/users",
+            "http://localhost:5001/api/users",
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -207,7 +207,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     try {
       setSwapBdLeadsLoading(true);
       const token = localStorage.getItem('token');
-      const res = await fetch(`https://bcrm.100acress.com/api/leads/bd-status/${bdId}`, {
+      const res = await fetch(`http://localhost:5001/api/leads/bd-status/${bdId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -241,7 +241,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       setPatchingLead(leadId);
       const token = localStorage.getItem('token');
 
-      const res = await fetch(`https://bcrm.100acress.com/api/leads/${leadId}/forward-swap`, {
+      const res = await fetch(`http://localhost:5001/api/leads/${leadId}/forward-swap`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -255,7 +255,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         throw new Error(data?.message || 'Failed to swap leads');
       }
 
-      const leadsResponse = await fetch('https://bcrm.100acress.com/api/leads', {
+      const leadsResponse = await fetch('http://localhost:5001/api/leads', {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -372,7 +372,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       const token = localStorage.getItem('token');
       
       // Use production API
-      const response = await fetch('https://bcrm.100acress.com/api/leads', {
+      const response = await fetch('http://localhost:5001/api/leads', {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -859,6 +859,19 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     const currentUserId = localStorage.getItem('userId');
     const currentUserRole = localStorage.getItem('userRole') || localStorage.getItem('role');
 
+    // 🔍 DEBUG: Show all available users
+    console.log('🔍 Available Users for Chat:', {
+      totalUsers: users.length,
+      users: users.map(u => ({
+        _id: u._id,
+        name: u.name,
+        role: u.role,
+        email: u.email
+      })),
+      currentUserId,
+      currentUserRole
+    });
+
     let recipientUser = null;
     
     console.log('WhatsApp chat attempt:', {
@@ -916,7 +929,18 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       // Last resort - any available user (excluding current user)
       if (!recipientUser && users.length > 0) {
         console.log('Using any available user as last resort (excluding current user)');
-        recipientUser = users.find(u => String(u._id) !== String(currentUserId)) || users[0];
+        const availableUsers = users.filter(u => String(u._id) !== String(currentUserId));
+        if (availableUsers.length > 0) {
+          recipientUser = availableUsers[0];
+        } else {
+          console.error('❌ NO VALID RECIPIENT FOUND - Only current user available');
+          toast({
+            title: 'Error',
+            description: 'No other users available to chat with. Please contact admin.',
+            variant: 'destructive'
+          });
+          return;
+        }
       }
       
     } else {
@@ -940,16 +964,50 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     }
 
     console.log('Final recipient user:', recipientUser);
-    console.log('Lead assignment info:', { 
+    console.log('🔍 DETAILED DEBUG - Lead Assignment Analysis:', { 
       leadId: lead._id, 
+      leadName: lead.name,
       assignedTo: lead.assignedTo, 
       currentUserId,
-      recipientUserId: recipientUser?._id 
+      recipientUserId: recipientUser?._id,
+      recipientUserName: recipientUser?.name,
+      isSelfAssignment: recipientUser?._id && String(recipientUser._id) === String(currentUserId),
+      assignmentChain: lead.assignmentChain,
+      currentUserRole: currentUserRole
     });
 
-    // 🚫 Self-assignment validation
-    if (recipientUser?._id && String(recipientUser._id) === String(currentUserId)) {
-      console.error('Self-assignment detected. Cannot chat with yourself.');
+    // 🚫 Self-assignment validation with robust ID comparison
+    // Handle different ID types (string, ObjectId, number)
+    const normalizeId = (id) => {
+      if (!id) return null;
+      if (typeof id === 'string') return id;
+      if (typeof id === 'object' && id.toString) return id.toString();
+      if (typeof id === 'number') return id.toString();
+      return String(id);
+    };
+    
+    const normalizedRecipientUserId = normalizeId(recipientUser?._id);
+    const normalizedCurrentUserId = normalizeId(currentUserId);
+    
+    console.log('🔍 Leads Mobile ID Comparison:', {
+      recipientUserId: recipientUser?._id,
+      recipientUserIdType: typeof recipientUser?._id,
+      currentUserId: currentUserId,
+      currentUserIdType: typeof currentUserId,
+      normalizedRecipientUserId,
+      normalizedCurrentUserId,
+      areEqual: normalizedRecipientUserId === normalizedCurrentUserId
+    });
+    
+    if (normalizedRecipientUserId === normalizedCurrentUserId) {
+      console.error('❌ SELF-ASSIGNMENT DETECTED IN LEADS MOBILE - IDs match after normalization');
+      console.error('Lead:', lead.name);
+      console.error('Original recipient user ID:', recipientUser?._id, `(${typeof recipientUser?._id})`);
+      console.error('Original current user ID:', currentUserId, `(${typeof currentUserId})`);
+      console.error('Normalized recipient user ID:', normalizedRecipientUserId);
+      console.error('Normalized current user ID:', normalizedCurrentUserId);
+      console.error('Recipient User:', recipientUser);
+      console.error('Assignment Chain:', lead.assignmentChain);
       toast({
         title: 'Error',
         description: 'You cannot chat with yourself. Please select another user.',
@@ -2208,18 +2266,13 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         <button
           onClick={() => {
             setShowAssignmentChain(false);
-            handleCallLead(
-              selectedLeadForChain.phone,
-              selectedLeadForChain._id,
-              selectedLeadForChain.name
-            );
+            handleWhatsAppChat(selectedLeadForChain);
           }}
           className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-green-600 py-2.5 text-white font-medium hover:bg-green-700 transition"
         >
-          <PhoneCall size={16} />
-          Call Now
+          <MessageCircle size={16} />
+          Chat with HOD
         </button>
-
         <button
           onClick={() => {
             setShowAssignmentChain(false);
@@ -2229,6 +2282,20 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         >
           <MessageSquare size={16} />
           Follow Up
+        </button>
+        <button
+          onClick={() => {
+            setShowAssignmentChain(false);
+            handleCallLead(
+              selectedLeadForChain.phone,
+              selectedLeadForChain._id,
+              selectedLeadForChain.name
+            );
+          }}
+          className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-purple-600 py-2.5 text-white font-medium hover:bg-purple-700 transition"
+        >
+          <PhoneCall size={16} />
+          Call Now
         </button>
       </div>
     </div>

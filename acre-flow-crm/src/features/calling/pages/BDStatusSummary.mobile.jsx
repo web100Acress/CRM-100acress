@@ -425,13 +425,51 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
   const handleMessageOpen = (bd) => {
     const currentUserId = localStorage.getItem('userId');
     
-    // 🚫 Prevent self-messaging
-    if (String(bd._id) === String(currentUserId)) {
+    // 🔍 DEBUG: Log BD data before setting recipient
+    console.log('🔍 DEBUG - BD Status Summary Chat Attempt:', {
+      bd: bd,
+      bdId: bd._id,
+      bdName: bd.name,
+      bdEmail: bd.email,
+      bdRole: bd.role,
+      currentUserId: currentUserId,
+      isSelfAttempt: String(bd._id) === String(currentUserId)
+    });
+    
+    // 🚫 Prevent self-messaging with robust ID comparison
+    // Handle different ID types (string, ObjectId, number)
+    const normalizeId = (id) => {
+      if (!id) return null;
+      if (typeof id === 'string') return id;
+      if (typeof id === 'object' && id.toString) return id.toString();
+      if (typeof id === 'number') return id.toString();
+      return String(id);
+    };
+    
+    const normalizedBdId = normalizeId(bd._id);
+    const normalizedCurrentUserId = normalizeId(currentUserId);
+    
+    console.log('🔍 BD Status ID Comparison:', {
+      bdId: bd._id,
+      bdIdType: typeof bd._id,
+      currentUserId: currentUserId,
+      currentUserIdType: typeof currentUserId,
+      normalizedBdId,
+      normalizedCurrentUserId,
+      areEqual: normalizedBdId === normalizedCurrentUserId
+    });
+    
+    if (normalizedBdId === normalizedCurrentUserId) {
+      console.error('❌ SELF-MESSAGING ATTEMPTED IN BD STATUS SUMMARY - IDs match after normalization');
+      console.error('Original BD ID:', bd._id, `(${typeof bd._id})`);
+      console.error('Original current user ID:', currentUserId, `(${typeof currentUserId})`);
+      console.error('Normalized BD ID:', normalizedBdId);
+      console.error('Normalized current user ID:', normalizedCurrentUserId);
       alert('You cannot message yourself. Please select another user.');
       return;
     }
     
-    console.log('Opening chat with:', { 
+    console.log('✅ Opening chat with valid recipient:', { 
       recipientId: bd._id, 
       recipientName: bd.name,
       currentUserId 
