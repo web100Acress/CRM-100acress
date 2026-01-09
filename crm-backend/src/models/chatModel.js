@@ -12,26 +12,53 @@ const chatSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   }],
-  createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  assignedTo: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
+  messages: [{
+    senderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    message: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 1000
+    },
+    timestamp: {
+      type: Date,
+      default: Date.now
+    },
+    status: {
+      type: String,
+      enum: ['sent', 'delivered', 'read', 'failed'],
+      default: 'sent'
+    },
+    messageType: {
+      type: String,
+      enum: ['text', 'image', 'file', 'audio'],
+      default: 'text'
+    },
+    attachmentUrl: {
+      type: String,
+      default: null
+    }
+  }],
   lastMessage: {
-    message: { type: String, required: true },
+    message: { type: String },
     senderId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     timestamp: { type: Date, default: Date.now }
+  },
+  unreadCount: {
+    type: Map,
+    of: Number,
+    default: new Map()
   }
 }, { timestamps: true });
 
-// Indexes for better performance
+// Indexes for performance
 chatSchema.index({ leadId: 1, participants: 1 });
 chatSchema.index({ participants: 1 });
+chatSchema.index({ updatedAt: -1 });
 
 // Validation: Exactly 2 participants
 chatSchema.pre('save', function(next) {

@@ -1,5 +1,4 @@
 const Lead = require('../models/leadModel');
-const ChatMessage = require('../models/messageModel');
 const Chat = require('../models/chatModel');
 const User = require('../models/userModel');
 
@@ -54,32 +53,34 @@ exports.assignLead = async (req, res, next) => {
       });
     }
 
-    // 🎯 GOLDEN RULE: Create chat between assigner and assignee
+    // 🎯 GOLDEN RULE: Create WhatsApp-style chat between assigner and assignee
     const participants = [assignerId, assigneeId];
     
     // Check if chat already exists for this assignment
-    const existingChat = await Chat.findOne({
+    let existingChat = await Chat.findOne({
       leadId,
-      participants: { $all: participants, $size: 2 }
-    });
+      participants: { $all: participants }
+    }).populate('participants', 'name role email');
 
     if (!existingChat) {
-      // Create new chat
-      await Chat.create({
+      // Create new WhatsApp-style chat
+      existingChat = new Chat({
         leadId,
         participants,
-        createdBy: assignerId,
-        assignedTo: assigneeId,
         lastMessage: {
           message: `Lead "${lead.name}" assigned to ${assignee.name}`,
           senderId: assignerId,
           timestamp: new Date()
         }
       });
-
-      console.log(`✅ Chat created: ${assigner.name} ↔ ${assignee.name} for lead: ${lead.name}`);
+      await existingChat.save();
+      
+      // Populate participants
+      await existingChat.populate('participants', 'name role email');
+      
+      console.log(`✅ WhatsApp Chat created: ${assigner.name} ↔ ${assignee.name} for lead: ${lead.name}`);
     } else {
-      console.log(`ℹ️ Chat already exists: ${assigner.name} ↔ ${assignee.name}`);
+      console.log(`ℹ️ WhatsApp Chat already exists: ${assigner.name} ↔ ${assignee.name}`);
     }
 
     // Update lead assignment
@@ -109,6 +110,7 @@ exports.assignLead = async (req, res, next) => {
       message: `Lead assigned to ${assignee.name} successfully`,
       data: {
         leadId,
+        chat: existingChat,
         assigner: {
           id: assignerId,
           name: assigner.name,
@@ -119,7 +121,7 @@ exports.assignLead = async (req, res, next) => {
           name: assignee.name,
           role: assignee.role
         },
-        chatCreated: !existingChat
+        chatCreated: true
       }
     });
 
@@ -129,43 +131,17 @@ exports.assignLead = async (req, res, next) => {
   }
 };
 
-// Get all chats for a specific lead
-exports.getChatsByLead = async (req, res, next) => {
-  try {
-    const { leadId } = req.query;
-    const currentUserId = req.user?.userId || req.user?._id;
-
-    if (!leadId) {
-      return res.status(400).json({
-        success: false,
-        message: 'leadId is required'
-      });
-    }
-
-    // Get all chats for this lead
-    const chats = await Chat.find({
-      leadId,
-      participants: currentUserId // Only chats where current user is participant
-    })
-    .populate('participants', 'name role email')
-    .populate('leadId', 'name email phone')
-    .sort({ updatedAt: -1 });
-
-    res.status(200).json({
-      success: true,
-      data: chats
-    });
-
-  } catch (error) {
-    console.error('Error getting chats by lead:', error);
-    next(error);
-  }
-};
-
-// Get all chats for current user
+// Get all chats for current user (WhatsApp style)
 exports.getUserChats = async (req, res, next) => {
   try {
     const currentUserId = req.user?.userId || req.user?._id;
+
+    if (!currentUserId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'User not authenticated' 
+      });
+    }
 
     // Get all chats where user is participant
     const chats = await Chat.find({
@@ -173,13 +149,32 @@ exports.getUserChats = async (req, res, next) => {
     })
     .populate('participants', 'name role email')
     .populate('leadId', 'name email phone status')
-    .populate('createdBy', 'name')
-    .populate('assignedTo', 'name')
     .sort({ updatedAt: -1 });
 
-    res.status(200).json({
-      success: true,
-      data: chats
+    // Format for frontend
+    const formattedChats = chats.map(chat => {
+      const oppositeUser = chat.participants.find(u => u._id.toString() !== currentUserId);
+      const unreadCount = chat.unreadCount.get(currentUserId) || 0;
+      
+      return {
+        _id: chat._id,
+        leadId: chat.leadId,
+        participants: chat.participants,
+        oppositeUser: {
+          _id: oppositeUser?._id,
+          name: oppositeUser?.name,
+          role: oppositeUser?.role,
+          email: oppositeUser?.email
+        },
+        lastMessage: chat.lastMessage,
+        unreadCount,
+        updatedAt: chat.updatedAt
+      };
+    });
+
+    res.status(200).json({ 
+      success: true, 
+      data: formattedChats 
     });
 
   } catch (error) {

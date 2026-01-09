@@ -6,9 +6,6 @@ const auth = require('../middlewares/auth');
 // Assign lead with auto chat creation
 router.post('/assign', auth, leadAssignmentController.assignLead);
 
-// Get chats for a specific lead
-router.get('/chats', auth, leadAssignmentController.getChatsByLead);
-
 // Get all chats for current user
 router.get('/user-chats', auth, leadAssignmentController.getUserChats);
 

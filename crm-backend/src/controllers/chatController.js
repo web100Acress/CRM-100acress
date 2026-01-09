@@ -1,9 +1,8 @@
 const Chat = require('../models/chatModel');
-const ChatMessage = require('../models/messageModel');
 const User = require('../models/userModel');
 const Lead = require('../models/leadModel');
 
-// Create or get chat between assigner and assignee
+// 🎯 WhatsApp Style Chat System
 exports.createOrGetChat = async (req, res, next) => {
   try {
     const { leadId, createdBy, assignedTo } = req.body;
@@ -15,11 +14,11 @@ exports.createOrGetChat = async (req, res, next) => {
       });
     }
 
-    // Rule: Sirf assigner aur assignee ke beech chat
+    // 🚫 Self assignment check
     if (createdBy === assignedTo) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Cannot create chat with same user' 
+        message: 'Self assignment not allowed' 
       });
     }
 
@@ -27,20 +26,23 @@ exports.createOrGetChat = async (req, res, next) => {
     let chat = await Chat.findOne({
       leadId,
       participants: { $all: [createdBy, assignedTo] }
-    }).populate('participants', 'name');
+    }).populate('participants', 'name role email');
 
-    // If not exists, create new chat
     if (!chat) {
+      // Create new WhatsApp-style chat
       chat = new Chat({
         leadId,
         participants: [createdBy, assignedTo],
-        createdBy,
-        assignedTo
+        lastMessage: {
+          message: `Lead assigned`,
+          senderId: createdBy,
+          timestamp: new Date()
+        }
       });
       await chat.save();
       
       // Populate participants
-      await chat.populate('participants', 'name');
+      await chat.populate('participants', 'name role email');
     }
 
     res.status(200).json({ 
@@ -53,10 +55,10 @@ exports.createOrGetChat = async (req, res, next) => {
   }
 };
 
-// Send message in a chat
+// Send message in WhatsApp style
 exports.sendMessage = async (req, res, next) => {
   try {
-    const { chatId, message, senderId } = req.body;
+    const { chatId, message, senderId, messageType = 'text', attachmentUrl = null } = req.body;
 
     if (!chatId || !message || !senderId) {
       return res.status(400).json({ 
@@ -74,30 +76,45 @@ exports.sendMessage = async (req, res, next) => {
       });
     }
 
-    // Create message
-    const newMessage = new ChatMessage({
-      chatId,
+    // Add message to chat
+    const newMessage = {
       senderId,
-      message,
-      status: 'sent'
-    });
+      message: message.trim(),
+      timestamp: new Date(),
+      status: 'sent',
+      messageType,
+      attachmentUrl
+    };
 
-    await newMessage.save();
+    chat.messages.push(newMessage);
 
-    // Update chat's last message
+    // Update last message
     chat.lastMessage = {
-      message,
+      message: message.trim(),
       senderId,
       timestamp: new Date()
     };
+
+    // Update unread count for other participant
+    const otherParticipant = chat.participants.find(id => id.toString() !== senderId);
+    if (otherParticipant) {
+      const currentCount = chat.unreadCount.get(otherParticipant.toString()) || 0;
+      chat.unreadCount.set(otherParticipant.toString(), currentCount + 1);
+    }
+
     await chat.save();
 
     // Populate and return
-    await newMessage.populate('senderId', 'name');
+    await chat.populate('participants', 'name role email');
+    await chat.populate('messages.senderId', 'name');
 
     res.status(201).json({ 
       success: true, 
-      data: newMessage 
+      data: {
+        chatId: chat._id,
+        message: newMessage,
+        senderName: chat.participants.find(p => p._id.toString() === senderId)?.name
+      }
     });
 
   } catch (err) {
@@ -127,14 +144,18 @@ exports.getChatMessages = async (req, res, next) => {
       });
     }
 
-    // Get messages
-    const messages = await ChatMessage.find({ chatId })
-      .populate('senderId', 'name')
-      .sort({ timestamp: 1 });
+    // Mark messages as read for current user
+    chat.unreadCount.set(currentUserId, 0);
+    await chat.save();
+
+    // Get chat with populated messages
+    const populatedChat = await Chat.findById(chatId)
+      .populate('participants', 'name role email')
+      .populate('messages.senderId', 'name');
 
     res.status(200).json({ 
       success: true, 
-      data: messages 
+      data: populatedChat.messages || []
     });
 
   } catch (err) {
@@ -158,13 +179,69 @@ exports.getUserChats = async (req, res, next) => {
     const chats = await Chat.find({
       participants: currentUserId
     })
-    .populate('participants', 'name')
-    .populate('leadId', 'name')
+    .populate('participants', 'name role email')
+    .populate('leadId', 'name email phone status')
     .sort({ updatedAt: -1 });
+
+    // Format for frontend
+    const formattedChats = chats.map(chat => {
+      const oppositeUser = chat.participants.find(u => u._id.toString() !== currentUserId);
+      const unreadCount = chat.unreadCount.get(currentUserId) || 0;
+      
+      return {
+        _id: chat._id,
+        leadId: chat.leadId,
+        participants: chat.participants,
+        oppositeUser: {
+          _id: oppositeUser?._id,
+          name: oppositeUser?.name,
+          role: oppositeUser?.role,
+          email: oppositeUser?.email
+        },
+        lastMessage: chat.lastMessage,
+        unreadCount,
+        updatedAt: chat.updatedAt
+      };
+    });
 
     res.status(200).json({ 
       success: true, 
-      data: chats 
+      data: formattedChats 
+    });
+
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Mark messages as read
+exports.markAsRead = async (req, res, next) => {
+  try {
+    const { chatId } = req.body;
+    const currentUserId = req.user?.userId || req.user?._id;
+
+    if (!chatId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'chatId is required' 
+      });
+    }
+
+    const chat = await Chat.findById(chatId);
+    if (!chat || !chat.participants.includes(currentUserId)) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Access denied: Not a participant' 
+      });
+    }
+
+    // Mark as read
+    chat.unreadCount.set(currentUserId, 0);
+    await chat.save();
+
+    res.status(200).json({ 
+      success: true, 
+      message: 'Messages marked as read' 
     });
 
   } catch (err) {
