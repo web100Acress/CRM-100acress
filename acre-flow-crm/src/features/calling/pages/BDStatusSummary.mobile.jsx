@@ -423,6 +423,58 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
   };
 
   const handleMessageOpen = (bd) => {
+    const currentUserId = localStorage.getItem('userId');
+    
+    // 🔍 DEBUG: Log BD data before setting recipient
+    console.log('🔍 DEBUG - BD Status Summary Chat Attempt:', {
+      bd: bd,
+      bdId: bd._id,
+      bdName: bd.name,
+      bdEmail: bd.email,
+      bdRole: bd.role,
+      currentUserId: currentUserId,
+      isSelfAttempt: String(bd._id) === String(currentUserId)
+    });
+    
+    // 🚫 Prevent self-messaging with robust ID comparison
+    // Handle different ID types (string, ObjectId, number)
+    const normalizeId = (id) => {
+      if (!id) return null;
+      if (typeof id === 'string') return id;
+      if (typeof id === 'object' && id.toString) return id.toString();
+      if (typeof id === 'number') return id.toString();
+      return String(id);
+    };
+    
+    const normalizedBdId = normalizeId(bd._id);
+    const normalizedCurrentUserId = normalizeId(currentUserId);
+    
+    console.log('🔍 BD Status ID Comparison:', {
+      bdId: bd._id,
+      bdIdType: typeof bd._id,
+      currentUserId: currentUserId,
+      currentUserIdType: typeof currentUserId,
+      normalizedBdId,
+      normalizedCurrentUserId,
+      areEqual: normalizedBdId === normalizedCurrentUserId
+    });
+    
+    if (normalizedBdId === normalizedCurrentUserId) {
+      console.error('❌ SELF-MESSAGING ATTEMPTED IN BD STATUS SUMMARY - IDs match after normalization');
+      console.error('Original BD ID:', bd._id, `(${typeof bd._id})`);
+      console.error('Original current user ID:', currentUserId, `(${typeof currentUserId})`);
+      console.error('Normalized BD ID:', normalizedBdId);
+      console.error('Normalized current user ID:', normalizedCurrentUserId);
+      alert('You cannot message yourself. Please select another user.');
+      return;
+    }
+    
+    console.log('✅ Opening chat with valid recipient:', { 
+      recipientId: bd._id, 
+      recipientName: bd.name,
+      currentUserId 
+    });
+    
     setMessageRecipient(bd);
     setMessageModalVisible(true);
   };
@@ -692,13 +744,23 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
                   <Eye size={14} />
                   <span>View Details</span>
                 </button>
-                <button
-                  onClick={() => handleMessageOpen(bd)}
-                  className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
-                >
-                  <MessageSquare size={14} />
-                  <span>Message</span>
-                </button>
+                {(() => {
+                  const currentUserId = localStorage.getItem('userId');
+                  return (
+                    <button
+                      onClick={() => handleMessageOpen(bd)}
+                      disabled={String(bd._id) === String(currentUserId)}
+                      className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors text-sm ${
+                        String(bd._id) === String(currentUserId)
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-green-600 text-white hover:bg-green-700'
+                      }`}
+                    >
+                      <MessageSquare size={14} />
+                      <span>{String(bd._id) === String(currentUserId) ? 'Yourself' : 'Message'}</span>
+                    </button>
+                  );
+                })()}
               </div>
             </CardContent>
           </Card>
