@@ -69,7 +69,7 @@ exports.sendMessage = async (req, res, next) => {
 
     // Security: Check if user is participant
     const chat = await Chat.findById(chatId);
-    if (!chat || !chat.participants.includes(senderId)) {
+    if (!chat || !chat.participants.map(id => id.toString()).includes(senderId.toString())) {
       return res.status(403).json({ 
         success: false, 
         message: 'Access denied: Not a participant' 
@@ -137,7 +137,7 @@ exports.getChatMessages = async (req, res, next) => {
 
     // Security: Check if user is participant
     const chat = await Chat.findById(chatId);
-    if (!chat || !chat.participants.includes(currentUserId)) {
+    if (!chat || !chat.participants.map(id => id.toString()).includes(currentUserId.toString())) {
       return res.status(403).json({ 
         success: false, 
         message: 'Access denied: Not a participant' 
