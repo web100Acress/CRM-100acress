@@ -308,6 +308,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(requestBody)
       });

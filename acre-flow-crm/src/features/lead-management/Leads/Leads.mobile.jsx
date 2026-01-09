@@ -1043,6 +1043,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       name: recipientUser.name || recipientUser.userName || recipientUser.email || 'User',
       email: recipientUser.email || recipientUser.userEmail || '',
       role: recipientUser.role || recipientUser.userRole,
+      leadId: lead._id, // Add leadId to tie chat to this lead
       // Add all available data to help with resolution
       userName: recipientUser.userName,
       fullName: recipientUser.fullName,
@@ -1200,7 +1201,8 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
             id: assignedUser._id,
             name: assignedUser.name || assignedUser.userName || assignedUser.email || 'User',
             email: assignedUser.email || assignedUser.userEmail || '',
-            role: assignedUser.role || assignedUser.userRole
+            role: assignedUser.role || assignedUser.userRole,
+            leadId: selectedLeadForForward?._id // Add leadId
           };
           
           console.log('Setting auto-open WhatsApp recipient:', recipientData);

@@ -9,6 +9,9 @@ router.post('/send', auth, chatController.sendMessage);
 // Get chat history for a lead
 router.get('/', auth, chatController.getChatByLeadId);
 
+// Get all conversations for current user
+router.get('/conversations', auth, chatController.getConversations);
+
 // Mark messages as read
 router.patch('/read', auth, chatController.markAsRead);
 

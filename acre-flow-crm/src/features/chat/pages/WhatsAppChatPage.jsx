@@ -193,7 +193,7 @@ const WhatsAppChatPage = () => {
         return;
       }
 
-      const response = await fetch('https://bcrm.100acress.com/api/messages/conversations', {
+      const response = await fetch('https://bcrm.100acress.com/api/chats/conversations', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

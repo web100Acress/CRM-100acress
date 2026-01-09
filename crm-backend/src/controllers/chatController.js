@@ -1,5 +1,6 @@
 const Chat = require('../models/chatModel');
 const User = require('../models/userModel');
+const Lead = require('../models/leadModel');
 
 // Send a message (BD ↔ Lead / HOD ↔ BD)
 exports.sendMessage = async (req, res, next) => {
@@ -47,6 +48,58 @@ exports.getChatByLeadId = async (req, res, next) => {
       .sort({ timestamp: 1 });
 
     res.status(200).json({ success: true, data: chats });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Get all conversations for current user (grouped by lead)
+exports.getConversations = async (req, res, next) => {
+  try {
+    const currentUserId = req.user?.userId || req.user?._id;
+    
+    if (!currentUserId) {
+      return res.status(401).json({ success: false, message: 'User not authenticated' });
+    }
+
+    // Find all chats where user is either sender or receiver
+    const chats = await Chat.find({
+      $or: [
+        { senderId: currentUserId },
+        { receiverId: currentUserId }
+      ]
+    })
+    .populate('senderId', 'name')
+    .populate('receiverId', 'name')
+    .populate('leadId', 'name')
+    .sort({ timestamp: -1 });
+
+    // Group by leadId and get latest message for each lead
+    const conversationsMap = new Map();
+    
+    chats.forEach(chat => {
+      const leadId = chat.leadId._id.toString();
+      const otherUser = chat.senderId._id.toString() === currentUserId ? chat.receiverId : chat.senderId;
+      
+      if (!conversationsMap.has(leadId) || conversationsMap.get(leadId).timestamp < chat.timestamp) {
+        conversationsMap.set(leadId, {
+          _id: otherUser._id,
+          recipientName: otherUser.name,
+          recipientEmail: otherUser.email || '',
+          leadId: leadId,
+          leadName: chat.leadId.name,
+          lastMessage: {
+            message: chat.message,
+            timestamp: chat.timestamp
+          },
+          unreadCount: 0 // TODO: Calculate actual unread count
+        });
+      }
+    });
+
+    const conversations = Array.from(conversationsMap.values());
+    
+    res.status(200).json({ success: true, data: conversations });
   } catch (err) {
     next(err);
   }
