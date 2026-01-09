@@ -43,6 +43,13 @@ const LeadTable = ({ userRole }) => {
   const [selectedLeadForForwardPatch, setSelectedLeadForForwardPatch] = useState(null);
   const [selectedPatchEmployeeId, setSelectedPatchEmployeeId] = useState('');
   const [forwardPatchReason, setForwardPatchReason] = useState('');
+  const [showForwardSwap, setShowForwardSwap] = useState(false);
+  const [selectedLeadForForwardSwap, setSelectedLeadForForwardSwap] = useState(null);
+  const [selectedSwapBdId, setSelectedSwapBdId] = useState('');
+  const [swapBdLeads, setSwapBdLeads] = useState([]);
+  const [swapBdLeadsLoading, setSwapBdLeadsLoading] = useState(false);
+  const [selectedSwapLeadId, setSelectedSwapLeadId] = useState('');
+  const [forwardSwapReason, setForwardSwapReason] = useState('');
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
   const prevAssignedLeadIds = useRef(new Set());
@@ -76,6 +83,89 @@ const LeadTable = ({ userRole }) => {
       connected: Number(duration) >= 3,
     });
     setShowCallConfirm(true);
+  };
+
+  const fetchBdLeadsForSwap = async (bdId, currentLeadId) => {
+    try {
+      setSwapBdLeadsLoading(true);
+      const token = localStorage.getItem("token");
+      const res = await fetch(`https://bcrm.100acress.com/api/leads/bd-status/${bdId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      const json = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(json?.message || 'Failed to fetch BD leads');
+      }
+
+      const leads = json?.data?.leads || [];
+      const filtered = Array.isArray(leads)
+        ? leads.filter((l) => String(l?._id || l?.id) !== String(currentLeadId))
+        : [];
+      setSwapBdLeads(filtered);
+    } catch (err) {
+      setSwapBdLeads([]);
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to fetch BD leads',
+        variant: 'destructive',
+      });
+    } finally {
+      setSwapBdLeadsLoading(false);
+    }
+  };
+
+  const handleForwardSwapLead = async (leadId, swapLeadId, reason) => {
+    try {
+      setPatchingLead(leadId);
+      const token = localStorage.getItem("token");
+
+      const res = await fetch(`https://bcrm.100acress.com/api/leads/${leadId}/forward-swap`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ swapLeadId, reason }),
+      });
+
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.message || 'Failed to swap leads');
+      }
+
+      const leadsResponse = await fetch("https://bcrm.100acress.com/api/leads", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const leadsJson = await leadsResponse.json();
+      setLeadsList(leadsJson.data || []);
+
+      toast({
+        title: 'Success',
+        description: data?.message || 'Leads swapped successfully',
+      });
+
+      setShowForwardSwap(false);
+      setSelectedLeadForForwardSwap(null);
+      setSelectedSwapBdId('');
+      setSwapBdLeads([]);
+      setSelectedSwapLeadId('');
+      setForwardSwapReason('');
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to swap leads',
+        variant: 'destructive',
+      });
+    } finally {
+      setPatchingLead(null);
+    }
   };
 
   const confirmAndSaveCall = async () => {
@@ -1171,6 +1261,25 @@ const LeadTable = ({ userRole }) => {
                         </button>
                       )}
 
+                      {canForwardPatchLead(lead) && (
+                        <button
+                          className="lead-forward-button"
+                          onClick={() => {
+                            setSelectedLeadForForwardSwap(lead);
+                            setSelectedSwapBdId('');
+                            setSwapBdLeads([]);
+                            setSelectedSwapLeadId('');
+                            setForwardSwapReason('');
+                            setShowForwardSwap(true);
+                          }}
+                          disabled={patchingLead === lead._id}
+                          title="Swap Leads"
+                        >
+                          <ArrowRight size={14} />
+                          {patchingLead === lead._id ? 'Swapping...' : 'Swap'}
+                        </button>
+                      )}
+
                       {canAssignToSelf(lead) && (
                         <button
                           className="lead-self-assign-button"
@@ -1965,6 +2074,100 @@ const LeadTable = ({ userRole }) => {
               disabled={!selectedLeadForForwardPatch?._id || !selectedPatchEmployeeId || !!patchingLead}
             >
               {patchingLead ? 'Saving...' : 'Reassign'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showForwardSwap} onOpenChange={setShowForwardSwap}>
+        <DialogContent className="lead-dialog-content">
+          <DialogHeader>
+            <DialogTitle className="lead-dialog-title">
+              Swap Lead - {selectedLeadForForwardSwap?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="lead-details-content">
+            <div className="lead-dialog-field">
+              <label className="lead-dialog-label">Select Target BD</label>
+              <select
+                className="lead-assignment-select"
+                value={selectedSwapBdId}
+                onChange={(e) => {
+                  const nextBd = e.target.value;
+                  setSelectedSwapBdId(nextBd);
+                  setSelectedSwapLeadId('');
+                  setSwapBdLeads([]);
+                  if (nextBd) {
+                    fetchBdLeadsForSwap(nextBd, selectedLeadForForwardSwap?._id);
+                  }
+                }}
+              >
+                <option value="">Select BD</option>
+                {assignableUsers
+                  .filter((u) => (u?.role || u?.userRole) === 'bd')
+                  .filter((u) => String(u?._id) !== String(selectedLeadForForwardSwap?.assignedTo))
+                  .map((u) => (
+                    <option key={u._id} value={u._id}>
+                      {u.name} ({u.role})
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            <div className="lead-dialog-field">
+              <label className="lead-dialog-label">Select BD Lead to Swap With</label>
+              {swapBdLeadsLoading ? (
+                <div className="lead-dialog-message">Loading BD leads...</div>
+              ) : (
+                <select
+                  className="lead-assignment-select"
+                  value={selectedSwapLeadId}
+                  onChange={(e) => setSelectedSwapLeadId(e.target.value)}
+                  disabled={!selectedSwapBdId || swapBdLeads.length === 0}
+                >
+                  <option value="">Select Lead</option>
+                  {swapBdLeads.map((l) => (
+                    <option key={l._id} value={l._id}>
+                      {l.name} {l.phone ? `(${l.phone})` : ''}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            <div className="lead-dialog-field">
+              <label className="lead-dialog-label">Reason (optional)</label>
+              <input
+                className="lead-details-input"
+                value={forwardSwapReason}
+                onChange={(e) => setForwardSwapReason(e.target.value)}
+                placeholder="Reason for swapping"
+              />
+            </div>
+          </div>
+
+          <div className="lead-advanced-footer">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowForwardSwap(false);
+                setSelectedLeadForForwardSwap(null);
+                setSelectedSwapBdId('');
+                setSwapBdLeads([]);
+                setSelectedSwapLeadId('');
+                setForwardSwapReason('');
+              }}
+            >
+              Close
+            </Button>
+            <Button
+              onClick={() => {
+                if (!selectedLeadForForwardSwap?._id || !selectedSwapLeadId) return;
+                handleForwardSwapLead(selectedLeadForForwardSwap._id, selectedSwapLeadId, forwardSwapReason);
+              }}
+              disabled={!selectedLeadForForwardSwap?._id || !selectedSwapLeadId || !!patchingLead}
+            >
+              {patchingLead ? 'Swapping...' : 'Swap'}
             </Button>
           </div>
         </DialogContent>
