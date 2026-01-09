@@ -41,6 +41,11 @@ const assignmentChainSchema = new mongoose.Schema({
     _id: { type: mongoose.Schema.Types.ObjectId },
     name: { type: String },
     role: { type: String }
+  },
+  // Add chat creation trigger
+  chatCreated: {
+    type: Boolean,
+    default: false
   }
 }, { _id: false });
 

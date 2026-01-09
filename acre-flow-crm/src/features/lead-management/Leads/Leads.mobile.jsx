@@ -1135,7 +1135,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       console.log('Selected employee:', selectedEmployeeId);
       
       const res = await fetch(
-        `https://bcrm.100acress.com/api/leads/${leadId}/forward`,
+        `https://bcrm.100acress.com/api/lead-assignment/assign`,
         {
           method: "POST",
           headers: {
@@ -1143,8 +1143,11 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ 
-            action: 'forward',
-            selectedEmployee: selectedEmployeeId 
+            leadId: leadId,
+            assigneeId: selectedEmployeeId,
+            assigneeName: selectedEmployee?.name,
+            assigneeRole: selectedEmployee?.role,
+            notes: `Lead forwarded by ${currentUserName}`
           }),
         }
       );

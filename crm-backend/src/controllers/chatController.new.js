@@ -1,5 +1,5 @@
 const Chat = require('../models/chatModel');
-const ChatMessage = require('../models/messageModel');
+const Message = require('../models/messageModel');
 const User = require('../models/userModel');
 const Lead = require('../models/leadModel');
 
@@ -75,7 +75,7 @@ exports.sendMessage = async (req, res, next) => {
     }
 
     // Create message
-    const newMessage = new ChatMessage({
+    const newMessage = new Message({
       chatId,
       senderId,
       message,
@@ -128,7 +128,7 @@ exports.getChatMessages = async (req, res, next) => {
     }
 
     // Get messages
-    const messages = await ChatMessage.find({ chatId })
+    const messages = await Message.find({ chatId })
       .populate('senderId', 'name')
       .sort({ timestamp: 1 });
 

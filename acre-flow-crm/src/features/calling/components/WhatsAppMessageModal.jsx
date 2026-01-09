@@ -230,7 +230,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
               id: msg._id,
               text: msg.message,
               sender: isMe ? 'me' : 'other',
-              senderName: isMe ? 'You' : (msg.senderName || 'Unknown'),
+              senderName: isMe ? 'You' : (msg.senderName || msg.senderId?.name || resolvedRecipient?.name || 'Unknown'),
               senderRole: msg.senderRole,
               timestamp: new Date(msg.timestamp),
               status: msg.status
@@ -363,7 +363,14 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
               </span>
             </div>
             <div>
-              <h3 className="font-semibold">{recipientDisplayName}</h3>
+              <h3 className="font-semibold">
+                {recipient.displayName || recipient.name || recipientDisplayName}
+                {recipient.leadName && (
+                  <span className="text-xs opacity-75 ml-2">
+                    (Lead: {recipient.leadName})
+                  </span>
+                )}
+              </h3>
               {roleLabel && <p className="text-xs opacity-90">{roleLabel}</p>}
             </div>
           </div>
@@ -410,6 +417,12 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
                         : 'bg-white text-gray-800 border'
                     }`}
                   >
+                    {/* Show sender name for messages from others */}
+                    {msg.sender === 'other' && msg.senderName && (
+                      <p className="text-xs font-semibold mb-1 text-gray-600">
+                        {msg.senderName}
+                      </p>
+                    )}
                     <p className="text-sm">{msg.text}</p>
                     <p className={`text-xs mt-1 ${
                       msg.sender === 'me' ? 'text-green-100' : 'text-gray-500'
