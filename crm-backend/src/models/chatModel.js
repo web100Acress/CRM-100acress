@@ -7,64 +7,38 @@ const chatSchema = new mongoose.Schema({
     required: true,
     index: true
   },
-  senderId: {
+  participants: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  }],
+  createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
-  senderRole: {
-    type: String,
-    enum: ['boss', 'hod', 'team-leader', 'bd', 'lead'],
-    default: 'bd'
-  },
-  receiverId: {
+  assignedTo: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
-  receiverRole: {
-    type: String,
-    enum: ['boss', 'hod', 'team-leader', 'bd', 'lead'],
-    default: 'bd'
-  },
-  message: {
-    type: String,
-    required: true,
-    trim: true,
-    maxlength: 1000
-  },
-  timestamp: {
-    type: Date,
-    default: Date.now
-  },
-  status: {
-    type: String,
-    enum: ['sent', 'delivered', 'read', 'failed'],
-    default: 'sent'
-  },
-  direction: {
-    type: String,
-    enum: ['incoming', 'outgoing'],
-    default: 'outgoing'
-  },
-  read: {
-    type: Boolean,
-    default: false
-  },
-  messageType: {
-    type: String,
-    enum: ['text', 'image', 'file', 'audio'],
-    default: 'text'
-  },
-  attachmentUrl: {
-    type: String,
-    default: null
+  lastMessage: {
+    message: { type: String, required: true },
+    senderId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    timestamp: { type: Date, default: Date.now }
   }
 }, { timestamps: true });
 
 // Indexes for better performance
-chatSchema.index({ leadId: 1, timestamp: 1 });
-chatSchema.index({ senderId: 1, receiverId: 1, timestamp: -1 });
-chatSchema.index({ receiverId: 1, read: 1, timestamp: -1 });
+chatSchema.index({ leadId: 1, participants: 1 });
+chatSchema.index({ participants: 1 });
+
+// Validation: Exactly 2 participants
+chatSchema.pre('save', function(next) {
+  if (this.participants.length !== 2) {
+    return next(new Error('Chat must have exactly 2 participants'));
+  }
+  next();
+});
 
 module.exports = mongoose.model('Chat', chatSchema);
