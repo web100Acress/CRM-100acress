@@ -927,6 +927,10 @@ const LeadTable = ({ userRole }) => {
     // Only the current assignee can forward the lead
     if (lead.assignedTo !== currentUserId) return false;
 
+    const chain = Array.isArray(lead?.assignmentChain) ? lead.assignmentChain : [];
+    const wasForwarded = chain.some((e) => String(e?.status) === 'forwarded');
+    if (wasForwarded) return false;
+
     // Define forwarding hierarchy - only BD and team-leader can forward
     const forwardHierarchy = {
       "super-admin": ["head-admin"],

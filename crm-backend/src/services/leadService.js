@@ -137,16 +137,30 @@ const forwardLead = async (leadId, currentUserId, action = 'forward', selectedEm
   }
 
   // Update current user's status in assignment chain
-  const currentUserInChain = lead.assignmentChain.find(
-    entry => entry.userId === currentUserId
-  );
-  if (currentUserInChain) {
-    currentUserInChain.status = action === 'forward' ? 'forwarded' : 'completed';
-    currentUserInChain.completedAt = new Date();
+  const chain = Array.isArray(lead.assignmentChain) ? lead.assignmentChain : [];
+  const findLastAssignedIndexForUser = () => {
+    for (let i = chain.length - 1; i >= 0; i -= 1) {
+      if (String(chain[i]?.userId) === String(currentUserId) && String(chain[i]?.status) === 'assigned') {
+        return i;
+      }
+    }
+    return -1;
+  };
+
+  const idx = findLastAssignedIndexForUser();
+  if (idx >= 0) {
+    chain[idx].status = action === 'forward' ? 'forwarded' : 'completed';
+    chain[idx].completedAt = new Date();
+  } else {
+    const anyIdx = chain.findIndex((entry) => String(entry?.userId) === String(currentUserId));
+    if (anyIdx >= 0) {
+      chain[anyIdx].status = action === 'forward' ? 'forwarded' : 'completed';
+      chain[anyIdx].completedAt = new Date();
+    }
   }
 
   // Add next assignee to assignment chain
-  lead.assignmentChain.push({
+  chain.push({
     userId: nextAssignee._id.toString(),
     role: nextAssignee.role,
     name: nextAssignee.name,
@@ -158,6 +172,8 @@ const forwardLead = async (leadId, currentUserId, action = 'forward', selectedEm
       role: currentUser.role
     }
   });
+
+  lead.assignmentChain = chain;
 
   // Update the assignedTo field
   lead.assignedTo = nextAssignee._id.toString();

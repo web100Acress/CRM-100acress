@@ -1252,8 +1252,12 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
   };
 
   const canForwardLead = (lead) => {
-    // Lead should not be forwarded back to the same user
-    if (lead?.assignedTo && String(lead.assignedTo) === String(currentUserId)) return false;
+    // Only the current assignee can forward the lead
+    if (!lead?.assignedTo || String(lead.assignedTo) !== String(currentUserId)) return false;
+
+    const chain = Array.isArray(lead?.assignmentChain) ? lead.assignmentChain : [];
+    const wasForwarded = chain.some((e) => String(e?.status) === 'forwarded');
+    if (wasForwarded) return false;
 
     const role = (currentUserRole || userRole || '').toString();
 
@@ -1511,34 +1515,33 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
               {/* Lead Header with Gradient */}
               <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 relative">
                 {/* Forwarded By Badge - Show at top */}
-                {lead.assignmentChain && lead.assignmentChain.length > 0 && (
-                  (() => {
-                    console.log('AssignmentChain for lead', lead.name, ':', lead.assignmentChain);
-                    const firstAssignment = lead.assignmentChain[0];
-                    console.log('First assignment:', firstAssignment);
-                    console.log('All keys in first assignment:', Object.keys(firstAssignment || {}));
-                    
-                    // Try multiple possible field names for the forwarder's name
-                    const assignedByName = 
-                      firstAssignment?.assignedBy?.name || 
-                      firstAssignment?.assignedByUser?.name ||
-                      firstAssignment?.forwardedBy?.name ||
-                      firstAssignment?.fromUser?.name ||
-                      firstAssignment?.sender?.name ||
-                      firstAssignment?.assignedByName ||
-                      firstAssignment?.forwarderName ||
-                      firstAssignment?.name ||
-                      'Admin';
-                    
-                    console.log('Assigned by name:', assignedByName);
-                    return (
-                      <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
-                        <ForwardIcon size={12} />
-                        Forwarded by {assignedByName}
-                      </div>
-                    );
-                  })()
-                )}
+                {(() => {
+                  const chain = Array.isArray(lead?.assignmentChain) ? lead.assignmentChain : [];
+                  const wasForwarded = chain.some((e) => String(e?.status) === 'forwarded');
+                  if (!wasForwarded) return null;
+
+                  const lastAssignedEntry = [...chain]
+                    .reverse()
+                    .find((e) => String(e?.status) === 'assigned');
+
+                  const assignedByName =
+                    lastAssignedEntry?.assignedBy?.name ||
+                    lastAssignedEntry?.assignedByUser?.name ||
+                    lastAssignedEntry?.forwardedBy?.name ||
+                    lastAssignedEntry?.fromUser?.name ||
+                    lastAssignedEntry?.sender?.name ||
+                    lastAssignedEntry?.assignedByName ||
+                    lastAssignedEntry?.forwarderName ||
+                    lastAssignedEntry?.name ||
+                    'Admin';
+
+                  return (
+                    <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                      <ForwardIcon size={12} />
+                      Forwarded by {assignedByName}
+                    </div>
+                  );
+                })()}
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-white/30 shadow-lg">
