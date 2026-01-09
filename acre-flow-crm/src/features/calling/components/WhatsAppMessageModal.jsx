@@ -210,7 +210,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://bcrm.100acress.com/api/messages/conversation/${finalRecipientId}`, {
+      const response = await fetch(`https://bcrm.100acress.com/api/chats?leadId=${recipient.leadId || recipient._id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -296,18 +296,18 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
       const token = localStorage.getItem('token');
       
       const requestBody = {
-        recipientId: finalRecipientId,
-        recipientEmail: resolvedRecipient?.email || recipient?.email,
-        recipientName: recipientDisplayName,
+        leadId: recipient.leadId || recipient._id,
         message: message.trim(),
-        senderRole: getValidSenderRole(currentUserRole)
+        senderId: getCurrentUserId(),
+        senderRole: getValidSenderRole(currentUserRole),
+        receiverId: finalRecipientId,
+        receiverRole: getValidSenderRole(recipient.role || recipient.userRole)
       };
       
-      const response = await fetch('https://bcrm.100acress.com/api/messages/send', {
+      const response = await fetch('https://bcrm.100acress.com/api/chats/send', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
         },
         body: JSON.stringify(requestBody)
       });

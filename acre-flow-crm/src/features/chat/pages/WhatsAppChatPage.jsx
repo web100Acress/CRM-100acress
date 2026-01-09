@@ -214,12 +214,12 @@ const WhatsAppChatPage = () => {
     }
   };
 
-  // Fetch messages for selected user
-  const fetchMessages = async (userId) => {
+  // Fetch messages for selected lead
+  const fetchMessages = async (leadId) => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://bcrm.100acress.com/api/messages/conversation/${userId}`, {
+      const response = await fetch(`https://bcrm.100acress.com/api/chats?leadId=${leadId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -228,20 +228,9 @@ const WhatsAppChatPage = () => {
       
       if (response.ok) {
         const data = await response.json();
-        if (data.success) {
-          const currentUserId = getCurrentUserId();
-          const formatted = data.data.map(msg => {
-            const isMe = String(msg.senderId) === String(currentUserId);
-            let senderName = null;
-            if (!isMe) {
-              // Try to find sender in assignable-users
-              const sender = assignableUsers.find((u) => String(u?._id) === String(msg.senderId));
-              senderName = sender?.name || sender?.userName || sender?.email || null;
-            }
-            return { ...msg, senderName };
-          });
-          setMessages(formatted);
-        }
+        setMessages(data.data || []);
+      } else {
+        console.error('Failed to fetch messages');
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -256,23 +245,25 @@ const WhatsAppChatPage = () => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://bcrm.100acress.com/api/messages/send', {
+      const response = await fetch('https://bcrm.100acress.com/api/chats/send', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          recipientId: selectedUser._id,
-          recipientEmail: getUserDisplayEmail(selectedUser),
-          recipientName: getUserDisplayName(selectedUser),
-          message: newMessage.trim()
+          leadId: selectedUser.leadId,
+          message: newMessage.trim(),
+          senderId: getCurrentUserId(),
+          senderRole: userRole,
+          receiverId: selectedUser._id,
+          receiverRole: selectedUser.role
         })
       });
       
       if (response.ok) {
         setNewMessage('');
-        fetchMessages(selectedUser._id);
+        fetchMessages(selectedUser.leadId);
       }
     } catch (error) {
       console.error('Error sending message:', error);
@@ -293,7 +284,7 @@ const WhatsAppChatPage = () => {
     // Poll for new messages every 30 seconds
     const interval = setInterval(() => {
       if (selectedUser) {
-        fetchMessages(selectedUser._id);
+        fetchMessages(selectedUser.leadId);
       }
       fetchChatUsers();
     }, 30000);
@@ -367,7 +358,7 @@ const WhatsAppChatPage = () => {
                     key={index}
                     onClick={() => {
                       setSelectedUser(user);
-                      fetchMessages(user._id);
+                      fetchMessages(user.leadId);
                     }}
                     className={`w-full p-4 hover:bg-gray-50 transition-colors flex items-center gap-3 ${
                       selectedUser?._id === user._id ? 'bg-green-50' : ''

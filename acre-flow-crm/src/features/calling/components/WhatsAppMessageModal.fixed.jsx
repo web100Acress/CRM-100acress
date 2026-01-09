@@ -321,11 +321,11 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
       
       // Use localhost:5001 for development, production URL for production
       const baseUrl = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:5001/api/messages'
-        : 'https://bcrm.100acress.com/api/messages';
+        ? 'http://localhost:5001/api/chats'
+        : 'https://bcrm.100acress.com/api/chats';
       
-      // Fetch conversation for current user with recipient
-      const response = await fetch(`${baseUrl}/conversation/${finalRecipientId}`, {
+      // Fetch conversation for current lead
+      const response = await fetch(`${baseUrl}?leadId=${recipient.leadId || recipient._id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -451,19 +451,20 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
       const token = localStorage.getItem('token');
       
       const requestBody = {
-        recipientId: finalRecipientId,
-        recipientEmail: resolvedRecipient?.email || recipient?.email,
-        recipientName: recipientDisplayName,
+        leadId: recipient.leadId || recipient._id,
         message: message.trim(),
-        senderRole: getValidSenderRole(currentUserRole)
+        senderId: getCurrentUserId(),
+        senderRole: getValidSenderRole(currentUserRole),
+        receiverId: finalRecipientId,
+        receiverRole: getValidSenderRole(recipient.role || recipient.userRole)
       };
       
       console.log('Sending message:', requestBody);
       
       // Use localhost:5001 for development, production URL for production
       const baseUrl = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:5001/api/messages'
-        : 'https://bcrm.100acress.com/api/messages';
+        ? 'http://localhost:5001/api/chats'
+        : 'https://bcrm.100acress.com/api/chats';
       
       const response = await fetch(`${baseUrl}/send`, {
         method: 'POST',
