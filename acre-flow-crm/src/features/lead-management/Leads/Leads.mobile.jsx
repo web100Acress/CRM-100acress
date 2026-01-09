@@ -880,12 +880,15 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       // For BD users, find HOD or Boss to chat with
       console.log('Looking for HOD or Boss in assignable users...');
       
-      // Try to find HOD first
-      recipientUser = byRole('hod') || byRole('head-admin') || byRole('head');
+      // Filter out current user from available users
+      const otherUsers = users.filter(u => String(u._id) !== String(currentUserId));
+      
+      // Try to find HOD first (excluding current user)
+      recipientUser = otherUsers.find(u => ['hod', 'head-admin', 'head'].includes(u.role));
       
       if (!recipientUser) {
         console.log('HOD not found, looking for Boss...');
-        recipientUser = byRole('boss') || byRole('super-admin');
+        recipientUser = otherUsers.find(u => ['boss', 'super-admin'].includes(u.role));
       }
       
       if (!recipientUser) {
@@ -895,22 +898,25 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
           const lastAssignment = lead.assignmentChain[lead.assignmentChain.length - 1];
           console.log('Last assignment:', lastAssignment);
           
-          // Try to find the user who assigned this lead
+          // Try to find the user who assigned this lead (excluding current user)
           if (lastAssignment?.assignedBy) {
             const assignedById = typeof lastAssignment.assignedBy === 'object' 
               ? lastAssignment.assignedBy._id || lastAssignment.assignedBy.id
               : lastAssignment.assignedBy;
             
-            recipientUser = users.find((u) => String(u?._id) === String(assignedById));
-            console.log('Found assignedBy in assignment chain:', recipientUser);
+            // Only select if it's not the current user
+            if (String(assignedById) !== String(currentUserId)) {
+              recipientUser = users.find((u) => String(u?._id) === String(assignedById));
+              console.log('Found assignedBy in assignment chain:', recipientUser);
+            }
           }
         }
       }
       
-      // Last resort - any available user
+      // Last resort - any available user (excluding current user)
       if (!recipientUser && users.length > 0) {
-        console.log('Using any available user as last resort');
-        recipientUser = users[0];
+        console.log('Using any available user as last resort (excluding current user)');
+        recipientUser = users.find(u => String(u._id) !== String(currentUserId)) || users[0];
       }
       
     } else {
@@ -927,8 +933,9 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       if (assignedUser) {
         recipientUser = assignedUser;
       } else {
-        // Fallback: try to find any available user
-        recipientUser = byRole('boss') || byRole('super-admin') || byRole('hod') || byRole('head-admin') || byRole('head') || byRole('team-leader') || byRole('bd') || byRole('employee') || users[0];
+        // Fallback: try to find any available user (excluding current user)
+        const availableUsers = users.filter(u => String(u._id) !== String(currentUserId));
+        recipientUser = availableUsers.find(u => ['boss', 'super-admin', 'hod', 'head-admin', 'head', 'team-leader'].includes(u.role)) || availableUsers[0];
       }
     }
 
@@ -939,6 +946,17 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       currentUserId,
       recipientUserId: recipientUser?._id 
     });
+
+    // 🚫 Self-assignment validation
+    if (recipientUser?._id && String(recipientUser._id) === String(currentUserId)) {
+      console.error('Self-assignment detected. Cannot chat with yourself.');
+      toast({
+        title: 'Error',
+        description: 'You cannot chat with yourself. Please select another user.',
+        variant: 'destructive'
+      });
+      return;
+    }
 
     if (!recipientUser?._id) {
       console.error('No valid recipient found. Available users:', users.map(u => ({ _id: u._id, name: u.name, role: u.role })));

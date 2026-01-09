@@ -423,6 +423,20 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
   };
 
   const handleMessageOpen = (bd) => {
+    const currentUserId = localStorage.getItem('userId');
+    
+    // 🚫 Prevent self-messaging
+    if (String(bd._id) === String(currentUserId)) {
+      alert('You cannot message yourself. Please select another user.');
+      return;
+    }
+    
+    console.log('Opening chat with:', { 
+      recipientId: bd._id, 
+      recipientName: bd.name,
+      currentUserId 
+    });
+    
     setMessageRecipient(bd);
     setMessageModalVisible(true);
   };
@@ -692,13 +706,23 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
                   <Eye size={14} />
                   <span>View Details</span>
                 </button>
-                <button
-                  onClick={() => handleMessageOpen(bd)}
-                  className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
-                >
-                  <MessageSquare size={14} />
-                  <span>Message</span>
-                </button>
+                {(() => {
+                  const currentUserId = localStorage.getItem('userId');
+                  return (
+                    <button
+                      onClick={() => handleMessageOpen(bd)}
+                      disabled={String(bd._id) === String(currentUserId)}
+                      className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors text-sm ${
+                        String(bd._id) === String(currentUserId)
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-green-600 text-white hover:bg-green-700'
+                      }`}
+                    >
+                      <MessageSquare size={14} />
+                      <span>{String(bd._id) === String(currentUserId) ? 'Yourself' : 'Message'}</span>
+                    </button>
+                  );
+                })()}
               </div>
             </CardContent>
           </Card>

@@ -35,7 +35,32 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
       const token = localStorage.getItem('token');
       const currentUserId = getCurrentUserId();
       
-      const response = await fetch('https://bcrm.100acress.com/api/chats/create', {
+      // 🚫 CRITICAL FIX: Prevent self-chat
+      let assignedToId = recipient._id;
+      if (String(assignedToId) === String(currentUserId)) {
+        console.error('❌ SELF-CHAT DETECTED - recipient._id equals currentUserId');
+        console.error('Current user:', currentUserId);
+        console.error('Recipient ID:', assignedToId);
+        console.error('Recipient data:', recipient);
+        
+        // Don't proceed with chat creation if it would result in self-chat
+        toast({
+          title: 'Error',
+          description: 'You cannot chat with yourself. Please select another user.',
+          variant: 'destructive'
+        });
+        setCreatingChat(false);
+        return;
+      }
+      
+      console.log('✅ Creating chat with correct participants:', {
+        leadId: recipient.leadId,
+        createdBy: currentUserId,
+        assignedTo: assignedToId,
+        senderName: recipient.name
+      });
+      
+      const response = await fetch('http://localhost:5001/api/chats/create', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -44,7 +69,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
         body: JSON.stringify({
           leadId: recipient.leadId,
           createdBy: currentUserId,
-          assignedTo: recipient._id
+          assignedTo: assignedToId
         })
       });
       
@@ -54,6 +79,17 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
           setChatId(data.data._id);
           console.log('Chat created/found:', data.data._id);
         }
+      } else {
+        // Handle backend error responses
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Chat creation failed:', errorData);
+        
+        // Show the actual error message from backend
+        toast({
+          title: 'Error',
+          description: errorData.message || 'Failed to create chat',
+          variant: 'destructive'
+        });
       }
     } catch (error) {
       console.error('Error creating chat:', error);
@@ -85,7 +121,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://bcrm.100acress.com/api/chats/messages?chatId=${chatId}`, {
+      const response = await fetch(`http://localhost:5001/api/chats/messages?chatId=${chatId}`, {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
       });
       if (response.ok) {
@@ -113,7 +149,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
     setIsSending(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://bcrm.100acress.com/api/chats/send', {
+      const response = await fetch('http://localhost:5001/api/chats/send', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ chatId: chatId, message: message.trim(), senderId: getCurrentUserId() })
