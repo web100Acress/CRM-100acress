@@ -897,9 +897,12 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         // Lead assigned to someone else -> Chat with assigned user
         recipientUser = users.find(u => String(u._id) === String(lead.assignedTo));
         console.log('✅ Found assigned user for chat:', recipientUser);
-        const availableUsers = users.filter(u => String(u._id) !== String(currentUserId));
-        recipientUser = availableUsers.find(u => ['boss', 'super-admin', 'hod', 'head-admin', 'head', 'team-leader'].includes(u.role)) || availableUsers[0];
       }
+    } else {
+      // HOD/Boss logic - Chat with assigned user
+      console.log('🔍 HOD/Boss trying to chat with assigned user');
+      recipientUser = users.find(u => String(u._id) === String(lead.assignedTo));
+      console.log('✅ HOD/Boss found assigned user:', recipientUser);
     }
 
     console.log('Final recipient user:', recipientUser);
@@ -998,60 +1001,6 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       assignedByName = forwardedByName; // Same person for now
     }
     
-    // For BD users (like Test): the recipient should be the person who assigned/forwarded the lead
-    if ((currentUserRole === 'bd' || currentUserRole === 'employee') && 
-        String(lead.assignedTo) === String(currentUserId)) {
-      
-      console.log('BD user (Test) trying to chat - finding who assigned the lead');
-      
-      // Find the person who assigned this lead
-      if (lead.assignmentChain && lead.assignmentChain.length > 0) {
-        const lastAssignment = lead.assignmentChain[lead.assignmentChain.length - 1];
-        console.log('Last assignment:', lastAssignment);
-        
-        if (lastAssignment?.assignedBy) {
-          const assignedById = typeof lastAssignment.assignedBy === 'object' 
-            ? lastAssignment.assignedBy._id || lastAssignment.assignedBy.id
-            : lastAssignment.assignedBy;
-          
-          recipientUser = users.find((u) => String(u?._id) === String(assignedById));
-          console.log('Found assignedBy in assignment chain:', recipientUser);
-        }
-      }
-      
-      // If no assignment chain, find HOD or Boss (should be Anurag)
-      if (!recipientUser) {
-        // Look specifically for Anurag or any HOD/Boss role
-        recipientUser = users.find((u) => 
-          (u?.name?.toLowerCase().includes('anurag')) ||
-          (u?.role === 'hod') || 
-          (u?.role === 'head-admin') || 
-          (u?.role === 'head') ||
-          (u?.role === 'boss') || 
-          (u?.role === 'super-admin')
-        );
-        
-        // If still not found, get first HOD/Boss
-        if (!recipientUser) {
-          recipientUser = byRole('hod') || byRole('head-admin') || byRole('head') ||
-                            byRole('boss') || byRole('super-admin') ||
-                            users[0];
-        }
-        
-        console.log('Using HOD/Boss as recipient for BD user:', recipientUser);
-      }
-      
-    } else {
-      // For HODs/Boss: chat with the assigned user
-      console.log('HOD/Boss trying to chat with assigned user');
-      const assignedUserId = lead?.assignedTo;
-      const assignedUser = assignedUserId
-        ? users.find((u) => String(u?._id) === String(assignedUserId))
-        : null;
-      
-      console.log('Found assigned user:', assignedUser);
-      
-    }
     const recipientData = {
       _id: recipientUser._id,
       id: recipientUser._id,
