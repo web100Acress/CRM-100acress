@@ -33,16 +33,16 @@ const DashboardMobile = ({ userRole = 'employee' }) => {
   const getDashboardTitle = () => {
     switch (userRole) {
       case 'boss':
-        return 'Super Admin Dashboard';
+        return 'Boss Dashboard';
       case 'hod':
       case 'head-admin':
       case 'head':
-        return 'Head Dashboard';
+        return 'HOD Dashboard';
       case 'team-leader':
         return 'Team Leader Dashboard';
       case 'bd':
       case 'employee':
-        return 'Employee Dashboard';
+        return 'BD Dashboard';
       default:
         return 'Dashboard';
     }

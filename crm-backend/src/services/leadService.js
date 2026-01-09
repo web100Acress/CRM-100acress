@@ -1,5 +1,6 @@
 const Lead = require('../models/leadModel');
 const User = require('../models/userModel');
+const mongoose = require('mongoose');
 
 // Role hierarchy for lead forwarding
 const roleHierarchy = {
@@ -266,6 +267,83 @@ const getAssignableUsers = async (currentUserRole, currentUserId) => {
   return users;
 };
 
+const forwardPatchLead = async (leadId, requesterId, newAssigneeId, reason = '') => {
+  const lead = await Lead.findById(leadId);
+  if (!lead) return null;
+
+  const requester = await User.findById(requesterId);
+  if (!requester) return null;
+
+  const allowedRoles = ['boss', 'hod', 'team-leader'];
+  if (!allowedRoles.includes(String(requester.role))) {
+    throw new Error('Not allowed to forward-patch this lead');
+  }
+
+  if (!newAssigneeId) {
+    throw new Error('New assignee is required');
+  }
+
+  const newAssignee = await User.findById(newAssigneeId);
+  if (!newAssignee) {
+    throw new Error('Selected employee not found');
+  }
+
+  const newRole = String(newAssignee.role || '');
+  if (newRole !== 'bd') {
+    throw new Error('Forward patch can only assign to BD');
+  }
+
+  if (!lead.assignedTo) {
+    throw new Error('Lead is not currently assigned');
+  }
+
+  if (String(lead.assignedTo) === String(newAssigneeId)) {
+    throw new Error('Lead is already assigned to the selected BD');
+  }
+
+  const chain = Array.isArray(lead.assignmentChain) ? lead.assignmentChain : [];
+  const wasForwarded = chain.some((e) => String(e?.status) === 'forwarded');
+  if (!wasForwarded) {
+    throw new Error('Forward patch is only available for already forwarded leads');
+  }
+
+  const currentAssigneeEntryIndex = (() => {
+    for (let i = chain.length - 1; i >= 0; i -= 1) {
+      if (String(chain[i]?.userId) === String(lead.assignedTo) && String(chain[i]?.status) === 'assigned') {
+        return i;
+      }
+    }
+    return -1;
+  })();
+
+  if (currentAssigneeEntryIndex >= 0) {
+    chain[currentAssigneeEntryIndex].status = 'rejected';
+    chain[currentAssigneeEntryIndex].completedAt = new Date();
+    chain[currentAssigneeEntryIndex].notes = reason || 'Reassigned';
+  }
+
+  chain.push({
+    userId: newAssignee._id.toString(),
+    role: newAssignee.role,
+    name: newAssignee.name,
+    assignedAt: new Date(),
+    status: 'assigned',
+    notes: reason || 'Forward patched',
+    assignedBy: {
+      _id: requester._id,
+      name: requester.name,
+      role: requester.role,
+    },
+  });
+
+  lead.assignmentChain = chain;
+  lead.assignedTo = newAssignee._id.toString();
+  lead.assignedBy = requesterId;
+
+  await lead.save();
+  return lead;
+};
+
 const deleteLead = async (id) => {
   return await Lead.findByIdAndDelete(id);
 };
@@ -284,6 +362,154 @@ const getFollowUps = async (id) => {
   return lead ? lead.followUps : null;
 };
 
+const forwardSwapLead = async (leadId, requesterId, swapLeadId, reason = '') => {
+  const requester = await User.findById(requesterId);
+  if (!requester) return null;
+
+  const allowedRoles = ['boss', 'hod', 'team-leader'];
+  if (!allowedRoles.includes(String(requester.role))) {
+    throw new Error('Not allowed to swap leads');
+  }
+
+  if (!swapLeadId) {
+    throw new Error('Swap lead is required');
+  }
+
+  if (String(leadId) === String(swapLeadId)) {
+    throw new Error('Cannot swap the same lead');
+  }
+
+  const applySwap = async (session = null) => {
+    const leadA = session ? await Lead.findById(leadId).session(session) : await Lead.findById(leadId);
+    const leadB = session ? await Lead.findById(swapLeadId).session(session) : await Lead.findById(swapLeadId);
+
+    if (!leadA || !leadB) {
+      throw new Error('Lead not found');
+    }
+
+    if (!leadA.assignedTo || !leadB.assignedTo) {
+      throw new Error('Both leads must be assigned to swap');
+    }
+
+    const chainA = Array.isArray(leadA.assignmentChain) ? leadA.assignmentChain : [];
+    const wasForwardedA = chainA.some((e) => String(e?.status) === 'forwarded');
+    if (!wasForwardedA) {
+      throw new Error('Swap is only available for already forwarded leads');
+    }
+
+    const bdAId = String(leadA.assignedTo);
+    const bdBId = String(leadB.assignedTo);
+
+    if (bdAId === bdBId) {
+      throw new Error('Both leads are assigned to the same BD');
+    }
+
+    const bdA = session ? await User.findById(bdAId).session(session) : await User.findById(bdAId);
+    const bdB = session ? await User.findById(bdBId).session(session) : await User.findById(bdBId);
+    if (!bdA || !bdB) {
+      throw new Error('BD user not found');
+    }
+
+    if (String(bdA.role) !== 'bd' || String(bdB.role) !== 'bd') {
+      throw new Error('Swap is only supported between BD assigned leads');
+    }
+
+    const chainB = Array.isArray(leadB.assignmentChain) ? leadB.assignmentChain : [];
+
+    const findLastAssignedIndex = (chain, assignedTo) => {
+      for (let i = chain.length - 1; i >= 0; i -= 1) {
+        if (String(chain[i]?.userId) === String(assignedTo) && String(chain[i]?.status) === 'assigned') {
+          return i;
+        }
+      }
+      return -1;
+    };
+
+    const idxA = findLastAssignedIndex(chainA, bdAId);
+    if (idxA >= 0) {
+      chainA[idxA].status = 'rejected';
+      chainA[idxA].completedAt = new Date();
+      chainA[idxA].notes = reason || 'Swapped';
+    }
+
+    const idxB = findLastAssignedIndex(chainB, bdBId);
+    if (idxB >= 0) {
+      chainB[idxB].status = 'rejected';
+      chainB[idxB].completedAt = new Date();
+      chainB[idxB].notes = reason || 'Swapped';
+    }
+
+    chainA.push({
+      userId: bdB._id.toString(),
+      role: bdB.role,
+      name: bdB.name,
+      assignedAt: new Date(),
+      status: 'assigned',
+      notes: reason || 'Swapped',
+      assignedBy: {
+        _id: requester._id,
+        name: requester.name,
+        role: requester.role,
+      },
+    });
+
+    chainB.push({
+      userId: bdA._id.toString(),
+      role: bdA.role,
+      name: bdA.name,
+      assignedAt: new Date(),
+      status: 'assigned',
+      notes: reason || 'Swapped',
+      assignedBy: {
+        _id: requester._id,
+        name: requester.name,
+        role: requester.role,
+      },
+    });
+
+    leadA.assignmentChain = chainA;
+    leadB.assignmentChain = chainB;
+
+    leadA.assignedTo = bdB._id.toString();
+    leadB.assignedTo = bdA._id.toString();
+
+    leadA.assignedBy = requesterId;
+    leadB.assignedBy = requesterId;
+
+    if (session) {
+      await leadA.save({ session });
+      await leadB.save({ session });
+    } else {
+      await leadA.save();
+      await leadB.save();
+    }
+
+    return { leadA, leadB };
+  };
+
+  const session = await mongoose.startSession();
+  try {
+    let result = null;
+    try {
+      await session.withTransaction(async () => {
+        result = await applySwap(session);
+      });
+      return result;
+    } catch (err) {
+      try {
+        if (session.inTransaction()) {
+          await session.abortTransaction();
+        }
+      } catch {
+        // ignore
+      }
+      return await applySwap(null);
+    }
+  } finally {
+    session.endSession();
+  }
+};
+
 module.exports = {
   createLead,
   getBDSummary,
@@ -296,6 +522,8 @@ module.exports = {
   addFollowUp,
   getFollowUps,
   forwardLead,
+  forwardPatchLead,
+  forwardSwapLead,
   getNextAssignableUsers,
   getAssignableUsers,
-}; 
+};
