@@ -896,34 +896,53 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
 
   // Fetch call history for a lead
   const fetchLeadCallHistory = async (leadId) => {
-    if (!leadId) return;
+    if (!leadId) {
+      console.log('No leadId provided for call history');
+      return;
+    }
     
+    console.log('Fetching call history for leadId:', leadId);
     setLoadingCallHistory(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(apiUrl(`leads/${leadId}/calls`), {
+      const url = apiUrl(`leads/${leadId}/calls`);
+      console.log('Call history API URL:', url);
+      
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
       
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setCallHistory(data.data || []);
-          console.log('Call history fetched:', data.data);
-        } else {
-          console.error('Failed to fetch call history:', data.message);
-          setCallHistory([]);
-        }
+      console.log('Call history response status:', response.status);
+      
+      const data = await response.json();
+      console.log('Call history response data:', data);
+      
+      if (response.ok && data.success) {
+        setCallHistory(data.data || []);
+        console.log('Call history fetched successfully:', data.data?.length || 0, 'records');
       } else {
-        console.error('Failed to fetch call history:', response.status);
+        console.error('Failed to fetch call history:', data.message || 'Unknown error');
         setCallHistory([]);
+        // Show toast for access denied
+        if (response.status === 403) {
+          toast({
+            title: "Access Denied",
+            description: data.message || "You don't have permission to view this lead's call history",
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
       console.error('Error fetching call history:', error);
       setCallHistory([]);
+      toast({
+        title: "Error",
+        description: "Failed to fetch call history. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoadingCallHistory(false);
     }

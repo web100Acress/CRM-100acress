@@ -510,9 +510,35 @@ exports.getLeadCallHistory = async (req, res, next) => {
       });
       hasAccess = isHODAssigned || String(lead.assignedBy) === String(userId);
     } else {
-      // BD/TL has access if they made the call or lead is assigned to them
-      hasAccess = String(lead.assignedTo) === String(userId);
+      // BD/TL has access if:
+      // 1. Lead is assigned to them, OR
+      // 2. They made any call for this lead, OR
+      // 3. They are in the assignment chain
+      const isAssignedTo = String(lead.assignedTo) === String(userId);
+      
+      // Check if user made any call for this lead
+      const userMadeCall = await CallRecord.findOne({ 
+        leadId: leadId,
+        userId: userId 
+      });
+      
+      // Check if user is in assignment chain
+      const assignmentChain = Array.isArray(lead.assignmentChain) ? lead.assignmentChain : [];
+      const isInChain = assignmentChain.some(entry => {
+        const entryUserId = entry.userId?._id || entry.userId;
+        return String(entryUserId) === String(userId);
+      });
+      
+      hasAccess = isAssignedTo || !!userMadeCall || isInChain;
     }
+    
+    console.log('Call history access check:', {
+      leadId,
+      userId,
+      userRole,
+      hasAccess,
+      assignedTo: lead.assignedTo
+    });
     
     if (!hasAccess) {
       return res.status(403).json({ 
@@ -526,6 +552,8 @@ exports.getLeadCallHistory = async (req, res, next) => {
       .populate('leadId', 'name phone status')
       .sort({ callDate: -1 })
       .limit(200);
+    
+    console.log('Call records found:', callRecords.length);
     
     res.status(200).json({ 
       success: true, 

@@ -10,6 +10,15 @@ router.get('/bd-status/:bdId', auth, leadController.getBDDetails);
 // Place static routes BEFORE any /:id routes
 router.get('/assignable-users', auth, leadController.getAssignableUsers);
 
+// Save call record - BEFORE /:id routes
+router.post('/calls', auth, leadController.saveCallRecord);
+
+// Get call records for current user - BEFORE /:id routes
+router.get('/calls', auth, leadController.getCallRecords);
+
+// Get call history for specific lead - MUST BE BEFORE /:id route
+router.get('/:leadId/calls', auth, leadController.getLeadCallHistory);
+
 router.get('/', auth, leadController.getLeads);
 router.post('/', auth, leadController.createLead);
 router.put('/:id', auth, leadController.updateLead);
@@ -31,14 +40,5 @@ router.post('/:id/forward-patch', auth, leadController.forwardPatchLead);
 
 // Forward swap (swap two leads between BDs)
 router.post('/:id/forward-swap', auth, leadController.forwardSwapLead);
-
-// Save call record
-router.post('/calls', auth, leadController.saveCallRecord);
-
-// Get call records for current user
-router.get('/calls', auth, leadController.getCallRecords);
-
-// Get call history for specific lead
-router.get('/:leadId/calls', auth, leadController.getLeadCallHistory);
 
 module.exports = router;
