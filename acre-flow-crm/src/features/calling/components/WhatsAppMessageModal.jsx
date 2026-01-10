@@ -252,45 +252,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
     } 
   }, [chatId, fetchMessages]);
   
-  // Send welcome message if chat is empty
-  useEffect(() => {
-    if (chatId && messages.length === 0 && !loading && !creatingChat) {
-      const sendWelcomeMessage = async () => {
-        try {
-          const token = localStorage.getItem('token');
-          const currentUserId = getCurrentUserId();
-          const welcomeMessage = `Hi ${recipient?.name || 'there'}! I'm contacting you regarding the lead: ${recipient?.leadName || 'N/A'}`;
-          
-          const response = await fetch('https://bcrm.100acress.com/api/chats/send', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ 
-              chatId: chatId, 
-              message: welcomeMessage, 
-              senderId: currentUserId 
-            })
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            if (data.success) {
-              console.log('✅ Welcome message sent');
-              // Refresh messages after sending welcome
-              setTimeout(() => fetchMessages(), 500);
-            }
-          }
-        } catch (error) {
-          console.error('Error sending welcome message:', error);
-        }
-      };
-      
-      // Only send welcome if this is a newly created chat (no messages)
-      sendWelcomeMessage();
-    }
-  }, [chatId, messages.length, loading, creatingChat, recipient, fetchMessages]);
+  // Note: Removed auto welcome message - user will see notification and then chat opens
 
   if (!isOpen || !recipient) return null;
 
@@ -298,13 +260,14 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg w-full max-w-md h-[600px] flex flex-col">
         <div className="bg-green-600 text-white p-4 rounded-t-lg flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-              <span className="text-sm font-medium">{oppositeUser?.name?.charAt(0).toUpperCase() || '?'}</span>
+          <div className="flex items-center space-x-3 flex-1 min-w-0">
+            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-sm font-medium text-white">{oppositeUser?.name?.charAt(0).toUpperCase() || '?'}</span>
             </div>
-            <div>
-              <h3 className="font-semibold">{oppositeUser?.name || 'Unknown'}{recipient?.leadName && <span className="text-xs opacity-75 ml-2">(Lead: {recipient.leadName})</span>}</h3>
-              <p className="text-xs opacity-90">{oppositeUser?.role || 'User'} {recipient?.leadName && `• Lead: ${recipient.leadName}`}</p>
+            <div className="flex-1 min-w-0">
+              {/* ✅ Header: Opposite person name prominently */}
+              <h3 className="font-semibold text-base truncate">{oppositeUser?.name || 'Unknown'}</h3>
+              <p className="text-xs opacity-90 truncate">{oppositeUser?.role || 'User'} • {recipient?.leadName || 'Unknown Lead'}</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
@@ -317,7 +280,10 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
         <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
           {creatingChat ? (
             <div className="flex items-center justify-center h-full">
-              <div className="text-gray-500">Creating chat...</div>
+              <div className="flex flex-col items-center gap-2">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                <div className="text-gray-500 text-sm">Opening chat...</div>
+              </div>
             </div>
           ) : loading ? (
             <div className="flex items-center justify-center h-full">
@@ -326,25 +292,36 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
           ) : messages.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-gray-500 text-center">
-                <p>No messages yet</p>
-                <p className="text-sm mt-2">Start a conversation!</p>
+                <p className="text-lg font-medium">No messages yet</p>
+                <p className="text-sm mt-2 opacity-75">Start a conversation with {oppositeUser?.name || 'this user'}!</p>
               </div>
             </div>
           ) : (
             <div className="flex flex-col space-y-3 h-full">
               {messages.map((msg) => (
-                <div key={msg.id} className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'} w-full`}>
-                  <div className={`max-w-[70%] px-4 py-2 rounded-2xl ${
+                <div key={msg.id} className={`flex ${msg.sender === 'me' ? 'justify-start' : 'justify-end'} w-full`}>
+                  <div className={`max-w-[70%] px-4 py-2 rounded-lg ${
                     msg.sender === 'me' 
-                      ? 'bg-green-600 text-white' 
-                      : 'bg-white text-gray-800 border border-gray-200'
-                  }`}>
+                      ? 'bg-white text-gray-800 border border-gray-200' 
+                      : 'bg-green-600 text-white'
+                  }`}
+                  style={{
+                    borderTopLeftRadius: msg.sender === 'me' ? '4px' : '18px',
+                    borderTopRightRadius: msg.sender === 'me' ? '18px' : '4px',
+                    borderBottomLeftRadius: '18px',
+                    borderBottomRightRadius: '18px'
+                  }}>
+                    {/* Show "You" label for sent messages */}
+                    {msg.sender === 'me' && (
+                      <p className="text-xs font-semibold mb-1 text-gray-600">You</p>
+                    )}
+                    {/* Show sender name for received messages */}
                     {msg.sender === 'other' && (
-                      <p className="text-xs font-semibold mb-1 text-gray-600">{msg.senderName}</p>
+                      <p className="text-xs font-semibold mb-1 text-green-100">{msg.senderName}</p>
                     )}
                     <p className="text-sm break-words">{msg.text}</p>
-                    <p className={`text-xs mt-1 ${
-                      msg.sender === 'me' ? 'text-green-100' : 'text-gray-500'
+                    <p className={`text-xs mt-1 text-right ${
+                      msg.sender === 'me' ? 'text-gray-500' : 'text-green-100'
                     }`}>
                       {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>

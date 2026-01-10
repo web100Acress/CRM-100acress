@@ -2,7 +2,7 @@ const Chat = require('../models/chatModel');
 const User = require('../models/userModel');
 const Lead = require('../models/leadModel');
 
-// 🎯 WhatsApp Style Chat System
+// 🎯 WhatsApp Style Chat System - STRICT: Only Assigner ↔ Assigned User
 exports.createOrGetChat = async (req, res, next) => {
   try {
     const { leadId, createdBy, assignedTo } = req.body;
@@ -19,6 +19,104 @@ exports.createOrGetChat = async (req, res, next) => {
       return res.status(400).json({ 
         success: false, 
         message: 'Self assignment not allowed' 
+      });
+    }
+
+    // 🔒 VALIDATE: Both users must be in assignment chain and form a consecutive pair
+    const lead = await Lead.findById(leadId);
+    if (!lead) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Lead not found' 
+      });
+    }
+
+    const assignmentChain = Array.isArray(lead.assignmentChain) ? lead.assignmentChain : [];
+    
+    // Helper function to get assigner ID from entry
+    const getAssignerId = (entry) => {
+      if (!entry?.assignedBy) return null;
+      if (typeof entry.assignedBy === 'string') return entry.assignedBy;
+      if (entry.assignedBy._id) return String(entry.assignedBy._id);
+      return null;
+    };
+    
+    // Check if both users are in the assignment chain
+    const createdByInChain = assignmentChain.some(
+      entry => String(entry.userId) === String(createdBy)
+    );
+    const assignedToInChain = assignmentChain.some(
+      entry => String(entry.userId) === String(assignedTo)
+    );
+    
+    // Also check current assigned user
+    const isCreatedByCurrentAssigned = String(lead.assignedTo) === String(createdBy);
+    const isAssignedToCurrentAssigned = String(lead.assignedTo) === String(assignedTo);
+    
+    // Both users must be in chain or currently assigned
+    if (!(createdByInChain || isCreatedByCurrentAssigned) || !(assignedToInChain || isAssignedToCurrentAssigned)) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Chat not allowed: Both users must be in the assignment chain.' 
+      });
+    }
+    
+    // Validate: Check if they form a consecutive pair in the chain
+    // Case 1: createdBy assigned to assignedTo (createdBy → assignedTo)
+    const assignedToEntry = assignmentChain.find(
+      entry => String(entry.userId) === String(assignedTo)
+    );
+    
+    let isValidPair = false;
+    
+    if (assignedToEntry) {
+      const assignerId = getAssignerId(assignedToEntry);
+      if (assignerId && String(assignerId) === String(createdBy)) {
+        // createdBy is the assigner of assignedTo
+        isValidPair = true;
+      }
+    }
+    
+    // Case 2: assignedTo assigned to createdBy (assignedTo → createdBy)
+    if (!isValidPair) {
+      const createdByEntry = assignmentChain.find(
+        entry => String(entry.userId) === String(createdBy)
+      );
+      
+      if (createdByEntry) {
+        const assignerId = getAssignerId(createdByEntry);
+        if (assignerId && String(assignerId) === String(assignedTo)) {
+          // assignedTo is the assigner of createdBy
+          isValidPair = true;
+        }
+      }
+    }
+    
+    // Case 3: Both are in chain and could be consecutive (check all pairs)
+    if (!isValidPair && createdByInChain && assignedToInChain) {
+      // Check if they appear as consecutive assigner-assigned pairs
+      for (const entry of assignmentChain) {
+        const assignerId = getAssignerId(entry);
+        const entryUserId = String(entry.userId);
+        
+        // Check if createdBy assigned to assignedTo
+        if (assignerId && String(assignerId) === String(createdBy) && entryUserId === String(assignedTo)) {
+          isValidPair = true;
+          break;
+        }
+        
+        // Check if assignedTo assigned to createdBy
+        if (assignerId && String(assignerId) === String(assignedTo) && entryUserId === String(createdBy)) {
+          isValidPair = true;
+          break;
+        }
+      }
+    }
+    
+    if (!isValidPair) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Chat not allowed: Users must be consecutive pairs in the assignment chain (assigner ↔ assigned user).' 
       });
     }
 

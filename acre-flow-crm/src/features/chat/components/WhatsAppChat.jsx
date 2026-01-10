@@ -144,20 +144,20 @@ const WhatsAppChat = ({ chat, isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-md h-[600px] flex flex-col">
+      <div className="bg-white rounded-lg w-full max-w-md h-[600px] flex flex-col shadow-2xl">
         {/* WhatsApp Header */}
         <div className="bg-green-600 text-white p-4 rounded-t-lg flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-              <span className="text-sm font-medium">
+          <div className="flex items-center space-x-3 flex-1 min-w-0">
+            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-sm font-medium text-white">
                 {oppositeUser?.name?.charAt(0).toUpperCase() || '?'}
               </span>
             </div>
-            <div>
-              {/* ✅ WHATSAPP HEADER: Opposite user + Lead info */}
-              <h3 className="font-semibold">{oppositeUser?.name || 'Unknown'}</h3>
-              <p className="text-xs opacity-90">
-                {oppositeUser?.role || 'User'} • Lead: {chat.leadId?.name || 'Unknown'}
+            <div className="flex-1 min-w-0">
+              {/* ✅ WHATSAPP HEADER: Opposite person name prominently */}
+              <h3 className="font-semibold text-base truncate">{oppositeUser?.name || 'Unknown'}</h3>
+              <p className="text-xs opacity-90 truncate">
+                {oppositeUser?.role || 'User'} • {chat.leadId?.name || 'Unknown Lead'}
               </p>
             </div>
           </div>
@@ -195,24 +195,30 @@ const WhatsAppChat = ({ chat, isOpen, onClose }) => {
               {messages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}
+                  className={`flex ${msg.sender === 'me' ? 'justify-start' : 'justify-end'}`}
                 >
                   <div
                     className={`max-w-xs px-4 py-2 rounded-lg ${
                       msg.sender === 'me'
-                        ? 'bg-green-600 text-white'
-                        : 'bg-white text-gray-800 border'
+                        ? 'bg-white text-gray-800 border border-gray-200'
+                        : 'bg-green-600 text-white'
                     }`}
+                    style={{
+                      borderTopLeftRadius: msg.sender === 'me' ? '4px' : '18px',
+                      borderTopRightRadius: msg.sender === 'me' ? '18px' : '4px',
+                      borderBottomLeftRadius: '18px',
+                      borderBottomRightRadius: '18px'
+                    }}
                   >
-                    {/* Show sender name for messages from others */}
-                    {msg.sender === 'other' && (
+                    {/* Show sender name for sent messages (me) */}
+                    {msg.sender === 'me' && (
                       <p className="text-xs font-semibold mb-1 text-gray-600">
-                        {msg.senderName}
+                        You
                       </p>
                     )}
-                    <p className="text-sm">{msg.text}</p>
-                    <p className={`text-xs mt-1 ${
-                      msg.sender === 'me' ? 'text-green-100' : 'text-gray-500'
+                    <p className="text-sm break-words">{msg.text}</p>
+                    <p className={`text-xs mt-1 text-right ${
+                      msg.sender === 'me' ? 'text-gray-500' : 'text-green-100'
                     }`}>
                       {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
