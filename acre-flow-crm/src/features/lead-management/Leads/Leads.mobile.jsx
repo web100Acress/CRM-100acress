@@ -72,6 +72,8 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
   const [forwardSwapReason, setForwardSwapReason] = useState('');
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
   const [whatsAppRecipient, setWhatsAppRecipient] = useState(null);
+  const [callHistory, setCallHistory] = useState([]);
+  const [loadingCallHistory, setLoadingCallHistory] = useState(false);
   const currentUserId = localStorage.getItem('userId');
   const currentUserRole = localStorage.getItem('userRole');
 
@@ -725,12 +727,16 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     console.log('handleCallLead called with:', { phone, leadId, leadName });
     
     if (phone) {
-      // Set call data
+      // Clean phone number (remove spaces, dashes, etc.)
+      const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+      
+      // Set call data with accurate start time
+      const startTime = new Date();
       const callInfo = {
-        phone: phone,
+        phone: cleanPhone,
         leadId: leadId,
         leadName: leadName,
-        startTime: new Date()
+        startTime: startTime
       };
       
       console.log('Setting call data:', callInfo);
@@ -742,26 +748,62 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       setCallStatus('connecting');
       setCallDuration(0);
       
-      // Actually make the phone call
-      window.location.href = `tel:${phone}`;
+      // Actually make the phone call - opens native dialer
+      window.location.href = `tel:${cleanPhone}`;
       
-      // Simulate connection after 2 seconds
+      // Start tracking call duration immediately (user might be on call)
+      // We'll track from when popup opens until user returns
+      const startTrackingTime = Date.now();
+      
+      // Check if user returns from call (visibility change)
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible' && callStatus === 'connecting') {
+          // User returned, call likely ended
+          const endTime = new Date();
+          const duration = Math.floor((Date.now() - startTrackingTime) / 1000);
+          
+          setCallStatus('ended');
+          setCallDuration(duration);
+          
+          // Save call record
+          saveCallRecord({
+            leadId: callInfo.leadId,
+            leadName: callInfo.leadName,
+            phone: callInfo.phone,
+            startTime: callInfo.startTime,
+            endTime: endTime,
+            duration: duration,
+            status: duration >= 3 ? 'completed' : 'missed'
+          });
+          
+          document.removeEventListener('visibilitychange', handleVisibilityChange);
+        }
+      };
+      
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      
+      // Also simulate connection after 2 seconds for UI
       setTimeout(() => {
-        console.log('Call connected');
-        setCallStatus('connected');
-        
-        // Start duration timer
-        const interval = setInterval(() => {
-          setCallDuration(prev => prev + 1);
-        }, 1000);
-        
-        // Save interval for cleanup
-        setCallData(prev => ({ ...prev, interval }));
+        if (callStatus === 'connecting') {
+          console.log('Call connected');
+          setCallStatus('connected');
+          
+          // Start duration timer
+          const interval = setInterval(() => {
+            setCallDuration(prev => {
+              const newDuration = prev + 1;
+              return newDuration;
+            });
+          }, 1000);
+          
+          // Save interval for cleanup
+          setCallData(prev => ({ ...prev, interval }));
+        }
       }, 2000);
       
       toast({
         title: "Calling Lead",
-        description: `Calling ${leadName} at ${phone}...`,
+        description: `Opening dialer for ${leadName} at ${phone}...`,
       });
     } else {
       toast({
@@ -778,40 +820,54 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       clearInterval(callData.interval);
     }
     
+    const endTime = new Date();
+    const finalDuration = callDuration || Math.floor((endTime.getTime() - callData?.startTime?.getTime()) / 1000) || 0;
+    
     setCallStatus('ended');
     
-    // Save call record
-    setTimeout(() => {
+    // Save call record with accurate duration
+    if (callData) {
       saveCallRecord({
         leadId: callData.leadId,
         leadName: callData.leadName,
         phone: callData.phone,
         startTime: callData.startTime,
-        endTime: new Date(),
-        duration: callDuration,
-        status: callDuration >= 3 ? 'completed' : 'missed'
+        endTime: endTime,
+        duration: finalDuration,
+        status: finalDuration >= 3 ? 'completed' : 'missed'
       });
       
-      // Close popup and redirect back to leads section
+      // Refresh call history if lead details modal is open
+      if (showLeadDetails && selectedLead && String(selectedLead._id) === String(callData.leadId)) {
+        setTimeout(() => {
+          fetchLeadCallHistory(callData.leadId);
+        }, 1000);
+      }
+    }
+    
+    // Close popup after a delay
+    setTimeout(() => {
+      const savedLeadId = callData?.leadId;
       setShowCallPopup(false);
       setCallData(null);
       setCallDuration(0);
       setCallStatus('connecting');
       
-      // Redirect back to leads section
-      setTimeout(() => {
-        // Scroll to the lead that was called
-        const leadElement = document.getElementById(`lead-${callData.leadId}`);
-        if (leadElement) {
-          leadElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          // Highlight the lead briefly
-          leadElement.classList.add('ring-2', 'ring-green-500', 'ring-offset-2');
-          setTimeout(() => {
-            leadElement.classList.remove('ring-2', 'ring-green-500', 'ring-offset-2');
-          }, 2000);
-        }
-      }, 500);
-    }, 1000);
+      // Scroll to the lead that was called
+      if (savedLeadId) {
+        setTimeout(() => {
+          const leadElement = document.getElementById(`lead-${savedLeadId}`);
+          if (leadElement) {
+            leadElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Highlight the lead briefly
+            leadElement.classList.add('ring-2', 'ring-green-500', 'ring-offset-2');
+            setTimeout(() => {
+              leadElement.classList.remove('ring-2', 'ring-green-500', 'ring-offset-2');
+            }, 2000);
+          }
+        }, 500);
+      }
+    }, 1500);
   };
 
   const saveCallRecord = async (callRecord) => {
@@ -835,6 +891,41 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       }
     } catch (error) {
       console.error('Error saving call record:', error);
+    }
+  };
+
+  // Fetch call history for a lead
+  const fetchLeadCallHistory = async (leadId) => {
+    if (!leadId) return;
+    
+    setLoadingCallHistory(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(apiUrl(`leads/${leadId}/calls`), {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setCallHistory(data.data || []);
+          console.log('Call history fetched:', data.data);
+        } else {
+          console.error('Failed to fetch call history:', data.message);
+          setCallHistory([]);
+        }
+      } else {
+        console.error('Failed to fetch call history:', response.status);
+        setCallHistory([]);
+      }
+    } catch (error) {
+      console.error('Error fetching call history:', error);
+      setCallHistory([]);
+    } finally {
+      setLoadingCallHistory(false);
     }
   };
 
@@ -2303,7 +2394,19 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       )}
 
       {showLeadDetails && selectedLead && (
-        <Dialog open={showLeadDetails} onOpenChange={setShowLeadDetails}>
+        <Dialog 
+          open={showLeadDetails} 
+          onOpenChange={(open) => {
+            setShowLeadDetails(open);
+            if (open) {
+              // Fetch call history when modal opens
+              fetchLeadCallHistory(selectedLead._id);
+            } else {
+              // Clear call history when modal closes
+              setCallHistory([]);
+            }
+          }}
+        >
           <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Lead Details</DialogTitle>
@@ -2357,6 +2460,84 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                   <MessageSquare size={16} />
                   <span>Follow-up</span>
                 </button>
+              </div>
+
+              {/* Call History Section */}
+              <div className="border-t pt-4 mt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                    <PhoneCall size={16} className="text-green-600" />
+                    Call History
+                  </h4>
+                  {loadingCallHistory && (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  )}
+                </div>
+                
+                {!loadingCallHistory && callHistory.length > 0 ? (
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {callHistory.map((call, index) => (
+                      <div 
+                        key={call._id || index} 
+                        className="bg-gray-50 rounded-lg p-3 border border-gray-200"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <PhoneCall size={14} className="text-green-600" />
+                              <span className="text-sm font-medium text-gray-900">
+                                {call.userId?.name || 'Unknown User'}
+                              </span>
+                              {call.userId?.role && (
+                                <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
+                                  {call.userId.role.toUpperCase()}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500">{call.phone}</p>
+                          </div>
+                          <div className="text-right">
+                            <span className={`text-xs px-2 py-0.5 rounded ${
+                              call.status === 'completed' 
+                                ? 'bg-green-100 text-green-700' 
+                                : call.status === 'missed'
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-gray-100 text-gray-700'
+                            }`}>
+                              {call.status}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-gray-600">
+                          <div className="flex items-center gap-3">
+                            <span className="flex items-center gap-1">
+                              <Clock size={12} />
+                              {formatDuration(call.duration)}
+                            </span>
+                            <span>
+                              {new Date(call.callDate || call.createdAt).toLocaleDateString('en-IN', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric'
+                              })}
+                            </span>
+                          </div>
+                          <span>
+                            {new Date(call.callDate || call.createdAt).toLocaleTimeString('en-IN', {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : !loadingCallHistory ? (
+                  <div className="text-center py-4 text-gray-500 text-sm">
+                    <PhoneCall size={24} className="mx-auto mb-2 text-gray-300" />
+                    <p>No call history available</p>
+                  </div>
+                ) : null}
               </div>
             </div>
           </DialogContent>
