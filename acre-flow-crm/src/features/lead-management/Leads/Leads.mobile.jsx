@@ -1379,79 +1379,45 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     // Get allowed recipients based on direct assignment
     const recipients = getDirectChatUsers({ currentUser, lead });
     
-    // Map recipients to user objects
-    // First, create findUserById function that has access to users and lead
-    const findUserByIdForMapping = (userId) => {
-      if (!userId) return null;
-      const userIdStr = String(userId);
-      
-      // First try assignableUsers
-      let found = users.find(u => String(u._id) === userIdStr);
-      if (found) return found;
-      
-      // If not found, check if we can get from assignment chain
-      if (lead.assignmentChain && lead.assignmentChain.length > 0) {
-        const chainEntry = lead.assignmentChain.find(
-          entry => String(entry.userId) === userIdStr
-        );
-        if (chainEntry) {
-          // Create a minimal user object from chain entry
-          return {
-            _id: chainEntry.userId,
-            name: chainEntry.name,
-            role: chainEntry.role,
-            email: null
-          };
-        }
-      }
-      
-      // Also check assignedBy in chain entries
-      for (const entry of lead.assignmentChain || []) {
-        if (entry.assignedBy) {
-          const assignerId = typeof entry.assignedBy === 'string' 
-            ? entry.assignedBy 
-            : (entry.assignedBy._id || null);
-          if (assignerId && String(assignerId) === userIdStr) {
-            if (typeof entry.assignedBy === 'object' && entry.assignedBy.name) {
-              return {
-                _id: assignerId,
-                name: entry.assignedBy.name,
-                role: entry.assignedBy.role || 'Unknown',
-                email: null
-              };
-            } else if (typeof entry.assignedBy === 'string') {
-              return {
-                _id: assignerId,
-                name: 'Unknown User',
-                role: 'Unknown',
-                email: null
-              };
-            }
-          }
-        }
-      }
-      
-      return null;
-    };
+    console.log('🔍 Recipients from getDirectChatUsers:', {
+      count: recipients.length,
+      recipients: recipients.map(r => ({
+        _id: r?._id || 'missing',
+        name: r?.name || 'missing',
+        role: r?.role || 'missing',
+        type: typeof r
+      }))
+    });
     
+    // Recipients should already be user objects from getDirectChatUsers
+    // Just filter out invalid entries and self
     const validRecipients = recipients
-      .map(recipient => {
-        if (typeof recipient === 'string') {
-          // Find user by ID - use comprehensive search
-          return findUserByIdForMapping(recipient);
-        } else if (recipient && recipient._id) {
-          // Already a user object - verify it has required fields
-          if (!recipient.name) {
-            // If name is missing, try to find full user object
-            const fullUser = findUserByIdForMapping(recipient._id);
-            return fullUser || recipient;
-          }
-          return recipient;
+      .filter(recipient => {
+        // Must be an object with _id
+        if (!recipient || !recipient._id) {
+          console.log('❌ Invalid recipient (no _id):', recipient);
+          return false;
         }
-        return null;
-      })
-      .filter(Boolean)
-      .filter(u => u._id && String(u._id) !== String(currentUserId)); // Remove self and invalid entries
+        
+        // Must have name
+        if (!recipient.name || recipient.name === 'Unknown User') {
+          console.log('⚠️ Recipient missing name, trying to find:', recipient._id);
+          // Try to find in users array
+          const found = users.find(u => String(u._id) === String(recipient._id));
+          if (found && found.name) {
+            Object.assign(recipient, { name: found.name, email: found.email, role: found.role || recipient.role });
+            console.log('✅ Enhanced recipient with user data:', recipient.name);
+          }
+        }
+        
+        // Must not be self
+        if (String(recipient._id) === String(currentUserId)) {
+          console.log('❌ Recipient is self, skipping');
+          return false;
+        }
+        
+        return true;
+      });
 
     console.log('🔍 Role-based recipients:', {
       currentUserRole,
@@ -1468,6 +1434,59 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       const assignedToIdStr = String(lead.assignedTo);
       const currentUserIdStr = String(currentUserId);
       
+      // Helper to find user by ID
+      const findUserByIdForMapping = (userId) => {
+        if (!userId) return null;
+        const userIdStr = String(userId);
+        
+        // First try assignableUsers
+        let found = users.find(u => String(u._id) === userIdStr);
+        if (found) return found;
+        
+        // If not found, check if we can get from assignment chain
+        if (lead.assignmentChain && lead.assignmentChain.length > 0) {
+          const chainEntry = lead.assignmentChain.find(
+            entry => String(entry.userId) === userIdStr
+          );
+          if (chainEntry) {
+            return {
+              _id: chainEntry.userId,
+              name: chainEntry.name,
+              role: chainEntry.role,
+              email: null
+            };
+          }
+        }
+        
+        // Also check assignedBy in chain entries
+        for (const entry of lead.assignmentChain || []) {
+          if (entry.assignedBy) {
+            const assignerId = typeof entry.assignedBy === 'string' 
+              ? entry.assignedBy 
+              : (entry.assignedBy._id || null);
+            if (assignerId && String(assignerId) === userIdStr) {
+              if (typeof entry.assignedBy === 'object' && entry.assignedBy.name) {
+                return {
+                  _id: assignerId,
+                  name: entry.assignedBy.name,
+                  role: entry.assignedBy.role || 'Unknown',
+                  email: null
+                };
+              } else if (typeof entry.assignedBy === 'string') {
+                return {
+                  _id: assignerId,
+                  name: 'Unknown User',
+                  role: 'Unknown',
+                  email: null
+                };
+              }
+            }
+          }
+        }
+        
+        return null;
+      };
+      
       // Check if current user is assigner of currently assigned user
       const assignedToEntry = lead.assignmentChain.find(entry => String(entry.userId) === assignedToIdStr);
       if (assignedToEntry && assignedToEntry.assignedBy) {
@@ -1478,14 +1497,14 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         if (assignerId && String(assignerId) === currentUserIdStr) {
           // Current user is assigner - add assigned user
           const assignedUser = findUserByIdForMapping(lead.assignedTo);
-          if (assignedUser) {
+          if (assignedUser && String(assignedUser._id) !== currentUserIdStr) {
             validRecipients.push(assignedUser);
             console.log('✅ Last resort: Found assigned user via direct lookup:', assignedUser.name);
           }
         } else if (assignedToIdStr === currentUserIdStr && assignerId) {
           // Current user is assigned - add assigner
           const assignerUser = findUserByIdForMapping(assignerId);
-          if (assignerUser) {
+          if (assignerUser && String(assignerUser._id) !== currentUserIdStr) {
             validRecipients.push(assignerUser);
             console.log('✅ Last resort: Found assigner via direct lookup:', assignerUser.name);
           }
@@ -2417,9 +2436,12 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
           open={showLeadDetails} 
           onOpenChange={(open) => {
             setShowLeadDetails(open);
-            if (open) {
+            if (open && selectedLead?._id) {
               // Fetch call history when modal opens
-              fetchLeadCallHistory(selectedLead._id);
+              console.log('📞 Opening lead details modal, fetching call history for leadId:', selectedLead._id);
+              setTimeout(() => {
+                fetchLeadCallHistory(selectedLead._id);
+              }, 200);
             } else {
               // Clear call history when modal closes
               setCallHistory([]);

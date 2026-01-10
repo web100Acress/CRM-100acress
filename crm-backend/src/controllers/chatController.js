@@ -2,7 +2,7 @@ const Chat = require('../models/chatModel');
 const User = require('../models/userModel');
 const Lead = require('../models/leadModel');
 
-// 🎯 WhatsApp Style Chat System - STRICT: Only Assigner ↔ Assigned User
+// 🎯 WhatsApp Style Chat System
 exports.createOrGetChat = async (req, res, next) => {
   try {
     const { leadId, createdBy, assignedTo } = req.body;
@@ -15,14 +15,90 @@ exports.createOrGetChat = async (req, res, next) => {
     }
 
     // 🚫 Self assignment check
-    if (createdBy === assignedTo) {
+    if (String(createdBy) === String(assignedTo)) {
       return res.status(400).json({ 
         success: false, 
         message: 'Self assignment not allowed' 
       });
     }
 
-    // 🔒 VALIDATE: Both users must be in assignment chain and form a consecutive pair
+    // 🔍 Get both users to check their roles
+    const createdByUser = await User.findById(createdBy);
+    const assignedToUser = await User.findById(assignedTo);
+    
+    if (!createdByUser || !assignedToUser) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'One or both users not found' 
+      });
+    }
+
+    // Normalize roles to lowercase for comparison
+    const normalizeRole = (role) => {
+      if (!role) return '';
+      const r = String(role).trim().toLowerCase();
+      if (r === 'boss' || r === 'super-admin' || r === 'superadmin') return 'boss';
+      if (r === 'hod' || r === 'head-admin' || r === 'head' || r === 'head_admin') return 'hod';
+      if (r === 'team-leader' || r === 'team_leader') return 'team-leader';
+      if (r === 'bd' || r === 'employee') return 'bd';
+      return r;
+    };
+
+    const createdByRole = normalizeRole(createdByUser.role);
+    const assignedToRole = normalizeRole(assignedToUser.role);
+
+    // ✅ ROLE-BASED VALIDATION: Boss, HOD, Team Leader, and BD can chat with each other
+    const allowedRoles = ['boss', 'hod', 'team-leader', 'bd'];
+    const isCreatedByAllowed = allowedRoles.includes(createdByRole);
+    const isAssignedToAllowed = allowedRoles.includes(assignedToRole);
+
+    // Log for debugging
+    console.log('🔍 CHAT VALIDATION DEBUG:', {
+      leadId,
+      createdBy,
+      assignedTo,
+      createdByRole,
+      assignedToRole,
+      isCreatedByAllowed,
+      isAssignedToAllowed
+    });
+
+    // ✅ PRIORITY 1: If both users have valid roles (Boss/HOD/Team Leader/BD), allow chat
+    if (isCreatedByAllowed && isAssignedToAllowed) {
+      console.log('✅ ROLE-BASED PERMISSION: Both users have valid roles - Chat allowed');
+      
+      // Check if chat already exists
+      let chat = await Chat.findOne({
+        leadId,
+        participants: { $all: [createdBy, assignedTo] }
+      }).populate('participants', 'name role email')
+        .populate('messages.senderId', 'name role email');
+
+      if (!chat) {
+        // Create new WhatsApp-style chat
+        chat = new Chat({
+          leadId,
+          participants: [createdBy, assignedTo],
+          lastMessage: {
+            message: `Chat started`,
+            senderId: createdBy,
+            timestamp: new Date()
+          }
+        });
+        await chat.save();
+        
+        // Populate participants and messages
+        await chat.populate('participants', 'name role email');
+        await chat.populate('messages.senderId', 'name role email');
+      }
+
+      return res.status(200).json({ 
+        success: true, 
+        data: chat 
+      });
+    }
+
+    // 🔒 FALLBACK: Assignment chain validation for other cases
     const lead = await Lead.findById(leadId);
     if (!lead) {
       return res.status(404).json({ 
@@ -55,11 +131,7 @@ exports.createOrGetChat = async (req, res, next) => {
     const isCreatedByAssignedBy = String(lead.assignedBy) === String(createdBy);
     const isAssignedToAssignedBy = String(lead.assignedBy) === String(assignedTo);
     
-    // Log for debugging
-    console.log('🔍 CHAT VALIDATION DEBUG:', {
-      leadId,
-      createdBy,
-      assignedTo,
+    console.log('🔍 ASSIGNMENT CHAIN VALIDATION:', {
       leadAssignedTo: lead.assignedTo,
       leadAssignedBy: lead.assignedBy,
       assignmentChainLength: assignmentChain.length,
@@ -68,22 +140,16 @@ exports.createOrGetChat = async (req, res, next) => {
       isCreatedByCurrentAssigned,
       isAssignedToCurrentAssigned,
       isCreatedByAssignedBy,
-      isAssignedToAssignedBy,
-      assignmentChain: assignmentChain.map(e => ({
-        userId: e.userId,
-        name: e.name,
-        role: e.role,
-        assignedBy: e.assignedBy
-      }))
+      isAssignedToAssignedBy
     });
     
     // Both users must be in chain or currently assigned/assignedBy
     if (!(createdByInChain || isCreatedByCurrentAssigned || isCreatedByAssignedBy) || 
         !(assignedToInChain || isAssignedToCurrentAssigned || isAssignedToAssignedBy)) {
-      console.log('❌ VALIDATION FAILED: Users not in assignment chain');
+      console.log('❌ VALIDATION FAILED: Users not in assignment chain and roles not eligible');
       return res.status(403).json({ 
         success: false, 
-        message: 'Chat not allowed: Both users must be in the assignment chain.' 
+        message: 'Chat not allowed: Users must have valid roles (Boss/HOD/Team Leader/BD) or be in the assignment chain.' 
       });
     }
     
@@ -98,7 +164,6 @@ exports.createOrGetChat = async (req, res, next) => {
     if (assignedToEntry) {
       const assignerId = getAssignerId(assignedToEntry);
       if (assignerId && String(assignerId) === String(createdBy)) {
-        // createdBy is the assigner of assignedTo
         isValidPair = true;
         console.log('✅ Case 1: createdBy is assigner of assignedTo');
       }
@@ -113,7 +178,6 @@ exports.createOrGetChat = async (req, res, next) => {
       if (createdByEntry) {
         const assignerId = getAssignerId(createdByEntry);
         if (assignerId && String(assignerId) === String(assignedTo)) {
-          // assignedTo is the assigner of createdBy
           isValidPair = true;
           console.log('✅ Case 2: assignedTo is assigner of createdBy');
         }
@@ -123,11 +187,9 @@ exports.createOrGetChat = async (req, res, next) => {
     // Case 3: Direct assignment check (lead.assignedBy → lead.assignedTo)
     if (!isValidPair) {
       if (isCreatedByAssignedBy && isAssignedToCurrentAssigned) {
-        // createdBy is the assigner (lead.assignedBy) and assignedTo is the assigned (lead.assignedTo)
         isValidPair = true;
         console.log('✅ Case 3: Direct assignment (assignedBy → assignedTo)');
       } else if (isAssignedToAssignedBy && isCreatedByCurrentAssigned) {
-        // assignedTo is the assigner and createdBy is the assigned
         isValidPair = true;
         console.log('✅ Case 3b: Reverse direct assignment (assignedTo → createdBy)');
       }
@@ -135,19 +197,16 @@ exports.createOrGetChat = async (req, res, next) => {
     
     // Case 4: Both are in chain and could be consecutive (check all pairs)
     if (!isValidPair && createdByInChain && assignedToInChain) {
-      // Check if they appear as consecutive assigner-assigned pairs
       for (const entry of assignmentChain) {
         const assignerId = getAssignerId(entry);
         const entryUserId = String(entry.userId);
         
-        // Check if createdBy assigned to assignedTo
         if (assignerId && String(assignerId) === String(createdBy) && entryUserId === String(assignedTo)) {
           isValidPair = true;
           console.log('✅ Case 4: Found consecutive pair in chain (createdBy → assignedTo)');
           break;
         }
         
-        // Check if assignedTo assigned to createdBy
         if (assignerId && String(assignerId) === String(assignedTo) && entryUserId === String(createdBy)) {
           isValidPair = true;
           console.log('✅ Case 4b: Found consecutive pair in chain (assignedTo → createdBy)');
@@ -156,8 +215,7 @@ exports.createOrGetChat = async (req, res, next) => {
       }
     }
     
-    // Case 5: Check consecutive entries in chain (user at index i assigned to user at index i+1)
-    // IMPORTANT: Verify actual assignment relationship, not just index position
+    // Case 5: Check consecutive entries in chain
     if (!isValidPair && assignmentChain.length >= 2) {
       for (let i = 0; i < assignmentChain.length - 1; i++) {
         const currentEntry = assignmentChain[i];
@@ -165,11 +223,9 @@ exports.createOrGetChat = async (req, res, next) => {
         const currentUserIdStr = String(currentEntry.userId);
         const nextUserIdStr = String(nextEntry.userId);
         
-        // Verify that nextEntry was actually assigned by currentEntry
         const nextAssignerId = getAssignerId(nextEntry);
         const isActualAssignment = nextAssignerId && String(nextAssignerId) === currentUserIdStr;
         
-        // Check if createdBy and assignedTo are consecutive AND have actual assignment relationship
         if (isActualAssignment) {
           if ((currentUserIdStr === String(createdBy) && nextUserIdStr === String(assignedTo)) ||
               (currentUserIdStr === String(assignedTo) && nextUserIdStr === String(createdBy))) {
@@ -183,16 +239,15 @@ exports.createOrGetChat = async (req, res, next) => {
     
     if (!isValidPair) {
       console.log('❌ VALIDATION FAILED: Users do not form a valid consecutive pair');
-      console.log('Assignment chain details:', JSON.stringify(assignmentChain, null, 2));
       return res.status(403).json({ 
         success: false, 
         message: 'Chat not allowed: Users must be consecutive pairs in the assignment chain (assigner ↔ assigned user).',
         debug: {
           createdBy,
           assignedTo,
-          assignmentChainLength: assignmentChain.length,
-          createdByInChain,
-          assignedToInChain
+          createdByRole,
+          assignedToRole,
+          assignmentChainLength: assignmentChain.length
         }
       });
     }
