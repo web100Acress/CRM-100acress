@@ -1135,7 +1135,8 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         }
         
         // If current user is in this entry, can chat with their assigner (e.g., BD can chat with HOD)
-        if (entryUserId === currentUserIdStr && !isCurrentlyAssigned) {
+        // IMPORTANT: Remove !isCurrentlyAssigned check - user should be able to chat with assigner even if currently assigned
+        if (entryUserId === currentUserIdStr) {
           const assignerId = getAssignerId(entry);
           if (assignerId) {
             const assignerUser = findUserById(assignerId);
@@ -1151,8 +1152,9 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       });
       
       // Strategy 2.5: IMPORTANT - If current user assigned the currently assigned user, allow chat
-      // This handles cases like HOD → BD where HOD is not in chain entry but assigned to BD
-      if (lead.assignedTo && !isCurrentlyAssigned) {
+      // This handles cases like HOD → BD where HOD assigned to BD
+      // REMOVED !isCurrentlyAssigned check - HOD should chat with BD even if HOD is in chain
+      if (lead.assignedTo) {
         const assignedToIdStr = String(lead.assignedTo);
         
         // Check if current user is assigner of the currently assigned user
@@ -1166,7 +1168,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
               const alreadyAdded = allowedUsers.some(u => String(u._id) === String(assignedUser._id));
               if (!alreadyAdded) {
                 allowedUsers.push(assignedUser);
-                console.log('✅ Current user assigned to currently assigned user (HOD→BD case):', assignedUser.name);
+                console.log('✅ Strategy 2.5: Current user assigned to currently assigned user (HOD→BD case):', assignedUser.name);
               }
             }
           }
