@@ -1,12 +1,53 @@
 const Lead = require('../models/leadModel');
 const User = require('../models/userModel');
+const Chat = require('../models/chatModel');
+const mongoose = require('mongoose');
+
+// Helper function to create chat between two users for a lead
+const createChatForAssignment = async (leadId, assignerId, assigneeId) => {
+  try {
+    if (!leadId || !assignerId || !assigneeId || assignerId === assigneeId) {
+      return null;
+    }
+    
+    // Check if chat already exists
+    const existingChat = await Chat.findOne({
+      leadId,
+      participants: { $all: [assignerId, assigneeId] }
+    });
+    
+    if (existingChat) {
+      return existingChat;
+    }
+    
+    // Create new chat
+    const chat = new Chat({
+      leadId,
+      participants: [assignerId, assigneeId],
+      lastMessage: {
+        message: `Lead assigned`,
+        senderId: assignerId,
+        timestamp: new Date()
+      }
+    });
+    
+    await chat.save();
+    return chat;
+  } catch (error) {
+    console.error('Error creating chat for assignment:', error);
+    return null;
+  }
+};
 
 // Role hierarchy for lead forwarding
 const roleHierarchy = {
-  'super-admin': 'head-admin',
-  'head-admin': 'team-leader',
-  'team-leader': 'employee',
-  'employee': null // Employee is the final level
+  'boss': 'hod',
+  'hod': 'sales_head',
+  'sales_head': 'bd',
+  'team-leader': 'bd',
+  'admin': 'sales_head',
+  'crm_admin': 'hod',
+  'bd': null // BD is the final level
 };
 
 const createLead = async (leadData, creator) => {
@@ -34,7 +75,14 @@ const createLead = async (leadData, creator) => {
     }
   }
   leadData.assignmentChain = assignmentChain;
-  return await Lead.create(leadData);
+  const lead = await Lead.create(leadData);
+  
+  // 🎯 Auto-create chat between creator and assignee if assigned
+  if (leadData.assignedTo && creator) {
+    await createChatForAssignment(lead._id.toString(), creator._id.toString(), leadData.assignedTo);
+  }
+  
+  return lead;
 };
 
 const getLeads = async () => {
@@ -42,7 +90,7 @@ const getLeads = async () => {
 };
 
 const getLeadsForUser = async (user) => {
-  if (user.role === 'super-admin') {
+  if (user.role === 'boss') {
     return await Lead.find();
   }
   return await Lead.find({ 'assignmentChain.userId': user._id.toString() });
@@ -56,24 +104,36 @@ const updateLead = async (id, updateData) => {
   const lead = await Lead.findById(id);
   if (!lead) return null;
   
-  // If assignedTo is changing, add new assignee to assignmentChain if not already present
-  if (updateData.assignedTo) {
-    const alreadyInChain = lead.assignmentChain.some(
-      entry => entry.userId === updateData.assignedTo
-    );
-    if (!alreadyInChain) {
-      const assignee = await User.findById(updateData.assignedTo);
-      if (assignee) {
-        lead.assignmentChain.push({
-          userId: assignee._id.toString(),
-          role: assignee.role,
-          name: assignee.name,
-          assignedAt: new Date(),
-          status: 'assigned'
-        });
+    // If assignedTo is changing, add new assignee to assignmentChain if not already present
+    if (updateData.assignedTo) {
+      const alreadyInChain = lead.assignmentChain.some(
+        entry => entry.userId === updateData.assignedTo
+      );
+      if (!alreadyInChain) {
+        const assignee = await User.findById(updateData.assignedTo);
+        if (assignee) {
+          const assignerId = updateData.assignedBy || lead.assignedBy || lead.assignmentChain[lead.assignmentChain.length - 1]?.userId;
+          
+          lead.assignmentChain.push({
+            userId: assignee._id.toString(),
+            role: assignee.role,
+            name: assignee.name,
+            assignedAt: new Date(),
+            status: 'assigned',
+            assignedBy: assignerId ? {
+              _id: assignerId,
+              name: (await User.findById(assignerId))?.name || 'Unknown',
+              role: (await User.findById(assignerId))?.role || 'Unknown'
+            } : undefined
+          });
+          
+          // 🎯 Auto-create chat between assigner and assignee
+          if (assignerId && assignerId !== assignee._id.toString()) {
+            await createChatForAssignment(lead._id.toString(), assignerId, assignee._id.toString());
+          }
+        }
       }
     }
-  }
   
   // Update other fields, including workProgress
   if ("workProgress" in updateData) {
@@ -85,51 +145,101 @@ const updateLead = async (id, updateData) => {
 };
 
 // New function to forward lead to next person in hierarchy
-const forwardLead = async (leadId, currentUserId, action = 'forward') => {
+const forwardLead = async (leadId, currentUserId, action = 'forward', selectedEmployeeId = null) => {
   const lead = await Lead.findById(leadId);
   if (!lead) return null;
 
   const currentUser = await User.findById(currentUserId);
   if (!currentUser) return null;
 
-  // Find the next role in hierarchy
-  const nextRole = roleHierarchy[currentUser.role];
-  if (!nextRole) {
-    throw new Error('Cannot forward lead: User is at the lowest level');
-  }
+  let nextAssignee;
+  
+  if (selectedEmployeeId) {
+    // Use the selected employee if provided
+    nextAssignee = await User.findById(selectedEmployeeId);
+    if (!nextAssignee) {
+      throw new Error('Selected employee not found');
+    }
+    
+    // Validate that the selected employee is in the correct role hierarchy
+    const forwardHierarchy = {
+      "boss": ["hod"],
+      "hod": ["sales_head", "bd"],
+      "sales_head": ["bd"],
+      "team-leader": ["bd"],
+      "admin": ["sales_head"],
+      "crm_admin": ["hod"],
+    };
+    
+    const possibleRoles = forwardHierarchy[currentUser.role];
+    if (!possibleRoles || !possibleRoles.includes(nextAssignee.role)) {
+      throw new Error(`Cannot forward lead to ${nextAssignee.role}. You can only forward to: ${possibleRoles?.join(', ') || 'no one'}`);
+    }
+  } else {
+    // Default behavior: find the next role in hierarchy
+    const nextRole = roleHierarchy[currentUser.role];
+    if (!nextRole) {
+      throw new Error('Cannot forward lead: User is at the lowest level');
+    }
 
-  // Find users with the next role
-  const nextLevelUsers = await User.find({ role: nextRole });
-  if (nextLevelUsers.length === 0) {
-    throw new Error(`No users found with role: ${nextRole}`);
-  }
+    // Find users with the next role
+    const nextLevelUsers = await User.find({ role: nextRole });
+    if (nextLevelUsers.length === 0) {
+      throw new Error(`No users found with role: ${nextRole}`);
+    }
 
-  // For now, assign to the first available user (you can implement more sophisticated logic)
-  const nextAssignee = nextLevelUsers[0];
+    // For now, assign to the first available user (you can implement more sophisticated logic)
+    nextAssignee = nextLevelUsers[0];
+  }
 
   // Update current user's status in assignment chain
-  const currentUserInChain = lead.assignmentChain.find(
-    entry => entry.userId === currentUserId
-  );
-  if (currentUserInChain) {
-    currentUserInChain.status = action === 'forward' ? 'forwarded' : 'completed';
-    currentUserInChain.completedAt = new Date();
+  const chain = Array.isArray(lead.assignmentChain) ? lead.assignmentChain : [];
+  const findLastAssignedIndexForUser = () => {
+    for (let i = chain.length - 1; i >= 0; i -= 1) {
+      if (String(chain[i]?.userId) === String(currentUserId) && String(chain[i]?.status) === 'assigned') {
+        return i;
+      }
+    }
+    return -1;
+  };
+
+  const idx = findLastAssignedIndexForUser();
+  if (idx >= 0) {
+    chain[idx].status = action === 'forward' ? 'forwarded' : 'completed';
+    chain[idx].completedAt = new Date();
+  } else {
+    const anyIdx = chain.findIndex((entry) => String(entry?.userId) === String(currentUserId));
+    if (anyIdx >= 0) {
+      chain[anyIdx].status = action === 'forward' ? 'forwarded' : 'completed';
+      chain[anyIdx].completedAt = new Date();
+    }
   }
 
   // Add next assignee to assignment chain
-  lead.assignmentChain.push({
+  chain.push({
     userId: nextAssignee._id.toString(),
     role: nextAssignee.role,
     name: nextAssignee.name,
     assignedAt: new Date(),
-    status: 'assigned'
+    status: 'assigned',
+    assignedBy: {
+      _id: currentUser._id,
+      name: currentUser.name,
+      role: currentUser.role
+    }
   });
+
+  lead.assignmentChain = chain;
 
   // Update the assignedTo field
   lead.assignedTo = nextAssignee._id.toString();
   lead.assignedBy = currentUserId;
 
   await lead.save();
+  
+  // 🎯 Auto-create chat between assigner and assignee
+  await createChatForAssignment(leadId, currentUserId, nextAssignee._id.toString());
+  
   return lead;
 };
 
@@ -141,24 +251,92 @@ const getNextAssignableUsers = async (currentUserRole) => {
   return await User.find({ role: nextRole });
 };
 
+// --- BD Analytics ---
+// Get summary for all BDs (employees) who have assigned leads
+const getBDSummary = async () => {
+  console.log('🔍 Fetching BD Summary...');
+  
+  // Include all roles that can have leads assigned (bd, team-leader, etc.)
+  const bds = await User.find({ 
+    role: { $in: ['bd', 'team-leader', 'hod', 'admin', 'crm_admin'] }
+  });
+  console.log(`👥 Found ${bds.length} users with lead assignment roles`);
+  
+  const leads = await Lead.find().sort({ createdAt: -1 }); // Get all leads, sorted by newest first
+  console.log(`📋 Found ${leads.length} total leads`);
+
+  // For each BD, aggregate stats
+  const summary = await Promise.all(bds.map(async (bd) => {
+    const assignedLeads = leads.filter(l => l.assignedTo === String(bd._id));
+    console.log(`👤 ${bd.name}: ${assignedLeads.length} leads assigned`);
+    
+    // Only include BDs who have at least one assigned lead
+    if (assignedLeads.length === 0) return null;
+    
+    const hot = assignedLeads.filter(l => l.status === 'Hot').length;
+    const warm = assignedLeads.filter(l => l.status === 'Warm').length;
+    const cold = assignedLeads.filter(l => l.status === 'Cold').length;
+    const followUps = assignedLeads.reduce((sum, l) => sum + (Array.isArray(l.followUps) ? l.followUps.length : 0), 0);
+    const converted = assignedLeads.filter(l => l.status === 'Converted').length;
+    const conversionRate = assignedLeads.length > 0 ? Math.round((converted / assignedLeads.length) * 100) : 0;
+    
+    // Include latest lead info for debugging
+    const latestLead = assignedLeads[0];
+    
+    return {
+      bdId: bd._id,
+      name: bd.name,
+      email: bd.email,
+      totalLeads: assignedLeads.length,
+      hot, warm, cold,
+      followUps,
+      conversionRate,
+      latestLeadCreatedAt: latestLead ? latestLead.createdAt : null,
+      // Include lead IDs for debugging
+      leadIds: assignedLeads.map(l => l._id)
+    };
+  }));
+  
+  // Filter out null entries (BDs without leads)
+  const result = summary.filter(item => item !== null);
+  console.log(`📊 Returning ${result.length} BDs with leads`);
+  return result;
+};
+
+// Get all leads, follow-ups, calls etc. for a specific BD
+const getBDDetails = async (bdId) => {
+  const bd = await User.findById(bdId);
+  if (!bd) return null;
+  const leads = await Lead.find({ assignedTo: String(bdId) });
+  // const callLogs = await CallLog.find({ userId: String(bdId) });
+  return {
+    bd: { _id: bd._id, name: bd.name, email: bd.email },
+    leads,
+    // callLogs,
+  };
+};
+
 // Function to get users that can be assigned to (including self for certain roles)
 const getAssignableUsers = async (currentUserRole, currentUserId) => {
   // If team-leader, return all employees and self
   if (currentUserRole === 'team-leader') {
-    const employees = await User.find({ role: 'employee' });
+    const employees = await User.find({ role: 'bd' });
     const self = await User.findById(currentUserId);
     return self ? [...employees, self] : employees;
   }
 
-  // If employee, only self
-  if (currentUserRole === 'employee') {
+  // If bd, include HOD users for chat hierarchy
+  if (currentUserRole === 'bd') {
     const self = await User.findById(currentUserId);
-    return self ? [self] : [];
+    const hods = await User.find({ role: 'hod' });
+    const teamLeaders = await User.find({ role: 'team-leader' });
+    const allUsers = [...hods, ...teamLeaders];
+    return self ? [...allUsers, self] : allUsers;
   }
 
   // For super-admin and head-admin, return all users at lower levels
   const users = [];
-  const roleLevels = ['super-admin', 'head-admin', 'team-leader', 'employee'];
+  const roleLevels = ['boss', 'hod', 'team-leader', 'bd'];
   const currentUserLevel = roleLevels.indexOf(currentUserRole);
   const assignableRoles = roleLevels.slice(currentUserLevel + 1); // +1 to exclude current level
   for (const role of assignableRoles) {
@@ -166,6 +344,87 @@ const getAssignableUsers = async (currentUserRole, currentUserId) => {
     users.push(...roleUsers);
   }
   return users;
+};
+
+const forwardPatchLead = async (leadId, requesterId, newAssigneeId, reason = '') => {
+  const lead = await Lead.findById(leadId);
+  if (!lead) return null;
+
+  const requester = await User.findById(requesterId);
+  if (!requester) return null;
+
+  const allowedRoles = ['boss', 'hod', 'team-leader'];
+  if (!allowedRoles.includes(String(requester.role))) {
+    throw new Error('Not allowed to forward-patch this lead');
+  }
+
+  if (!newAssigneeId) {
+    throw new Error('New assignee is required');
+  }
+
+  const newAssignee = await User.findById(newAssigneeId);
+  if (!newAssignee) {
+    throw new Error('Selected employee not found');
+  }
+
+  const newRole = String(newAssignee.role || '');
+  if (newRole !== 'bd') {
+    throw new Error('Forward patch can only assign to BD');
+  }
+
+  if (!lead.assignedTo) {
+    throw new Error('Lead is not currently assigned');
+  }
+
+  if (String(lead.assignedTo) === String(newAssigneeId)) {
+    throw new Error('Lead is already assigned to the selected BD');
+  }
+
+  const chain = Array.isArray(lead.assignmentChain) ? lead.assignmentChain : [];
+  const wasForwarded = chain.some((e) => String(e?.status) === 'forwarded');
+  if (!wasForwarded) {
+    throw new Error('Forward patch is only available for already forwarded leads');
+  }
+
+  const currentAssigneeEntryIndex = (() => {
+    for (let i = chain.length - 1; i >= 0; i -= 1) {
+      if (String(chain[i]?.userId) === String(lead.assignedTo) && String(chain[i]?.status) === 'assigned') {
+        return i;
+      }
+    }
+    return -1;
+  })();
+
+  if (currentAssigneeEntryIndex >= 0) {
+    chain[currentAssigneeEntryIndex].status = 'rejected';
+    chain[currentAssigneeEntryIndex].completedAt = new Date();
+    chain[currentAssigneeEntryIndex].notes = reason || 'Reassigned';
+  }
+
+  chain.push({
+    userId: newAssignee._id.toString(),
+    role: newAssignee.role,
+    name: newAssignee.name,
+    assignedAt: new Date(),
+    status: 'assigned',
+    notes: reason || 'Forward patched',
+    assignedBy: {
+      _id: requester._id,
+      name: requester.name,
+      role: requester.role,
+    },
+  });
+
+  lead.assignmentChain = chain;
+  lead.assignedTo = newAssignee._id.toString();
+  lead.assignedBy = requesterId;
+
+  await lead.save();
+  
+  // 🎯 Auto-create chat between assigner and assignee
+  await createChatForAssignment(leadId, requesterId, newAssignee._id.toString());
+  
+  return lead;
 };
 
 const deleteLead = async (id) => {
@@ -186,8 +445,164 @@ const getFollowUps = async (id) => {
   return lead ? lead.followUps : null;
 };
 
+const forwardSwapLead = async (leadId, requesterId, swapLeadId, reason = '') => {
+  const requester = await User.findById(requesterId);
+  if (!requester) return null;
+
+  const allowedRoles = ['boss', 'hod', 'team-leader'];
+  if (!allowedRoles.includes(String(requester.role))) {
+    throw new Error('Not allowed to swap leads');
+  }
+
+  if (!swapLeadId) {
+    throw new Error('Swap lead is required');
+  }
+
+  if (String(leadId) === String(swapLeadId)) {
+    throw new Error('Cannot swap the same lead');
+  }
+
+  const applySwap = async (session = null) => {
+    const leadA = session ? await Lead.findById(leadId).session(session) : await Lead.findById(leadId);
+    const leadB = session ? await Lead.findById(swapLeadId).session(session) : await Lead.findById(swapLeadId);
+
+    if (!leadA || !leadB) {
+      throw new Error('Lead not found');
+    }
+
+    if (!leadA.assignedTo || !leadB.assignedTo) {
+      throw new Error('Both leads must be assigned to swap');
+    }
+
+    const chainA = Array.isArray(leadA.assignmentChain) ? leadA.assignmentChain : [];
+    const wasForwardedA = chainA.some((e) => String(e?.status) === 'forwarded');
+    if (!wasForwardedA) {
+      throw new Error('Swap is only available for already forwarded leads');
+    }
+
+    const bdAId = String(leadA.assignedTo);
+    const bdBId = String(leadB.assignedTo);
+
+    if (bdAId === bdBId) {
+      throw new Error('Both leads are assigned to the same BD');
+    }
+
+    const bdA = session ? await User.findById(bdAId).session(session) : await User.findById(bdAId);
+    const bdB = session ? await User.findById(bdBId).session(session) : await User.findById(bdBId);
+    if (!bdA || !bdB) {
+      throw new Error('BD user not found');
+    }
+
+    if (String(bdA.role) !== 'bd' || String(bdB.role) !== 'bd') {
+      throw new Error('Swap is only supported between BD assigned leads');
+    }
+
+    const chainB = Array.isArray(leadB.assignmentChain) ? leadB.assignmentChain : [];
+
+    const findLastAssignedIndex = (chain, assignedTo) => {
+      for (let i = chain.length - 1; i >= 0; i -= 1) {
+        if (String(chain[i]?.userId) === String(assignedTo) && String(chain[i]?.status) === 'assigned') {
+          return i;
+        }
+      }
+      return -1;
+    };
+
+    const idxA = findLastAssignedIndex(chainA, bdAId);
+    if (idxA >= 0) {
+      chainA[idxA].status = 'rejected';
+      chainA[idxA].completedAt = new Date();
+      chainA[idxA].notes = reason || 'Swapped';
+    }
+
+    const idxB = findLastAssignedIndex(chainB, bdBId);
+    if (idxB >= 0) {
+      chainB[idxB].status = 'rejected';
+      chainB[idxB].completedAt = new Date();
+      chainB[idxB].notes = reason || 'Swapped';
+    }
+
+    chainA.push({
+      userId: bdB._id.toString(),
+      role: bdB.role,
+      name: bdB.name,
+      assignedAt: new Date(),
+      status: 'assigned',
+      notes: reason || 'Swapped',
+      assignedBy: {
+        _id: requester._id,
+        name: requester.name,
+        role: requester.role,
+      },
+    });
+
+    chainB.push({
+      userId: bdA._id.toString(),
+      role: bdA.role,
+      name: bdA.name,
+      assignedAt: new Date(),
+      status: 'assigned',
+      notes: reason || 'Swapped',
+      assignedBy: {
+        _id: requester._id,
+        name: requester.name,
+        role: requester.role,
+      },
+    });
+
+    leadA.assignmentChain = chainA;
+    leadB.assignmentChain = chainB;
+
+    leadA.assignedTo = bdB._id.toString();
+    leadB.assignedTo = bdA._id.toString();
+
+    leadA.assignedBy = requesterId;
+    leadB.assignedBy = requesterId;
+
+    if (session) {
+      await leadA.save({ session });
+      await leadB.save({ session });
+    } else {
+      await leadA.save();
+      await leadB.save();
+    }
+    
+    // 🎯 Auto-create chats for swapped assignments
+    // Chat between requester and new assignee for leadA
+    await createChatForAssignment(leadId, requesterId, bdB._id.toString());
+    // Chat between requester and new assignee for leadB
+    await createChatForAssignment(swapLeadId, requesterId, bdA._id.toString());
+
+    return { leadA, leadB };
+  };
+
+  const session = await mongoose.startSession();
+  try {
+    let result = null;
+    try {
+      await session.withTransaction(async () => {
+        result = await applySwap(session);
+      });
+      return result;
+    } catch (err) {
+      try {
+        if (session.inTransaction()) {
+          await session.abortTransaction();
+        }
+      } catch {
+        // ignore
+      }
+      return await applySwap(null);
+    }
+  } finally {
+    session.endSession();
+  }
+};
+
 module.exports = {
   createLead,
+  getBDSummary,
+  getBDDetails,
   getLeads,
   getLeadsForUser,
   getLeadById,
@@ -196,6 +611,8 @@ module.exports = {
   addFollowUp,
   getFollowUps,
   forwardLead,
+  forwardPatchLead,
+  forwardSwapLead,
   getNextAssignableUsers,
   getAssignableUsers,
-}; 
+};

@@ -12,7 +12,7 @@ const followUpSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['super-admin', 'head-admin', 'team-leader', 'employee'],
+    enum: ['boss', 'hod', 'team-leader', 'bd'],
     required: true
   },
   timestamp: {
@@ -36,12 +36,22 @@ const assignmentChainSchema = new mongoose.Schema({
     default: 'assigned'
   },
   completedAt: { type: Date },
-  notes: { type: String }
+  notes: { type: String },
+  assignedBy: {
+    _id: { type: mongoose.Schema.Types.ObjectId },
+    name: { type: String },
+    role: { type: String }
+  },
+  // Add chat creation trigger
+  chatCreated: {
+    type: Boolean,
+    default: false
+  }
 }, { _id: false });
 
 const leadSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  email: { type: String, required: true },
+  email: { type: String },
   phone: { type: String },
   status: {
     type: String,
