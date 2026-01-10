@@ -157,6 +157,7 @@ exports.createOrGetChat = async (req, res, next) => {
     }
     
     // Case 5: Check consecutive entries in chain (user at index i assigned to user at index i+1)
+    // IMPORTANT: Verify actual assignment relationship, not just index position
     if (!isValidPair && assignmentChain.length >= 2) {
       for (let i = 0; i < assignmentChain.length - 1; i++) {
         const currentEntry = assignmentChain[i];
@@ -164,12 +165,18 @@ exports.createOrGetChat = async (req, res, next) => {
         const currentUserIdStr = String(currentEntry.userId);
         const nextUserIdStr = String(nextEntry.userId);
         
-        // Check if createdBy and assignedTo are consecutive in chain
-        if ((currentUserIdStr === String(createdBy) && nextUserIdStr === String(assignedTo)) ||
-            (currentUserIdStr === String(assignedTo) && nextUserIdStr === String(createdBy))) {
-          isValidPair = true;
-          console.log('✅ Case 5: Users are consecutive in assignment chain');
-          break;
+        // Verify that nextEntry was actually assigned by currentEntry
+        const nextAssignerId = getAssignerId(nextEntry);
+        const isActualAssignment = nextAssignerId && String(nextAssignerId) === currentUserIdStr;
+        
+        // Check if createdBy and assignedTo are consecutive AND have actual assignment relationship
+        if (isActualAssignment) {
+          if ((currentUserIdStr === String(createdBy) && nextUserIdStr === String(assignedTo)) ||
+              (currentUserIdStr === String(assignedTo) && nextUserIdStr === String(createdBy))) {
+            isValidPair = true;
+            console.log('✅ Case 5: Users are consecutive in assignment chain with valid assignment relationship');
+            break;
+          }
         }
       }
     }
