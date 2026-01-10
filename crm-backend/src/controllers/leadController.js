@@ -385,20 +385,88 @@ exports.saveCallRecord = async (req, res, next) => {
   }
 };
 
-// Get call records for a user
+// Get call records for a user - with assignment chain filtering
 exports.getCallRecords = async (req, res, next) => {
   try {
     const userId = req.user?.userId || req.user?._id;
-    const CallRecord = require('../models/callRecordModel');
+    const userRole = req.user?.role?.toLowerCase();
+    const { leadId } = req.query; // Optional: filter by specific lead
     
-    const callRecords = await CallRecord.find({ userId })
-      .populate('leadId', 'name email phone')
-      .populate('userId', 'name email phone')
-      .sort({ callDate: -1 });
+    const CallRecord = require('../models/callRecordModel');
+    const Lead = require('../models/leadModel');
+    
+    let query = {};
+    
+    // Role-based filtering
+    if (userRole === 'boss') {
+      // Boss sees all call records
+      if (leadId) {
+        query.leadId = leadId;
+      }
+      // No additional filter - boss sees everything
+    } else if (userRole === 'hod') {
+      // HOD sees calls for leads they assigned
+      if (leadId) {
+        // Check if this lead was assigned by HOD
+        const lead = await Lead.findById(leadId);
+        if (lead) {
+          const assignmentChain = Array.isArray(lead.assignmentChain) ? lead.assignmentChain : [];
+          const isHODAssigned = assignmentChain.some(entry => {
+            const assignerId = entry.assignedBy?._id || entry.assignedBy;
+            return String(assignerId) === String(userId);
+          });
+          
+          if (isHODAssigned || String(lead.assignedBy) === String(userId)) {
+            query.leadId = leadId;
+          } else {
+            // HOD didn't assign this lead, return empty
+            return res.status(200).json({ 
+              success: true, 
+              data: [],
+              message: 'No access to this lead\'s call history'
+            });
+          }
+        }
+      } else {
+        // Get all leads assigned by HOD
+        const hodAssignedLeads = await Lead.find({
+          $or: [
+            { assignedBy: userId },
+            { 'assignmentChain.assignedBy._id': userId },
+            { 'assignmentChain.assignedBy': userId }
+          ]
+        }).select('_id');
+        
+        const leadIds = hodAssignedLeads.map(l => l._id);
+        if (leadIds.length > 0) {
+          query.leadId = { $in: leadIds };
+        } else {
+          // No leads assigned by HOD
+          return res.status(200).json({ 
+            success: true, 
+            data: [],
+            count: 0
+          });
+        }
+      }
+    } else {
+      // BD/TL sees only their own calls
+      query.userId = userId;
+      if (leadId) {
+        query.leadId = leadId;
+      }
+    }
+    
+    const callRecords = await CallRecord.find(query)
+      .populate('leadId', 'name phone status assignedTo assignedBy assignmentChain')
+      .populate('userId', 'name role email')
+      .sort({ callDate: -1 })
+      .limit(500);
     
     res.status(200).json({ 
       success: true, 
-      data: callRecords 
+      data: callRecords,
+      count: callRecords.length
     });
   } catch (err) {
     console.error('Error fetching call records:', err);
@@ -409,19 +477,60 @@ exports.getCallRecords = async (req, res, next) => {
   }
 };
 
-// Get call records for a specific lead
+// Get call history for specific lead - with assignment chain access control
 exports.getLeadCallHistory = async (req, res, next) => {
   try {
     const { leadId } = req.params;
+    const userId = req.user?.userId || req.user?._id;
+    const userRole = req.user?.role?.toLowerCase();
+    
     const CallRecord = require('../models/callRecordModel');
+    const Lead = require('../models/leadModel');
+    
+    // Check if user has access to this lead's call history
+    const lead = await Lead.findById(leadId);
+    if (!lead) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Lead not found' 
+      });
+    }
+    
+    let hasAccess = false;
+    
+    if (userRole === 'boss') {
+      // Boss has access to all leads
+      hasAccess = true;
+    } else if (userRole === 'hod') {
+      // HOD has access if they assigned this lead
+      const assignmentChain = Array.isArray(lead.assignmentChain) ? lead.assignmentChain : [];
+      const isHODAssigned = assignmentChain.some(entry => {
+        const assignerId = entry.assignedBy?._id || entry.assignedBy;
+        return String(assignerId) === String(userId);
+      });
+      hasAccess = isHODAssigned || String(lead.assignedBy) === String(userId);
+    } else {
+      // BD/TL has access if they made the call or lead is assigned to them
+      hasAccess = String(lead.assignedTo) === String(userId);
+    }
+    
+    if (!hasAccess) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Access denied: You do not have permission to view this lead\'s call history' 
+      });
+    }
     
     const callRecords = await CallRecord.find({ leadId })
-      .populate('userId', 'name email phone')
-      .sort({ callDate: -1 });
+      .populate('userId', 'name role email')
+      .populate('leadId', 'name phone status')
+      .sort({ callDate: -1 })
+      .limit(200);
     
     res.status(200).json({ 
       success: true, 
-      data: callRecords 
+      data: callRecords,
+      count: callRecords.length
     });
   } catch (err) {
     console.error('Error fetching lead call history:', err);

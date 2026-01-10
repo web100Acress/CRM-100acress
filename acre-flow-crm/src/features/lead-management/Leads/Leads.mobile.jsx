@@ -725,12 +725,16 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     console.log('handleCallLead called with:', { phone, leadId, leadName });
     
     if (phone) {
-      // Set call data
+      // Clean phone number (remove spaces, dashes, etc.)
+      const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+      
+      // Set call data with accurate start time
+      const startTime = new Date();
       const callInfo = {
-        phone: phone,
+        phone: cleanPhone,
         leadId: leadId,
         leadName: leadName,
-        startTime: new Date()
+        startTime: startTime
       };
       
       console.log('Setting call data:', callInfo);
@@ -742,26 +746,62 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       setCallStatus('connecting');
       setCallDuration(0);
       
-      // Actually make the phone call
-      window.location.href = `tel:${phone}`;
+      // Actually make the phone call - opens native dialer
+      window.location.href = `tel:${cleanPhone}`;
       
-      // Simulate connection after 2 seconds
+      // Start tracking call duration immediately (user might be on call)
+      // We'll track from when popup opens until user returns
+      const startTrackingTime = Date.now();
+      
+      // Check if user returns from call (visibility change)
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible' && callStatus === 'connecting') {
+          // User returned, call likely ended
+          const endTime = new Date();
+          const duration = Math.floor((Date.now() - startTrackingTime) / 1000);
+          
+          setCallStatus('ended');
+          setCallDuration(duration);
+          
+          // Save call record
+          saveCallRecord({
+            leadId: callInfo.leadId,
+            leadName: callInfo.leadName,
+            phone: callInfo.phone,
+            startTime: callInfo.startTime,
+            endTime: endTime,
+            duration: duration,
+            status: duration >= 3 ? 'completed' : 'missed'
+          });
+          
+          document.removeEventListener('visibilitychange', handleVisibilityChange);
+        }
+      };
+      
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      
+      // Also simulate connection after 2 seconds for UI
       setTimeout(() => {
-        console.log('Call connected');
-        setCallStatus('connected');
-        
-        // Start duration timer
-        const interval = setInterval(() => {
-          setCallDuration(prev => prev + 1);
-        }, 1000);
-        
-        // Save interval for cleanup
-        setCallData(prev => ({ ...prev, interval }));
+        if (callStatus === 'connecting') {
+          console.log('Call connected');
+          setCallStatus('connected');
+          
+          // Start duration timer
+          const interval = setInterval(() => {
+            setCallDuration(prev => {
+              const newDuration = prev + 1;
+              return newDuration;
+            });
+          }, 1000);
+          
+          // Save interval for cleanup
+          setCallData(prev => ({ ...prev, interval }));
+        }
       }, 2000);
       
       toast({
         title: "Calling Lead",
-        description: `Calling ${leadName} at ${phone}...`,
+        description: `Opening dialer for ${leadName} at ${phone}...`,
       });
     } else {
       toast({
