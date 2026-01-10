@@ -12,6 +12,7 @@ import WhatsAppMessageModal from '@/features/calling/components/WhatsAppMessageM
 import CreateLeadFormMobile from '@/layout/CreateLeadForm.mobile';
 import LeadTableMobile from '@/layout/LeadTable.mobile';
 import LeadAdvancedOptionsMobile from '@/layout/LeadAdvancedOptions.mobile';
+import { apiUrl } from '@/config/apiConfig';
 
 const LeadsMobile = ({ userRole = 'bd' }) => {
   const navigate = useNavigate();
@@ -79,7 +80,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     const fetchStats = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch("https://bcrm.100acress.com/api/leads", {
+        const response = await fetch(apiUrl("leads"), {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -118,7 +119,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       try {
         const token = localStorage.getItem('token');
         const response = await fetch(
-          "https://bcrm.100acress.com/api/leads/assignable-users",
+          apiUrl("leads/assignable-users"),
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -136,7 +137,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         try {
           const token = localStorage.getItem('token');
           const response = await fetch(
-            "https://bcrm.100acress.com/api/users",
+            apiUrl("users"),
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -207,7 +208,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     try {
       setSwapBdLeadsLoading(true);
       const token = localStorage.getItem('token');
-      const res = await fetch(`https://bcrm.100acress.com/api/leads/bd-status/${bdId}`, {
+      const res = await fetch(apiUrl(`leads/bd-status/${bdId}`), {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -241,7 +242,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       setPatchingLead(leadId);
       const token = localStorage.getItem('token');
 
-      const res = await fetch(`https://bcrm.100acress.com/api/leads/${leadId}/forward-swap`, {
+      const res = await fetch(apiUrl(`leads/${leadId}/forward-swap`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -255,7 +256,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         throw new Error(data?.message || 'Failed to swap leads');
       }
 
-      const leadsResponse = await fetch('https://bcrm.100acress.com/api/leads', {
+      const leadsResponse = await fetch(apiUrl('leads'), {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -817,7 +818,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     try {
       const token = localStorage.getItem('token');
       
-      const response = await fetch('https://bcrm.100acress.com/api/leads/calls', {
+      const response = await fetch(apiUrl('leads/calls'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -888,8 +889,33 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     function getDirectChatUsers({ currentUser, lead }) {
       const assignmentChain = Array.isArray(lead.assignmentChain) ? lead.assignmentChain : [];
       
+      // If no assignment chain but lead is assigned, allow chat with assigner
       if (assignmentChain.length === 0) {
-        console.log('❌ No assignment chain found - chat not allowed');
+        console.log('⚠️ No assignment chain found, checking direct assignment...');
+        
+        // Fallback: If lead is assigned to someone and current user is assigned or assigned by
+        if (lead.assignedTo) {
+          const assignedUser = findUserById(lead.assignedTo);
+          
+          // If current user is assigned, can chat with assigner (lead.assignedBy)
+          if (isCurrentlyAssigned && lead.assignedBy) {
+            const assignerUser = findUserById(lead.assignedBy);
+            if (assignerUser && String(assignerUser._id) !== currentUserIdStr) {
+              console.log('✅ Fallback: Current user assigned, can chat with assigner:', assignerUser.name);
+              return [assignerUser];
+            }
+          }
+          
+          // If current user is the assigner, can chat with assigned user
+          if (lead.assignedBy && String(lead.assignedBy) === currentUserIdStr && assignedUser) {
+            if (String(assignedUser._id) !== currentUserIdStr) {
+              console.log('✅ Fallback: Current user is assigner, can chat with assigned:', assignedUser.name);
+              return [assignedUser];
+            }
+          }
+        }
+        
+        console.log('❌ No assignment chain found and no valid direct assignment - chat not allowed');
         return [];
       }
       
@@ -907,11 +933,52 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       // Find all users current user can chat with (consecutive pairs in chain)
       const allowedUsers = [];
       
-      // Helper function to find user by ID
+      // Helper function to find user by ID - search in both assignableUsers and assignmentChain
       const findUserById = (userId) => {
         if (!userId) return null;
         const userIdStr = String(userId);
-        return users.find(u => String(u._id) === userIdStr);
+        
+        // First try assignableUsers
+        let found = users.find(u => String(u._id) === userIdStr);
+        if (found) return found;
+        
+        // If not found, check if we can get from assignment chain
+        if (lead.assignmentChain && lead.assignmentChain.length > 0) {
+          const chainEntry = lead.assignmentChain.find(
+            entry => String(entry.userId) === userIdStr
+          );
+          if (chainEntry) {
+            // Create a minimal user object from chain entry
+            return {
+              _id: chainEntry.userId,
+              name: chainEntry.name,
+              role: chainEntry.role,
+              email: null // Might not have email in chain
+            };
+          }
+        }
+        
+        // Also check assignedBy in chain entries
+        for (const entry of lead.assignmentChain || []) {
+          if (entry.assignedBy) {
+            const assignerId = typeof entry.assignedBy === 'string' 
+              ? entry.assignedBy 
+              : (entry.assignedBy._id || null);
+            if (assignerId && String(assignerId) === userIdStr) {
+              // Check if assignedBy has name/role
+              if (typeof entry.assignedBy === 'object' && entry.assignedBy.name) {
+                return {
+                  _id: assignerId,
+                  name: entry.assignedBy.name,
+                  role: entry.assignedBy.role || 'Unknown',
+                  email: null
+                };
+              }
+            }
+          }
+        }
+        
+        return null;
       };
       
       // Helper function to get assigner ID from assignment entry
@@ -935,6 +1002,35 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
             if (assignerUser && String(assignerUser._id) !== currentUserIdStr) {
               allowedUsers.push(assignerUser);
               console.log('✅ Current user is assigned, can chat with assigner:', assignerUser.name);
+            }
+          } else {
+            // If no assignedBy, check previous entry in chain
+            const currentIndex = assignmentChain.findIndex(
+              entry => String(entry.userId) === currentUserIdStr
+            );
+            if (currentIndex > 0) {
+              const previousEntry = assignmentChain[currentIndex - 1];
+              const previousUser = findUserById(previousEntry.userId);
+              if (previousUser && String(previousUser._id) !== currentUserIdStr) {
+                allowedUsers.push(previousUser);
+                console.log('✅ Current user is assigned, can chat with previous user in chain:', previousUser.name);
+              }
+            } else if (lead.assignedBy) {
+              // Fallback: Use lead.assignedBy
+              const assignerUser = findUserById(lead.assignedBy);
+              if (assignerUser && String(assignerUser._id) !== currentUserIdStr) {
+                allowedUsers.push(assignerUser);
+                console.log('✅ Current user is assigned, using lead.assignedBy:', assignerUser.name);
+              }
+            }
+          }
+        } else {
+          // Current user is assigned but not in chain - find who assigned
+          if (lead.assignedBy) {
+            const assignerUser = findUserById(lead.assignedBy);
+            if (assignerUser && String(assignerUser._id) !== currentUserIdStr) {
+              allowedUsers.push(assignerUser);
+              console.log('✅ Current user is assigned (not in chain), using lead.assignedBy:', assignerUser.name);
             }
           }
         }
@@ -1005,15 +1101,21 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         currentUserId: currentUser._id,
         currentUserRole: currentUser.role,
         leadAssignedTo: lead.assignedTo,
+        leadAssignedBy: lead.assignedBy,
         isCurrentlyAssigned,
         isInChain,
+        allowedUsersCount: allowedUsers.length,
         allowedUsers: allowedUsers.map(u => ({ _id: u._id, name: u.name, role: u.role })),
+        assignmentChainLength: assignmentChain.length,
         assignmentChain: assignmentChain.map(e => ({ 
           userId: e.userId, 
           name: e.name, 
           role: e.role, 
-          assignedBy: e.assignedBy 
-        }))
+          assignedBy: e.assignedBy,
+          assignedById: getAssignerId(e)
+        })),
+        totalUsersAvailable: users.length,
+        usersSample: users.slice(0, 3).map(u => ({ _id: u._id, name: u.name }))
       });
       
       return allowedUsers;
@@ -1050,10 +1152,33 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     });
 
     if (validRecipients.length === 0) {
-      console.error('❌ NO VALID RECIPIENT FOUND - Not in assignment chain');
+      console.error('❌ NO VALID RECIPIENT FOUND');
+      console.error('DEBUG INFO:', {
+        leadId: lead._id,
+        leadName: lead.name,
+        currentUserId,
+        leadAssignedTo: lead.assignedTo,
+        leadAssignedBy: lead.assignedBy,
+        assignmentChainLength: lead.assignmentChain?.length || 0,
+        assignmentChain: lead.assignmentChain,
+        usersCount: users.length,
+        recipientsCount: recipients.length,
+        validRecipientsCount: validRecipients.length
+      });
+      
+      // Provide more helpful error message
+      let errorMessage = 'You can only chat with users in the assignment chain.';
+      if (!lead.assignmentChain || lead.assignmentChain.length === 0) {
+        errorMessage = 'This lead has no assignment chain. Please assign the lead first to start chatting.';
+      } else if (!lead.assignedTo) {
+        errorMessage = 'This lead is not assigned to anyone. Please assign it first to start chatting.';
+      } else if (String(lead.assignedTo) !== currentUserId && String(lead.assignedBy) !== currentUserId) {
+        errorMessage = 'You are not in the assignment chain for this lead. Only the assigner and assigned user can chat.';
+      }
+      
       toast({
         title: 'Chat Not Available',
-        description: 'You can only chat with users in the assignment chain. Please check the assignment chain to see who you can chat with.',
+        description: errorMessage,
         variant: 'destructive'
       });
       return;
@@ -1216,8 +1341,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       
       // Use localhost for development, change back to production when ready
       const apiUrl = process.env.NODE_ENV === 'development' 
-        ? `http://localhost:5001/api/leads/${selectedLeadForStatus._id}`
-        : `https://bcrm.100acress.com/api/leads/${selectedLeadForStatus._id}`;
+        apiUrl(`leads/${selectedLeadForStatus._id}`);
       
       const response = await fetch(
         apiUrl,
@@ -1278,7 +1402,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       console.log('Selected employee:', selectedEmployeeId);
       
       const res = await fetch(
-        `https://bcrm.100acress.com/api/lead-assignment/assign`,
+        apiUrl(`lead-assignment/assign`),
         {
           method: "POST",
           headers: {
@@ -1534,7 +1658,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       const token = localStorage.getItem('token');
 
       const res = await fetch(
-        `https://bcrm.100acress.com/api/leads/${leadId}/forward-patch`,
+        apiUrl(`leads/${leadId}/forward-patch`),
         {
           method: 'POST',
           headers: {
@@ -1550,7 +1674,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         throw new Error(data?.message || 'Failed to reassign lead');
       }
 
-      const leadsResponse = await fetch('https://bcrm.100acress.com/api/leads', {
+      const leadsResponse = await fetch(apiUrl('leads'), {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -1592,7 +1716,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         // Try to fetch from API as fallback
         const token = localStorage.getItem('token');
         
-        const response = await fetch(`https://bcrm.100acress.com/api/leads/${leadId}/assignment-chain`, {
+        const response = await fetch(apiUrl(`leads/${leadId}/assignment-chain`), {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Send, Phone, Video, MoreVertical, Smile, Paperclip, Search, MessageCircle, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { apiUrl } from '@/config/apiConfig';
 
 const WhatsAppChat = ({ chat, isOpen, onClose }) => {
   const { toast } = useToast();
@@ -44,7 +45,7 @@ const WhatsAppChat = ({ chat, isOpen, onClose }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://bcrm.100acress.com/api/chats/messages?chatId=${chat._id}`, {
+      const response = await fetch(apiUrl(`chats/messages?chatId=${chat._id}`), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -78,7 +79,7 @@ const WhatsAppChat = ({ chat, isOpen, onClose }) => {
     setIsSending(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://bcrm.100acress.com/api/chats/send', {
+      const response = await fetch(apiUrl('chats/send'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
