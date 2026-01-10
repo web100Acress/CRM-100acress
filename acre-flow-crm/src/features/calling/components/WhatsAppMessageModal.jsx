@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Send, Phone, Video, MoreVertical, Smile, Paperclip } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { apiUrl } from '@/config/apiConfig';
 
 const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
   const { toast } = useToast();
@@ -87,7 +88,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
         senderName: recipient.name
       });
       
-      const response = await fetch('https://bcrm.100acress.com/api/chats/create', {
+      const response = await fetch(apiUrl('chats/create'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -156,7 +157,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://bcrm.100acress.com/api/chats/messages?chatId=${chatId}`, {
+      const response = await fetch(apiUrl(`chats/messages?chatId=${chatId}`), {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
       });
       if (response.ok) {
@@ -199,7 +200,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
     setIsSending(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://bcrm.100acress.com/api/chats/send', {
+      const response = await fetch(apiUrl('chats/send'), {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ chatId: chatId, message: message.trim(), senderId: getCurrentUserId() })

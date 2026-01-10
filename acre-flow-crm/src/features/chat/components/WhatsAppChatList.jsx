@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Search, MessageCircle, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import WhatsAppChat from './WhatsAppChat';
+import { apiUrl } from '@/config/apiConfig';
 
 const WhatsAppChatList = () => {
   const { toast } = useToast();
@@ -29,7 +30,7 @@ const WhatsAppChatList = () => {
   const fetchChats = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://bcrm.100acress.com/api/lead-assignment/user-chats', {
+      const response = await fetch(apiUrl('lead-assignment/user-chats'), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
