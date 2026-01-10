@@ -88,7 +88,10 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
         senderName: recipient.name
       });
       
-      const response = await fetch(apiUrl('chats/create'), {
+      const chatUrl = apiUrl('chats/create');
+      console.log('🔍 Creating chat at URL:', chatUrl);
+      
+      const response = await fetch(chatUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -101,12 +104,14 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
         })
       });
       
+      console.log('🔍 Chat creation response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
         console.log('🔍 Chat creation response:', data);
         if (data.success) {
           setChatId(data.data._id);
-          console.log('Chat created/found:', data.data._id);
+          console.log('✅ Chat created/found:', data.data._id);
           
           // Check if chat has any initial messages
           if (data.data.messages && data.data.messages.length > 0) {
@@ -114,11 +119,17 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
           } else {
             console.log('🔍 Chat has no initial messages');
           }
+        } else {
+          console.error('❌ Chat creation failed - success false:', data);
         }
       } else {
         // Handle backend error responses
         const errorData = await response.json().catch(() => ({}));
-        console.error('Chat creation failed:', errorData);
+        console.error('❌ Chat creation failed - HTTP error:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
         
         // Show the actual error message from backend
         toast({
@@ -196,22 +207,46 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
   }, [chatId, getCurrentUserId]);
 
   const handleSendMessage = useCallback(async () => {
-    if (!message.trim() || isSending || !chatId) return;
+    console.log('🔍 handleSendMessage called:', {
+      message: message.trim(),
+      isSending,
+      chatId,
+      messageLength: message.trim().length
+    });
+    
+    if (!message.trim() || isSending || !chatId) {
+      console.log('❌ Message send blocked:', {
+        noMessage: !message.trim(),
+        isSending,
+        noChatId: !chatId
+      });
+      return;
+    }
+    
     setIsSending(true);
     try {
       const token = localStorage.getItem('token');
+      console.log('🔍 Sending message to:', apiUrl('chats/send'));
+      
       const response = await fetch(apiUrl('chats/send'), {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ chatId: chatId, message: message.trim(), senderId: getCurrentUserId() })
       });
+      
+      console.log('🔍 Send response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('🔍 Send response data:', data);
         if (data.success) {
           setMessage('');
           const newMsg = { id: Math.random().toString(), text: message.trim(), sender: 'me', senderName: 'You', timestamp: new Date() };
           setMessages(prev => [...prev, newMsg]);
         }
+      } else {
+        const errorData = await response.json();
+        console.error('❌ Send failed:', errorData);
       }
     } catch (error) {
       console.error('Error sending message:', error);
