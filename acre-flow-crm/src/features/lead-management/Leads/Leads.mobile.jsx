@@ -939,17 +939,31 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         return assignerId && String(assignerId) === currentUserIdStr && String(entry.userId) === String(lead.assignedTo);
       });
       
+      // Check if current user is assigner of ANYONE in chain (important for HOD→BD cases)
+      const isAssignerOfAnyone = assignmentChain.some(entry => {
+        const assignerId = getAssignerId(entry);
+        return assignerId && String(assignerId) === currentUserIdStr;
+      });
+      
       console.log('🔍 USER POSITION CHECK:', {
         currentUserId: currentUserIdStr,
+        currentUserRole: currentUser.role,
         isInChain,
         isCurrentlyAssigned,
         isAssignerOfCurrentAssigned,
+        isAssignerOfAnyone,
         leadAssignedTo: lead.assignedTo,
-        assignmentChainLength: assignmentChain.length
+        assignmentChainLength: assignmentChain.length,
+        assignmentChain: assignmentChain.map(e => ({
+          userId: e.userId,
+          name: e.name,
+          assignedById: getAssignerId(e)
+        }))
       });
       
-      if (!isInChain && !isCurrentlyAssigned && !isAssignerOfCurrentAssigned) {
-        console.log('❌ Current user is not in assignment chain, not assigned, and not assigner - chat not allowed');
+      // More lenient check: Allow if user is in chain, assigned, or is an assigner of anyone
+      if (!isInChain && !isCurrentlyAssigned && !isAssignerOfCurrentAssigned && !isAssignerOfAnyone) {
+        console.log('❌ Current user is not in assignment chain, not assigned, and not assigner of anyone - chat not allowed');
         return [];
       }
       
@@ -961,9 +975,14 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         if (!userId) return null;
         const userIdStr = String(userId);
         
+        console.log('🔍 findUserById called for:', userIdStr);
+        
         // First try assignableUsers
         let found = users.find(u => String(u._id) === userIdStr);
-        if (found) return found;
+        if (found) {
+          console.log('✅ Found in assignableUsers:', found.name);
+          return found;
+        }
         
         // If not found, check if we can get from assignment chain
         if (lead.assignmentChain && lead.assignmentChain.length > 0) {
@@ -972,16 +991,18 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
           );
           if (chainEntry) {
             // Create a minimal user object from chain entry
-            return {
+            const userFromChain = {
               _id: chainEntry.userId,
               name: chainEntry.name,
               role: chainEntry.role,
               email: null // Might not have email in chain
             };
+            console.log('✅ Found in assignment chain:', userFromChain.name);
+            return userFromChain;
           }
         }
         
-        // Also check assignedBy in chain entries
+        // Also check assignedBy in chain entries (for assigners)
         for (const entry of lead.assignmentChain || []) {
           if (entry.assignedBy) {
             const assignerId = typeof entry.assignedBy === 'string' 
@@ -990,17 +1011,30 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
             if (assignerId && String(assignerId) === userIdStr) {
               // Check if assignedBy has name/role
               if (typeof entry.assignedBy === 'object' && entry.assignedBy.name) {
-                return {
+                const userFromAssignedBy = {
                   _id: assignerId,
                   name: entry.assignedBy.name,
                   role: entry.assignedBy.role || 'Unknown',
                   email: null
                 };
+                console.log('✅ Found in assignedBy:', userFromAssignedBy.name);
+                return userFromAssignedBy;
+              } else if (typeof entry.assignedBy === 'string') {
+                // assignedBy is just an ID string, create minimal user
+                const userFromAssignedBy = {
+                  _id: assignerId,
+                  name: 'Unknown User',
+                  role: 'Unknown',
+                  email: null
+                };
+                console.log('✅ Found in assignedBy (string ID):', assignerId);
+                return userFromAssignedBy;
               }
             }
           }
         }
         
+        console.log('❌ User not found:', userIdStr);
         return null;
       };
       
@@ -1082,12 +1116,12 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       }
       
       // Strategy 2: Current user is in chain - can chat with users they assigned TO
-      // Find entries where current user is the assigner
+      // Find entries where current user is the assigner (HOD → BD, HOD → TL, etc.)
       assignmentChain.forEach(entry => {
         const assignerId = getAssignerId(entry);
         const entryUserId = String(entry.userId);
         
-        // If current user assigned this entry
+        // If current user assigned this entry (e.g., HOD assigned to BD)
         if (assignerId && String(assignerId) === currentUserIdStr) {
           const assignedUser = findUserById(entry.userId);
           if (assignedUser && String(assignedUser._id) !== currentUserIdStr) {
@@ -1095,12 +1129,12 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
             const alreadyAdded = allowedUsers.some(u => String(u._id) === String(assignedUser._id));
             if (!alreadyAdded) {
               allowedUsers.push(assignedUser);
-              console.log('✅ Current user assigned to:', assignedUser.name, 'can chat');
+              console.log('✅ Current user assigned to:', assignedUser.name, 'can chat (assigner → assigned)');
             }
           }
         }
         
-        // If current user is in this entry, can chat with their assigner
+        // If current user is in this entry, can chat with their assigner (e.g., BD can chat with HOD)
         if (entryUserId === currentUserIdStr && !isCurrentlyAssigned) {
           const assignerId = getAssignerId(entry);
           if (assignerId) {
@@ -1115,6 +1149,29 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
           }
         }
       });
+      
+      // Strategy 2.5: IMPORTANT - If current user assigned the currently assigned user, allow chat
+      // This handles cases like HOD → BD where HOD is not in chain entry but assigned to BD
+      if (lead.assignedTo && !isCurrentlyAssigned) {
+        const assignedToIdStr = String(lead.assignedTo);
+        
+        // Check if current user is assigner of the currently assigned user
+        const assignedToEntry = assignmentChain.find(entry => String(entry.userId) === assignedToIdStr);
+        if (assignedToEntry) {
+          const assignerId = getAssignerId(assignedToEntry);
+          if (assignerId && String(assignerId) === currentUserIdStr) {
+            // Current user (e.g., HOD) assigned this lead to someone (e.g., BD)
+            const assignedUser = findUserById(lead.assignedTo);
+            if (assignedUser && String(assignedUser._id) !== currentUserIdStr) {
+              const alreadyAdded = allowedUsers.some(u => String(u._id) === String(assignedUser._id));
+              if (!alreadyAdded) {
+                allowedUsers.push(assignedUser);
+                console.log('✅ Current user assigned to currently assigned user (HOD→BD case):', assignedUser.name);
+              }
+            }
+          }
+        }
+      }
       
       // Strategy 3: Check if current user assigned to someone in chain (forward case)
       // Look for consecutive pairs where current user can chat
@@ -1142,9 +1199,9 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         }
       }
       
-      // Strategy 4: If current user is in chain but no recipient found yet,
-      // check if they assigned the currently assigned user
-      if (allowedUsers.length === 0 && isInChain && lead.assignedTo) {
+      // Strategy 4: CRITICAL - If no recipient found yet, check if current user assigned currently assigned user
+      // This is the main fix for HOD→BD case where HOD is assigner but not in chain entry
+      if (allowedUsers.length === 0 && lead.assignedTo) {
         const assignedToIdStr = String(lead.assignedTo);
         
         // Check if current user is the assigner of the currently assigned user
@@ -1155,23 +1212,23 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
             const assignedUser = findUserById(lead.assignedTo);
             if (assignedUser && String(assignedUser._id) !== currentUserIdStr) {
               allowedUsers.push(assignedUser);
-              console.log('✅ Current user in chain assigned to current assigned user:', assignedUser.name);
+              console.log('✅ Strategy 4: Current user is assigner of currently assigned user (HOD→BD):', assignedUser.name);
             }
           }
         }
-        
-        // Also check reverse - if currently assigned user can chat with current user
-        if (allowedUsers.length === 0) {
-          const currentUserEntry = assignmentChain.find(entry => String(entry.userId) === currentUserIdStr);
-          if (currentUserEntry && String(lead.assignedTo) === currentUserIdStr) {
-            // Current user is both in chain and currently assigned - find their assigner
-            const assignerId = getAssignerId(currentUserEntry);
-            if (assignerId) {
-              const assignerUser = findUserById(assignerId);
-              if (assignerUser && String(assignerUser._id) !== currentUserIdStr) {
-                allowedUsers.push(assignerUser);
-                console.log('✅ Current user in chain and assigned, can chat with assigner:', assignerUser.name);
-              }
+      }
+      
+      // Strategy 4.5: Last resort - Check all chain entries for assigner relationships
+      if (allowedUsers.length === 0) {
+        // Check if current user is assigner of anyone in the chain
+        for (const entry of assignmentChain) {
+          const assignerId = getAssignerId(entry);
+          if (assignerId && String(assignerId) === currentUserIdStr) {
+            const assignedUser = findUserById(entry.userId);
+            if (assignedUser && String(assignedUser._id) !== currentUserIdStr) {
+              allowedUsers.push(assignedUser);
+              console.log('✅ Strategy 4.5: Found assigner relationship in chain:', assignedUser.name);
+              break; // Found at least one, good enough
             }
           }
         }
@@ -1211,25 +1268,118 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     const recipients = getDirectChatUsers({ currentUser, lead });
     
     // Map recipients to user objects
+    // First, create findUserById function that has access to users and lead
+    const findUserByIdForMapping = (userId) => {
+      if (!userId) return null;
+      const userIdStr = String(userId);
+      
+      // First try assignableUsers
+      let found = users.find(u => String(u._id) === userIdStr);
+      if (found) return found;
+      
+      // If not found, check if we can get from assignment chain
+      if (lead.assignmentChain && lead.assignmentChain.length > 0) {
+        const chainEntry = lead.assignmentChain.find(
+          entry => String(entry.userId) === userIdStr
+        );
+        if (chainEntry) {
+          // Create a minimal user object from chain entry
+          return {
+            _id: chainEntry.userId,
+            name: chainEntry.name,
+            role: chainEntry.role,
+            email: null
+          };
+        }
+      }
+      
+      // Also check assignedBy in chain entries
+      for (const entry of lead.assignmentChain || []) {
+        if (entry.assignedBy) {
+          const assignerId = typeof entry.assignedBy === 'string' 
+            ? entry.assignedBy 
+            : (entry.assignedBy._id || null);
+          if (assignerId && String(assignerId) === userIdStr) {
+            if (typeof entry.assignedBy === 'object' && entry.assignedBy.name) {
+              return {
+                _id: assignerId,
+                name: entry.assignedBy.name,
+                role: entry.assignedBy.role || 'Unknown',
+                email: null
+              };
+            } else if (typeof entry.assignedBy === 'string') {
+              return {
+                _id: assignerId,
+                name: 'Unknown User',
+                role: 'Unknown',
+                email: null
+              };
+            }
+          }
+        }
+      }
+      
+      return null;
+    };
+    
     const validRecipients = recipients
       .map(recipient => {
         if (typeof recipient === 'string') {
-          // Find user by ID
-          return users.find(u => String(u._id) === String(recipient));
+          // Find user by ID - use comprehensive search
+          return findUserByIdForMapping(recipient);
         } else if (recipient && recipient._id) {
-          // Already a user object
+          // Already a user object - verify it has required fields
+          if (!recipient.name) {
+            // If name is missing, try to find full user object
+            const fullUser = findUserByIdForMapping(recipient._id);
+            return fullUser || recipient;
+          }
           return recipient;
         }
         return null;
       })
       .filter(Boolean)
-      .filter(u => String(u._id) !== String(currentUserId)); // Remove self
+      .filter(u => u._id && String(u._id) !== String(currentUserId)); // Remove self and invalid entries
 
     console.log('🔍 Role-based recipients:', {
       currentUserRole,
-      recipients,
+      recipientsCount: recipients.length,
+      recipients: recipients.map(r => typeof r === 'string' ? r : (r?._id || 'invalid')),
+      validRecipientsCount: validRecipients.length,
       validRecipients: validRecipients.map(u => ({ _id: u._id, name: u.name, role: u.role }))
     });
+
+    // Last resort: If no valid recipients but lead is assigned, try direct assignment chain lookup
+    if (validRecipients.length === 0 && lead.assignedTo && lead.assignmentChain && lead.assignmentChain.length > 0) {
+      console.log('⚠️ No valid recipients found, trying direct assignment chain lookup...');
+      
+      const assignedToIdStr = String(lead.assignedTo);
+      const currentUserIdStr = String(currentUserId);
+      
+      // Check if current user is assigner of currently assigned user
+      const assignedToEntry = lead.assignmentChain.find(entry => String(entry.userId) === assignedToIdStr);
+      if (assignedToEntry && assignedToEntry.assignedBy) {
+        const assignerId = typeof assignedToEntry.assignedBy === 'string' 
+          ? assignedToEntry.assignedBy 
+          : (assignedToEntry.assignedBy._id || null);
+        
+        if (assignerId && String(assignerId) === currentUserIdStr) {
+          // Current user is assigner - add assigned user
+          const assignedUser = findUserByIdForMapping(lead.assignedTo);
+          if (assignedUser) {
+            validRecipients.push(assignedUser);
+            console.log('✅ Last resort: Found assigned user via direct lookup:', assignedUser.name);
+          }
+        } else if (assignedToIdStr === currentUserIdStr && assignerId) {
+          // Current user is assigned - add assigner
+          const assignerUser = findUserByIdForMapping(assignerId);
+          if (assignerUser) {
+            validRecipients.push(assignerUser);
+            console.log('✅ Last resort: Found assigner via direct lookup:', assignerUser.name);
+          }
+        }
+      }
+    }
 
     if (validRecipients.length === 0) {
       console.error('❌ NO VALID RECIPIENT FOUND');
@@ -1243,7 +1393,8 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         assignmentChain: lead.assignmentChain,
         usersCount: users.length,
         recipientsCount: recipients.length,
-        validRecipientsCount: validRecipients.length
+        validRecipientsCount: validRecipients.length,
+        assignableUsersSample: users.slice(0, 3).map(u => ({ _id: u._id, name: u.name }))
       });
       
       // Provide more helpful error message
