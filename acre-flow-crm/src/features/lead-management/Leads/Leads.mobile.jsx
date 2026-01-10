@@ -921,12 +921,35 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       
       const currentUserIdStr = String(currentUser._id);
       
+      // Helper function to get assigner ID from assignment entry (define early)
+      const getAssignerId = (entry) => {
+        if (!entry?.assignedBy) return null;
+        if (typeof entry.assignedBy === 'string') return entry.assignedBy;
+        if (entry.assignedBy._id) return String(entry.assignedBy._id);
+        return null;
+      };
+      
       // Check if current user is in assignment chain
       const isInChain = assignmentChain.some(entry => String(entry.userId) === currentUserIdStr);
       const isCurrentlyAssigned = String(lead.assignedTo) === currentUserIdStr;
       
-      if (!isInChain && !isCurrentlyAssigned) {
-        console.log('❌ Current user is not in assignment chain - chat not allowed');
+      // Check if current user is assigner of currently assigned user (even if not in chain entry)
+      const isAssignerOfCurrentAssigned = assignmentChain.some(entry => {
+        const assignerId = getAssignerId(entry);
+        return assignerId && String(assignerId) === currentUserIdStr && String(entry.userId) === String(lead.assignedTo);
+      });
+      
+      console.log('🔍 USER POSITION CHECK:', {
+        currentUserId: currentUserIdStr,
+        isInChain,
+        isCurrentlyAssigned,
+        isAssignerOfCurrentAssigned,
+        leadAssignedTo: lead.assignedTo,
+        assignmentChainLength: assignmentChain.length
+      });
+      
+      if (!isInChain && !isCurrentlyAssigned && !isAssignerOfCurrentAssigned) {
+        console.log('❌ Current user is not in assignment chain, not assigned, and not assigner - chat not allowed');
         return [];
       }
       
@@ -981,13 +1004,23 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         return null;
       };
       
-      // Helper function to get assigner ID from assignment entry
-      const getAssignerId = (entry) => {
-        if (!entry?.assignedBy) return null;
-        if (typeof entry.assignedBy === 'string') return entry.assignedBy;
-        if (entry.assignedBy._id) return entry.assignedBy._id;
-        return null;
-      };
+      // Strategy 0: Check if current user assigned the currently assigned user (even if not in chain)
+      if (!isInChain && !isCurrentlyAssigned && lead.assignedTo) {
+        const assignedToIdStr = String(lead.assignedTo);
+        const assignedEntry = assignmentChain.find(entry => String(entry.userId) === assignedToIdStr);
+        
+        if (assignedEntry) {
+          const assignerId = getAssignerId(assignedEntry);
+          if (assignerId && String(assignerId) === currentUserIdStr) {
+            // Current user is the assigner of currently assigned user
+            const assignedUser = findUserById(lead.assignedTo);
+            if (assignedUser && String(assignedUser._id) !== currentUserIdStr) {
+              allowedUsers.push(assignedUser);
+              console.log('✅ Current user assigned the currently assigned user (not in chain), can chat:', assignedUser.name);
+            }
+          }
+        }
+      }
       
       // Strategy 1: Current user is assigned - can chat with their assigner
       if (isCurrentlyAssigned) {
@@ -1032,6 +1065,18 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
               allowedUsers.push(assignerUser);
               console.log('✅ Current user is assigned (not in chain), using lead.assignedBy:', assignerUser.name);
             }
+          }
+        }
+      }
+      
+      // Strategy 1.5: If current user is assigner of currently assigned user (even if not in chain)
+      if (isAssignerOfCurrentAssigned && lead.assignedTo) {
+        const assignedUser = findUserById(lead.assignedTo);
+        if (assignedUser && String(assignedUser._id) !== currentUserIdStr) {
+          const alreadyAdded = allowedUsers.some(u => String(u._id) === String(assignedUser._id));
+          if (!alreadyAdded) {
+            allowedUsers.push(assignedUser);
+            console.log('✅ Current user is assigner of currently assigned user (not in chain), can chat:', assignedUser.name);
           }
         }
       }
@@ -1091,6 +1136,41 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                   allowedUsers.push(assignedToUser);
                   console.log('✅ Current user can chat with user they forwarded to:', assignedToUser.name);
                 }
+              }
+            }
+          }
+        }
+      }
+      
+      // Strategy 4: If current user is in chain but no recipient found yet,
+      // check if they assigned the currently assigned user
+      if (allowedUsers.length === 0 && isInChain && lead.assignedTo) {
+        const assignedToIdStr = String(lead.assignedTo);
+        
+        // Check if current user is the assigner of the currently assigned user
+        const assignedToEntry = assignmentChain.find(entry => String(entry.userId) === assignedToIdStr);
+        if (assignedToEntry) {
+          const assignerId = getAssignerId(assignedToEntry);
+          if (assignerId && String(assignerId) === currentUserIdStr) {
+            const assignedUser = findUserById(lead.assignedTo);
+            if (assignedUser && String(assignedUser._id) !== currentUserIdStr) {
+              allowedUsers.push(assignedUser);
+              console.log('✅ Current user in chain assigned to current assigned user:', assignedUser.name);
+            }
+          }
+        }
+        
+        // Also check reverse - if currently assigned user can chat with current user
+        if (allowedUsers.length === 0) {
+          const currentUserEntry = assignmentChain.find(entry => String(entry.userId) === currentUserIdStr);
+          if (currentUserEntry && String(lead.assignedTo) === currentUserIdStr) {
+            // Current user is both in chain and currently assigned - find their assigner
+            const assignerId = getAssignerId(currentUserEntry);
+            if (assignerId) {
+              const assignerUser = findUserById(assignerId);
+              if (assignerUser && String(assignerUser._id) !== currentUserIdStr) {
+                allowedUsers.push(assignerUser);
+                console.log('✅ Current user in chain and assigned, can chat with assigner:', assignerUser.name);
               }
             }
           }
