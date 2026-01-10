@@ -49,12 +49,38 @@ exports.createOrGetChat = async (req, res, next) => {
       entry => String(entry.userId) === String(assignedTo)
     );
     
-    // Also check current assigned user
+    // Also check current assigned user and lead.assignedBy
     const isCreatedByCurrentAssigned = String(lead.assignedTo) === String(createdBy);
     const isAssignedToCurrentAssigned = String(lead.assignedTo) === String(assignedTo);
+    const isCreatedByAssignedBy = String(lead.assignedBy) === String(createdBy);
+    const isAssignedToAssignedBy = String(lead.assignedBy) === String(assignedTo);
     
-    // Both users must be in chain or currently assigned
-    if (!(createdByInChain || isCreatedByCurrentAssigned) || !(assignedToInChain || isAssignedToCurrentAssigned)) {
+    // Log for debugging
+    console.log('🔍 CHAT VALIDATION DEBUG:', {
+      leadId,
+      createdBy,
+      assignedTo,
+      leadAssignedTo: lead.assignedTo,
+      leadAssignedBy: lead.assignedBy,
+      assignmentChainLength: assignmentChain.length,
+      createdByInChain,
+      assignedToInChain,
+      isCreatedByCurrentAssigned,
+      isAssignedToCurrentAssigned,
+      isCreatedByAssignedBy,
+      isAssignedToAssignedBy,
+      assignmentChain: assignmentChain.map(e => ({
+        userId: e.userId,
+        name: e.name,
+        role: e.role,
+        assignedBy: e.assignedBy
+      }))
+    });
+    
+    // Both users must be in chain or currently assigned/assignedBy
+    if (!(createdByInChain || isCreatedByCurrentAssigned || isCreatedByAssignedBy) || 
+        !(assignedToInChain || isAssignedToCurrentAssigned || isAssignedToAssignedBy)) {
+      console.log('❌ VALIDATION FAILED: Users not in assignment chain');
       return res.status(403).json({ 
         success: false, 
         message: 'Chat not allowed: Both users must be in the assignment chain.' 
@@ -62,18 +88,19 @@ exports.createOrGetChat = async (req, res, next) => {
     }
     
     // Validate: Check if they form a consecutive pair in the chain
+    let isValidPair = false;
+    
     // Case 1: createdBy assigned to assignedTo (createdBy → assignedTo)
     const assignedToEntry = assignmentChain.find(
       entry => String(entry.userId) === String(assignedTo)
     );
-    
-    let isValidPair = false;
     
     if (assignedToEntry) {
       const assignerId = getAssignerId(assignedToEntry);
       if (assignerId && String(assignerId) === String(createdBy)) {
         // createdBy is the assigner of assignedTo
         isValidPair = true;
+        console.log('✅ Case 1: createdBy is assigner of assignedTo');
       }
     }
     
@@ -88,11 +115,25 @@ exports.createOrGetChat = async (req, res, next) => {
         if (assignerId && String(assignerId) === String(assignedTo)) {
           // assignedTo is the assigner of createdBy
           isValidPair = true;
+          console.log('✅ Case 2: assignedTo is assigner of createdBy');
         }
       }
     }
     
-    // Case 3: Both are in chain and could be consecutive (check all pairs)
+    // Case 3: Direct assignment check (lead.assignedBy → lead.assignedTo)
+    if (!isValidPair) {
+      if (isCreatedByAssignedBy && isAssignedToCurrentAssigned) {
+        // createdBy is the assigner (lead.assignedBy) and assignedTo is the assigned (lead.assignedTo)
+        isValidPair = true;
+        console.log('✅ Case 3: Direct assignment (assignedBy → assignedTo)');
+      } else if (isAssignedToAssignedBy && isCreatedByCurrentAssigned) {
+        // assignedTo is the assigner and createdBy is the assigned
+        isValidPair = true;
+        console.log('✅ Case 3b: Reverse direct assignment (assignedTo → createdBy)');
+      }
+    }
+    
+    // Case 4: Both are in chain and could be consecutive (check all pairs)
     if (!isValidPair && createdByInChain && assignedToInChain) {
       // Check if they appear as consecutive assigner-assigned pairs
       for (const entry of assignmentChain) {
@@ -102,21 +143,50 @@ exports.createOrGetChat = async (req, res, next) => {
         // Check if createdBy assigned to assignedTo
         if (assignerId && String(assignerId) === String(createdBy) && entryUserId === String(assignedTo)) {
           isValidPair = true;
+          console.log('✅ Case 4: Found consecutive pair in chain (createdBy → assignedTo)');
           break;
         }
         
         // Check if assignedTo assigned to createdBy
         if (assignerId && String(assignerId) === String(assignedTo) && entryUserId === String(createdBy)) {
           isValidPair = true;
+          console.log('✅ Case 4b: Found consecutive pair in chain (assignedTo → createdBy)');
+          break;
+        }
+      }
+    }
+    
+    // Case 5: Check consecutive entries in chain (user at index i assigned to user at index i+1)
+    if (!isValidPair && assignmentChain.length >= 2) {
+      for (let i = 0; i < assignmentChain.length - 1; i++) {
+        const currentEntry = assignmentChain[i];
+        const nextEntry = assignmentChain[i + 1];
+        const currentUserIdStr = String(currentEntry.userId);
+        const nextUserIdStr = String(nextEntry.userId);
+        
+        // Check if createdBy and assignedTo are consecutive in chain
+        if ((currentUserIdStr === String(createdBy) && nextUserIdStr === String(assignedTo)) ||
+            (currentUserIdStr === String(assignedTo) && nextUserIdStr === String(createdBy))) {
+          isValidPair = true;
+          console.log('✅ Case 5: Users are consecutive in assignment chain');
           break;
         }
       }
     }
     
     if (!isValidPair) {
+      console.log('❌ VALIDATION FAILED: Users do not form a valid consecutive pair');
+      console.log('Assignment chain details:', JSON.stringify(assignmentChain, null, 2));
       return res.status(403).json({ 
         success: false, 
-        message: 'Chat not allowed: Users must be consecutive pairs in the assignment chain (assigner ↔ assigned user).' 
+        message: 'Chat not allowed: Users must be consecutive pairs in the assignment chain (assigner ↔ assigned user).',
+        debug: {
+          createdBy,
+          assignedTo,
+          assignmentChainLength: assignmentChain.length,
+          createdByInChain,
+          assignedToInChain
+        }
       });
     }
 
