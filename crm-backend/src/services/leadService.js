@@ -1,6 +1,43 @@
 const Lead = require('../models/leadModel');
 const User = require('../models/userModel');
+const Chat = require('../models/chatModel');
 const mongoose = require('mongoose');
+
+// Helper function to create chat between two users for a lead
+const createChatForAssignment = async (leadId, assignerId, assigneeId) => {
+  try {
+    if (!leadId || !assignerId || !assigneeId || assignerId === assigneeId) {
+      return null;
+    }
+    
+    // Check if chat already exists
+    const existingChat = await Chat.findOne({
+      leadId,
+      participants: { $all: [assignerId, assigneeId] }
+    });
+    
+    if (existingChat) {
+      return existingChat;
+    }
+    
+    // Create new chat
+    const chat = new Chat({
+      leadId,
+      participants: [assignerId, assigneeId],
+      lastMessage: {
+        message: `Lead assigned`,
+        senderId: assignerId,
+        timestamp: new Date()
+      }
+    });
+    
+    await chat.save();
+    return chat;
+  } catch (error) {
+    console.error('Error creating chat for assignment:', error);
+    return null;
+  }
+};
 
 // Role hierarchy for lead forwarding
 const roleHierarchy = {
@@ -38,7 +75,14 @@ const createLead = async (leadData, creator) => {
     }
   }
   leadData.assignmentChain = assignmentChain;
-  return await Lead.create(leadData);
+  const lead = await Lead.create(leadData);
+  
+  // 🎯 Auto-create chat between creator and assignee if assigned
+  if (leadData.assignedTo && creator) {
+    await createChatForAssignment(lead._id.toString(), creator._id.toString(), leadData.assignedTo);
+  }
+  
+  return lead;
 };
 
 const getLeads = async () => {
@@ -60,24 +104,36 @@ const updateLead = async (id, updateData) => {
   const lead = await Lead.findById(id);
   if (!lead) return null;
   
-  // If assignedTo is changing, add new assignee to assignmentChain if not already present
-  if (updateData.assignedTo) {
-    const alreadyInChain = lead.assignmentChain.some(
-      entry => entry.userId === updateData.assignedTo
-    );
-    if (!alreadyInChain) {
-      const assignee = await User.findById(updateData.assignedTo);
-      if (assignee) {
-        lead.assignmentChain.push({
-          userId: assignee._id.toString(),
-          role: assignee.role,
-          name: assignee.name,
-          assignedAt: new Date(),
-          status: 'assigned'
-        });
+    // If assignedTo is changing, add new assignee to assignmentChain if not already present
+    if (updateData.assignedTo) {
+      const alreadyInChain = lead.assignmentChain.some(
+        entry => entry.userId === updateData.assignedTo
+      );
+      if (!alreadyInChain) {
+        const assignee = await User.findById(updateData.assignedTo);
+        if (assignee) {
+          const assignerId = updateData.assignedBy || lead.assignedBy || lead.assignmentChain[lead.assignmentChain.length - 1]?.userId;
+          
+          lead.assignmentChain.push({
+            userId: assignee._id.toString(),
+            role: assignee.role,
+            name: assignee.name,
+            assignedAt: new Date(),
+            status: 'assigned',
+            assignedBy: assignerId ? {
+              _id: assignerId,
+              name: (await User.findById(assignerId))?.name || 'Unknown',
+              role: (await User.findById(assignerId))?.role || 'Unknown'
+            } : undefined
+          });
+          
+          // 🎯 Auto-create chat between assigner and assignee
+          if (assignerId && assignerId !== assignee._id.toString()) {
+            await createChatForAssignment(lead._id.toString(), assignerId, assignee._id.toString());
+          }
+        }
       }
     }
-  }
   
   // Update other fields, including workProgress
   if ("workProgress" in updateData) {
@@ -180,6 +236,10 @@ const forwardLead = async (leadId, currentUserId, action = 'forward', selectedEm
   lead.assignedBy = currentUserId;
 
   await lead.save();
+  
+  // 🎯 Auto-create chat between assigner and assignee
+  await createChatForAssignment(leadId, currentUserId, nextAssignee._id.toString());
+  
   return lead;
 };
 
@@ -360,6 +420,10 @@ const forwardPatchLead = async (leadId, requesterId, newAssigneeId, reason = '')
   lead.assignedBy = requesterId;
 
   await lead.save();
+  
+  // 🎯 Auto-create chat between assigner and assignee
+  await createChatForAssignment(leadId, requesterId, newAssignee._id.toString());
+  
   return lead;
 };
 
@@ -502,6 +566,12 @@ const forwardSwapLead = async (leadId, requesterId, swapLeadId, reason = '') => 
       await leadA.save();
       await leadB.save();
     }
+    
+    // 🎯 Auto-create chats for swapped assignments
+    // Chat between requester and new assignee for leadA
+    await createChatForAssignment(leadId, requesterId, bdB._id.toString());
+    // Chat between requester and new assignee for leadB
+    await createChatForAssignment(swapLeadId, requesterId, bdA._id.toString());
 
     return { leadA, leadB };
   };
