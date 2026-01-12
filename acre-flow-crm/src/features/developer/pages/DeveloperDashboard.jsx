@@ -1,5 +1,5 @@
   import React from 'react';
-  import DeveloperContent from '@/features/developer/components/DeveloperContent';
+  import DeveloperContent from '@/features/developer/DeveloperContent';
   import { LogOut, Code } from 'lucide-react';
   import { useNavigate } from 'react-router-dom';
 
@@ -30,21 +30,10 @@
             <div className="header-title-group">
             </div>
           </div>
-        <main className="developer-main">
+        <main>
           <DeveloperContent userRole="developer" />
         </main>
-        <style>{`   
-        .developer-dashboard * {
-            box-sizing: border-box;
-          }
-          .developer-main {
-            padding: 1rem;
-            max-width:2000px;
-            margin: 0 auto;
-            box-sizing: border-box; 
-          }
-          }
-        `}</style>
+      
       </div>
     );
   };

@@ -10,7 +10,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .developer-main {
@@ -89,9 +89,9 @@
   box-sizing: border-box;
 }
 
-/* Ensure content doesn't overflow */
+/* Ensure content can scroll properly */
 .content-card {
-  overflow: hidden;
+  overflow: visible;
 }
 
 .developer-main {

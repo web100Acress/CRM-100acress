@@ -1,6 +1,6 @@
 import React from 'react';
 import DashboardLayout from '@/layout/DashboardLayout';
-import DeveloperContent from '@/features/developer/components/DeveloperContent';
+import DeveloperContent from '@/features/developer/DeveloperContent';
 
 const DeveloperMobile = ({ userRole = 'super-admin' }) => {
   return (

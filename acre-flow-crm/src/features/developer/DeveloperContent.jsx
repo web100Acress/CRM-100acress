@@ -1,9 +1,9 @@
-    import React, { useState, useEffect } from 'react';
-import '../../../styles/DeveloperContent.css'
-import '../../../styles/sidebar.css'
-import '../styles/DeveloperHeader.css'
-import '../styles/DeveloperLayout.css'
-import '../styles/DeveloperOverview.css'
+import React, { useState, useEffect } from 'react';
+import '../../styles/DeveloperContent.css'
+import '../../styles/sidebar.css'
+import './styles/DeveloperHeader.css'
+import './styles/DeveloperLayout.css'
+import DeveloperSidebar from './components/Sidebar';
 import { 
   Code, 
   Database, 
@@ -59,23 +59,23 @@ import { useNavigate } from 'react-router-dom';
 import { NavLink } from 'react-router-dom';
 
 // Developer-specific imports
-import DeveloperHeader from './DeveloperHeader';
-import DeveloperOverview from './DeveloperOverview';
-import DeveloperChat from './DeveloperChat';
-import RoleAssignment from './RoleAssignment';
-import ActivityCredentials from './ActivityCredentials';
-import DeveloperTools from './DeveloperTools';
-import SystemMonitor from './SystemMonitor';
-import DatabaseManager from './DatabaseManager';
-import ApiTester from './ApiTester';
-import LogViewer from './LogViewer';
-import PerformanceMetrics from './PerformanceMetrics';
-import DeploymentPanel from './DeploymentPanel';
-import SecurityAudit from './SecurityAudit';
-import BackupManager from './BackupManager';
-import CacheManager from './CacheManager';
-import QueueMonitor from './QueueMonitor';
-import ErrorHandler from './ErrorHandler';
+import DeveloperHeader from './components/Header/DeveloperHeader';
+import Dashboard from './components/Dashboard';
+import DeveloperChat from './components/DeveloperChat';
+import RoleAssignment from './components/RoleAssignment';
+import ActivityCredentials from './components/ActivityCredentials';
+import DeveloperTools from './components/DeveloperTools';
+import SystemMonitor from './components/SystemMonitor';
+import DatabaseManager from './components/DatabaseManager';
+import ApiTester from './components/ApiTester';
+import LogViewer from './components/LogViewer';
+import PerformanceMetrics from './components/PerformanceMetrics';
+import DeploymentPanel from './components/DeploymentPanel';
+import SecurityAudit from './components/SecurityAudit';
+import BackupManager from './components/BackupManager';
+import CacheManager from './components/CacheManager';
+import QueueMonitor from './components/QueueMonitor';
+import ErrorHandler from './components/ErrorHandler';
 
 import { useTheme } from '@/context/ThemeContext';
 
@@ -1123,7 +1123,7 @@ const DeveloperContent = ({ userRole }) => {
       const renderContent = () => {
         switch (activeTab) {
           case 'overview':
-            return <DeveloperOverview developerName={developerName} systemStats={systemStats} handleAction={handleAction} />;
+            return <Dashboard />;
           case 'role-assignment':
             return <RoleAssignment />;
           case 'create-employee':
@@ -1168,168 +1168,18 @@ const DeveloperContent = ({ userRole }) => {
       };
       return (
     <div className={`dashboard-container ${isDark ? 'dark-theme' : 'light-theme'}`}>
-      {/* Desktop Sidebar */}
-      <div
-        className={`crm-sidebar ${isDark ? 'is-dark' : 'is-light'} ${sidebarOpen ? 'is-collapsed' : ''} ${
-          false ? 'hidden' : 'flex'
-        }`}
-      >
-        <div className="crm-sidebar-rail">
-          <div className="crm-rail-top">
-            <div className="crm-rail-logo" title="100acres CRM">
-              <Code className="crm-rail-logo-icon" />
-            </div>
-          </div>
-
-          <div className="crm-rail-nav">
-            {tabs.map((tab, idx) => (
-              <React.Fragment key={tab.id}>
-                <button
-                  onClick={() => {
-                    setActiveTab(tab.id);
-                  }}
-                  className={`crm-rail-link ${activeTab === tab.id ? 'active' : ''}`}
-                >
-                  <tab.icon className="crm-rail-icon" />
-                </button>
-                {idx < tabs.length - 1 && <div className="crm-rail-divider" />}
-              </React.Fragment>
-            ))}
-          </div>
-
-          <div className="crm-rail-bottom">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="crm-rail-action"
-              title={isDark ? 'Light Mode' : 'Dark Mode'}
-            >
-              {isDark ? <Sun className="crm-rail-icon" /> : <Moon className="crm-rail-icon" />}
-            </button>
-            <button type="button" onClick={handleLogout} className="crm-rail-action" title="Logout">
-              <LogOut className="crm-rail-icon" />
-            </button>
-          </div>
-        </div>
-
-        {!sidebarOpen && (
-          <div className="crm-sidebar-panel">
-            <div className="crm-panel-header">
-              <div className="crm-panel-brand">
-                <div className="crm-panel-brand-icon">
-                  <Code className="crm-panel-brand-icon-svg" />
-                </div>
-                <div className="crm-panel-brand-text">
-                  <div className="crm-panel-brand-title">Developer Console</div>
-                  <div className="crm-panel-brand-sub">System Management</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="crm-panel-nav">
-              <div className="crm-panel-group">
-                <div className="crm-panel-heading">Developer Tools</div>
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`crm-panel-link ${activeTab === tab.id ? 'active' : ''}`}
-                  >
-                    <span className="crm-panel-link-icon"><tab.icon className="crm-panel-icon" /></span>
-                    <span className="crm-panel-link-label">{tab.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="crm-panel-footer">
-              <div className="crm-panel-user">
-                <div className="crm-panel-user-avatar"><Shield className="crm-panel-user-icon" /></div>
-                <div className="crm-panel-user-meta">
-                  <div className="crm-panel-user-name">{developerName}</div>
-                  <div className="crm-panel-user-role">Developer</div>
-                </div>
-              </div>
-
-              <div className="crm-panel-footer-actions">
-                <button type="button" onClick={toggleTheme} className="crm-panel-toggle">
-                  <span className="crm-panel-toggle-label">Dark Mode</span>
-                  <span className={`crm-panel-toggle-pill ${isDark ? 'on' : 'off'}`}>
-                    <span className="crm-panel-toggle-dot" />
-                  </span>
-                </button>
-
-                <button type="button" className="crm-panel-logout" onClick={handleLogout}>
-                  <LogOut className="crm-panel-logout-icon" />
-                  <span>Logout</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Mobile Sidebar */}
-      {false && (
-        <>
-          <div className={`crm-mobile-sidebar ${isDark ? 'is-dark' : 'is-light'}`}>
-            <div className="crm-mobile-header">
-              <div className="crm-mobile-brand">
-                <div className="crm-panel-brand-icon">
-                  <Code className="crm-panel-brand-icon-svg" />
-                </div>
-                <div className="crm-panel-brand-text">
-                  <div className="crm-panel-brand-title">Developer Console</div>
-                  <div className="crm-panel-brand-sub">System Management</div>
-                </div>
-              </div>
-              <button className="crm-mobile-close"><X /></button>
-            </div>
-
-            <div className="crm-mobile-nav">
-              <div className="crm-panel-group">
-                <div className="crm-panel-heading">Developer Tools</div>
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`crm-panel-link ${activeTab === tab.id ? 'active' : ''}`}
-                  >
-                    <span className="crm-panel-link-icon"><tab.icon className="crm-panel-icon" /></span>
-                    <span className="crm-panel-link-label">{tab.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="crm-panel-footer">
-              <div className="crm-panel-user">
-                <div className="crm-panel-user-avatar"><Shield className="crm-panel-user-icon" /></div>
-                <div className="crm-panel-user-meta">
-                  <div className="crm-panel-user-name">{developerName}</div>
-                  <div className="crm-panel-user-role">Developer</div>
-                </div>
-              </div>
-
-              <div className="crm-panel-footer-actions">
-                <button type="button" onClick={toggleTheme} className="crm-panel-toggle">
-                  <span className="crm-panel-toggle-label">Dark Mode</span>
-                  <span className={`crm-panel-toggle-pill ${isDark ? 'on' : 'off'}`}>
-                    <span className="crm-panel-toggle-dot" />
-                  </span>
-                </button>
-
-                <button type="button" className="crm-panel-logout" onClick={handleLogout}>
-                  <LogOut className="crm-panel-logout-icon" />
-                  <span>Logout</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="crm-sidebar-backdrop"></div>
-        </>
-      )}
+      {/* Sidebar Component */}
+      <DeveloperSidebar
+        isDark={isDark}
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        toggleTheme={toggleTheme}
+        handleLogout={handleLogout}
+        developerName={developerName}
+        tabs={tabs}
+      />
 
       {/* Main Content Area */}
       <div className="main-content">
