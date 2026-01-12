@@ -40,6 +40,19 @@ const UserSearchModal = ({ isOpen, onClose, onUserSelect, currentUserRole }) => 
 
       if (response.ok) {
         const data = await response.json();
+        console.log('🔍 DEBUG - Frontend received:', {
+          query: query || 'EMPTY',
+          success: data.success,
+          totalUsers: data.users?.length || 0,
+          users: data.users?.map(u => ({
+            _id: u._id,
+            name: u.name,
+            email: u.email,
+            role: u.role,
+            department: u.department
+          }))
+        });
+        
         if (data.success) {
           setSearchResults(data.users || []);
         } else {

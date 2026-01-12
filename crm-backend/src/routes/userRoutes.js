@@ -17,4 +17,30 @@ router.put('/profile', auth, userController.updateProfile);
 router.post('/profile-image', auth, uploadProfileImage, userController.uploadProfileImage);
 router.post('/search', auth, userController.searchUsers);
 
+// Test endpoint to check all users
+router.get('/test-all', auth, async (req, res) => {
+  try {
+    const User = require('../models/userModel');
+    const allUsers = await User.find({});
+    console.log(' ALL USERS IN DB:', allUsers.length);
+    res.json({
+      success: true,
+      totalUsers: allUsers.length,
+      users: allUsers.map(u => ({
+        _id: u._id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        department: u.department
+      }))
+    });
+  } catch (error) {
+    console.error('Error fetching all users:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
 module.exports = router;

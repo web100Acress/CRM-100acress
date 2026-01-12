@@ -735,6 +735,19 @@ exports.searchUsers = async (req, res) => {
         profileImage: 1
       });
 
+      console.log('🔍 DEBUG - User Search Results:', {
+        query: query || 'EMPTY',
+        searchCriteria,
+        totalUsersFound: users.length,
+        users: users.map(u => ({
+          _id: u._id,
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          department: u.department
+        }))
+      });
+
       res.json({
         success: true,
         users: users || []
