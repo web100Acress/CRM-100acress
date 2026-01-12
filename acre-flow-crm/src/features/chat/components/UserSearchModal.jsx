@@ -38,15 +38,17 @@ const UserSearchModal = ({ isOpen, onClose, onUserSelect, currentUserRole }) => 
         const data = await response.json();
         
         if (data.success && Array.isArray(data.data)) {
-          // Filter users by roles: boss, head-admin (HOD), team-leader, employee (BD)
-          const allowedRoles = ['boss', 'super-admin', 'head-admin', 'team-leader', 'employee'];
+          // Filter users by roles: boss, hod, team-leader, bd (actual database role values)
+          // Include variants that might exist in database
+          const allowedRoles = ['boss', 'super-admin', 'superadmin', 'hod', 'head-admin', 'head_admin', 'team-leader', 'team_leader', 'bd', 'employee'];
           
           let filteredUsers = data.data
             .filter(user => {
               // Exclude current user
               if (user._id === userId) return false;
-              // Filter by allowed roles
-              return allowedRoles.includes(user.role);
+              // Filter by allowed roles (check both exact match and lowercase)
+              const userRole = user.role?.toLowerCase().trim();
+              return allowedRoles.some(allowedRole => userRole === allowedRole.toLowerCase());
             })
             .map(user => ({
               _id: user._id,
@@ -210,14 +212,20 @@ const UserSearchModal = ({ isOpen, onClose, onUserSelect, currentUserRole }) => 
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full font-medium">
                         {(() => {
+                          const roleLower = (user.role || '').toLowerCase().trim();
                           const roleMap = {
+                            'bd': 'BD',
                             'employee': 'BD',
+                            'hod': 'HOD',
                             'head-admin': 'HOD',
-                            'super-admin': 'BOSS',
+                            'head_admin': 'HOD',
                             'boss': 'BOSS',
-                            'team-leader': 'TEAM LEADER'
+                            'super-admin': 'BOSS',
+                            'superadmin': 'BOSS',
+                            'team-leader': 'TEAM LEADER',
+                            'team_leader': 'TEAM LEADER'
                           };
-                          return roleMap[user.role] || (user.role || 'user').replace(/_/g, ' ').toUpperCase();
+                          return roleMap[roleLower] || (user.role || 'user').replace(/_/g, ' ').toUpperCase();
                         })()}
                       </span>
                       {user.department && (
