@@ -2604,6 +2604,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
           }}
           recipient={whatsAppRecipient}
           onMessageSent={fetchChatList}
+          onChatDeleted={fetchChatList}
         />
       )}
     {showAssignmentChain && selectedLeadForChain && (
