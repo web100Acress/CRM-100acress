@@ -43,7 +43,7 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
   const fetchAssignableUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://bcrm.100acress.com/api/leads/assignable-users`, {
+      const response = await fetch(`http://localhost:5001/api/leads/assignable-users`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -58,12 +58,22 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
       let users = json.data || [];
       
       // Filter users based on current user role
-      if (currentUserRole === 'super-admin') {
-        // Super admin can only assign to head-admin users
-        users = users.filter((user) => user.role === 'head-admin');
+      if (currentUserRole === 'super-admin' || currentUserRole === 'boss') {
+        // Boss can ONLY assign to HOD users
+        users = users.filter((user) => user.role === 'hod');
+        console.log('🔍 Mobile Boss assigning leads - Available HODs ONLY:', users);
+      } else if (currentUserRole === 'hod') {
+        // HOD can assign to team-leader and bd users
+        users = users.filter((user) => user.role === 'team-leader' || user.role === 'bd');
+        console.log('🔍 Mobile HOD assigning leads - Available Team Leaders & BD:', users);
+      } else if (currentUserRole === 'team-leader') {
+        // Team Leader can assign to bd users
+        users = users.filter((user) => user.role === 'bd');
+        console.log('🔍 Mobile Team Leader assigning leads - Available BD:', users);
       } else {
-        // Other roles can assign to all users (or implement your logic)
-        // For now, keep all users for other roles
+        // Other roles cannot assign leads - empty list
+        users = [];
+        console.log('🔍 Mobile Other roles cannot assign leads - No users available');
       }
       
       setAssignableUsers(users);
@@ -336,8 +346,14 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
             <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
               <User size={16} />
               Assign To
-              {currentUserRole === "super-admin" && (
+              {(currentUserRole === "super-admin" || currentUserRole === "boss") && (
                 <span className="text-xs text-gray-500 ml-2">(Only HODs)</span>
+              )}
+              {currentUserRole === "hod" && (
+                <span className="text-xs text-gray-500 ml-2">(Team Leaders & BD)</span>
+              )}
+              {currentUserRole === "team-leader" && (
+                <span className="text-xs text-gray-500 ml-2">(Only BD)</span>
               )}
             </label>
             <select
@@ -349,13 +365,28 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
               <option value="">Select Agent</option>
               {assignableUsers.map((user) => (
                 <option key={user._id} value={user._id}>
-                  {user.name} ({user.role === "head-admin" ? "HOD" : user.role})
+                  {user.name} ({user.role === "hod" ? "HOD" : user.role})
                 </option>
               ))}
             </select>
-            {currentUserRole === "super-admin" && assignableUsers.length === 0 && (
+            {(currentUserRole === "super-admin" || currentUserRole === "boss") && assignableUsers.length === 0 && (
               <p className="text-xs text-gray-500 mt-1">
                 No HODs available to assign leads to
+              </p>
+            )}
+            {currentUserRole === "hod" && assignableUsers.length === 0 && (
+              <p className="text-xs text-gray-500 mt-1">
+                No Team Leaders or BD available to assign leads to
+              </p>
+            )}
+            {currentUserRole === "team-leader" && assignableUsers.length === 0 && (
+              <p className="text-xs text-gray-500 mt-1">
+                No BD available to assign leads to
+              </p>
+            )}
+            {!(currentUserRole === "super-admin" || currentUserRole === "boss" || currentUserRole === "hod" || currentUserRole === "team-leader") && (
+              <p className="text-xs text-red-500 mt-1">
+                You don't have permission to assign leads
               </p>
             )}
           </div>
