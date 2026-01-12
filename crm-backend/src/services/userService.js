@@ -1,8 +1,18 @@
 const User = require('../models/userModel');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const { mapAcressRoleToCRM } = require('./roleMappingService');
 
 const createUser = async (userData) => {
+  // Apply role mapping if role is provided
+  if (userData.role) {
+    userData.role = mapAcressRoleToCRM(userData.role);
+    console.log(' User Creation Role Mapping:', {
+      originalRole: userData.role,
+      mappedRole: userData.role
+    });
+  }
+  
   if (userData.password) {
     const saltRounds = 10;
     userData.password = await bcrypt.hash(userData.password, saltRounds);
@@ -19,6 +29,14 @@ const getUserById = async (id) => {
 };
 
 const updateUser = async (id, updateData) => {
+  // Apply role mapping if role is being updated
+  if (updateData.role) {
+    updateData.role = mapAcressRoleToCRM(updateData.role);
+    console.log(' User Update Role Mapping:', {
+      originalRole: updateData.role,
+      mappedRole: updateData.role
+    });
+  }
   return await User.findByIdAndUpdate(id, updateData, { new: true });
 };
 

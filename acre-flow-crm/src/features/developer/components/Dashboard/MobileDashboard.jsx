@@ -166,8 +166,8 @@ const MobileDashboard = () => {
       )}
 
       {/* Main Content */}
-      <div className="flex h-screen pt-14">
-        <div className="flex-1 overflow-auto">
+      <div className="min-h-screen pt-14">
+        <div className="overflow-auto">
           <div className="p-4">
             {renderMobileContent()}
           </div>

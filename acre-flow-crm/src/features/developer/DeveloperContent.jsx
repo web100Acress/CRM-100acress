@@ -1189,7 +1189,7 @@ const DeveloperContent = ({ userRole }) => {
           developerName={developerName}
         />
 
-        <main>
+        <main className="developer-main">
           <Card className="content-card">
             <CardHeader>
               <CardTitle className="content-title">

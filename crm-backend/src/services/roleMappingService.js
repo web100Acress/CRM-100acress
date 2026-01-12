@@ -15,10 +15,13 @@ const mapAcressRoleToCRM = (acressRole) => {
 
   const roleLower = acressRole.toLowerCase().trim();
 
-  // Role mapping configuration
+  // Role mapping configuration - Handle all variants
   const roleMap = {
-    // Admin roles
+    // Admin roles - Complete mapping for superadmin variants
     'admin': 'admin',
+    'super-admin': 'boss',     // Maps hyphenated version
+    'superadmin': 'boss',      // Maps non-hyphenated version
+    'boss': 'boss',            // Already boss stays boss
     
     // Sales roles
     'saleshead': 'sales_head',
@@ -33,7 +36,16 @@ const mapAcressRoleToCRM = (acressRole) => {
     'hr_manager': 'hr_manager',
   };
 
-  return roleMap[roleLower] || 'user';
+  const mappedRole = roleMap[roleLower] || 'user';
+  
+  // Debug logging for role mapping
+  console.log('🔍 Role Mapping:', {
+    input: acressRole,
+    normalized: roleLower,
+    output: mappedRole
+  });
+
+  return mappedRole;
 };
 
 /**
@@ -42,7 +54,7 @@ const mapAcressRoleToCRM = (acressRole) => {
  * @returns {boolean}
  */
 const hasAdminAccess = (role) => {
-  const adminRoles = ['admin', 'superadmin', 'boss', 'hod', 'crm_admin'];
+  const adminRoles = ['admin', 'superadmin', 'super-admin', 'boss', 'hod', 'crm_admin'];
   return adminRoles.includes(role?.toLowerCase());
 };
 
