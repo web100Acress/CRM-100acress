@@ -207,16 +207,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
       <DialogContent className="lead-form-dialog">
         <DialogHeader>
           <DialogTitle className="lead-form-title">Create New Lead</DialogTitle>
-          {/* <Button
-            variant="ghost"
-            size="sm"
-            className="dialog-close-button"
-            onClick={onClose}
-          >
-            <X className="h-4 w-4" />
-          </Button> */}
         </DialogHeader>
-
         <form onSubmit={handleSubmit} className="lead-form-grid">
           <div className="form-group">
             <label htmlFor="name">

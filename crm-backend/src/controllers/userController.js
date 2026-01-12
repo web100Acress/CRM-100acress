@@ -702,4 +702,83 @@ exports.uploadProfileImage = async (req, res) => {
       message: 'Internal server error' 
     });
   }
+};
+
+// Search Users Controller
+exports.searchUsers = async (req, res) => {
+  try {
+    const { query, excludeSelf = true, role } = req.body;
+    const currentUserId = req.user?.userId || req.user?.id || req.user?._id;
+    
+    // If query is empty or undefined, return all users (excluding self if requested)
+    if (!query || query.trim().length === 0) {
+      // Build search criteria for all users
+      const searchCriteria = {};
+      
+      // Exclude current user if requested
+      if (excludeSelf && currentUserId) {
+        searchCriteria._id = { $ne: currentUserId };
+      }
+
+      // Add role filter if specified
+      if (role) {
+        searchCriteria.role = role;
+      }
+
+      // Get all users matching criteria
+      const users = await userService.findUsers(searchCriteria, {
+        _id: 1,
+        name: 1,
+        email: 1,
+        role: 1,
+        department: 1,
+        profileImage: 1
+      });
+
+      res.json({
+        success: true,
+        users: users || []
+      });
+      return;
+    }
+
+    // Build search criteria for specific query
+    const searchCriteria = {
+      $or: [
+        { name: { $regex: query, $options: 'i' } },
+        { email: { $regex: query, $options: 'i' } }
+      ]
+    };
+
+    // Exclude current user if requested
+    if (excludeSelf && currentUserId) {
+      searchCriteria._id = { $ne: currentUserId };
+    }
+
+    // Add role filter if specified
+    if (role) {
+      searchCriteria.role = role;
+    }
+
+    // Search users
+    const users = await userService.findUsers(searchCriteria, {
+      _id: 1,
+      name: 1,
+      email: 1,
+      role: 1,
+      department: 1,
+      profileImage: 1
+    });
+
+    res.json({
+      success: true,
+      users: users || []
+    });
+  } catch (err) {
+    console.error('Error searching users:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error' 
+    });
+  }
 }; 

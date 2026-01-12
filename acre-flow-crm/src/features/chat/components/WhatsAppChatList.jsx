@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, MessageCircle, Clock } from 'lucide-react';
+import { Search, MessageCircle, Clock, Edit, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import WhatsAppChat from './WhatsAppChat';
+import UserSearchModal from './UserSearchModal';
 import { apiUrl } from '@/config/apiConfig';
 
 const WhatsAppChatList = () => {
@@ -11,6 +12,16 @@ const WhatsAppChatList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedChat, setSelectedChat] = useState(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [showUserSearch, setShowUserSearch] = useState(false);
+
+  // Get current user info
+  const getCurrentUserInfo = useCallback(() => {
+    const token = localStorage.getItem('token');
+    const userId = localStorage.getItem('userId');
+    const userRole = localStorage.getItem('userRole') || 'bd';
+    
+    return { token, userId, userRole };
+  }, []);
 
   // Get current user ID
   const getCurrentUserId = useCallback(() => {
@@ -103,6 +114,69 @@ const WhatsAppChatList = () => {
     setSelectedChat(null);
   };
 
+  // Handle user selection for new chat
+  const handleUserSelect = async (selectedUser) => {
+    try {
+      const { token } = getCurrentUserInfo();
+      const currentUserId = getCurrentUserId();
+      
+      // Create new chat
+      const response = await fetch(apiUrl('chats/create'), {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          participantId: selectedUser._id,
+          participantName: selectedUser.name,
+          participantEmail: selectedUser.email,
+          participantRole: selectedUser.role
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          // Refresh chat list
+          await fetchChats();
+          
+          // Find the newly created chat and open it
+          const newChat = data.chat;
+          if (newChat) {
+            setSelectedChat(newChat);
+            setIsChatOpen(true);
+          }
+          
+          toast({
+            title: 'Success',
+            description: `Chat created with ${selectedUser.name}`,
+            variant: 'default'
+          });
+        } else {
+          toast({
+            title: 'Error',
+            description: data.message || 'Failed to create chat',
+            variant: 'destructive'
+          });
+        }
+      } else {
+        toast({
+          title: 'Error',
+          description: 'Failed to create chat',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      console.error('Error creating chat:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create chat',
+        variant: 'destructive'
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -117,7 +191,16 @@ const WhatsAppChatList = () => {
       <div className="w-96 border-r bg-white flex flex-col">
         {/* Header */}
         <div className="p-4 border-b">
-          <h2 className="text-xl font-semibold mb-4">WhatsApp Chats</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">WhatsApp Chats</h2>
+            <button
+              onClick={() => setShowUserSearch(true)}
+              className="p-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors"
+              title="New Chat"
+            >
+              <Plus size={20} />
+            </button>
+          </div>
           
           {/* Search */}
           <div className="relative">
@@ -211,6 +294,14 @@ const WhatsAppChatList = () => {
           />
         </div>
       )}
+
+      {/* User Search Modal */}
+      <UserSearchModal
+        isOpen={showUserSearch}
+        onClose={() => setShowUserSearch(false)}
+        onUserSelect={handleUserSelect}
+        currentUserRole={getCurrentUserInfo().userRole}
+      />
     </div>
   );
 };
