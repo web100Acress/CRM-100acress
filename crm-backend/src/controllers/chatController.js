@@ -480,3 +480,127 @@ exports.markAsRead = async (req, res, next) => {
     next(err);
   }
 };
+
+// Create chat with selected user (for user search functionality)
+exports.createChat = async (req, res, next) => {
+  try {
+    const { participantId, participantName, participantEmail, participantRole } = req.body;
+    const currentUserId = req.user?.userId || req.user?.id || req.user?._id;
+    
+    if (!participantId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'participantId is required' 
+      });
+    }
+
+    // 🚫 Self assignment check
+    if (String(participantId) === String(currentUserId)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Self assignment not allowed' 
+      });
+    }
+
+    // 🔍 Get both users to check their roles
+    const currentUser = await User.findById(currentUserId);
+    const participantUser = await User.findById(participantId);
+    
+    if (!currentUser || !participantUser) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'One or both users not found' 
+      });
+    }
+
+    // Normalize roles to lowercase for comparison
+    const normalizeRole = (role) => {
+      if (!role) return '';
+      const r = String(role).trim().toLowerCase();
+      if (r === 'boss' || r === 'super-admin' || r === 'superadmin') return 'boss';
+      if (r === 'hod' || r === 'head-admin' || r === 'head' || r === 'head_admin') return 'hod';
+      if (r === 'team-leader' || r === 'team_leader') return 'team-leader';
+      if (r === 'bd' || r === 'employee') return 'bd';
+      return r;
+    };
+
+    const currentUserRole = normalizeRole(currentUser.role);
+    const participantUserRole = normalizeRole(participantUser.role);
+
+    // ✅ ROLE-BASED VALIDATION: Boss, HOD, Team Leader, and BD can chat with each other
+    const allowedRolePairs = [
+      ['boss', 'hod'],
+      ['hod', 'boss'], ['hod', 'team-leader'], ['hod', 'bd'],
+      ['team-leader', 'hod'], ['team-leader', 'bd'],
+      ['bd', 'hod'], ['bd', 'team-leader']
+    ];
+
+    const isAllowed = allowedRolePairs.some(
+      ([role1, role2]) => 
+        (currentUserRole === role1 && participantUserRole === role2) ||
+        (currentUserRole === role2 && participantUserRole === role1)
+    );
+
+    if (!isAllowed) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Chat not allowed between these roles' 
+      });
+    }
+
+    // 🔍 Check if chat already exists
+    const existingChat = await Chat.findOne({
+      participants: { $all: [currentUserId, participantId] }
+    }).populate('participants', 'name role email')
+     .populate('leadId', 'name email phone status');
+
+    if (existingChat) {
+      return res.status(200).json({
+        success: true,
+        message: 'Chat already exists',
+        chat: existingChat
+      });
+    }
+
+    // 🆕 Create new chat (without lead requirement)
+    const newChat = new Chat({
+      participants: [currentUserId, participantId],
+      createdBy: currentUserId,
+      lastMessage: null,
+      unreadCount: new Map([[participantId, 0], [currentUserId, 0]])
+    });
+
+    await newChat.save();
+
+    // Populate the new chat
+    await newChat.populate('participants', 'name role email');
+
+    const formattedChat = {
+      _id: newChat._id,
+      leadId: null, // No lead associated for user search chats
+      participants: newChat.participants,
+      oppositeUser: {
+        _id: participantUser._id,
+        name: participantUser.name,
+        role: participantUser.role,
+        email: participantUser.email
+      },
+      lastMessage: null,
+      unreadCount: 0,
+      updatedAt: newChat.updatedAt
+    };
+
+    res.status(201).json({
+      success: true,
+      message: 'Chat created successfully',
+      chat: formattedChat
+    });
+
+  } catch (err) {
+    console.error('Error creating chat:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error' 
+    });
+  }
+};

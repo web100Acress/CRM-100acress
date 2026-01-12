@@ -327,8 +327,8 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     try {
       const token = localStorage.getItem('token');
       
-      // Create new chat
-      const response = await fetch(apiUrl('chats/create'), {
+      // Create new chat using the new endpoint
+      const response = await fetch(apiUrl('chats/create-chat'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -370,9 +370,10 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
           });
         }
       } else {
+        const errorData = await response.json();
         toast({
           title: 'Error',
-          description: 'Failed to create chat',
+          description: errorData.message || 'Failed to create chat',
           variant: 'destructive'
         });
       }

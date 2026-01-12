@@ -118,10 +118,9 @@ const WhatsAppChatList = () => {
   const handleUserSelect = async (selectedUser) => {
     try {
       const { token } = getCurrentUserInfo();
-      const currentUserId = getCurrentUserId();
       
-      // Create new chat
-      const response = await fetch(apiUrl('chats/create'), {
+      // Create new chat using the new endpoint
+      const response = await fetch(apiUrl('chats/create-chat'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -161,9 +160,10 @@ const WhatsAppChatList = () => {
           });
         }
       } else {
+        const errorData = await response.json();
         toast({
           title: 'Error',
-          description: 'Failed to create chat',
+          description: errorData.message || 'Failed to create chat',
           variant: 'destructive'
         });
       }
