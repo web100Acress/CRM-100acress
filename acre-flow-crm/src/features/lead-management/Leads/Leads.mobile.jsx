@@ -215,6 +215,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
   const fetchChatList = async () => {
     try {
       const token = localStorage.getItem('token');
+      const currentUserId = localStorage.getItem('userId');
       const response = await fetch(apiUrl("chats/list"), {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -224,60 +225,46 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       
       if (response.ok) {
         const data = await response.json();
-        // Mock data for demonstration - replace with actual API response
-        const mockChatList = [
-          {
-            id: 1,
-            name: "Rahul Sharma",
-            lastMessage: "Hi, I'm interested in the property",
-            time: "2:30 PM",
-            unread: 2,
-            avatar: "RS",
-            phone: "+91 98765 43210",
-            status: "online"
-          },
-          {
-            id: 2,
-            name: "Priya Patel",
-            lastMessage: "Can we schedule a site visit?",
-            time: "1:15 PM",
-            unread: 0,
-            avatar: "PP",
-            phone: "+91 87654 32109",
-            status: "offline"
-          },
-          {
-            id: 3,
-            name: "Amit Kumar",
-            lastMessage: "Thanks for the information",
-            time: "Yesterday",
-            unread: 0,
-            avatar: "AK",
-            phone: "+91 76543 21098",
-            status: "online"
-          },
-          {
-            id: 4,
-            name: "Sneha Reddy",
-            lastMessage: "What are the payment options?",
-            time: "Yesterday",
-            unread: 1,
-            avatar: "SR",
-            phone: "+91 65432 10987",
-            status: "away"
-          },
-          {
-            id: 5,
-            name: "Vikram Singh",
-            lastMessage: "I'll call you tomorrow",
-            time: "Monday",
-            unread: 0,
-            avatar: "VS",
-            phone: "+91 54321 09876",
-            status: "offline"
-          }
-        ];
-        setChatList(mockChatList);
+        if (data.success && Array.isArray(data.data)) {
+          // Format the API response to match the chat list structure
+          const formattedChatList = data.data.map((chat) => {
+            const oppositeUser = chat.oppositeUser || (chat.participants?.find(u => String(u._id) !== String(currentUserId)));
+            const userName = oppositeUser?.name || 'Unknown User';
+            const userEmail = oppositeUser?.email || '';
+            const lastMsg = chat.lastMessage;
+            
+            // Format time
+            const formatTime = (date) => {
+              if (!date) return '';
+              const now = new Date();
+              const msgDate = new Date(date);
+              const diffInHours = (now - msgDate) / (1000 * 60 * 60);
+              
+              if (diffInHours < 24) {
+                return msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              } else if (diffInHours < 24 * 7) {
+                return msgDate.toLocaleDateString([], { weekday: 'short' });
+              } else {
+                return msgDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+              }
+            };
+            
+            return {
+              id: chat._id,
+              name: userName,
+              lastMessage: lastMsg?.message || '',
+              time: formatTime(lastMsg?.timestamp || chat.updatedAt),
+              unread: chat.unreadCount || 0,
+              avatar: userName.charAt(0).toUpperCase(),
+              phone: oppositeUser?.phone || '',
+              status: 'offline', // You can implement online status later
+              chatId: chat._id,
+              participantId: oppositeUser?._id
+            };
+          });
+          
+          setChatList(formattedChatList);
+        }
       }
     } catch (error) {
       console.error("Error fetching chat list:", error);
@@ -2615,6 +2602,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
             setWhatsAppRecipient(null);
           }}
           recipient={whatsAppRecipient}
+          onMessageSent={fetchChatList}
         />
       )}
     {showAssignmentChain && selectedLeadForChain && (

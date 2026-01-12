@@ -3,7 +3,7 @@ import { X, Send, Phone, Video, MoreVertical, Smile, Paperclip } from 'lucide-re
 import { useToast } from '@/hooks/use-toast';
 import { apiUrl } from '@/config/apiConfig';
 
-const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
+const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent }) => {
   const { toast } = useToast();
   const [chatId, setChatId] = useState(null);
   const [message, setMessage] = useState('');
@@ -254,6 +254,10 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
           setMessage('');
           const newMsg = { id: Math.random().toString(), text: message.trim(), sender: 'me', senderName: 'You', timestamp: new Date() };
           setMessages(prev => [...prev, newMsg]);
+          // Call callback to refresh chat list
+          if (onMessageSent) {
+            onMessageSent();
+          }
         }
       } else {
         const errorData = await response.json();
