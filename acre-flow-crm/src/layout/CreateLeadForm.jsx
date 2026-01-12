@@ -68,12 +68,22 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
       let users = json.data || [];
 
       // Filter users based on current user role
-      if (currentUserRole === "super-admin") {
-        // Super admin can only assign to head-admin users
-        users = users.filter((user) => user.role === "head-admin");
+      if (currentUserRole === "super-admin" || currentUserRole === "boss") {
+        // Boss can ONLY assign to HOD users
+        users = users.filter((user) => user.role === "hod");
+        console.log('🔍 Boss assigning leads - Available HODs ONLY:', users);
+      } else if (currentUserRole === "hod") {
+        // HOD can assign to team-leader and bd users
+        users = users.filter((user) => user.role === "team-leader" || user.role === "bd");
+        console.log('🔍 HOD assigning leads - Available Team Leaders & BD:', users);
+      } else if (currentUserRole === "team-leader") {
+        // Team Leader can assign to bd users
+        users = users.filter((user) => user.role === "bd");
+        console.log('🔍 Team Leader assigning leads - Available BD:', users);
       } else {
-        // Other roles can assign to all users (or implement your logic)
-        // For now, keep all users for other roles
+        // Other roles cannot assign leads - empty list
+        users = [];
+        console.log('🔍 Other roles cannot assign leads - No users available');
       }
 
       setAssignableUsers(users);
@@ -324,8 +334,14 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
           <div className="form-group">
             <label htmlFor="assignedTo">
               Assign To
-              {currentUserRole === "super-admin" && (
+              {(currentUserRole === "super-admin" || currentUserRole === "boss") && (
                 <span className="text-xs text-gray-500 ml-2">(Only HODs)</span>
+              )}
+              {currentUserRole === "hod" && (
+                <span className="text-xs text-gray-500 ml-2">(Team Leaders & BD)</span>
+              )}
+              {currentUserRole === "team-leader" && (
+                <span className="text-xs text-gray-500 ml-2">(Only BD)</span>
               )}
             </label>
             <select
@@ -338,16 +354,33 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
               <option value="">Unassigned</option>
               {assignableUsers.map((user) => (
                 <option key={user._id} value={user._id}>
-                  {user.name} ({user.role === "head-admin" ? "HOD" : user.role})
+                  {user.name} ({user.role === "hod" ? "HOD" : user.role})
                 </option>
               ))}
             </select>
-            {currentUserRole === "super-admin" &&
+            {(currentUserRole === "super-admin" || currentUserRole === "boss") &&
               assignableUsers.length === 0 && (
                 <p className="text-xs text-gray-500 mt-1">
                   No HODs available to assign leads to
                 </p>
               )}
+            {currentUserRole === "hod" &&
+              assignableUsers.length === 0 && (
+                <p className="text-xs text-gray-500 mt-1">
+                  No Team Leaders or BD available to assign leads to
+                </p>
+              )}
+            {currentUserRole === "team-leader" &&
+              assignableUsers.length === 0 && (
+                <p className="text-xs text-gray-500 mt-1">
+                  No BD available to assign leads to
+                </p>
+              )}
+            {!(currentUserRole === "super-admin" || currentUserRole === "boss" || currentUserRole === "hod" || currentUserRole === "team-leader") && (
+              <p className="text-xs text-red-500 mt-1">
+                You don't have permission to assign leads
+              </p>
+            )}
           </div>
 
           <DialogFooter className="form-actions">
