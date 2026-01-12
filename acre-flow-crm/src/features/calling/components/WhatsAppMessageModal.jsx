@@ -29,7 +29,19 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
 
   // Find or create chat between current user and recipient
   const findOrCreateChat = useCallback(async () => {
-    if (!recipient?._id || !recipient?.leadId) return;
+    if (!recipient?._id) return;
+    
+    // If we already have chatId, use it directly (for user search created chats)
+    if (recipient.chatId) {
+      setChatId(recipient.chatId);
+      return;
+    }
+    
+    // For lead-based chats, require leadId
+    if (!recipient?.leadId) {
+      console.warn('⚠️ No leadId provided for chat creation');
+      return;
+    }
     
     setCreatingChat(true);
     try {
@@ -77,8 +89,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient }) => {
       // 🔥 TEMPORARY BYPASS: Allow self-chat for testing
       if (normalizedRecipientId === normalizedCurrentUserId) {
         console.warn('⚠️ SELF-CHAT BYPASSED FOR TESTING - This should be fixed in production');
-        // Don't return - allow chat to proceed for debugging
-        // In production, this should return the error
+        // return; // Uncomment this in production
       }
       
       console.log('✅ Creating chat with correct participants:', {

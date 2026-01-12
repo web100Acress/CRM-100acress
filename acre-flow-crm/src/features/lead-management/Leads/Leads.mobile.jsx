@@ -348,12 +348,14 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
           // Refresh chat list
           await fetchChatList();
           
-          // Open WhatsApp modal with the new chat
+          // Open WhatsApp modal with the created chat data
           setWhatsAppRecipient({
             _id: selectedUser._id,
             name: selectedUser.name,
             email: selectedUser.email,
-            role: selectedUser.role
+            role: selectedUser.role,
+            leadId: data.chat?._id || null, // Use chat ID as leadId for WhatsAppMessageModal
+            chatId: data.chat?._id || null // Set chatId directly
           });
           setShowWhatsAppModal(true);
           
