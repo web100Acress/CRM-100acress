@@ -416,7 +416,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         {/* Search Bar */}
         <div className="relative">
           <Search className="absolute left-3 top-3 text-gray-400" size={16} />
-          <input
+          <input  
             type="text"
             placeholder="Ask Meta AI or Search"
             value={chatSearchQuery}

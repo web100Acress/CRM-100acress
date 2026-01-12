@@ -19,80 +19,100 @@ const UserSearchModal = ({ isOpen, onClose, onUserSelect, currentUserRole }) => 
     return { token, userId, userName };
   }, []);
 
-  // Search users
-  const searchUsers = useCallback(async (query) => {
+  // Fetch and filter users
+  const fetchUsers = useCallback(async (query = '') => {
     setSearching(true);
     try {
-      const { token } = getCurrentUserInfo();
+      const { token, userId } = getCurrentUserInfo();
       
-      const response = await fetch(apiUrl('users/search'), {
-        method: 'POST',
+      // Fetch all users from /api/users endpoint
+      const response = await fetch(apiUrl('users'), {
+        method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          query: query.trim() || '', // Send empty string to fetch all users
-          excludeSelf: true,
-          role: currentUserRole
-        })
+        }
       });
 
       if (response.ok) {
         const data = await response.json();
-        console.log('🔍 DEBUG - Frontend received:', {
-          query: query || 'EMPTY',
-          success: data.success,
-          totalUsers: data.users?.length || 0,
-          users: data.users?.map(u => ({
-            _id: u._id,
-            name: u.name,
-            email: u.email,
-            role: u.role,
-            department: u.department
-          }))
-        });
         
-        if (data.success) {
-          setSearchResults(data.users || []);
+        if (data.success && Array.isArray(data.data)) {
+          // Filter users by roles: boss, head-admin (HOD), team-leader, employee (BD)
+          const allowedRoles = ['boss', 'super-admin', 'head-admin', 'team-leader', 'employee'];
+          
+          let filteredUsers = data.data
+            .filter(user => {
+              // Exclude current user
+              if (user._id === userId) return false;
+              // Filter by allowed roles
+              return allowedRoles.includes(user.role);
+            })
+            .map(user => ({
+              _id: user._id,
+              name: user.name || user.email?.split('@')[0] || 'Unknown',
+              email: user.email,
+              role: user.role,
+              department: user.department
+            }));
+
+          // Apply search query filter if provided
+          if (query.trim()) {
+            const searchLower = query.toLowerCase();
+            filteredUsers = filteredUsers.filter(user => 
+              user.name?.toLowerCase().includes(searchLower) ||
+              user.email?.toLowerCase().includes(searchLower)
+            );
+          }
+
+          console.log('🔍 Fetched users:', {
+            total: data.data.length,
+            filtered: filteredUsers.length,
+            query: query || 'ALL'
+          });
+          
+          setSearchResults(filteredUsers);
         } else {
           setSearchResults([]);
         }
       } else {
         setSearchResults([]);
+        toast({
+          title: 'Error',
+          description: 'Failed to fetch users',
+          variant: 'destructive'
+        });
       }
     } catch (error) {
-      console.error('Error searching users:', error);
+      console.error('Error fetching users:', error);
       setSearchResults([]);
       toast({
         title: 'Error',
-        description: 'Failed to search users',
+        description: 'Failed to fetch users',
         variant: 'destructive'
       });
     } finally {
       setSearching(false);
     }
-  }, [currentUserRole, toast, getCurrentUserInfo]);
+  }, [toast, getCurrentUserInfo]);
 
   // Initial fetch of all users when modal opens
   useEffect(() => {
     if (isOpen) {
-      searchUsers(''); // Fetch all users on modal open
+      fetchUsers(''); // Fetch all users on modal open
     }
-  }, [isOpen, searchUsers]);
+  }, [isOpen, fetchUsers]);
 
   // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (searchQuery.trim()) {
-        searchUsers(searchQuery);
-      } else if (isOpen) {
-        searchUsers(''); // Fetch all users when search is empty but modal is open
+      if (isOpen) {
+        fetchUsers(searchQuery);
       }
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, searchUsers, isOpen]);
+  }, [searchQuery, fetchUsers, isOpen]);
 
   // Handle user selection
   const handleUserSelect = (user) => {
@@ -188,8 +208,17 @@ const UserSearchModal = ({ isOpen, onClose, onUserSelect, currentUserRole }) => 
                       {user.email}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full capitalize">
-                        {user.role || 'user'}
+                      <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full font-medium">
+                        {(() => {
+                          const roleMap = {
+                            'employee': 'BD',
+                            'head-admin': 'HOD',
+                            'super-admin': 'BOSS',
+                            'boss': 'BOSS',
+                            'team-leader': 'TEAM LEADER'
+                          };
+                          return roleMap[user.role] || (user.role || 'user').replace(/_/g, ' ').toUpperCase();
+                        })()}
                       </span>
                       {user.department && (
                         <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">

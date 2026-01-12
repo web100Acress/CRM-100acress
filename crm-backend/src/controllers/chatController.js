@@ -528,20 +528,12 @@ exports.createChat = async (req, res, next) => {
     const participantUserRole = normalizeRole(participantUser.role);
 
     // ✅ ROLE-BASED VALIDATION: Boss, HOD, Team Leader, and BD can chat with each other
-    const allowedRolePairs = [
-      ['boss', 'hod'],
-      ['hod', 'boss'], ['hod', 'team-leader'], ['hod', 'bd'],
-      ['team-leader', 'hod'], ['team-leader', 'bd'],
-      ['bd', 'hod'], ['bd', 'team-leader']
-    ];
+    const allowedRoles = ['boss', 'hod', 'team-leader', 'bd'];
+    const isCurrentUserAllowed = allowedRoles.includes(currentUserRole);
+    const isParticipantAllowed = allowedRoles.includes(participantUserRole);
 
-    const isAllowed = allowedRolePairs.some(
-      ([role1, role2]) => 
-        (currentUserRole === role1 && participantUserRole === role2) ||
-        (currentUserRole === role2 && participantUserRole === role1)
-    );
-
-    if (!isAllowed) {
+    // Allow chat if both users have allowed roles (any combination between Boss, HOD, Team Leader, and BD)
+    if (!isCurrentUserAllowed || !isParticipantAllowed) {
       return res.status(403).json({ 
         success: false, 
         message: 'Chat not allowed between these roles' 
