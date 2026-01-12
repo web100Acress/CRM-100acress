@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, RefreshCw, Menu, X, Home, Settings, LogOut, BarChart3, Plus, Phone, Mail, MessageSquare, MessageCircle, Eye, User, Users, MapPin, UserCheck, Download, Trash2, ArrowRight, PhoneCall, PieChart, Calendar, Clock, TrendingUp, Activity, Target, Award, CheckCircle, XCircle, Building2, DollarSign, Mic, Volume2, Video, Edit, ArrowRight as ForwardIcon, Briefcase } from 'lucide-react';
+import { Search, Filter, RefreshCw, Menu, X, Home, Settings, LogOut, BarChart3, Plus, Phone, Mail, MessageSquare, MessageCircle, Eye, User, Users, MapPin, UserCheck, Download, Trash2, ArrowRight, PhoneCall, PieChart, Calendar, Clock, TrendingUp, Activity, Target, Award, CheckCircle, XCircle, Building2, DollarSign, Mic, Volume2, Video, Edit, ArrowRight as ForwardIcon, Briefcase, Camera, Lock, ChevronRight } from 'lucide-react';
 import MobileSidebar from '@/layout/MobileSidebar';
 import { Badge } from '@/layout/badge';
 import { Card, CardContent } from '@/layout/card';
@@ -9,6 +9,7 @@ import { Button } from '@/layout/button';
 import { useToast } from '@/hooks/use-toast';
 import FollowUpModal from '@/features/employee/follow-up/FollowUpModal';
 import WhatsAppMessageModal from '@/features/calling/components/WhatsAppMessageModal';
+import UserSearchModal from '@/features/chat/components/UserSearchModal';
 import CreateLeadFormMobile from '@/layout/CreateLeadForm.mobile';
 import LeadTableMobile from '@/layout/LeadTable.mobile';
 import LeadAdvancedOptionsMobile from '@/layout/LeadAdvancedOptions.mobile';
@@ -74,6 +75,10 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
   const [whatsAppRecipient, setWhatsAppRecipient] = useState(null);
   const [callHistory, setCallHistory] = useState([]);
   const [loadingCallHistory, setLoadingCallHistory] = useState(false);
+  const [chatList, setChatList] = useState([]);
+  const [chatFilter, setChatFilter] = useState('all');
+  const [chatSearchQuery, setChatSearchQuery] = useState('');
+  const [showUserSearch, setShowUserSearch] = useState(false);
   const currentUserId = localStorage.getItem('userId');
   const currentUserRole = localStorage.getItem('userRole');
 
@@ -205,6 +210,294 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         return 'Dashboard';
     }
   };
+
+  // Fetch chat list data
+  const fetchChatList = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(apiUrl("chats/list"), {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Mock data for demonstration - replace with actual API response
+        const mockChatList = [
+          {
+            id: 1,
+            name: "Rahul Sharma",
+            lastMessage: "Hi, I'm interested in the property",
+            time: "2:30 PM",
+            unread: 2,
+            avatar: "RS",
+            phone: "+91 98765 43210",
+            status: "online"
+          },
+          {
+            id: 2,
+            name: "Priya Patel",
+            lastMessage: "Can we schedule a site visit?",
+            time: "1:15 PM",
+            unread: 0,
+            avatar: "PP",
+            phone: "+91 87654 32109",
+            status: "offline"
+          },
+          {
+            id: 3,
+            name: "Amit Kumar",
+            lastMessage: "Thanks for the information",
+            time: "Yesterday",
+            unread: 0,
+            avatar: "AK",
+            phone: "+91 76543 21098",
+            status: "online"
+          },
+          {
+            id: 4,
+            name: "Sneha Reddy",
+            lastMessage: "What are the payment options?",
+            time: "Yesterday",
+            unread: 1,
+            avatar: "SR",
+            phone: "+91 65432 10987",
+            status: "away"
+          },
+          {
+            id: 5,
+            name: "Vikram Singh",
+            lastMessage: "I'll call you tomorrow",
+            time: "Monday",
+            unread: 0,
+            avatar: "VS",
+            phone: "+91 54321 09876",
+            status: "offline"
+          }
+        ];
+        setChatList(mockChatList);
+      }
+    } catch (error) {
+      console.error("Error fetching chat list:", error);
+    }
+  };
+
+  // Fetch chat list when component mounts or chat tab is active
+  useEffect(() => {
+    if (activeTab === 'chats') {
+      fetchChatList();
+    }
+  }, [activeTab]);
+
+  // Filter chat list based on search and filter
+  const getFilteredChatList = () => {
+    let filtered = chatList;
+    
+    // Apply search filter
+    if (chatSearchQuery) {
+      filtered = filtered.filter(chat => 
+        chat.name.toLowerCase().includes(chatSearchQuery.toLowerCase()) ||
+        chat.lastMessage.toLowerCase().includes(chatSearchQuery.toLowerCase())
+      );
+    }
+    
+    // Apply chat filter
+    switch (chatFilter) {
+      case 'unread':
+        filtered = filtered.filter(chat => chat.unread > 0);
+        break;
+      case 'online':
+        filtered = filtered.filter(chat => chat.status === 'online');
+        break;
+      case 'groups':
+        filtered = []; // No groups in this implementation
+        break;
+      default:
+        // 'all' - no filtering
+        break;
+    }
+    
+    return filtered;
+  };
+
+  // Handle user selection for new chat
+  const handleUserSelect = async (selectedUser) => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Create new chat
+      const response = await fetch(apiUrl('chats/create'), {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          participantId: selectedUser._id,
+          participantName: selectedUser.name,
+          participantEmail: selectedUser.email,
+          participantRole: selectedUser.role
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          // Refresh chat list
+          await fetchChatList();
+          
+          // Open WhatsApp modal with the new chat
+          setWhatsAppRecipient({
+            _id: selectedUser._id,
+            name: selectedUser.name,
+            email: selectedUser.email,
+            role: selectedUser.role
+          });
+          setShowWhatsAppModal(true);
+          
+          toast({
+            title: 'Success',
+            description: `Chat created with ${selectedUser.name}`,
+            variant: 'default'
+          });
+        } else {
+          toast({
+            title: 'Error',
+            description: data.message || 'Failed to create chat',
+            variant: 'destructive'
+          });
+        }
+      } else {
+        toast({
+          title: 'Error',
+          description: 'Failed to create chat',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      console.error('Error creating chat:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create chat',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  // WhatsApp-style Chat List Component
+  const WhatsAppChatList = () => (
+    <div className="min-h-screen bg-gray-50">
+      {/* WhatsApp Header */}
+      <div className="bg-green-600 text-white p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold">Chats</h2>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setShowUserSearch(true)}
+              className="p-2 hover:bg-green-700 rounded-full transition-colors"
+              title="New Chat"
+            >
+              <Plus size={20} />
+            </button>
+            <button className="p-2 hover:bg-green-700 rounded-full transition-colors">
+              <Camera size={20} />
+            </button>
+            <button className="p-2 hover:bg-green-700 rounded-full transition-colors">
+              <Edit size={20} />
+            </button>
+          </div>
+        </div>
+        
+        {/* Search Bar */}
+        <div className="relative">
+          <Search className="absolute left-3 top-3 text-gray-400" size={16} />
+          <input
+            type="text"
+            placeholder="Ask Meta AI or Search"
+            value={chatSearchQuery}
+            onChange={(e) => setChatSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400"
+          />
+        </div>
+      </div>
+
+      {/* Filter Tabs */}
+      <div className="bg-white border-b">
+        <div className="flex">
+          {['all', 'unread', 'favourites', 'groups'].map((filter) => (
+            <button
+              key={filter}
+              onClick={() => setChatFilter(filter)}
+              className={`flex-1 py-3 text-sm font-medium capitalize transition-colors ${
+                chatFilter === filter
+                  ? 'text-green-600 border-b-2 border-green-600'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              {filter}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Locked Chats Section */}
+      <div className="bg-white border-b">
+        <div className="flex items-center justify-between p-3">
+          <div className="flex items-center gap-2">
+            <Lock size={16} className="text-gray-600" />
+            <span className="text-sm font-medium text-gray-700">Locked chats</span>
+          </div>
+          <ChevronRight size={16} className="text-gray-400" />
+        </div>
+      </div>
+
+      {/* Chat List */}
+      <div className="bg-white">
+        {getFilteredChatList().map((chat) => (
+          <div
+            key={chat.id}
+            className="flex items-center p-3 hover:bg-gray-50 cursor-pointer transition-colors border-b"
+            onClick={() => {
+              setWhatsAppRecipient({
+                _id: chat.id,
+                name: chat.name,
+                phone: chat.phone
+              });
+              setShowWhatsAppModal(true);
+            }}
+          >
+            {/* Avatar */}
+            <div className="relative mr-3">
+              <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
+                <span className="text-gray-600 font-semibold">{chat.avatar}</span>
+              </div>
+              {chat.status === 'online' && (
+                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+              )}
+            </div>
+
+            {/* Chat Info */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="font-semibold text-gray-900 truncate">{chat.name}</h3>
+                <span className="text-xs text-gray-500">{chat.time}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-gray-600 truncate">{chat.lastMessage}</p>
+                {chat.unread > 0 && (
+                  <div className="bg-green-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center ml-2">
+                    {chat.unread}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   const fetchBdLeadsForSwap = async (bdId, currentLeadId) => {
     try {
@@ -660,6 +953,32 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
               <span className="text-sm">Debug</span>
             </button>
           )}
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="flex mt-4 bg-white/10 backdrop-blur-sm rounded-lg p-1">
+          <button
+            onClick={() => setActiveTab('all-leads')}
+            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200 ${
+              activeTab === 'all-leads'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-white hover:bg-white/20'
+            }`}
+          >
+            <MessageCircle size={16} className="inline mr-1" />
+            Leads
+          </button>
+          <button
+            onClick={() => setActiveTab('chats')}
+            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200 ${
+              activeTab === 'chats'
+                ? 'bg-white text-green-600 shadow-sm'
+                : 'text-white hover:bg-white/20'
+            }`}
+          >
+            <MessageSquare size={16} className="inline mr-1" />
+            Chats
+          </button>
         </div>
       </div>
 
@@ -1629,9 +1948,13 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       {renderMobileHeader()}
       
       <div className="relative">
-      {/* Leads List */}
-      <div className="p-4 space-y-4 pb-20 md:pb-4">
-        {filteredLeads.map((lead) => (
+      {/* Conditional Content Based on Active Tab */}
+      {activeTab === 'chats' ? (
+        <WhatsAppChatList />
+      ) : (
+        /* Leads List */
+        <div className="p-4 space-y-4 pb-20 md:pb-4">
+          {filteredLeads.map((lead) => (
           <Card key={lead._id || lead.id} id={`lead-${lead._id || lead.id}`} className="shadow-lg hover:shadow-xl transition-all duration-300 border-0 overflow-hidden">
             <CardContent className="p-0">
               {/* Lead Header with Gradient */}
@@ -1880,18 +2203,27 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
             </CardContent>
           </Card>
         ))}
-      </div>
 
-      {/* No Results */}
-      {filteredLeads.length === 0 && !loading && (
-        <div className="text-center py-8">
-          <div className="text-gray-400 mb-2">
-            <Users size={48} className="mx-auto" />
+        {/* No Results */}
+        {filteredLeads.length === 0 && !loading && (
+          <div className="text-center py-8">
+            <div className="text-gray-400 mb-2">
+              <Users size={48} className="mx-auto" />
+            </div>
+            <p className="text-gray-500">No leads found</p>
+            <p className="text-sm text-gray-400">Try adjusting your search or filters</p>
           </div>
-          <p className="text-gray-500">No leads found</p>
-          <p className="text-sm text-gray-400">Try adjusting your search or filters</p>
+        )}
         </div>
       )}
+
+      {/* User Search Modal */}
+      <UserSearchModal
+        isOpen={showUserSearch}
+        onClose={() => setShowUserSearch(false)}
+        onUserSelect={handleUserSelect}
+        currentUserRole={currentUserRole}
+      />
 
       {/* Modals */}
       {showFollowUp && selectedLead && (

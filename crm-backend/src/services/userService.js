@@ -84,6 +84,10 @@ const updateProfile = async (userId, updateData) => {
   );
 };
 
+const findUsers = async (criteria, projection = {}) => {
+  return await User.find(criteria, projection).limit(20);
+};
+
 module.exports = {
   createUser,
   getUsers,
@@ -93,5 +97,6 @@ module.exports = {
   setResetToken,
   resetPassword,
   updateUserStatus,
-  updateProfile
+  updateProfile,
+  findUsers
 };

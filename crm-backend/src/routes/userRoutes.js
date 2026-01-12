@@ -15,5 +15,6 @@ router.put('/:id/status', auth, userController.updateUserStatus);
 router.delete('/:id', auth, userController.deleteUser);
 router.put('/profile', auth, userController.updateProfile);
 router.post('/profile-image', auth, uploadProfileImage, userController.uploadProfileImage);
+router.post('/search', auth, userController.searchUsers);
 
 module.exports = router;
