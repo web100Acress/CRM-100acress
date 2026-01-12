@@ -1,7 +1,5 @@
-import React from 'react';
-import { Menu, Search, Bell, Settings, Code } from 'lucide-react';
-
-const DeveloperHeader = ({ sidebarOpen, onToggleSidebar, developerName }) => {
+import { Menu, Bell, Settings, Code, Search} from 'lucide-react';
+const DeveloperHeader = ({ onToggleSidebar, developerName }) => {
   return (
     <header className="dashboard-header">
       <div className="header-left">
@@ -11,10 +9,6 @@ const DeveloperHeader = ({ sidebarOpen, onToggleSidebar, developerName }) => {
         <div className="header-title-section">
           <div className="header-brand">
             <Code className="header-brand-icon" />
-            <div className="header-brand-text">
-              <h1 className="header-title">Developer Console</h1>
-              <p className="header-subtitle">System Management & Tools</p>
-            </div>
           </div>
           <div className="user-greeting">
             Hello <span className="user-name">{developerName}</span> <span className="user-role">(Developer)</span>
@@ -27,7 +21,7 @@ const DeveloperHeader = ({ sidebarOpen, onToggleSidebar, developerName }) => {
           <Search className="search-icon" />
           <input
             type="text"
-            placeholder="Search developer tools..."
+            placeholder="Search..."
             className="search-input"
           />
         </div>
