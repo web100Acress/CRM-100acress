@@ -451,9 +451,10 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
             className="flex items-center p-3 hover:bg-gray-50 cursor-pointer transition-colors border-b"
             onClick={() => {
               setWhatsAppRecipient({
-                _id: chat.id,
+                _id: chat.participantId || chat.id,
                 name: chat.name,
-                phone: chat.phone
+                phone: chat.phone,
+                chatId: chat.chatId || chat.id // Pass the chatId so modal can use it directly
               });
               setShowWhatsAppModal(true);
             }}

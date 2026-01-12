@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Send, Phone, Video, MoreVertical, Smile, Paperclip } from 'lucide-react';
+import { X, Send, Phone, Video, MoreVertical, Smile, Paperclip, Lock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiUrl } from '@/config/apiConfig';
 
@@ -25,6 +25,10 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent }) => 
       }
     }
     return localStorage.getItem('userId') || localStorage.getItem('id');
+  }, []);
+
+  const getCurrentUserName = useCallback(() => {
+    return localStorage.getItem('userName') || localStorage.getItem('name') || 'You';
   }, []);
 
   // Find or create chat between current user and recipient
@@ -188,21 +192,23 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent }) => 
         if (data.success) {
           const currentUserId = getCurrentUserId();
           console.log('🔍 Current user ID:', currentUserId);
+          const currentUserName = getCurrentUserName();
           const formattedMessages = data.data.map(msg => {
             const senderIdStr = String(msg.senderId?._id || msg.senderId);
             const isMe = senderIdStr === String(currentUserId);
+            const senderName = msg.senderId?.name || (isMe ? currentUserName : 'Unknown');
             console.log('🔍 Message:', {
               originalSenderId: msg.senderId,
               senderIdStr: senderIdStr,
               currentUserId: currentUserId,
               isMe: isMe,
-              senderName: msg.senderId?.name || 'Unknown'
+              senderName: senderName
             });
             return {
               id: msg._id || Math.random().toString(),
               text: msg.message,
               sender: isMe ? 'me' : 'other',
-              senderName: isMe ? 'You' : (msg.senderId?.name || 'Unknown'),
+              senderName: senderName,
               timestamp: new Date(msg.timestamp)
             };
           });
@@ -215,7 +221,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent }) => 
     } finally {
       setLoading(false);
     }
-  }, [chatId, getCurrentUserId]);
+  }, [chatId, getCurrentUserId, getCurrentUserName]);
 
   const handleSendMessage = useCallback(async () => {
     console.log('🔍 handleSendMessage called:', {
@@ -252,7 +258,8 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent }) => 
         console.log('🔍 Send response data:', data);
         if (data.success) {
           setMessage('');
-          const newMsg = { id: Math.random().toString(), text: message.trim(), sender: 'me', senderName: 'You', timestamp: new Date() };
+          const currentUserName = getCurrentUserName();
+          const newMsg = { id: Math.random().toString(), text: message.trim(), sender: 'me', senderName: currentUserName, timestamp: new Date() };
           setMessages(prev => [...prev, newMsg]);
           // Call callback to refresh chat list
           if (onMessageSent) {
@@ -280,8 +287,14 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent }) => 
   
   // Find/create chat when modal opens
   useEffect(() => { 
-    if (isOpen && recipient?._id && recipient?.leadId) { 
-      findOrCreateChat(); 
+    if (isOpen && recipient?._id) { 
+      // If we have chatId, set it directly (for chat list opens)
+      if (recipient.chatId) {
+        setChatId(recipient.chatId);
+      } else if (recipient.leadId) {
+        // If we have leadId, find or create chat (for lead-based chats)
+        findOrCreateChat();
+      }
     } 
   }, [isOpen, recipient, findOrCreateChat]);
   
@@ -317,8 +330,18 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent }) => 
             </div>
             <div className="flex-1 min-w-0">
               {/* ✅ Header: Opposite person name prominently */}
-              <h3 className="font-semibold text-base truncate">{oppositeUser?.name || 'Unknown'}</h3>
-              <p className="text-xs opacity-90 truncate">{oppositeUser?.role || 'User'} • {recipient?.leadName || 'Unknown Lead'}</p>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-base truncate">{oppositeUser?.name || 'Unknown'}</h3>
+                <Lock size={14} className="text-white/80 flex-shrink-0" />
+              </div>
+              <p className="text-xs opacity-90 truncate">
+                <span className="inline-flex items-center gap-1">
+                  <Lock size={10} /> Private Chat
+                </span>
+                {' • '}
+                {oppositeUser?.role || 'User'}
+                {recipient?.leadName && ` • ${recipient.leadName}`}
+              </p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
@@ -362,14 +385,15 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent }) => 
                     borderBottomLeftRadius: '18px',
                     borderBottomRightRadius: '18px'
                   }}>
-                    {/* Show "You" label for sent messages */}
-                    {msg.sender === 'me' && (
-                      <p className="text-xs font-semibold mb-1 text-gray-600">You</p>
-                    )}
-                    {/* Show sender name for received messages */}
-                    {msg.sender === 'other' && (
-                      <p className="text-xs font-semibold mb-1 text-green-100">{msg.senderName}</p>
-                    )}
+                    {/* Show sender name on both sides */}
+                    <div className="flex items-center gap-1 mb-1">
+                      <p className={`text-xs font-semibold ${
+                        msg.sender === 'me' ? 'text-gray-600' : 'text-green-100'
+                      }`}>
+                        {msg.senderName}
+                      </p>
+                      <Lock size={10} className={msg.sender === 'me' ? 'text-gray-400' : 'text-green-200'} />
+                    </div>
                     <p className="text-sm break-words">{msg.text}</p>
                     <p className={`text-xs mt-1 text-right ${
                       msg.sender === 'me' ? 'text-gray-500' : 'text-green-100'
