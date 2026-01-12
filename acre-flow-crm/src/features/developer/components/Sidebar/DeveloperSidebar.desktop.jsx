@@ -59,13 +59,6 @@ const DeveloperSidebarDesktop = ({
         <div className="crm-sidebar-panel">
           <div className="crm-panel-header">
             <div className="crm-panel-brand">
-              <div className="crm-panel-brand-icon">
-                <Code className="crm-panel-brand-icon-svg" />
-              </div>
-              <div className="crm-panel-brand-text">
-                <div className="crm-panel-brand-title">Developer Console</div>
-                <div className="crm-panel-brand-sub">System Management</div>
-              </div>
             </div>
           </div>
 
