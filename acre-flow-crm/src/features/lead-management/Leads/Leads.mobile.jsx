@@ -1322,13 +1322,22 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       // HOD/Boss chats with assigned BD
       recipientUser = users.find(u => String(u._id) === String(lead.assignedTo));
       
+      // Add leadId to found user
+      if (recipientUser) {
+        recipientUser = {
+          ...recipientUser,
+          leadId: lead._id
+        };
+      }
+      
       // If not found, create recipient from lead data
       if (!recipientUser && lead.assignedTo) {
         recipientUser = {
           _id: lead.assignedTo,
           name: lead.assignedToName || lead.assignedUserName || 'Assigned User',
           role: 'bd',
-          email: lead.assignedToEmail || ''
+          email: lead.assignedToEmail || '',
+          leadId: lead._id // Add leadId for chat creation
         };
       }
     } else if (currentUserRole === 'bd' || currentUserRole === 'employee') {
@@ -1343,20 +1352,33 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
           
           recipientUser = users.find(u => String(u._id) === String(assignerId));
           
+          // Add leadId to found user
+          if (recipientUser) {
+            recipientUser = {
+              ...recipientUser,
+              leadId: lead._id
+            };
+          }
+          
           // If not found, create from assignment chain
           if (!recipientUser && firstAssignment.assignedBy) {
             recipientUser = {
               _id: assignerId,
               name: firstAssignment.assignedBy?.name || 'Assigner',
               role: firstAssignment.assignedBy?.role || 'hod',
-              email: firstAssignment.assignedBy?.email || ''
+              email: firstAssignment.assignedBy?.email || '',
+              leadId: lead._id // Add leadId for chat creation
             };
           }
         }
       }
     }
 
-    console.log('🔍 Selected Recipient:', recipientUser);
+    console.log('🔍 Selected Recipient:', {
+      ...recipientUser,
+      hasLeadId: !!recipientUser?.leadId,
+      leadId: recipientUser?.leadId
+    });
 
     if (!recipientUser) {
       toast({
