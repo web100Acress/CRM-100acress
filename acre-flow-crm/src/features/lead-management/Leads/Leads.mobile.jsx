@@ -1777,15 +1777,26 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
   };
 
   const fetchAssignmentChain = async (leadId) => {
+    console.log('🔍 fetchAssignmentChain called with leadId:', leadId);
     setChainLoading(true);
     try {
-      // Find the lead in the existing leads data
+      // Find the lead in existing leads data
       const lead = leads.find(l => (l._id || l.id) === leadId);
       
+      console.log('🔍 Lead found in leads array:', {
+        leadFound: !!lead,
+        leadId: lead?._id || lead?.id,
+        leadName: lead?.name,
+        hasAssignmentChain: !!lead?.assignmentChain,
+        assignmentChainLength: lead?.assignmentChain?.length || 0,
+        fullAssignmentChain: lead?.assignmentChain
+      });
+      
       if (lead && lead.assignmentChain) {
-        // Use existing assignment chain from lead data
+        console.log('✅ Using existing assignment chain from lead data');
         setAssignmentChain(lead.assignmentChain);
       } else {
+        console.log('⚠️ No assignment chain in lead data, trying API...');
         // Try to fetch from API as fallback
         const token = localStorage.getItem('token');
         
@@ -1796,16 +1807,27 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
           }
         });
         
+        console.log('🔍 Assignment chain API response:', {
+          status: response.status,
+          ok: response.ok,
+          statusText: response.statusText
+        });
+        
         if (response.ok) {
           const data = await response.json();
+          console.log('✅ Assignment chain API response:', {
+            success: data.success,
+            chain: data.chain,
+            chainLength: data.chain?.length || 0
+          });
           setAssignmentChain(data.chain || []);
         } else {
-          console.log('Assignment chain API not available');
+          console.log('❌ Assignment chain API failed:', response.status);
           setAssignmentChain([]);
         }
       }
     } catch (error) {
-      console.log('Error fetching assignment chain:', error);
+      console.error('❌ Error fetching assignment chain:', error);
       setAssignmentChain([]);
     } finally {
       setChainLoading(false);
@@ -2586,12 +2608,31 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
               <div className="flex-1 space-y-1">
                 <div className="flex justify-between items-center">
                   <p className="font-medium text-gray-900">
-                    {chain.name}
+                    {chain.assignedBy?.name || chain.assignedByUser?.name || chain.forwardedBy?.name || chain.name || 'Unknown'}
                   </p>
                   <span className="text-[11px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                    {chain.role}
+                    {chain.assignedBy?.role || chain.assignedByUser?.role || chain.forwardedBy?.role || chain.role || 'User'}
                   </span>
                 </div>
+
+                {/* Show action type */}
+                <p className="text-xs text-gray-600 font-medium">
+                  {chain.status === 'forwarded' ? (
+                    <span className="text-blue-600">
+                      <ForwardIcon size={10} className="inline mr-1" />
+                      Forwarded by {chain.assignedBy?.name || chain.assignedByUser?.name || 'Unknown'}
+                    </span>
+                  ) : chain.status === 'assigned' ? (
+                    <span className="text-green-600">
+                      <UserCheck size={10} className="inline mr-1" />
+                      Patched by {chain.assignedBy?.name || chain.assignedByUser?.name || 'Unknown'}
+                    </span>
+                  ) : (
+                    <span className="text-gray-600">
+                      Action by {chain.assignedBy?.name || chain.assignedByUser?.name || 'Unknown'}
+                    </span>
+                  )}
+                </p>
 
                 {chain.assignedTo ? (
                   <p className="text-xs text-gray-600">
