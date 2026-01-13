@@ -88,11 +88,12 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
       { path: '/sales-head-dashboard', icon: Home, label: 'Sales Dashboard', permission: 'sales.dashboard' },
       { path: '/leads', icon: Building2, label: 'Leads', permission: 'sales.leads' },
     ],
-    'head-admin': [
+
+    hod: [
       { path: '/', icon: Home, label: 'Dashboard' },
-      { path: '/leads', icon: Building2, label: 'My Leads' },
-      { path: '/calls', icon: PhoneCall, label: 'Call Logs' },
-      { path: '/admin/bd-analytics', icon: BarChart3, label: 'BD Analytics' },
+      { path: '/leads', icon: Building2, label: 'Leads Management' },
+    
+      { path: '/whatsapp-chat', icon: MessageCircle, label: 'Team Chat' },
     ],
     'team-leader': [
       { path: '/', icon: Home, label: 'Dashboard' },
@@ -110,7 +111,12 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
 
   // Build module-based navigation only for roles that should see cross-module items
   const moduleNav = [];
-  if (userRole !== 'team-leader' && userRole !== 'bd') {
+  if (userRole === 'hod') {
+    // HOD only sees specific modules
+    if (hasModule('Sales')) moduleNav.push(...navigationItems.sales);
+    if (hasModule('HR')) moduleNav.push(...navigationItems.hr);
+  } else if (userRole !== 'team-leader' && userRole !== 'bd') {
+    // Other roles (except team-leader and bd) see all modules
     if (isFullAccess || hasModule('Sales')) moduleNav.push(...navigationItems.sales);
     if (isFullAccess || hasModule('HR')) moduleNav.push(...navigationItems.hr);
     if (isFullAccess || hasModule('Blog')) moduleNav.push(...navigationItems.blog);
@@ -120,8 +126,9 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
   const filteredModuleNav = moduleNav.filter((it) => !it.permission || hasPermission(it.permission));
 
   // For team-leader, employee, and super-admin, always use role-specific navigation
+  // For HOD, use role-specific navigation to avoid module conflicts
   const navItems =
-    userRole === 'team-leader' || userRole === 'bd' || userRole === 'boss' || userRole === 'head-admin'
+    userRole === 'team-leader' || userRole === 'bd' || userRole === 'boss' || userRole === 'head-admin' || userRole === 'hod'
       ? (navigationItems[userRole] || navigationItems['bd'])
       : (filteredModuleNav.length > 0 ? filteredModuleNav : (navigationItems[userRole] || navigationItems['bd']));
 
