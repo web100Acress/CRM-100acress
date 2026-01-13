@@ -432,6 +432,14 @@
     color: #dc2626;
   }
 
+  .lead-action-button.call-history-btn {
+    color: #7c3aed;
+  }
+  .lead-action-button.call-history-btn:hover {
+    background-color: #f3e8ff;
+    color: #6d28d9;
+  }
+
   /* Pagination Styles */
   .lead-pagination-controls { /* Unique class name */
     display: flex;
@@ -959,6 +967,28 @@
   background: linear-gradient(135deg, #0f172a 0%, #111827 100%);
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(17, 24, 39, 0.25);
+}
+
+.mobile-call-history-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(124, 58, 237, 0.2);
+}
+
+.mobile-call-history-btn:hover {
+  background: linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(109, 40, 217, 0.25);
 }
 
 @media (max-width: 380px) {
