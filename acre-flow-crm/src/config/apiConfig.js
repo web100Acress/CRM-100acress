@@ -4,7 +4,11 @@
 const getApiBaseUrl = () => {
   // Check for environment variable first
   if (import.meta.env?.VITE_API_BASE_URL) {
-    return import.meta.env.VITE_API_BASE_URL;
+    // If we're on mobile and the env var points to production, use production
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      return import.meta.env.VITE_API_BASE_URL;
+    }
+    // If we're on localhost but env var is production, still try localhost first
   }
   
   // Check if running on localhost
@@ -14,8 +18,8 @@ const getApiBaseUrl = () => {
     return `http://localhost:${localPort}`;
   }
   
-  // Production URL
-  return 'https://bcrm.100acress.com';
+  // Production URL - fallback or when accessing from mobile
+  return import.meta.env?.VITE_API_BASE_URL || 'https://bcrm.100acress.com';
 };
 
 export const API_BASE_URL = getApiBaseUrl();
@@ -39,6 +43,12 @@ export const apiUrl = (endpoint) => {
 };
 
 // Log for debugging
+console.log('🔧 API Config Debug:');
+console.log('  - Hostname:', window.location.hostname);
+console.log('  - VITE_API_BASE_URL:', import.meta.env?.VITE_API_BASE_URL);
+console.log('  - VITE_LOCAL_API_PORT:', import.meta.env?.VITE_LOCAL_API_PORT);
+console.log('  - Final API_BASE_URL:', API_BASE_URL);
+
 if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
   console.log('🔧 API Config: Using localhost backend:', API_BASE_URL);
 } else {

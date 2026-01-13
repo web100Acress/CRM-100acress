@@ -51,6 +51,11 @@ const roleHierarchy = {
 };
 
 const createLead = async (leadData, creator) => {
+  // Set createdBy to the creator's ID
+  if (creator) {
+    leadData.createdBy = creator._id;
+  }
+  
   // Build assignmentChain: creator + assignee (if any)
   const assignmentChain = [];
   if (creator) {
@@ -90,10 +95,38 @@ const getLeads = async () => {
 };
 
 const getLeadsForUser = async (user) => {
-  if (user.role === 'boss') {
-    return await Lead.find();
+  const userRole = (user.role || '').toLowerCase();
+  
+  // For now, return all leads for testing
+  // TODO: Implement proper role-based filtering
+  console.log('🔍 Fetching leads for user:', {
+    userId: user._id,
+    userRole,
+    email: user.email
+  });
+  
+  try {
+    const allLeads = await Lead.find({}).sort({ createdAt: -1 });
+    console.log('📊 Total leads found:', allLeads.length);
+    
+    // Log some sample leads for debugging
+    if (allLeads.length > 0) {
+      console.log('📝 Sample leads:', allLeads.slice(0, 3).map(lead => ({
+        id: lead._id,
+        name: lead.name,
+        phone: lead.phone,
+        status: lead.status,
+        createdBy: lead.createdBy,
+        assignedTo: lead.assignedTo,
+        createdAt: lead.createdAt
+      })));
+    }
+    
+    return allLeads;
+  } catch (error) {
+    console.error('❌ Error fetching leads:', error);
+    return [];
   }
-  return await Lead.find({ 'assignmentChain.userId': user._id.toString() });
 };
 
 const getLeadById = async (id) => {

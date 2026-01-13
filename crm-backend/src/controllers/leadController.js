@@ -398,50 +398,49 @@ exports.getCallRecords = async (req, res, next) => {
     let query = {};
     
     // Role-based filtering
-    if (userRole === 'boss') {
-      // Boss sees all call records
+    if (userRole === 'boss' || userRole === 'super-admin') {
+      // Boss sees call records for leads they created
+      const userCreatedLeads = await Lead.find({ createdBy: userId }).select('_id');
+      const leadIds = userCreatedLeads.map(l => String(l._id));
       if (leadId) {
-        query.leadId = leadId;
-      }
-      // No additional filter - boss sees everything
-    } else if (userRole === 'hod') {
-      // HOD sees calls for leads they assigned
-      if (leadId) {
-        // Check if this lead was assigned by HOD
-        const lead = await Lead.findById(leadId);
-        if (lead) {
-          const assignmentChain = Array.isArray(lead.assignmentChain) ? lead.assignmentChain : [];
-          const isHODAssigned = assignmentChain.some(entry => {
-            const assignerId = entry.assignedBy?._id || entry.assignedBy;
-            return String(assignerId) === String(userId);
+        // Check if this specific lead was created by this boss
+        if (!leadIds.includes(String(leadId))) {
+          return res.status(200).json({ 
+            success: true, 
+            data: [],
+            count: 0
           });
-          
-          if (isHODAssigned || String(lead.assignedBy) === String(userId)) {
-            query.leadId = leadId;
-          } else {
-            // HOD didn't assign this lead, return empty
-            return res.status(200).json({ 
-              success: true, 
-              data: [],
-              message: 'No access to this lead\'s call history'
-            });
-          }
         }
+        query.leadId = leadId;
       } else {
-        // Get all leads assigned by HOD
-        const hodAssignedLeads = await Lead.find({
-          $or: [
-            { assignedBy: userId },
-            { 'assignmentChain.assignedBy._id': userId },
-            { 'assignmentChain.assignedBy': userId }
-          ]
-        }).select('_id');
-        
-        const leadIds = hodAssignedLeads.map(l => l._id);
         if (leadIds.length > 0) {
           query.leadId = { $in: leadIds };
         } else {
-          // No leads assigned by HOD
+          return res.status(200).json({ 
+            success: true, 
+            data: [],
+            count: 0
+          });
+        }
+      }
+    } else if (userRole === 'hod' || userRole === 'head-admin' || userRole === 'head') {
+      // HOD sees call records for leads they created
+      const userCreatedLeads = await Lead.find({ createdBy: userId }).select('_id');
+      const leadIds = userCreatedLeads.map(l => String(l._id));
+      if (leadId) {
+        // Check if this specific lead was created by this HOD
+        if (!leadIds.includes(String(leadId))) {
+          return res.status(200).json({ 
+            success: true, 
+            data: [],
+            count: 0
+          });
+        }
+        query.leadId = leadId;
+      } else {
+        if (leadIds.length > 0) {
+          query.leadId = { $in: leadIds };
+        } else {
           return res.status(200).json({ 
             success: true, 
             data: [],
@@ -498,17 +497,12 @@ exports.getLeadCallHistory = async (req, res, next) => {
     
     let hasAccess = false;
     
-    if (userRole === 'boss') {
-      // Boss has access to all leads
-      hasAccess = true;
-    } else if (userRole === 'hod') {
-      // HOD has access if they assigned this lead
-      const assignmentChain = Array.isArray(lead.assignmentChain) ? lead.assignmentChain : [];
-      const isHODAssigned = assignmentChain.some(entry => {
-        const assignerId = entry.assignedBy?._id || entry.assignedBy;
-        return String(assignerId) === String(userId);
-      });
-      hasAccess = isHODAssigned || String(lead.assignedBy) === String(userId);
+    if (userRole === 'boss' || userRole === 'super-admin') {
+      // Boss has access to call history for leads they created
+      hasAccess = String(lead.createdBy) === String(userId);
+    } else if (userRole === 'hod' || userRole === 'head-admin' || userRole === 'head') {
+      // HOD has access if they created this lead
+      hasAccess = String(lead.createdBy) === String(userId);
     } else {
       // BD/TL has access if:
       // 1. Lead is assigned to them, OR

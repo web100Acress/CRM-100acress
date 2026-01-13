@@ -304,6 +304,26 @@ const LoginMobile = () => {
         localStorage.removeItem("isDeveloperLoggedIn");
         localStorage.removeItem("isHrFinanceLoggedIn");
 
+        // 🎯 CRITICAL FIX: Store profile picture during login
+        if (crmData.user.profileImage) {
+          localStorage.setItem("userProfileImage", crmData.user.profileImage);
+          console.log("✅ Profile picture loaded during login:", crmData.user.profileImage);
+        } else {
+          // Check if there's a saved profile picture from previous session
+          const savedProfileImage = localStorage.getItem("userProfileImage");
+          if (savedProfileImage) {
+            console.log("✅ Using saved profile picture from previous session");
+          } else {
+            console.log("ℹ️ No profile picture found for this user");
+          }
+        }
+
+        // 🎯 GOOGLE PROFILE: Save Google profile icon if available
+        if (crmData.user.photoURL) {
+          localStorage.setItem("googleProfileImage", crmData.user.photoURL);
+          console.log("✅ Google profile icon saved:", crmData.user.photoURL);
+        }
+
         if (Array.isArray(crmData.user.allowedModules)) {
           localStorage.setItem("allowedModules", JSON.stringify(crmData.user.allowedModules));
         } else {
@@ -379,6 +399,26 @@ const LoginMobile = () => {
             localStorage.setItem("userId", verifyData.user._id);
             localStorage.setItem("sourceSystem", "100acress");
             localStorage.setItem("originalRole", verifyData.user.originalRole || verifyData.user.role);
+            
+            // 🎯 CRITICAL FIX: Store profile picture during login
+            if (verifyData.user.profileImage) {
+              localStorage.setItem("userProfileImage", verifyData.user.profileImage);
+              console.log("✅ Profile picture loaded during 100acress login:", verifyData.user.profileImage);
+            } else {
+              // Check if there's a saved profile picture from previous session
+              const savedProfileImage = localStorage.getItem("userProfileImage");
+              if (savedProfileImage) {
+                console.log("✅ Using saved profile picture from previous session");
+              } else {
+                console.log("ℹ️ No profile picture found for this user");
+              }
+            }
+
+            // 🎯 GOOGLE PROFILE: Save Google profile icon if available
+            if (verifyData.user.photoURL) {
+              localStorage.setItem("googleProfileImage", verifyData.user.photoURL);
+              console.log("✅ Google profile icon saved during 100acress login:", verifyData.user.photoURL);
+            }
             
             // Clear other login states
             localStorage.removeItem("isDeveloperLoggedIn");

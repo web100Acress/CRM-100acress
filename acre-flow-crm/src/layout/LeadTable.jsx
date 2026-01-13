@@ -17,6 +17,7 @@ import {
   Settings,
   PhoneCall,
   PieChart,
+  Clock,
 } from "lucide-react";
 import FollowUpModal from "@/features/employee/follow-up/FollowUpModal";
 import CreateLeadForm from "./CreateLeadForm";
@@ -55,6 +56,43 @@ const LeadTable = ({ userRole }) => {
   const prevAssignedLeadIds = useRef(new Set());
   const currentUserId = localStorage.getItem("userId");
 
+  // Helper function for API calls with fallback
+  const apiCall = async (endpoint, options = {}) => {
+    const token = localStorage.getItem("token");
+    const localUrl = `http://localhost:5001${endpoint}`;
+    const prodUrl = `https://bcrm.100acress.com${endpoint}`;
+    
+    console.log(`🔍 API Call: ${endpoint}`);
+    
+    // Try local API first
+    let response = await fetch(localUrl, {
+      ...options,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        ...options.headers
+      }
+    });
+    
+    console.log(`📡 Local API response: ${response.status}`);
+    
+    // If local fails, try production
+    if (!response.ok) {
+      console.log(`❌ Local API failed, trying production...`);
+      response = await fetch(prodUrl, {
+        ...options,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          ...options.headers
+        }
+      });
+      console.log(`📡 Production API response: ${response.status}`);
+    }
+    
+    return response;
+  };
+
   const [chainModalLead, setChainModalLead] = useState(null);
   const [showLeadDetails, setShowLeadDetails] = useState(false);
   const [selectedLeadForDetails, setSelectedLeadForDetails] = useState(null);
@@ -63,10 +101,11 @@ const LeadTable = ({ userRole }) => {
   const [callTracking, setCallTracking] = useState({});
   const callTrackingRef = useRef({});
   const [callHistory, setCallHistory] = useState({});
+  const [leadDetailsCallHistory, setLeadDetailsCallHistory] = useState([]);
+  const [loadingLeadDetailsCallHistory, setLoadingLeadDetailsCallHistory] = useState(false);
   const [showCallConfirm, setShowCallConfirm] = useState(false);
   const [callConfirmData, setCallConfirmData] = useState(null);
   const [showAdvancedLeadInfo, setShowAdvancedLeadInfo] = useState(false);
-
   const openCallConfirm = (pending, endTime = new Date()) => {
     if (!pending?.leadId || !pending?.startTime) return;
 
@@ -187,6 +226,13 @@ const LeadTable = ({ userRole }) => {
 
     if (!saved) return;
 
+    // Refresh call history if Lead Details modal is open
+    if (showLeadDetails && selectedLeadForDetails && String(selectedLeadForDetails._id) === String(data.pending.leadId)) {
+      setTimeout(() => {
+        fetchLeadDetailsCallHistory(data.pending.leadId);
+      }, 1000);
+    }
+
     try {
       localStorage.removeItem('pendingCall');
     } catch {
@@ -267,15 +313,16 @@ const LeadTable = ({ userRole }) => {
   useEffect(() => {
     const fetchLeads = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const response = await fetch("https://bcrm.100acress.com/api/leads", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
+        console.log('🔍 Desktop: Starting to fetch leads...');
+        
+        const response = await apiCall('/api/leads');
+        
         const json = await response.json();
+        console.log('📊 Desktop: Fetch leads response:', json);
+        
         setLeadsList(json.data || []);
+        
+        console.log('✅ Desktop: Leads loaded successfully:', (json.data || []).length, 'leads');
 
         // --- Notification logic ---
         const newAssignedLeads = (json.data || []).filter(
@@ -296,6 +343,7 @@ const LeadTable = ({ userRole }) => {
         prevAssignedLeadIds.current = newAssignedIds;
         // --- End notification logic ---
       } catch (error) {
+        console.error('❌ Desktop: Error fetching leads:', error);
         alert("Error fetching leads: " + error.message);
       } finally {
         setLoading(false);
@@ -304,20 +352,17 @@ const LeadTable = ({ userRole }) => {
 
     const fetchAssignableUsers = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const response = await fetch(
-          "https://bcrm.100acress.com/api/leads/assignable-users",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        console.log('🔍 Desktop: Fetching assignable users...');
+        
+        const response = await apiCall('/api/leads/assignable-users');
+        
         const json = await response.json();
+        console.log('📊 Desktop: Assignable users response:', json);
+        
         setAssignableUsers(json.data || []);
+        console.log('✅ Desktop: Assignable users loaded:', (json.data || []).length, 'users');
       } catch (error) {
-        console.error("Error fetching assignable users:", error);
+        console.error('❌ Desktop: Error fetching assignable users:', error);
       }
     };
 
@@ -432,17 +477,12 @@ const LeadTable = ({ userRole }) => {
 
   const handleUpdateStatus = async (leadId, newStatus) => {
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`https://bcrm.100acress.com/api/leads/${leadId}`, {
+      const response = await apiCall(`/api/leads/${leadId}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
         body: JSON.stringify({ status: newStatus }),
       });
 
-      if (res.ok) {
+      if (response.ok) {
         setLeadsList((prev) =>
           prev.map((lead) =>
             lead._id === leadId ? { ...lead, status: newStatus } : lead
@@ -453,7 +493,7 @@ const LeadTable = ({ userRole }) => {
           description: `Lead status updated to ${newStatus}`,
         });
       } else {
-        const data = await res.json();
+        const data = await response.json();
         alert(data.message || "Failed to update status");
       }
     } catch (err) {
@@ -622,6 +662,22 @@ const LeadTable = ({ userRole }) => {
           status: "success",
         });
 
+        // 🎯 AUTOMATICALLY SHOW CALL HISTORY AFTER CALL IS COMPLETED
+        // Find the lead data and show its details with call history
+        const leadData = data.find(lead => String(lead._id) === String(callData.leadId));
+        if (leadData) {
+          console.log('📞 Opening call history for called lead:', leadData.name);
+          
+          // Set selected lead and show lead details modal
+          setSelectedLeadForDetails(leadData);
+          setShowLeadDetails(true);
+          
+          // Fetch call history for this lead after a short delay
+          setTimeout(() => {
+            fetchLeadDetailsCallHistory(callData.leadId);
+          }, 500);
+        }
+
         return true;
       } else {
         let errorPayload = null;
@@ -757,6 +813,61 @@ const LeadTable = ({ userRole }) => {
       }
     } catch (error) {
       console.error("Error fetching call history:", error);
+    }
+  };
+
+  const fetchLeadDetailsCallHistory = async (leadId) => {
+    if (!leadId) {
+      console.log('No leadId provided for call history');
+      return;
+    }
+    
+    console.log('Fetching call history for Lead Details modal, leadId:', leadId);
+    setLoadingLeadDetailsCallHistory(true);
+    try {
+      const token = localStorage.getItem("token");
+      const apiUrl = process.env.NODE_ENV === 'development' 
+        ? `http://localhost:5001/api/leads/${leadId}/calls` 
+        : `https://bcrm.100acress.com/api/leads/${leadId}/calls`;
+      
+      console.log('Call history API URL:', apiUrl);
+      
+      const response = await fetch(apiUrl, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('Call history response status:', response.status);
+      
+      const data = await response.json();
+      console.log('Call history response data:', data);
+      
+      if (response.ok && data.success) {
+        setLeadDetailsCallHistory(data.data || []);
+        console.log('Call history fetched successfully:', data.data?.length || 0, 'records');
+      } else {
+        console.error('Failed to fetch call history:', data.message || 'Unknown error');
+        setLeadDetailsCallHistory([]);
+        if (response.status === 403) {
+          toast({
+            title: "Access Denied",
+            description: data.message || "You don't have permission to view this lead's call history",
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching call history:', error);
+      setLeadDetailsCallHistory([]);
+      toast({
+        title: "Error",
+        description: "Failed to fetch call history. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingLeadDetailsCallHistory(false);
     }
   };
 
@@ -1091,7 +1202,7 @@ const LeadTable = ({ userRole }) => {
       
       
 
-        {(userRole === "boss" || userRole === "super-admin" || userRole === "head-admin" || userRole === "admin" || userRole === "crm_admin") && (
+        {(userRole === "boss" || userRole === "hod") && (
           <button className="lead-create-button" onClick={handleCreateLead}>
             <Plus
               size={18}
@@ -1318,14 +1429,74 @@ const LeadTable = ({ userRole }) => {
                         <option value="Cold">❄️ Cold</option>
                       </select>
 
-                      {/* Quick Actions */}
-                      <button
-                        onClick={() => handleCallLead(lead.phone, lead._id, lead.name)}
-                        title="Call Lead"
-                        className="lead-action-button call-btn"
-                      >
-                        <PhoneCall size={16} />
-                      </button>
+                      {/* Call/Call History Button - Based on user role and assignment */}
+                      {(() => {
+                        const currentUserRole = localStorage.getItem("userRole");
+                        const isLeadCreator = lead.createdBy === currentUserId;
+                        const isAssignedToUser = String(lead.assignedTo) === String(currentUserId);
+                        
+                        // Boss who created lead - Show Call History (not Call button)
+                        if ((currentUserRole === 'boss' || currentUserRole === 'super-admin') && isLeadCreator && !isAssignedToUser) {
+                          return (
+                            <button
+                              onClick={() => {
+                                setSelectedLeadForDetails(lead);
+                                setShowLeadDetails(true);
+                                // Focus on call history section
+                                setTimeout(() => {
+                                  const callHistorySection = document.querySelector('.lead-details-call-history-section');
+                                  if (callHistorySection) {
+                                    callHistorySection.scrollIntoView({ behavior: 'smooth' });
+                                  }
+                                }, 300);
+                              }}
+                              title="View Call History"
+                              className="lead-action-button call-history-btn"
+                            >
+                              <Clock size={16} />
+                            </button>
+                          );
+                        }
+                        
+                        // Assigned user working on lead - Show Call History
+                        if (isAssignedToUser && lead.workProgress && lead.workProgress !== 'pending') {
+                          return (
+                            <button
+                              onClick={() => {
+                                setSelectedLeadForDetails(lead);
+                                setShowLeadDetails(true);
+                                // Focus on call history section
+                                setTimeout(() => {
+                                  const callHistorySection = document.querySelector('.lead-details-call-history-section');
+                                  if (callHistorySection) {
+                                    callHistorySection.scrollIntoView({ behavior: 'smooth' });
+                                  }
+                                }, 300);
+                              }}
+                              title="View Call History"
+                              className="lead-action-button call-history-btn"
+                            >
+                              <Clock size={16} />
+                            </button>
+                          );
+                        }
+                        
+                        // Assigned user with pending work - Show Call button
+                        if (isAssignedToUser) {
+                          return (
+                            <button
+                              onClick={() => handleCallLead(lead.phone, lead._id, lead.name)}
+                              title="Call Lead"
+                              className="lead-action-button call-btn"
+                            >
+                              <PhoneCall size={16} />
+                            </button>
+                          );
+                        }
+                        
+                        // Other users - No Call button
+                        return null;
+                      })()}
                       
                       <button
                         onClick={() => handleEmailLead(lead.email)}
@@ -1438,15 +1609,74 @@ const LeadTable = ({ userRole }) => {
                 )}
               </div>
               <div className="mobile-lead-actions">
-                <button 
-                  className="mobile-call-btn"
-                  onClick={() => {
-                    handleCallLead(lead.phone, lead._id, lead.name);
-                  }}
-                >
-                  <PhoneCall size={14} />
-                  Call
-                </button>
+                {(() => {
+                  const currentUserRole = localStorage.getItem("userRole");
+                  const isLeadCreator = lead.createdBy === currentUserId;
+                  const isAssignedToUser = String(lead.assignedTo) === String(currentUserId);
+                  
+                  // Boss who created lead - Show Call History (not Call button)
+                  if ((currentUserRole === 'boss' || currentUserRole === 'super-admin') && isLeadCreator && !isAssignedToUser) {
+                    return (
+                      <button 
+                        className="mobile-call-history-btn"
+                        onClick={() => {
+                          setSelectedLeadForDetails(lead);
+                          setShowLeadDetails(true);
+                          setTimeout(() => {
+                            const callHistorySection = document.querySelector('.lead-details-call-history-section');
+                            if (callHistorySection) {
+                              callHistorySection.scrollIntoView({ behavior: 'smooth' });
+                            }
+                          }, 300);
+                        }}
+                      >
+                        <Clock size={14} />
+                        Call History
+                      </button>
+                    );
+                  }
+                  
+                  // Assigned user working on lead - Show Call History
+                  if (isAssignedToUser && lead.workProgress && lead.workProgress !== 'pending') {
+                    return (
+                      <button 
+                        className="mobile-call-history-btn"
+                        onClick={() => {
+                          setSelectedLeadForDetails(lead);
+                          setShowLeadDetails(true);
+                          setTimeout(() => {
+                            const callHistorySection = document.querySelector('.lead-details-call-history-section');
+                            if (callHistorySection) {
+                              callHistorySection.scrollIntoView({ behavior: 'smooth' });
+                            }
+                          }, 300);
+                        }}
+                      >
+                        <Clock size={14} />
+                        Call History
+                      </button>
+                    );
+                  }
+                  
+                  // Assigned user with pending work - Show Call button
+                  if (isAssignedToUser) {
+                    return (
+                      <button 
+                        className="mobile-call-btn"
+                        onClick={() => {
+                          handleCallLead(lead.phone, lead._id, lead.name);
+                        }}
+                      >
+                        <PhoneCall size={14} />
+                        Call
+                      </button>
+                    );
+                  }
+                  
+                  // Other users - No Call button
+                  return null;
+                })()}
+                
                 <button 
                   className="mobile-followup-btn"
                   onClick={() => {
@@ -1475,7 +1705,22 @@ const LeadTable = ({ userRole }) => {
       </div>
 
       {/* Lead Details Modal */}
-      <Dialog open={showLeadDetails} onOpenChange={setShowLeadDetails}>
+      <Dialog 
+        open={showLeadDetails} 
+        onOpenChange={(open) => {
+          setShowLeadDetails(open);
+          if (open && selectedLeadForDetails?._id) {
+            // Fetch call history when modal opens
+            console.log('📞 Opening lead details modal, fetching call history for leadId:', selectedLeadForDetails._id);
+            setTimeout(() => {
+              fetchLeadDetailsCallHistory(selectedLeadForDetails._id);
+            }, 200);
+          } else {
+            // Clear call history when modal closes
+            setLeadDetailsCallHistory([]);
+          }
+        }}
+      >
         <DialogContent className="lead-details-dialog">
           <DialogHeader>
             <DialogTitle className="lead-details-title">Lead Details</DialogTitle>
@@ -1547,16 +1792,73 @@ const LeadTable = ({ userRole }) => {
                     View Follow-ups
                   </button>
 
-                  <button 
-                    className="lead-details-action-btn secondary"
-                    onClick={() => {
-                      handleCallLead(selectedLeadForDetails.phone, selectedLeadForDetails._id, selectedLeadForDetails.name);
-                      setShowLeadDetails(false);
-                    }}
-                  >
-                    <PhoneCall size={16} />
-                    Call Lead
-                  </button>
+                  {/* Call/Call History Button - Based on user role and assignment */}
+                  {(() => {
+                    const currentUserRole = localStorage.getItem("userRole");
+                    const isLeadCreator = selectedLeadForDetails.createdBy === currentUserId;
+                    const isAssignedToUser = String(selectedLeadForDetails.assignedTo) === String(currentUserId);
+                    
+                    // Boss who created lead - Show Call History (not Call button)
+                    if ((currentUserRole === 'boss' || currentUserRole === 'super-admin') && isLeadCreator && !isAssignedToUser) {
+                      return (
+                        <button 
+                          className="lead-details-action-btn secondary"
+                          onClick={() => {
+                            // Scroll to call history section
+                            setTimeout(() => {
+                              const callHistorySection = document.querySelector('.lead-details-call-history-section');
+                              if (callHistorySection) {
+                                callHistorySection.scrollIntoView({ behavior: 'smooth' });
+                              }
+                            }, 100);
+                          }}
+                        >
+                          <Clock size={16} />
+                          View Call History
+                        </button>
+                      );
+                    }
+                    
+                    // Assigned user working on lead - Show Call History
+                    if (isAssignedToUser && selectedLeadForDetails.workProgress && selectedLeadForDetails.workProgress !== 'pending') {
+                      return (
+                        <button 
+                          className="lead-details-action-btn secondary"
+                          onClick={() => {
+                            // Scroll to call history section
+                            setTimeout(() => {
+                              const callHistorySection = document.querySelector('.lead-details-call-history-section');
+                              if (callHistorySection) {
+                                callHistorySection.scrollIntoView({ behavior: 'smooth' });
+                              }
+                            }, 100);
+                          }}
+                        >
+                          <Clock size={16} />
+                          View Call History
+                        </button>
+                      );
+                    }
+                    
+                    // Assigned user with pending work - Show Call button
+                    if (isAssignedToUser) {
+                      return (
+                        <button 
+                          className="lead-details-action-btn secondary"
+                          onClick={() => {
+                            handleCallLead(selectedLeadForDetails.phone, selectedLeadForDetails._id, selectedLeadForDetails.name);
+                            setShowLeadDetails(false);
+                          }}
+                        >
+                          <PhoneCall size={16} />
+                          Call Lead
+                        </button>
+                      );
+                    }
+                    
+                    // Other users - No Call button
+                    return null;
+                  })()}
 
                   <button 
                     className="lead-details-action-btn secondary"
@@ -1606,6 +1908,84 @@ const LeadTable = ({ userRole }) => {
                     </button>
                   )}
                 </div>
+              </div>
+
+              {/* Call History Section */}
+              <div className="lead-details-call-history-section border-t pt-4 mt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                    <PhoneCall size={16} className="text-green-600" />
+                    Call History
+                  </h4>
+                  {loadingLeadDetailsCallHistory && (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  )}
+                </div>
+                
+                {!loadingLeadDetailsCallHistory && leadDetailsCallHistory.length > 0 ? (
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {leadDetailsCallHistory.map((call, index) => (
+                      <div 
+                        key={call._id || index} 
+                        className="bg-gray-50 rounded-lg p-3 border border-gray-200"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <PhoneCall size={14} className="text-green-600" />
+                              <span className="text-sm font-medium text-gray-900">
+                                {call.userId?.name || 'Unknown User'}
+                              </span>
+                              {call.userId?.role && (
+                                <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
+                                  {call.userId.role.toUpperCase()}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500">{call.phone}</p>
+                          </div>
+                          <div className="text-right">
+                            <span className={`text-xs px-2 py-0.5 rounded ${
+                              call.status === 'completed' 
+                                ? 'bg-green-100 text-green-700' 
+                                : call.status === 'missed'
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-gray-100 text-gray-700'
+                            }`}>
+                              {call.status}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-gray-600">
+                          <div className="flex items-center gap-3">
+                            <span className="flex items-center gap-1">
+                              <Clock size={12} />
+                              {formatDuration(call.duration)}
+                            </span>
+                            <span>
+                              {new Date(call.callDate || call.createdAt).toLocaleDateString('en-IN', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric'
+                              })}
+                            </span>
+                          </div>
+                          <span>
+                            {new Date(call.callDate || call.createdAt).toLocaleTimeString('en-IN', {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : !loadingLeadDetailsCallHistory ? (
+                  <div className="text-center py-4 text-gray-500 text-sm">
+                    <PhoneCall size={24} className="mx-auto mb-2 text-gray-300" />
+                    <p>No call history available</p>
+                  </div>
+                ) : null}
               </div>
             </div>
           )}
