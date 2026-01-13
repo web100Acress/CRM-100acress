@@ -1,193 +1,248 @@
-/* Base styles from your previous CSS, refined */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
 
-    .lead-form-dialog {
-      font-family: 'Inter', sans-serif;
-      background-color: #ffffff;
-      border-radius: 12px;
-      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15); /* More pronounced shadow */
-      padding: 2.5rem; /* Increased padding */
-      max-width: 650px; /* Wider form for better layout */
-      width: 85%; /* Further reduced width for better mobile display */
-      position: relative; /* Needed for absolute positioning of close button */
-    }
+/* ================= MODAL WRAPPER ================= */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-    /* Mobile-specific styles */
-    @media (max-width: 640px) {
-      .lead-form-dialog {
-        padding: 1.5rem; /* Reduced padding for mobile */
-        width: 98%; /* Almost full width on mobile */
-        margin: 0.5rem; /* Small margin */
-        max-height: 90vh; /* Limit height to fit screen */
-        overflow-y: auto; /* Enable scrolling if content overflows */
-      }
+.lead-form-dialog {
+  font-family: "Inter", sans-serif;
+  background: linear-gradient(135deg, #ffffff, #f8fafc);
+  border-radius: 16px;
+  width: 100%;
+  max-width:500px !important; 
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.25);
+  animation: scaleFade 0.25s ease;
+}
 
-      .lead-form-title {
-        font-size: 1.4rem; /* Smaller title on mobile */
-        margin-bottom: 1rem;
-      }
+@keyframes scaleFade {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
 
-      .form-actions {
-        flex-direction: column; /* Stack buttons vertically on mobile */
-        gap: 0.5rem;
-      }
+/* ================= HEADER ================= */
+.form-header {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  padding: 1.75rem 2rem;
+  color: white;
+  position: relative;
+}
 
-      .form-actions button {
-        width: 100%; /* Full-width buttons on mobile */
-      }
-    }
+.header-content {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
 
-    .dialog-close-button {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: #718096; /* Muted color */
-      transition: color 0.2s ease, background-color 0.2s ease;
-      border-radius: 50%; /* Make it circular */
-      padding: 0.5rem; /* Sufficient hit area */
-    }
+.header-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-    .dialog-close-button:hover {
-      color: #e53e3e; /* Red on hover */
-      background-color: #f7fafc; /* Light background on hover */
-    }
+.lead-form-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
 
-    /* Form Grid Layout */
-    .lead-form-grid {
-      display: grid;
-      grid-template-columns: 1fr; /* Default to single column */
-      gap: 1.5rem; /* Consistent spacing */
-    }
+.form-subtitle {
+  font-size: 0.875rem;
+  opacity: 0.85;
+}
 
-    @media (min-width: 640px) { /* md breakpoint */
-      .lead-form-grid {
-        grid-template-columns: repeat(2, 1fr); /* Two columns on larger screens */
-      }
-    }
+.dialog-close-button {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 0.5rem;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
 
-    .form-group {
-      display: flex;
-      flex-direction: column;
-    }
+.dialog-close-button:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
 
-    .lead-form-title {
-      font-size: 1.8rem; /* Larger, more impactful title */
-      font-weight: 700;
-      color: #1a202c; /* Darker text for prominence */
-      text-align: center; /* Center align title */
-      margin: 0 auto 1.5rem auto; /* Auto margins for horizontal centering */
-      display: block; /* Ensure block-level for proper centering */
-      width: 100%; /* Full width container */
-    }
+/* ================= FORM BODY ================= */
+.lead-form-grid {
+  padding: 2rem;
+  overflow-y: auto;
+  max-height: calc(90vh - 180px);
+}
 
-    .form-group label {
-      font-size: 0.9rem; /* Slightly smaller, clean label */
-      font-weight: 600;
-      color: #4a5568; /* Subtler label color */
-      margin-bottom: 0.5rem; /* Space between label and input */
-    }
+.form-section {
+  margin-bottom: 2rem;
+}
 
-    .form-group .required {
-      color: #e53e3e; /* Red asterisk for required fields */
-      margin-left: 0.25rem;
-    }
+.section-header {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 0.5rem;
+}
 
-    .form-input,
-    .form-select {
-      padding: 0.75rem 1rem; /* Generous padding */
-      border: 1px solid #e2e8f0; /* Light border */
-      border-radius: 0.5rem; /* More rounded corners */
-      font-size: 1rem;
-      color: #2d3748; /* Darker text */
-      background-color: #f7fafc; /* Light background for input fields */
-      transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
-      width: 100%; /* Full width */
-    }
+.section-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
 
-    /* Mobile-specific styles for form fields */
-    @media (max-width: 640px) {
-      .lead-form-grid {
-        grid-template-columns: repeat(2, 1fr) !important; /* Two columns on mobile */
-        gap: 1rem; /* Reduced gap for mobile */
-      }
+.section-title {
+  font-weight: 600;
+  color: #1f2937;
+}
 
-      .form-input,
-      .form-select {
-        max-width: 165px !important; /* Reduced max width for input fields on mobile */
-      }
-    }
+/* ================= FORM GRID ================= */
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.25rem;
+}
 
-    .form-input::placeholder {
-        color: #a0aec0; /* Muted placeholder text */
-    }
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
 
-    .form-input:focus,
-    .form-select:focus {
-      outline: none;
-      border-color: #4299e1; /* Blue focus border */
-      box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.3); /* Soft blue glow */
-      background-color: #ffffff; /* White background on focus */
-    }
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
 
-    .form-select {
-        appearance: none; /* Remove default select arrow */
-        background-image: url('data:image/svg+xml;utf8,<svg fill="%23A0AEC0" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" fill-rule="evenodd"></path></svg>');
-        background-repeat: no-repeat;
-        background-position: right 1rem center;
-        background-size: 1.2em;
-        cursor: pointer;
-    }
+/* ================= INPUTS ================= */
+.form-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
 
-    /* Actions Footer */
-    .form-actions {
-      display: flex;
-      justify-content: center;
-      column-gap: 12px;
-      margin-top: 16px;
-      padding-top: 1.5rem;
-      border-top: 1px solid #edf2f7; /* Subtle top border */
-    }
+.required {
+  color: #ef4444;
+}
 
-    .btn-cancel {
-      background-color: #e2e8f0; /* Light gray */
-      color: #2d3748;
-      border: 1px solid #cbd5e1;
-      transition: all 0.2s ease;
-    }
+.input-wrapper {
+  position: relative;
+}
 
-    .btn-cancel:hover {
-      background-color: #cbd5e1;
-      color: #1a202c;
-      transform: translateY(-1px); /* Slight lift on hover */
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
+.input-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6b7280;
+}
 
-    .btn-primary {
-      background-color: #28a745; /* Vibrant green */
-      color: white;
-      box-shadow: 0 4px 10px rgba(40, 167, 69, 0.2); /* Soft shadow for primary */
-      transition: all 0.2s ease;
-    }
+.form-input,
+.form-select {
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 2px solid #e5e7eb;
+  font-size: 0.95rem;
+  transition: 0.2s ease;
+}
 
-    .btn-primary:hover {
-      background-color: #218838; /* Darker green on hover */
-      transform: translateY(-1px);
-      box-shadow: 0 6px 12px rgba(40, 167, 69, 0.3);
-    }
+.form-input.enhanced {
+  padding-left: 3rem;
+}
 
-    .btn-primary:disabled {
-      background-color: #a7d9b5; /* Lighter green when disabled */
-      cursor: not-allowed;
-      box-shadow: none;
-      transform: none;
-    }
+.form-input:focus,
+.form-select:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+  outline: none;
+}
 
-    /* Icon styling within buttons */
-    .btn-cancel svg,
-    .btn-primary svg {
-      margin-right: 0.5rem;
-    }
-  
+.form-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg fill='%236b7280' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'><path d='M5.293 7.293L10 12l4.707-4.707' /></svg>");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+}
+
+/* ================= ASSIGNMENT MESSAGE ================= */
+.assignment-message {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.assignment-message.error {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.assignment-message.warning {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+/* ================= FOOTER ================= */
+.form-actions {
+  padding: 1.5rem 2rem;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+}
+
+/* ================= MOBILE ================= */
+@media (max-width: 768px) {
+  .lead-form-dialog {
+    width: 96%;
+  }
+
+  .lead-form-grid {
+    padding: 1.5rem;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .form-actions button {
+    width: 100%;
+  }
+}

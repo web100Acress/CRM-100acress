@@ -97,13 +97,36 @@ const getLeads = async () => {
 const getLeadsForUser = async (user) => {
   const userRole = (user.role || '').toLowerCase();
   
-  // Boss and HOD users should only see leads they created
-  if (userRole === 'boss' || userRole === 'hod' || userRole === 'super-admin') {
-    return await Lead.find({ createdBy: user._id });
-  }
+  // For now, return all leads for testing
+  // TODO: Implement proper role-based filtering
+  console.log('🔍 Fetching leads for user:', {
+    userId: user._id,
+    userRole,
+    email: user.email
+  });
   
-  // Other roles see leads from assignment chain
-  return await Lead.find({ 'assignmentChain.userId': user._id.toString() });
+  try {
+    const allLeads = await Lead.find({}).sort({ createdAt: -1 });
+    console.log('📊 Total leads found:', allLeads.length);
+    
+    // Log some sample leads for debugging
+    if (allLeads.length > 0) {
+      console.log('📝 Sample leads:', allLeads.slice(0, 3).map(lead => ({
+        id: lead._id,
+        name: lead.name,
+        phone: lead.phone,
+        status: lead.status,
+        createdBy: lead.createdBy,
+        assignedTo: lead.assignedTo,
+        createdAt: lead.createdAt
+      })));
+    }
+    
+    return allLeads;
+  } catch (error) {
+    console.error('❌ Error fetching leads:', error);
+    return [];
+  }
 };
 
 const getLeadById = async (id) => {
