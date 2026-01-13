@@ -51,6 +51,11 @@ const roleHierarchy = {
 };
 
 const createLead = async (leadData, creator) => {
+  // Set createdBy to the creator's ID
+  if (creator) {
+    leadData.createdBy = creator._id;
+  }
+  
   // Build assignmentChain: creator + assignee (if any)
   const assignmentChain = [];
   if (creator) {
@@ -90,9 +95,14 @@ const getLeads = async () => {
 };
 
 const getLeadsForUser = async (user) => {
-  if (user.role === 'boss') {
-    return await Lead.find();
+  const userRole = (user.role || '').toLowerCase();
+  
+  // Boss and HOD users should only see leads they created
+  if (userRole === 'boss' || userRole === 'hod' || userRole === 'super-admin') {
+    return await Lead.find({ createdBy: user._id });
   }
+  
+  // Other roles see leads from assignment chain
   return await Lead.find({ 'assignmentChain.userId': user._id.toString() });
 };
 
