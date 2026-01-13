@@ -1429,14 +1429,74 @@ const LeadTable = ({ userRole }) => {
                         <option value="Cold">❄️ Cold</option>
                       </select>
 
-                      {/* Quick Actions */}
-                      <button
-                        onClick={() => handleCallLead(lead.phone, lead._id, lead.name)}
-                        title="Call Lead"
-                        className="lead-action-button call-btn"
-                      >
-                        <PhoneCall size={16} />
-                      </button>
+                      {/* Call/Call History Button - Based on user role and assignment */}
+                      {(() => {
+                        const currentUserRole = localStorage.getItem("userRole");
+                        const isLeadCreator = lead.createdBy === currentUserId;
+                        const isAssignedToUser = String(lead.assignedTo) === String(currentUserId);
+                        
+                        // Boss who created lead - Show Call History (not Call button)
+                        if ((currentUserRole === 'boss' || currentUserRole === 'super-admin') && isLeadCreator && !isAssignedToUser) {
+                          return (
+                            <button
+                              onClick={() => {
+                                setSelectedLeadForDetails(lead);
+                                setShowLeadDetails(true);
+                                // Focus on call history section
+                                setTimeout(() => {
+                                  const callHistorySection = document.querySelector('.lead-details-call-history-section');
+                                  if (callHistorySection) {
+                                    callHistorySection.scrollIntoView({ behavior: 'smooth' });
+                                  }
+                                }, 300);
+                              }}
+                              title="View Call History"
+                              className="lead-action-button call-history-btn"
+                            >
+                              <Clock size={16} />
+                            </button>
+                          );
+                        }
+                        
+                        // Assigned user working on lead - Show Call History
+                        if (isAssignedToUser && lead.workProgress && lead.workProgress !== 'pending') {
+                          return (
+                            <button
+                              onClick={() => {
+                                setSelectedLeadForDetails(lead);
+                                setShowLeadDetails(true);
+                                // Focus on call history section
+                                setTimeout(() => {
+                                  const callHistorySection = document.querySelector('.lead-details-call-history-section');
+                                  if (callHistorySection) {
+                                    callHistorySection.scrollIntoView({ behavior: 'smooth' });
+                                  }
+                                }, 300);
+                              }}
+                              title="View Call History"
+                              className="lead-action-button call-history-btn"
+                            >
+                              <Clock size={16} />
+                            </button>
+                          );
+                        }
+                        
+                        // Assigned user with pending work - Show Call button
+                        if (isAssignedToUser) {
+                          return (
+                            <button
+                              onClick={() => handleCallLead(lead.phone, lead._id, lead.name)}
+                              title="Call Lead"
+                              className="lead-action-button call-btn"
+                            >
+                              <PhoneCall size={16} />
+                            </button>
+                          );
+                        }
+                        
+                        // Other users - No Call button
+                        return null;
+                      })()}
                       
                       <button
                         onClick={() => handleEmailLead(lead.email)}
@@ -1549,15 +1609,74 @@ const LeadTable = ({ userRole }) => {
                 )}
               </div>
               <div className="mobile-lead-actions">
-                <button 
-                  className="mobile-call-btn"
-                  onClick={() => {
-                    handleCallLead(lead.phone, lead._id, lead.name);
-                  }}
-                >
-                  <PhoneCall size={14} />
-                  Call
-                </button>
+                {(() => {
+                  const currentUserRole = localStorage.getItem("userRole");
+                  const isLeadCreator = lead.createdBy === currentUserId;
+                  const isAssignedToUser = String(lead.assignedTo) === String(currentUserId);
+                  
+                  // Boss who created lead - Show Call History (not Call button)
+                  if ((currentUserRole === 'boss' || currentUserRole === 'super-admin') && isLeadCreator && !isAssignedToUser) {
+                    return (
+                      <button 
+                        className="mobile-call-history-btn"
+                        onClick={() => {
+                          setSelectedLeadForDetails(lead);
+                          setShowLeadDetails(true);
+                          setTimeout(() => {
+                            const callHistorySection = document.querySelector('.lead-details-call-history-section');
+                            if (callHistorySection) {
+                              callHistorySection.scrollIntoView({ behavior: 'smooth' });
+                            }
+                          }, 300);
+                        }}
+                      >
+                        <Clock size={14} />
+                        Call History
+                      </button>
+                    );
+                  }
+                  
+                  // Assigned user working on lead - Show Call History
+                  if (isAssignedToUser && lead.workProgress && lead.workProgress !== 'pending') {
+                    return (
+                      <button 
+                        className="mobile-call-history-btn"
+                        onClick={() => {
+                          setSelectedLeadForDetails(lead);
+                          setShowLeadDetails(true);
+                          setTimeout(() => {
+                            const callHistorySection = document.querySelector('.lead-details-call-history-section');
+                            if (callHistorySection) {
+                              callHistorySection.scrollIntoView({ behavior: 'smooth' });
+                            }
+                          }, 300);
+                        }}
+                      >
+                        <Clock size={14} />
+                        Call History
+                      </button>
+                    );
+                  }
+                  
+                  // Assigned user with pending work - Show Call button
+                  if (isAssignedToUser) {
+                    return (
+                      <button 
+                        className="mobile-call-btn"
+                        onClick={() => {
+                          handleCallLead(lead.phone, lead._id, lead.name);
+                        }}
+                      >
+                        <PhoneCall size={14} />
+                        Call
+                      </button>
+                    );
+                  }
+                  
+                  // Other users - No Call button
+                  return null;
+                })()}
+                
                 <button 
                   className="mobile-followup-btn"
                   onClick={() => {
@@ -1673,16 +1792,73 @@ const LeadTable = ({ userRole }) => {
                     View Follow-ups
                   </button>
 
-                  <button 
-                    className="lead-details-action-btn secondary"
-                    onClick={() => {
-                      handleCallLead(selectedLeadForDetails.phone, selectedLeadForDetails._id, selectedLeadForDetails.name);
-                      setShowLeadDetails(false);
-                    }}
-                  >
-                    <PhoneCall size={16} />
-                    Call Lead
-                  </button>
+                  {/* Call/Call History Button - Based on user role and assignment */}
+                  {(() => {
+                    const currentUserRole = localStorage.getItem("userRole");
+                    const isLeadCreator = selectedLeadForDetails.createdBy === currentUserId;
+                    const isAssignedToUser = String(selectedLeadForDetails.assignedTo) === String(currentUserId);
+                    
+                    // Boss who created lead - Show Call History (not Call button)
+                    if ((currentUserRole === 'boss' || currentUserRole === 'super-admin') && isLeadCreator && !isAssignedToUser) {
+                      return (
+                        <button 
+                          className="lead-details-action-btn secondary"
+                          onClick={() => {
+                            // Scroll to call history section
+                            setTimeout(() => {
+                              const callHistorySection = document.querySelector('.lead-details-call-history-section');
+                              if (callHistorySection) {
+                                callHistorySection.scrollIntoView({ behavior: 'smooth' });
+                              }
+                            }, 100);
+                          }}
+                        >
+                          <Clock size={16} />
+                          View Call History
+                        </button>
+                      );
+                    }
+                    
+                    // Assigned user working on lead - Show Call History
+                    if (isAssignedToUser && selectedLeadForDetails.workProgress && selectedLeadForDetails.workProgress !== 'pending') {
+                      return (
+                        <button 
+                          className="lead-details-action-btn secondary"
+                          onClick={() => {
+                            // Scroll to call history section
+                            setTimeout(() => {
+                              const callHistorySection = document.querySelector('.lead-details-call-history-section');
+                              if (callHistorySection) {
+                                callHistorySection.scrollIntoView({ behavior: 'smooth' });
+                              }
+                            }, 100);
+                          }}
+                        >
+                          <Clock size={16} />
+                          View Call History
+                        </button>
+                      );
+                    }
+                    
+                    // Assigned user with pending work - Show Call button
+                    if (isAssignedToUser) {
+                      return (
+                        <button 
+                          className="lead-details-action-btn secondary"
+                          onClick={() => {
+                            handleCallLead(selectedLeadForDetails.phone, selectedLeadForDetails._id, selectedLeadForDetails.name);
+                            setShowLeadDetails(false);
+                          }}
+                        >
+                          <PhoneCall size={16} />
+                          Call Lead
+                        </button>
+                      );
+                    }
+                    
+                    // Other users - No Call button
+                    return null;
+                  })()}
 
                   <button 
                     className="lead-details-action-btn secondary"
@@ -1735,7 +1911,7 @@ const LeadTable = ({ userRole }) => {
               </div>
 
               {/* Call History Section */}
-              <div className="border-t pt-4 mt-4">
+              <div className="lead-details-call-history-section border-t pt-4 mt-4">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
                     <PhoneCall size={16} className="text-green-600" />

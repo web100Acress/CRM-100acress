@@ -36,6 +36,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
   const [showFollowUp, setShowFollowUp] = useState(false);
   const [showCreateLead, setShowCreateLead] = useState(false);
   const [showLeadDetails, setShowLeadDetails] = useState(false);
+  const [showLeadAnalytics, setShowLeadAnalytics] = useState(false);
   const [showStatusUpdate, setShowStatusUpdate] = useState(false);
   const [selectedLeadForStatus, setSelectedLeadForStatus] = useState(null);
   const [showAssignmentChain, setShowAssignmentChain] = useState(false);
@@ -1099,31 +1100,33 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         phone: cleanPhone,
         leadId: leadId,
         leadName: leadName,
-        startTime: startTime
+        startTime: startTime,
+        duration: 0,
+        status: 'connecting'
       };
       
-      console.log('Setting call data:', callInfo);
       setCallData(callInfo);
-      
-      // Show call popup
-      console.log('Showing call popup');
-      setShowCallPopup(true);
-      setCallStatus('connecting');
       setCallDuration(0);
+      setCallStatus('connecting');
+      setShowCallPopup(true);
       
-      // Actually make the phone call - opens native dialer
+      // Start the call timer
+      const timer = setInterval(() => {
+        setCallDuration(prev => prev + 1);
+      }, 1000);
+      
+      // Store timer in callData for cleanup
+      callInfo.timer = timer;
+      
+      // Initiate the actual call
       window.location.href = `tel:${cleanPhone}`;
       
-      // Start tracking call duration immediately (user might be on call)
-      // We'll track from when popup opens until user returns
-      const startTrackingTime = Date.now();
-      
-      // Check if user returns from call (visibility change)
+      // Handle visibility change to detect when user returns from call
       const handleVisibilityChange = () => {
-        if (document.visibilityState === 'visible' && callStatus === 'connecting') {
-          // User returned, call likely ended
+        if (!document.hidden && callStatus === 'connecting') {
+          // User returned to app after call
           const endTime = new Date();
-          const duration = Math.floor((Date.now() - startTrackingTime) / 1000);
+          const duration = Math.floor((endTime - startTime) / 1000);
           
           setCallStatus('ended');
           setCallDuration(duration);
@@ -1175,6 +1178,17 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleLeadAnalytics = (lead) => {
+    console.log('📊 Opening lead analytics for:', lead.name);
+    
+    // Set selected lead for analytics
+    setSelectedLead(lead);
+    
+    // Show analytics modal or navigate to analytics view
+    // For now, let's show a comprehensive analytics modal
+    setShowLeadAnalytics(true);
   };
 
   const endCall = () => {
@@ -2047,13 +2061,103 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
 
                 {/* Enhanced Action Buttons */}
                 <div className={`grid ${currentUserRole === 'bd' || currentUserRole === 'employee' ? 'grid-cols-4' : 'grid-cols-4'} gap-2`}>
-                  <button
-                    onClick={() => handleCallLead(lead.phone, lead._id, lead.name)}
-                    className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200 shadow-md hover:shadow-lg"
-                  >
-                    <PhoneCall size={18} />
-                    <span className="text-xs mt-1 font-medium">Call</span>
-                  </button>
+                  {(() => {
+                    const isLeadCreator = lead.createdBy === currentUserId;
+                    const isAssignedToUser = String(lead.assignedTo) === String(currentUserId);
+                    
+                    // Boss who created lead - Show Call History (not Call button)
+                    if ((currentUserRole === 'boss' || currentUserRole === 'super-admin') && isLeadCreator && !isAssignedToUser) {
+                      return (
+                        <button
+                          onClick={() => {
+                            setSelectedLead(lead);
+                            setShowLeadDetails(true);
+                            setTimeout(() => {
+                              const callHistorySection = document.querySelector('.lead-details-call-history-section');
+                              if (callHistorySection) {
+                                callHistorySection.scrollIntoView({ behavior: 'smooth' });
+                              }
+                            }, 300);
+                          }}
+                          className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                          title="View Call History"
+                        >
+                          <Clock size={18} />
+                          <span className="text-xs mt-1 font-medium">Call History</span>
+                        </button>
+                      );
+                    }
+                    
+                    // HOD who created lead and forwarded to BD/TL - Show Call History (not Call button)
+                    if (currentUserRole === 'hod' && isLeadCreator && isAssignedToUser && lead.assignedTo !== currentUserId) {
+                      return (
+                        <button
+                          onClick={() => {
+                            setSelectedLead(lead);
+                            setShowLeadDetails(true);
+                            setTimeout(() => {
+                              const callHistorySection = document.querySelector('.lead-details-call-history-section');
+                              if (callHistorySection) {
+                                callHistorySection.scrollIntoView({ behavior: 'smooth' });
+                              }
+                            }, 300);
+                          }}
+                          className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                          title="View Call History"
+                        >
+                          <Clock size={18} />
+                          <span className="text-xs mt-1 font-medium">Call History</span>
+                        </button>
+                      );
+                    }
+                    
+                    // Assigned user with pending work - Show Call button
+                    if (isAssignedToUser && (!lead.workProgress || lead.workProgress === 'pending')) {
+                      return (
+                        <button
+                          onClick={() => handleCallLead(lead.phone, lead._id, lead.name)}
+                          className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200 shadow-md hover:shadow-lg"
+                        >
+                          <PhoneCall size={18} />
+                          <span className="text-xs mt-1 font-medium">Call</span>
+                        </button>
+                      );
+                    }
+                    
+                    // Assigned user working on lead - Show Call History
+                    if (isAssignedToUser && lead.workProgress && lead.workProgress !== 'pending') {
+                      return (
+                        <button
+                          onClick={() => {
+                            setSelectedLead(lead);
+                            setShowLeadDetails(true);
+                            setTimeout(() => {
+                              const callHistorySection = document.querySelector('.lead-details-call-history-section');
+                              if (callHistorySection) {
+                                callHistorySection.scrollIntoView({ behavior: 'smooth' });
+                              }
+                            }, 300);
+                          }}
+                          className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                          title="View Call History"
+                        >
+                          <Clock size={18} />
+                          <span className="text-xs mt-1 font-medium">Call History</span>
+                        </button>
+                      );
+                    }
+                    
+                    // Default Call button for other cases
+                    return (
+                      <button
+                        onClick={() => handleCallLead(lead.phone, lead._id, lead.name)}
+                        className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200 shadow-md hover:shadow-lg"
+                      >
+                        <PhoneCall size={18} />
+                        <span className="text-xs mt-1 font-medium">Call</span>
+                      </button>
+                    );
+                  })()}
                   {/* WhatsApp button for assigned leads */}
                   {isWhatsAppButtonVisible(lead) && (
                     <button
@@ -2073,11 +2177,12 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                     <span className="text-xs mt-1 font-medium">Follow-up</span>
                   </button>
                   <button
-                    onClick={() => handleViewDetails(lead)}
-                    className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-200 shadow-md hover:shadow-lg"
+                    onClick={() => handleLeadAnalytics(lead)}
+                    className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                    title="Lead Performance & Analytics"
                   >
-                    <Eye size={18} />
-                    <span className="text-xs mt-1 font-medium">Details</span>
+                    <TrendingUp size={18} />
+                    <span className="text-xs mt-1 font-medium">Analytics</span>
                   </button>
                   {canForwardLead(lead) && (
                     <button
@@ -2275,13 +2380,97 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
               </div>
               
               <div className="flex gap-2">
-                <button
-                  onClick={() => handleCallLead(selectedLead.phone, selectedLead._id, selectedLead.name)}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  <PhoneCall size={16} />
-                  <span>Call</span>
-                </button>
+                {(() => {
+                  const isLeadCreator = selectedLead.createdBy === currentUserId;
+                  const isAssignedToUser = String(selectedLead.assignedTo) === String(currentUserId);
+                  
+                  // Boss who created lead - Show Call History (not Call button)
+                  if ((currentUserRole === 'boss' || currentUserRole === 'super-admin') && isLeadCreator && !isAssignedToUser) {
+                    return (
+                      <button
+                        onClick={() => {
+                          setTimeout(() => {
+                            const callHistorySection = document.querySelector('.lead-details-call-history-section');
+                            if (callHistorySection) {
+                              callHistorySection.scrollIntoView({ behavior: 'smooth' });
+                            }
+                          }, 100);
+                        }}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                        title="View Call History"
+                      >
+                        <Clock size={16} />
+                        <span>Call History</span>
+                      </button>
+                    );
+                  }
+                  
+                  // HOD who created lead and forwarded to BD/TL - Show Call History (not Call button)
+                  if (currentUserRole === 'hod' && isLeadCreator && isAssignedToUser && selectedLead.assignedTo !== currentUserId) {
+                    return (
+                      <button
+                        onClick={() => {
+                          setTimeout(() => {
+                            const callHistorySection = document.querySelector('.lead-details-call-history-section');
+                            if (callHistorySection) {
+                              callHistorySection.scrollIntoView({ behavior: 'smooth' });
+                            }
+                          }, 100);
+                        }}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                        title="View Call History"
+                      >
+                        <Clock size={16} />
+                        <span>Call History</span>
+                      </button>
+                    );
+                  }
+                  
+                  // Assigned user with pending work - Show Call button
+                  if (isAssignedToUser && (!selectedLead.workProgress || selectedLead.workProgress === 'pending')) {
+                    return (
+                      <button
+                        onClick={() => handleCallLead(selectedLead.phone, selectedLead._id, selectedLead.name)}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                      >
+                        <PhoneCall size={16} />
+                        <span>Call</span>
+                      </button>
+                    );
+                  }
+                  
+                  // Assigned user working on lead - Show Call History
+                  if (isAssignedToUser && selectedLead.workProgress && selectedLead.workProgress !== 'pending') {
+                    return (
+                      <button
+                        onClick={() => {
+                          setTimeout(() => {
+                            const callHistorySection = document.querySelector('.lead-details-call-history-section');
+                            if (callHistorySection) {
+                              callHistorySection.scrollIntoView({ behavior: 'smooth' });
+                            }
+                          }, 100);
+                        }}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                        title="View Call History"
+                      >
+                        <Clock size={16} />
+                        <span>Call History</span>
+                      </button>
+                    );
+                  }
+                  
+                  // Default Call button for other cases
+                  return (
+                    <button
+                      onClick={() => handleCallLead(selectedLead.phone, selectedLead._id, selectedLead.name)}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      <PhoneCall size={16} />
+                      <span>Call</span>
+                    </button>
+                  );
+                })()}
                 <button
                   onClick={() => {
                     setShowLeadDetails(false);
@@ -2371,6 +2560,140 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                   </div>
                 ) : null}
               </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Lead Analytics Modal */}
+      {showLeadAnalytics && selectedLead && (
+        <Dialog 
+          open={showLeadAnalytics} 
+          onOpenChange={setShowLeadAnalytics}
+        >
+          <DialogContent className="max-w-lg w-[95vw] max-h-[85vh] overflow-y-auto mx-4">
+            <DialogHeader className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4">
+              <DialogTitle className="flex items-center gap-2 text-base">
+                <TrendingUp size={18} />
+                <span className="font-semibold">Lead Analytics - {selectedLead.name}</span>
+              </DialogTitle>
+              <DialogDescription className="text-indigo-100">
+               
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="p-4 space-y-4">
+              {/* Lead Overview */}
+              <div className="bg-gray-50 rounded-lg p-3">
+                <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                  <Target size={16} className="text-indigo-600" />
+                  Lead Overview
+                </h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="text-gray-600">Status:</span>
+                    <span className="ml-2 font-medium">{selectedLead.status || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Budget:</span>
+                    <span className="ml-2 font-medium">{selectedLead.budget || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Property:</span>
+                    <span className="ml-2 font-medium">{selectedLead.property || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Location:</span>
+                    <span className="ml-2 font-medium">{selectedLead.location || 'N/A'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Performance Metrics */}
+              <div className="bg-blue-50 rounded-lg p-3">
+                <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                  <Activity size={16} className="text-blue-600" />
+                  Performance Metrics
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Total Calls:</span>
+                    <span className="font-medium">{callHistory.length || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Follow-ups:</span>
+                    <span className="font-medium">0</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Last Contact:</span>
+                    <span className="font-medium">
+                      {selectedLead.lastContact ? new Date(selectedLead.lastContact).toLocaleDateString() : 'Never'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Work Progress:</span>
+                    <span className="font-medium capitalize">{selectedLead.workProgress || 'pending'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Assignment Information */}
+              <div className="bg-purple-50 rounded-lg p-3">
+                <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                  <Users size={16} className="text-purple-600" />
+                  Assignment Information
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Created By:</span>
+                    <span className="font-medium">Boss</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Assigned To:</span>
+                    <span className="font-medium">
+                      {assignableUsers.find(u => String(u._id) === String(selectedLead.assignedTo))?.name || 'Unassigned'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Created Date:</span>
+                    <span className="font-medium">
+                      {selectedLead.createdAt ? new Date(selectedLead.createdAt).toLocaleDateString() : 'N/A'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Insights */}
+              <div className="bg-green-50 rounded-lg p-3">
+                <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                  <Award size={16} className="text-green-600" />
+                  Action Insights
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle size={14} className="text-green-600" />
+                    <span>Lead is actively being worked on</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <PhoneCall size={14} className="text-blue-600" />
+                    <span>Regular follow-up recommended</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <TrendingUp size={14} className="text-purple-600" />
+                    <span>High conversion potential</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2 p-4 border-t">
+              <button
+                onClick={() => setShowLeadAnalytics(false)}
+                className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200 font-medium text-sm"
+              >
+                <X size={14} />
+                <span>Close</span>
+              </button>
             </div>
           </DialogContent>
         </Dialog>
@@ -2732,20 +3055,114 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
           <MessageSquare size={16} />
           Follow Up
         </button>
-        <button
-          onClick={() => {
-            setShowAssignmentChain(false);
-            handleCallLead(
-              selectedLeadForChain.phone,
-              selectedLeadForChain._id,
-              selectedLeadForChain.name
-            );
-          }}
-          className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-purple-600 py-2.5 text-white font-medium hover:bg-purple-700 transition"
-        >
-          <PhoneCall size={16} />
-          Call Now
-        </button>
+        {(() => {
+                  const isLeadCreator = selectedLeadForChain.createdBy === currentUserId;
+                  const isAssignedToUser = String(selectedLeadForChain.assignedTo) === String(currentUserId);
+                  
+                  // Boss who created lead - Show Call History (not Call button)
+                  if ((currentUserRole === 'boss' || currentUserRole === 'super-admin') && isLeadCreator && !isAssignedToUser) {
+                    return (
+                      <button
+                        onClick={() => {
+                          setShowAssignmentChain(false);
+                          setTimeout(() => {
+                            const callHistorySection = document.querySelector('.lead-details-call-history-section');
+                            if (callHistorySection) {
+                              callHistorySection.scrollIntoView({ behavior: 'smooth' });
+                            }
+                          }, 100);
+                        }}
+                        className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 py-2.5 text-white font-medium hover:from-purple-600 hover:to-purple-700 transition"
+                        title="View Call History"
+                      >
+                        <Clock size={16} />
+                        Call History
+                      </button>
+                    );
+                  }
+                  
+                  // HOD who created lead and forwarded to BD/TL - Show Call History (not Call button)
+                  if (currentUserRole === 'hod' && isLeadCreator && isAssignedToUser && selectedLeadForChain.assignedTo !== currentUserId) {
+                    return (
+                      <button
+                        onClick={() => {
+                          setShowAssignmentChain(false);
+                          setTimeout(() => {
+                            const callHistorySection = document.querySelector('.lead-details-call-history-section');
+                            if (callHistorySection) {
+                              callHistorySection.scrollIntoView({ behavior: 'smooth' });
+                            }
+                          }, 100);
+                        }}
+                        className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 py-2.5 text-white font-medium hover:from-purple-600 hover:to-purple-700 transition"
+                        title="View Call History"
+                      >
+                        <Clock size={16} />
+                        Call History
+                      </button>
+                    );
+                  }
+                  
+                  // Assigned user with pending work - Show Call button
+                  if (isAssignedToUser && (!selectedLeadForChain.workProgress || selectedLeadForChain.workProgress === 'pending')) {
+                    return (
+                      <button
+                        onClick={() => {
+                          setShowAssignmentChain(false);
+                          handleCallLead(
+                            selectedLeadForChain.phone,
+                            selectedLeadForChain._id,
+                            selectedLeadForChain.name
+                          );
+                        }}
+                        className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-green-600 py-2.5 text-white font-medium hover:bg-green-700 transition"
+                      >
+                        <PhoneCall size={16} />
+                        Call Now
+                      </button>
+                    );
+                  }
+                  
+                  // Assigned user working on lead - Show Call History
+                  if (isAssignedToUser && selectedLeadForChain.workProgress && selectedLeadForChain.workProgress !== 'pending') {
+                    return (
+                      <button
+                        onClick={() => {
+                          setShowAssignmentChain(false);
+                          setTimeout(() => {
+                            const callHistorySection = document.querySelector('.lead-details-call-history-section');
+                            if (callHistorySection) {
+                              callHistorySection.scrollIntoView({ behavior: 'smooth' });
+                            }
+                          }, 100);
+                        }}
+                        className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 py-2.5 text-white font-medium hover:from-purple-600 hover:to-purple-700 transition"
+                        title="View Call History"
+                      >
+                        <Clock size={16} />
+                        Call History
+                      </button>
+                    );
+                  }
+                  
+                  // Default Call button for other cases
+                  return (
+                    <button
+                      onClick={() => {
+                        setShowAssignmentChain(false);
+                        handleCallLead(
+                          selectedLeadForChain.phone,
+                          selectedLeadForChain._id,
+                          selectedLeadForChain.name
+                        );
+                      }}
+                      className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-purple-600 py-2.5 text-white font-medium hover:bg-purple-700 transition"
+                    >
+                      <PhoneCall size={16} />
+                      Call Now
+                    </button>
+                  );
+                })()}
       </div>
     </div>
   </DialogContent>
