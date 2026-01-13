@@ -659,28 +659,22 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       const token = localStorage.getItem('token');
       
       console.log('🔍 Starting to fetch leads...');
+      console.log('🔍 Token present:', token ? 'Yes' : 'No');
+      console.log('🔍 Current hostname:', window.location.hostname);
       
-      // Try local API first
-      let response = await fetch('http://localhost:5001/api/leads', {
+      // Use the apiUrl helper function which automatically detects localhost vs production
+      const apiEndpoint = apiUrl('leads');
+      console.log('📡 API URL being used:', apiEndpoint);
+      
+      let response = await fetch(apiEndpoint, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
       
-      console.log('📡 Local API response status:', response.status);
-      
-      // If local fails, try production
-      if (!response.ok) {
-        console.log('❌ Local API failed, trying production API...');
-        response = await fetch('https://bcrm.100acress.com/api/leads', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        console.log('📡 Production API response status:', response.status);
-      }
+      console.log('📡 API response status:', response.status);
+      console.log('📡 API response ok:', response.ok);
       
       if (response.ok) {
         const data = await response.json();
@@ -726,6 +720,24 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         const errorText = await response.text();
         console.error('❌ Error response:', errorText);
         
+        // Show specific error based on status
+        let errorMessage = "Failed to fetch leads. Please try again.";
+        if (response.status === 401) {
+          errorMessage = "Authentication failed. Please login again.";
+        } else if (response.status === 403) {
+          errorMessage = "Access denied. You don't have permission to view leads.";
+        } else if (response.status === 404) {
+          errorMessage = "Leads endpoint not found. Please check API configuration.";
+        } else if (response.status >= 500) {
+          errorMessage = "Server error. Please try again later.";
+        }
+        
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive"
+        });
+        
         // Show mock data for testing
         console.log('🔄 Using mock data for testing...');
         const mockData = [
@@ -767,11 +779,26 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       }
     } catch (error) {
       console.error('❌ Error fetching leads:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch leads. Please try again.",
-        variant: "destructive"
+      console.error('❌ Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
       });
+      
+      // Check if it's a network error
+      if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
+        toast({
+          title: "Network Error",
+          description: "Unable to connect to the server. Please check your internet connection and try again.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to fetch leads. Please try again.",
+          variant: "destructive"
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -1220,10 +1247,28 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       });
       
       if (response.ok) {
+        const result = await response.json();
+        console.log("Call record saved successfully:", result);
         toast({
           title: "Call Recorded",
           description: `Call duration: ${formatDuration(callRecord.duration)}`,
         });
+
+        // 🎯 AUTOMATICALLY SHOW CALL HISTORY AFTER CALL IS COMPLETED
+        // Find the lead that was called and show its details with call history
+        const calledLead = leads.find(lead => String(lead._id) === String(callRecord.leadId));
+        if (calledLead) {
+          console.log('📞 Opening call history for called lead:', calledLead.name);
+          
+          // Set the selected lead and show lead details modal
+          setSelectedLead(calledLead);
+          setShowLeadDetails(true);
+          
+          // Fetch call history for this lead after a short delay
+          setTimeout(() => {
+            fetchLeadDetailsCallHistory(callRecord.leadId);
+          }, 500);
+        }
       }
     } catch (error) {
       console.error('Error saving call record:', error);
@@ -1508,7 +1553,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       
       if (res.ok) {
         // Refresh the leads list
-        const leadsResponse = await fetch("https://bcrm.100acress.com/api/leads", {
+        const leadsResponse = await fetch(apiUrl("leads"), {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
