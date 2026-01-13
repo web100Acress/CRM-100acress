@@ -2676,16 +2676,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
 
       {/* Actions */}
       <div className="pt-4 border-t flex gap-3">
-        <button
-          onClick={() => {
-            setShowAssignmentChain(false);
-            handleWhatsAppChat(selectedLeadForChain);
-          }}
-          className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-green-600 py-2.5 text-white font-medium hover:bg-green-700 transition"
-        >
-          <MessageCircle size={16} />
-          Chat
-        </button>
+    
         <button
           onClick={() => {
             setShowAssignmentChain(false);
