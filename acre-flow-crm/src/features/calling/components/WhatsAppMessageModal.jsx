@@ -136,9 +136,16 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
       if (response.ok) {
         const data = await response.json();
         console.log('🔍 Chat creation response:', data);
-        if (data.success) {
+        if (data.success && data.data?._id) {
           setChatId(data.data._id);
           console.log('✅ Chat created/found:', data.data._id);
+          
+          // Show success message
+          toast({
+            title: 'Success',
+            description: 'Chat ready for messaging',
+            variant: 'default'
+          });
           
           // Check if chat has any initial messages
           if (data.data.messages && data.data.messages.length > 0) {
@@ -147,7 +154,12 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
             console.log('🔍 Chat has no initial messages');
           }
         } else {
-          console.error('❌ Chat creation failed - success false:', data);
+          console.error('❌ Chat creation failed - success false or missing data:', data);
+          toast({
+            title: 'Error',
+            description: data.message || 'Failed to create chat: Invalid response',
+            variant: 'destructive'
+          });
         }
       } else {
         // Handle backend error responses
@@ -161,12 +173,17 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
         // Show the actual error message from backend
         toast({
           title: 'Error',
-          description: errorData.message || 'Failed to create chat',
+          description: errorData.message || `Failed to create chat (${response.status})`,
           variant: 'destructive'
         });
       }
     } catch (error) {
-      console.error('Error creating chat:', error);
+      console.error('❌ Error creating chat:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create chat. Please try again.',
+        variant: 'destructive'
+      });
     } finally {
       setCreatingChat(false);
     }
@@ -520,13 +537,30 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
   
   // Find/create chat when modal opens
   useEffect(() => { 
+    console.log('🔍 Chat Modal useEffect triggered:', {
+      isOpen,
+      recipientId: recipient?._id,
+      recipientName: recipient?.name,
+      recipientLeadId: recipient?.leadId,
+      recipientChatId: recipient?.chatId
+    });
+    
     if (isOpen && recipient?._id) { 
       // If we have chatId, set it directly (for chat list opens)
       if (recipient.chatId) {
+        console.log('✅ Setting existing chatId:', recipient.chatId);
         setChatId(recipient.chatId);
       } else if (recipient.leadId) {
         // If we have leadId, find or create chat (for lead-based chats)
+        console.log('🔍 Creating new chat for lead:', recipient.leadId);
         findOrCreateChat();
+      } else {
+        console.error('❌ No leadId or chatId provided for chat creation');
+        toast({
+          title: 'Error',
+          description: 'Cannot create chat: Missing lead information',
+          variant: 'destructive'
+        });
       }
     } 
   }, [isOpen, recipient, findOrCreateChat]);
