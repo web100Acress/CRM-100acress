@@ -658,13 +658,24 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     try {
       const token = localStorage.getItem('token');
       
-      // Use production API
-      const response = await fetch('https://bcrm.100acress.com/api/leads', {
+      // Try production API first
+      let response = await fetch('https://bcrm.100acress.com/api/leads', {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
+      
+      // If production fails, try local API
+      if (!response.ok) {
+        console.log('Production API failed, trying local API...');
+        response = await fetch('http://localhost:5001/api/leads', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+      }
       
       if (response.ok) {
         const data = await response.json();
@@ -678,6 +689,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         });
         
         setLeads(sortedLeads);
+        console.log('Leads loaded successfully:', sortedLeads.length, 'leads');
         
         // Calculate stats
         const totalLeads = sortedLeads?.length || 0;
@@ -691,6 +703,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
           hotLeads
         });
       } else {
+        console.log('API failed, using mock data');
         // Mock data for testing
         const mockData = [
           {
@@ -1279,186 +1292,63 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     const currentUserId = localStorage.getItem('userId');
     const currentUserRole = localStorage.getItem('userRole') || localStorage.getItem('role');
 
-    // 🔍 DEBUG: Show all available users
-    console.log('🔍 Available Users for Chat:', {
-      totalUsers: users.length,
-      users: users.map(u => ({
-        _id: u._id,
-        name: u.name,
-        role: u.role,
-        email: u.email
-      })),
-      currentUserId,
-      currentUserRole
-    });
-
-    // 🔍 LEAD CHAIN ANALYSIS
-    console.log('🔍 LEAD CHAIN STRUCTURE:', {
+    console.log('WhatsApp Chat Initiated:', {
       leadId: lead._id,
       leadName: lead.name,
+      currentUserId,
+      currentUserRole,
       assignedTo: lead.assignedTo,
-      assignmentChain: lead.assignmentChain,
-      assignmentChainLength: lead.assignmentChain?.length || 0,
-      firstAssignment: lead.assignmentChain?.[0],
-      createdBy: lead.createdBy,
-      allLeadProperties: Object.keys(lead)
+      totalUsers: users.length
     });
 
-    // 🔥 SIMPLE DIRECT CHAT LOGIC - HOD ↔ BD
-    // If current user is HOD and lead is assigned to BD, allow chat
-    // If current user is BD and lead is assigned to them, find who assigned it
     let recipientUser = null;
     const currentUserIdStr = String(currentUserId);
     
+    // Simple logic: Find chat partner based on assignment
     if (currentUserRole === 'hod' || currentUserRole === 'boss') {
-      // HOD/Boss logic - Chat with assigned user
-      console.log('🔍 HOD/Boss trying to chat with assigned user');
-      
-      // Find the assigned user (BD)
+      // HOD/Boss chats with assigned BD
       recipientUser = users.find(u => String(u._id) === String(lead.assignedTo));
-      console.log('✅ HOD/Boss found assigned user:', recipientUser);
       
-      // If not found in assignableUsers, try to create from lead data
+      // If not found, create recipient from lead data
       if (!recipientUser && lead.assignedTo) {
-        console.log('🔍 Assigned user not in assignableUsers, creating from lead data');
         recipientUser = {
           _id: lead.assignedTo,
           name: lead.assignedToName || lead.assignedUserName || 'Assigned User',
-          role: 'bd', // Assume BD if assigned by HOD
+          role: 'bd',
           email: lead.assignedToEmail || ''
         };
-        console.log('✅ Created recipient from lead data:', recipientUser);
       }
     } else if (currentUserRole === 'bd' || currentUserRole === 'employee') {
-      // BD logic - Chat with who assigned them the lead
-      console.log('🔍 BD user trying to chat with assigner');
-      
-      // If lead is assigned to current BD, find who assigned it
+      // BD chats with who assigned them the lead
       if (String(lead.assignedTo) === currentUserIdStr) {
-        console.log('✅ BD user is assigned to this lead, looking for assigner');
-        console.log('🔍 Assignment chain:', lead.assignmentChain);
-        console.log('🔍 Available users:', users.map(u => ({ _id: u._id, name: u.name, role: u.role })));
-        
-        // Look in assignment chain for who assigned this lead
+        // Look for assigner in assignment chain
         if (lead.assignmentChain && lead.assignmentChain.length > 0) {
-          console.log('🔍 Assignment chain entries:');
-          lead.assignmentChain.forEach((entry, index) => {
-            console.log(`  ${index}:`, {
-              userId: entry.userId,
-              name: entry.name,
-              role: entry.role,
-              assignedBy: entry.assignedBy,
-              assignedTo: entry.assignedTo
-            });
-          });
+          const firstAssignment = lead.assignmentChain[0];
+          const assignerId = typeof firstAssignment.assignedBy === 'string' 
+            ? firstAssignment.assignedBy 
+            : firstAssignment.assignedBy?._id;
           
-          // Find the entry where the current BD was assigned
-          const bdAssignment = lead.assignmentChain.find(assignment => 
-            String(assignment.userId) === currentUserIdStr
-          );
+          recipientUser = users.find(u => String(u._id) === String(assignerId));
           
-          console.log('🔍 Current BD ID:', currentUserIdStr);
-          console.log('🔍 Found BD assignment entry:', bdAssignment);
-          
-          if (bdAssignment && bdAssignment.assignedBy) {
-            const assignerId = typeof bdAssignment.assignedBy === 'string' 
-              ? bdAssignment.assignedBy 
-              : bdAssignment.assignedBy._id;
-            
-            console.log('🔍 Assigner ID extracted:', assignerId);
-            console.log('🔍 Assigner details:', bdAssignment.assignedBy);
-            
-            recipientUser = users.find(u => String(u._id) === String(assignerId));
-            console.log('✅ BD found assigner in users:', recipientUser);
-            
-            // If not found in users, create from assignment chain
-            if (!recipientUser && bdAssignment.assignedBy) {
-              recipientUser = {
-                _id: assignerId,
-                name: bdAssignment.assignedBy.name || 'Assigner',
-                role: bdAssignment.assignedBy.role || 'hod',
-                email: bdAssignment.assignedBy.email || ''
-              };
-              console.log('✅ BD created assigner from chain:', recipientUser);
-            }
-          } else {
-            console.log('❌ No assignedBy found in BD assignment entry');
+          // If not found, create from assignment chain
+          if (!recipientUser && firstAssignment.assignedBy) {
+            recipientUser = {
+              _id: assignerId,
+              name: firstAssignment.assignedBy?.name || 'Assigner',
+              role: firstAssignment.assignedBy?.role || 'hod',
+              email: firstAssignment.assignedBy?.email || ''
+            };
           }
-        } else {
-          console.log('❌ No assignment chain found');
-        }
-      } else {
-        console.log('❌ Lead is not assigned to current BD user');
-      }
-      
-      // Fallback: If BD logic fails, try to find the actual assigner from assignment chain
-      if (!recipientUser && lead.assignmentChain && lead.assignmentChain.length > 0) {
-        console.log('🔍 BD fallback - checking assignment chain for assigner');
-        console.log('🔍 Full assignment chain structure:', JSON.stringify(lead.assignmentChain, null, 2));
-        
-        for (const assignment of lead.assignmentChain) {
-          console.log('🔍 Processing assignment:', assignment);
-          console.log('🔍 assignment.assignedBy:', assignment.assignedBy);
-          console.log('🔍 Type of assignedBy:', typeof assignment.assignedBy);
-          
-          if (assignment.assignedBy) {
-            const assignerId = typeof assignment.assignedBy === 'string' 
-              ? assignment.assignedBy 
-              : assignment.assignedBy._id;
-            
-            console.log('🔍 Extracted assignerId:', assignerId);
-            console.log('🔍 Current user ID:', currentUserIdStr);
-            console.log('🔍 Are they different?', String(assignerId) !== currentUserIdStr);
-            
-            if (assignerId && String(assignerId) !== currentUserIdStr) {
-              // Create recipient from assignment chain even if not in users array
-              recipientUser = {
-                _id: assignerId,
-                name: assignment.assignedBy.name || 'Assigner',
-                role: assignment.assignedBy.role || 'hod',
-                email: assignment.assignedBy.email || ''
-              };
-              console.log('✅ BD fallback created assigner from chain:', recipientUser);
-              break;
-            } else {
-              console.log('❌ Assigner is same as current user, skipping');
-            }
-          } else {
-            console.log('❌ No assignedBy found in this assignment');
-          }
-        }
-      }
-      
-      // Last resort: If still no recipient, find any HOD (but prefer the one who appears in assignment chain)
-      if (!recipientUser) {
-        console.log('🔍 BD last resort - trying to find any HOD');
-        const anyHod = users.find(u => u.role === 'hod' || u.role === 'boss');
-        if (anyHod && String(anyHod._id) !== currentUserIdStr) {
-          recipientUser = anyHod;
-          console.log('✅ BD last resort found HOD:', recipientUser);
         }
       }
     }
 
-    // Validate recipient
+    console.log('🔍 Selected Recipient:', recipientUser);
+
     if (!recipientUser) {
-      console.error('❌ NO VALID RECIPIENT FOUND');
-      console.error('DEBUG INFO:', {
-        leadId: lead._id,
-        leadName: lead.name,
-        currentUserId,
-        leadAssignedTo: lead.assignedTo,
-        leadAssignedBy: lead.assignedBy,
-        assignmentChainLength: lead.assignmentChain?.length || 0,
-        assignmentChain: lead.assignmentChain,
-        usersCount: users.length,
-        recipientsCount: 0,
-        assignableUsersSample: users.slice(0, 3).map(u => ({ _id: u._id, name: u.name }))
-      });
-      
       toast({
-        title: 'Chat Not Available',
-        description: 'No valid recipient found. You can only chat with users in the assignment chain.',
+        title: 'Error',
+        description: 'No valid recipient found for chat',
         variant: 'destructive'
       });
       return;
@@ -1466,28 +1356,16 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
 
     // Prevent self-chat
     if (String(recipientUser._id) === currentUserIdStr) {
-      console.error('❌ SELF-CHAT DETECTED');
       toast({
         title: 'Error',
-        description: 'You cannot chat with yourself.',
+        description: 'You cannot chat with yourself',
         variant: 'destructive'
       });
       return;
     }
 
-    console.log('✅ FINAL RECIPIENT SELECTED:', recipientUser);
-
-    // Open WhatsApp modal with selected recipient
-    // Include lead information for the WhatsApp modal
-    const recipientData = {
-      ...recipientUser,
-      leadId: lead._id,
-      leadName: lead.name,
-      assignedTo: lead.assignedTo
-    };
-    
+    setWhatsAppRecipient(recipientUser);
     setShowWhatsAppModal(true);
-    setWhatsAppRecipient(recipientData);
   };
 
   const handleStatusUpdate = (lead) => {
