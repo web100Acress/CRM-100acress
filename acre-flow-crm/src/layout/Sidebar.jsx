@@ -55,10 +55,6 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
     boss: [
       { path: '/', icon: Home, label: 'Dashboard' },
       { path: '/leads', icon: Building2, label: 'All Leads' },
-      // { path: '/calls', icon: PhoneCall, label: 'Call Logs' },
-      // { path: '/calling-settings', icon: Settings, label: 'Calling Settings' },
-      // { path: '/email', icon: Mail, label: 'Email Center' },
-      // { path: '/whatsapp', icon: MessageCircle, label: 'WhatsApp Logs' },
       { path: '/users', icon: Users, label: 'Manage Users' },
       { path: '/admin/bd-analytics', icon: BarChart3, label: 'BD Analytics' },
     ],
@@ -103,7 +99,6 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
     bd: [
       { path: '/employee-dashboard', icon: Home, label: 'Dashboard' },
       { path: '/leads', icon: Building2, label: 'My Leads' },
-      { path: '/calls', icon: PhoneCall, label: 'Call Logs' },
       { path: '/whatsapp-chat', icon: MessageCircle, label: 'Management Chat' },
     ]
   };
@@ -121,7 +116,7 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
 
   // For team-leader, employee, and super-admin, always use role-specific navigation
   const navItems =
-    userRole === 'team-leader' || userRole === 'bd' || userRole === 'boss' || userRole === 'head-admin'
+    ['team-leader', 'bd', 'boss', 'head-admin', 'sales', 'hr', 'blog', 'admin'].includes(userRole)
       ? (navigationItems[userRole] || navigationItems['bd'])
       : (filteredModuleNav.length > 0 ? filteredModuleNav : (navigationItems[userRole] || navigationItems['bd']));
 
@@ -180,7 +175,7 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
 
   const headerTitle = useMemo(() => {
     if (userRole === 'boss') return 'Boss';
-    if (userRole === 'head-admin') return 'Head Admin';
+    if (userRole === 'head-admin') return 'HOD';
     if (userRole === 'team-leader') return 'Team Leader';
     if (userRole === 'bd') return 'BD';
     return 'CRM';
@@ -189,7 +184,7 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
   const getRoleDisplayName = (role) => {
     switch (role) {
       case 'boss': return 'BOSS';
-      case 'head-admin': return 'Head';
+      case 'head-admin': return 'HOD';
       case 'team-leader': return 'Team Leader';
       case 'bd': return 'BD';
       default: return 'User';
@@ -206,18 +201,17 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
     <>
       {/* Desktop Sidebar */}
       <div
-        className={`crm-sidebar ${isDark ? 'is-dark' : 'is-light'} ${isCollapsed ? 'is-collapsed' : ''} ${
-          isMobile ? 'hidden' : 'flex'
-        }`}
+        className={`crm-sidebar ${isDark ? 'is-dark' : 'is-light'} ${isCollapsed ? 'is-collapsed' : ''} ${isMobile ? 'hidden' : 'flex'
+          }`}
       >
-        <div className="crm-sidebar-rail">
-          <div className="crm-rail-top">
-            <div className="crm-rail-logo" title="100acres CRM">
-              <Building2 className="crm-rail-logo-icon" />
-            </div>
+        {/* <div className="crm-sidebar-rail"> */}
+        {/* <div className="crm-rail-top">
+          <div className="crm-rail-logo" title="100acres CRM">
+            <Building2 className="crm-rail-logo-icon" />
           </div>
+        </div> */}
 
-          <div className="crm-rail-nav">
+        {/* <div className="crm-rail-nav">
             {groupedNav.map((grp, grpIdx) => (
               <React.Fragment key={grp.title}>
                 {grp.items.map(({ path, icon: Icon, label }) => {
@@ -238,22 +232,22 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
                 {grpIdx < groupedNav.length - 1 && <div className="crm-rail-divider" />}
               </React.Fragment>
             ))}
-          </div>
+          </div> */}
 
-          <div className="crm-rail-bottom">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="crm-rail-action"
-              title={isDark ? 'Light Mode' : 'Dark Mode'}
-            >
-              {isDark ? <Sun className="crm-rail-icon" /> : <Moon className="crm-rail-icon" />}
-            </button>
-            <button type="button" onClick={handleLogout} className="crm-rail-action" title="Logout">
-              <LogOut className="crm-rail-icon" />
-            </button>
-          </div>
-        </div>
+        {/* <div className="crm-rail-bottom">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="crm-rail-action"
+            title={isDark ? 'Light Mode' : 'Dark Mode'}
+          >
+            {isDark ? <Sun className="crm-rail-icon" /> : <Moon className="crm-rail-icon" />}
+          </button>
+          <button type="button" onClick={handleLogout} className="crm-rail-action" title="Logout">
+            <LogOut className="crm-rail-icon" />
+          </button>
+        </div> */}
+        {/* </div> */}
 
         {!isCollapsed && (
           <div className="crm-sidebar-panel">
