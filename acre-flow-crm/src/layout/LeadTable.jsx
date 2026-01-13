@@ -662,6 +662,22 @@ const LeadTable = ({ userRole }) => {
           status: "success",
         });
 
+        // 🎯 AUTOMATICALLY SHOW CALL HISTORY AFTER CALL IS COMPLETED
+        // Find the lead data and show its details with call history
+        const leadData = data.find(lead => String(lead._id) === String(callData.leadId));
+        if (leadData) {
+          console.log('📞 Opening call history for called lead:', leadData.name);
+          
+          // Set selected lead and show lead details modal
+          setSelectedLeadForDetails(leadData);
+          setShowLeadDetails(true);
+          
+          // Fetch call history for this lead after a short delay
+          setTimeout(() => {
+            fetchLeadDetailsCallHistory(callData.leadId);
+          }, 500);
+        }
+
         return true;
       } else {
         let errorPayload = null;

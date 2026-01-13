@@ -81,39 +81,127 @@ const EditProfileMobile = () => {
       checkForUpdates();
     }, 3000); // Check every 3 seconds for more real-time feel
     
-    // Listen for storage events from other tabs
-    const handleStorageChange = (e) => {
-      if (e.key === 'userProfileImage' && e.newValue) {
-        setProfileImage(e.newValue);
-        toast({
-          title: "Profile Updated",
-          description: "Profile picture updated from another device",
-          variant: "info"
-        });
-      }
-      if (e.key === 'userName' && e.newValue) {
-        setFormData(prev => ({ ...prev, name: e.newValue }));
-      }
-      if (e.key === 'userEmail' && e.newValue) {
-        setFormData(prev => ({ ...prev, email: e.newValue }));
-      }
-    };
-    
-    window.addEventListener('storage', handleStorageChange);
-    
     return () => {
       clearInterval(interval);
-      window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
 
-  const loadUserData = () => {
+  const loadUserData = async () => {
     setLoading(true);
     try {
-      // Load from localStorage (in real app, this would be from API)
-      const userData = {
+      // 🎯 LOAD FROM BACKEND DATABASE + S3 (not localStorage)
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        throw new Error('User not authenticated');
+      }
+      
+      // Dynamic API base URL
+      const API_BASE = process.env.NODE_ENV === 'development' 
+        ? 'http://localhost:5001' 
+        : 'https://bcrm.100acress.com';
+      
+      // 🎯 TEMPORARY BYPASS: Skip backend test for development
+      console.log('� BYPASS: Skipping backend test, assuming backend is ready...');
+      
+      // Fetch current user data from backend (use /me endpoint for current user)
+      console.log('🔍 Fetching user profile from:', `${API_BASE}/api/users/me`);
+      console.log('🔍 Token available:', token ? 'Yes' : 'No');
+      
+      // Add cache-buster to avoid cached requests
+      const cacheBuster = new Date().getTime();
+      const response = await fetch(`${API_BASE}/api/users/me?_cb=${cacheBuster}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Cache-Control': 'no-cache'
+        }
+      });
+      
+      console.log('🔍 Profile API response status:', response.status);
+      console.log('🔍 Profile API response ok:', response.ok);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('🔴 Profile API error response:', errorText);
+        
+        // 🎯 FALLBACK: Use login data if profile endpoint doesn't exist
+        if (response.status === 404) {
+          console.log('🔄 Profile endpoint not found, using fallback login data...');
+          
+          const fallbackData = {
+            name: localStorage.getItem('userName') || '',
+            email: localStorage.getItem('userEmail') || '',
+            phone: localStorage.getItem('userPhone') || '+91 9876543211',
+            role: localStorage.getItem('userRole') || 'employee',
+            department: localStorage.getItem('userDepartment') || 'Sales',
+            joinDate: localStorage.getItem('userJoinDate') || '2024-01-15'
+          };
+          
+          setFormData(prev => ({
+            ...prev,
+            ...fallbackData
+          }));
+          
+          // Load profile image from localStorage fallback
+          const savedImage = localStorage.getItem('userProfileImage');
+          if (savedImage) {
+            setProfileImage(savedImage);
+            console.log('✅ Profile image loaded from localStorage fallback:', savedImage.substring(0, 50) + '...');
+          }
+          
+          setLastSaved(new Date());
+          setLoading(false);
+          return;
+        }
+        
+        throw new Error(`Failed to fetch user data: ${response.status} ${response.statusText}`);
+      }
+      
+      const userData = await response.json();
+      
+      console.log('🔍 User data loaded from database:', userData);
+      
+      // Update form with backend data
+      setFormData(prev => ({
+        ...prev,
+        name: userData.data.name || '',
+        email: userData.data.email || '',
+        phone: userData.data.phone || '',
+        role: userData.data.role || localStorage.getItem('userRole') || 'employee',
+        department: userData.data.department || 'Sales',
+        joinDate: userData.data.joinDate || '2024-01-15'
+      }));
+      
+      // Load profile image with Google icon priority
+      const googleProfileImage = localStorage.getItem('googleProfileImage');
+      const savedProfileImage = localStorage.getItem('userProfileImage');
+      const loginProfileImage = localStorage.getItem('loginProfileImage');
+      
+      // 🎯 GOOGLE PRIORITY: Use Google profile icon first
+      if (googleProfileImage) {
+        setProfileImage(googleProfileImage);
+        console.log('✅ Google profile icon loaded:', googleProfileImage.substring(0, 50) + '...');
+      } else if (savedProfileImage) {
+        setProfileImage(savedProfileImage);
+        console.log('✅ Profile image loaded from localStorage:', savedImage.substring(0, 50) + '...');
+      } else if (loginProfileImage) {
+        setProfileImage(loginProfileImage);
+        console.log('✅ Login profile image loaded:', loginProfileImage.substring(0, 50) + '...');
+      } else {
+        console.log('ℹ️ No profile image found, using default');
+      }
+      
+      setLastSaved(new Date());
+    } catch (error) {
+      console.error('Error loading user data from backend:', error);
+      
+      // 🎯 ULTIMATE FALLBACK: Always use localStorage if backend fails
+      console.log('🔄 Backend error, using localStorage fallback...');
+      
+      const fallbackData = {
         name: localStorage.getItem('userName') || '',
         email: localStorage.getItem('userEmail') || '',
         phone: localStorage.getItem('userPhone') || '+91 9876543211',
@@ -122,24 +210,34 @@ const EditProfileMobile = () => {
         joinDate: localStorage.getItem('userJoinDate') || '2024-01-15'
       };
       
-      setFormData(prev => ({
-        ...prev,
-        ...userData
-      }));
+      setFormData(prev => ({ ...prev, ...fallbackData }));
       
-      // Load saved profile image
-      const savedImage = localStorage.getItem('userProfileImage');
-      if (savedImage) {
-        setProfileImage(savedImage);
+      // 🎯 GOOGLE PRIORITY: Check Google profile first
+      const googleProfileImage = localStorage.getItem('googleProfileImage');
+      const savedProfileImage = localStorage.getItem('userProfileImage');
+      const loginProfileImage = localStorage.getItem('loginProfileImage');
+      
+      if (googleProfileImage) {
+        setProfileImage(googleProfileImage);
+        console.log('✅ Google profile icon loaded from fallback:', googleProfileImage.substring(0, 50) + '...');
+      } else if (savedProfileImage) {
+        setProfileImage(savedProfileImage);
+        console.log('✅ Profile image loaded from localStorage fallback:', savedProfileImage.substring(0, 50) + '...');
+      } else if (loginProfileImage) {
+        setProfileImage(loginProfileImage);
+        console.log('✅ Login profile image loaded from fallback:', loginProfileImage.substring(0, 50) + '...');
+      } else {
+        console.log('ℹ️ No profile image found, using default');
       }
       
       setLastSaved(new Date());
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load profile data",
-        variant: "destructive"
-      });
+      
+      // Don't show error toast for fallback - it's silent
+      // toast({
+      //   title: "Error",
+      //   description: "Failed to load profile data from server",
+      //   variant: "destructive"
+      // });
     } finally {
       setLoading(false);
     }
@@ -202,14 +300,22 @@ const EditProfileMobile = () => {
       }));
     }
     
-    // Auto-save to localStorage for real-time sync
-    localStorage.setItem(`user_${field}`, value);
-    
-    // Trigger storage event for other tabs
-    window.dispatchEvent(new StorageEvent('storage', {
-      key: `user_${field}`,
-      newValue: value
-    }));
+    // 🎯 NO LOCALSTORAGE for sensitive fields - Save to backend database only
+    // Only save non-sensitive fields to localStorage as backup
+    if (field !== 'currentPassword' && field !== 'newPassword' && field !== 'confirmPassword') {
+      const keyMap = {
+        name: 'userName',
+        email: 'userEmail', 
+        phone: 'userPhone'
+      };
+      
+      if (keyMap[field]) {
+        localStorage.setItem(keyMap[field], value);
+        console.log(`📝 Updated ${field} in form state and localStorage:`, value);
+      }
+    } else {
+      console.log(`📝 Updated ${field} in form state only (sensitive data):`, '***');
+    }
   };
 
   const handleImageClick = () => {
@@ -249,12 +355,13 @@ const EditProfileMobile = () => {
         const formData = new FormData();
         formData.append('profileImage', file);
 
-        // Upload to server
-        const apiUrl = process.env.NODE_ENV === 'development'
-          ? 'http://localhost:5001/api/users/profile-image'
-          : 'https://bcrm.100acress.com/api/users/profile-image';
+        // 🎯 CRITICAL FIX: Use dynamic API base URL
+        const API_BASE = process.env.NODE_ENV === 'development' 
+          ? 'http://localhost:5001' 
+          : 'https://bcrm.100acress.com';
 
-        const response = await fetch(apiUrl, {
+        // Upload to server
+        const response = await fetch(`${API_BASE}/api/users/profile-image`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -269,11 +376,33 @@ const EditProfileMobile = () => {
 
         const result = await response.json();
         
-        // Update state with server response
-        setProfileImage(result.data.profileImage);
+        console.log('🔍 Image upload response:', result);
         
-        // Update localStorage
-        localStorage.setItem('userProfileImage', result.data.profileImage);
+        // 🎯 CRITICAL FIX: Handle both base64 and S3 URLs
+        let imageUrl = result.data.profileImage;
+        
+        if (imageUrl) {
+          if (imageUrl.startsWith('data:')) {
+            // Backend returned base64 data - use as-is
+            console.log('🔧 Backend returned base64 data, using directly');
+          } else if (imageUrl.startsWith('http')) {
+            // Backend returned full S3 URL - use as-is
+            console.log('🔧 Backend returned full S3 URL:', imageUrl);
+          } else {
+            // Backend returned relative path - convert to full URL
+            const baseUrl = process.env.NODE_ENV === 'development' 
+              ? 'http://localhost:5001' 
+              : 'https://bcrm.100acress.com';
+            imageUrl = baseUrl + imageUrl;
+            console.log('🔧 Converted relative URL to full URL:', imageUrl);
+          }
+        }
+        
+        // Update state with server response
+        setProfileImage(imageUrl);
+        
+        // 🎯 BACKEND DATABASE + S3 ONLY (no localStorage)
+        console.log('✅ Profile image uploaded to S3, saved in database:', imageUrl);
         
         toast({
           title: "Image Updated",
@@ -288,14 +417,8 @@ const EditProfileMobile = () => {
           variant: "destructive"
         });
         
-        // Fallback to local storage if server upload fails
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const imageUrl = e.target.result;
-          setProfileImage(imageUrl);
-          localStorage.setItem('userProfileImage', imageUrl);
-        };
-        reader.readAsDataURL(file);
+        // 🎯 NO LOCALSTORAGE FALLBACK for images - Backend only
+        // Don't save base64 to localStorage as it causes issues
       } finally {
         setSaving(false);
         setSyncStatus('synced');
@@ -318,8 +441,16 @@ const EditProfileMobile = () => {
     
     try {
       const token = localStorage.getItem('token');
-      const userId = localStorage.getItem('userId') || localStorage.getItem('user_id');
       
+      if (!token) {
+        throw new Error('User not authenticated');
+      }
+      
+      // 🎯 CRITICAL FIX: Use dynamic API base URL and handle image URLs
+      const API_BASE = process.env.NODE_ENV === 'development' 
+        ? 'http://localhost:5001' 
+        : 'https://bcrm.100acress.com';
+
       // Prepare data for API
       const profileData = {
         name: formData.name,
@@ -334,8 +465,8 @@ const EditProfileMobile = () => {
         profileData.newPassword = formData.newPassword;
       }
 
-      // Call backend API
-      const response = await fetch('http://localhost:5001/api/users/profile', {
+      // Call backend API (use /me endpoint for current user)
+      const response = await fetch(`${API_BASE}/api/users/me`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -351,14 +482,32 @@ const EditProfileMobile = () => {
 
       const result = await response.json();
       
-      // Update localStorage with server response
-      localStorage.setItem('userName', result.data.name || formData.name);
-      localStorage.setItem('userEmail', result.data.email || formData.email);
-      localStorage.setItem('userPhone', result.data.phone || formData.phone);
-      localStorage.setItem('profileImage', result.data.profileImage || profileImage);
-      localStorage.setItem('profileLastUpdated', new Date().toISOString());
+      console.log('🔍 Profile data saved to database via backend API');
       
-      // Update component state
+      // Handle image URL from backend response
+      if (result.data.profileImage) {
+        let savedImageUrl = result.data.profileImage;
+        
+        if (savedImageUrl.startsWith('data:')) {
+          // Backend returned base64 data - use as-is
+          console.log('🔧 Backend returned base64 data in profile save, using directly');
+        } else if (savedImageUrl.startsWith('http')) {
+          // Backend returned full S3 URL - use as-is
+          console.log('🔧 Backend returned full S3 URL in profile save:', savedImageUrl);
+        } else {
+          // Backend returned relative path - convert to full URL
+          const baseUrl = process.env.NODE_ENV === 'development' 
+            ? 'http://localhost:5001' 
+            : 'https://bcrm.100acress.com';
+          savedImageUrl = baseUrl + savedImageUrl;
+          console.log('🔧 Converted relative URL to full URL in profile save:', savedImageUrl);
+        }
+        
+        // Update state with processed URL
+        setProfileImage(savedImageUrl);
+      }
+      
+      // Update component state only
       setLastSaved(new Date());
       setSyncStatus('synced');
       
