@@ -56,6 +56,43 @@ const LeadTable = ({ userRole }) => {
   const prevAssignedLeadIds = useRef(new Set());
   const currentUserId = localStorage.getItem("userId");
 
+  // Helper function for API calls with fallback
+  const apiCall = async (endpoint, options = {}) => {
+    const token = localStorage.getItem("token");
+    const localUrl = `http://localhost:5001${endpoint}`;
+    const prodUrl = `https://bcrm.100acress.com${endpoint}`;
+    
+    console.log(`🔍 API Call: ${endpoint}`);
+    
+    // Try local API first
+    let response = await fetch(localUrl, {
+      ...options,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        ...options.headers
+      }
+    });
+    
+    console.log(`📡 Local API response: ${response.status}`);
+    
+    // If local fails, try production
+    if (!response.ok) {
+      console.log(`❌ Local API failed, trying production...`);
+      response = await fetch(prodUrl, {
+        ...options,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          ...options.headers
+        }
+      });
+      console.log(`📡 Production API response: ${response.status}`);
+    }
+    
+    return response;
+  };
+
   const [chainModalLead, setChainModalLead] = useState(null);
   const [showLeadDetails, setShowLeadDetails] = useState(false);
   const [selectedLeadForDetails, setSelectedLeadForDetails] = useState(null);
@@ -276,15 +313,16 @@ const LeadTable = ({ userRole }) => {
   useEffect(() => {
     const fetchLeads = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const response = await fetch("https://bcrm.100acress.com/api/leads", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
+        console.log('🔍 Desktop: Starting to fetch leads...');
+        
+        const response = await apiCall('/api/leads');
+        
         const json = await response.json();
+        console.log('📊 Desktop: Fetch leads response:', json);
+        
         setLeadsList(json.data || []);
+        
+        console.log('✅ Desktop: Leads loaded successfully:', (json.data || []).length, 'leads');
 
         // --- Notification logic ---
         const newAssignedLeads = (json.data || []).filter(
@@ -305,6 +343,7 @@ const LeadTable = ({ userRole }) => {
         prevAssignedLeadIds.current = newAssignedIds;
         // --- End notification logic ---
       } catch (error) {
+        console.error('❌ Desktop: Error fetching leads:', error);
         alert("Error fetching leads: " + error.message);
       } finally {
         setLoading(false);
@@ -313,20 +352,17 @@ const LeadTable = ({ userRole }) => {
 
     const fetchAssignableUsers = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const response = await fetch(
-          "https://bcrm.100acress.com/api/leads/assignable-users",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        console.log('🔍 Desktop: Fetching assignable users...');
+        
+        const response = await apiCall('/api/leads/assignable-users');
+        
         const json = await response.json();
+        console.log('📊 Desktop: Assignable users response:', json);
+        
         setAssignableUsers(json.data || []);
+        console.log('✅ Desktop: Assignable users loaded:', (json.data || []).length, 'users');
       } catch (error) {
-        console.error("Error fetching assignable users:", error);
+        console.error('❌ Desktop: Error fetching assignable users:', error);
       }
     };
 
@@ -441,17 +477,12 @@ const LeadTable = ({ userRole }) => {
 
   const handleUpdateStatus = async (leadId, newStatus) => {
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`https://bcrm.100acress.com/api/leads/${leadId}`, {
+      const response = await apiCall(`/api/leads/${leadId}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
         body: JSON.stringify({ status: newStatus }),
       });
 
-      if (res.ok) {
+      if (response.ok) {
         setLeadsList((prev) =>
           prev.map((lead) =>
             lead._id === leadId ? { ...lead, status: newStatus } : lead
@@ -462,7 +493,7 @@ const LeadTable = ({ userRole }) => {
           description: `Lead status updated to ${newStatus}`,
         });
       } else {
-        const data = await res.json();
+        const data = await response.json();
         alert(data.message || "Failed to update status");
       }
     } catch (err) {
@@ -1155,7 +1186,7 @@ const LeadTable = ({ userRole }) => {
       
       
 
-        {(userRole === "boss" || userRole === "super-admin" || userRole === "head-admin" || userRole === "admin" || userRole === "crm_admin") && (
+        {(userRole === "boss" || userRole === "hod") && (
           <button className="lead-create-button" onClick={handleCreateLead}>
             <Plus
               size={18}

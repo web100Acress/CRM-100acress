@@ -658,28 +658,33 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     try {
       const token = localStorage.getItem('token');
       
-      // Try production API first
-      let response = await fetch('https://bcrm.100acress.com/api/leads', {
+      console.log('🔍 Starting to fetch leads...');
+      
+      // Try local API first
+      let response = await fetch('http://localhost:5001/api/leads', {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
       
-      // If production fails, try local API
+      console.log('📡 Local API response status:', response.status);
+      
+      // If local fails, try production
       if (!response.ok) {
-        console.log('Production API failed, trying local API...');
-        response = await fetch('http://localhost:5001/api/leads', {
+        console.log('❌ Local API failed, trying production API...');
+        response = await fetch('https://bcrm.100acress.com/api/leads', {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
+        console.log('📡 Production API response status:', response.status);
       }
       
       if (response.ok) {
         const data = await response.json();
-        console.log('Fetch leads response:', data);
+        console.log('📊 Fetch leads response:', data);
         
         // Sort leads by createdAt (newest first)
         const sortedLeads = (data.data || data.payload || data || []).sort((a, b) => {
@@ -688,14 +693,28 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
           return dateB - dateA; // Newest first
         });
         
+        console.log('✅ Leads loaded successfully:', sortedLeads.length, 'leads');
+        
+        if (sortedLeads.length > 0) {
+          console.log('📝 Sample leads:', sortedLeads.slice(0, 3).map(lead => ({
+            id: lead._id,
+            name: lead.name,
+            phone: lead.phone,
+            status: lead.status,
+            location: lead.location
+          })));
+        }
+        
         setLeads(sortedLeads);
-        console.log('Leads loaded successfully:', sortedLeads.length, 'leads');
         
         // Calculate stats
         const totalLeads = sortedLeads?.length || 0;
         const coldLeads = sortedLeads?.filter(lead => lead.status === 'Cold').length || 0;
         const warmLeads = sortedLeads?.filter(lead => lead.status === 'Warm').length || 0;
         const hotLeads = sortedLeads?.filter(lead => lead.status === 'Hot').length || 0;
+        
+        console.log('📈 Stats calculated:', { totalLeads, coldLeads, warmLeads, hotLeads });
+        
         setStats({
           totalLeads,
           coldLeads,
@@ -703,60 +722,54 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
           hotLeads
         });
       } else {
-        console.log('API failed, using mock data');
-        // Mock data for testing
+        console.error('❌ API response not ok:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('❌ Error response:', errorText);
+        
+        // Show mock data for testing
+        console.log('🔄 Using mock data for testing...');
         const mockData = [
           {
-            _id: '1',
-            name: 'John Doe',
-            email: 'john@example.com',
+            _id: 'mock-1',
+            name: 'Test Lead 1',
             phone: '+91 9876543210',
-            location: 'Mumbai',
-            budget: '50-70 Lakhs',
+            location: 'Gurugram',
+            budget: '₹1 Cr - ₹5 Cr',
             property: '3BHK Apartment',
             status: 'Hot',
-            assignedTo: 'Agent A',
-            lastContact: new Date().toISOString()
+            createdAt: new Date().toISOString()
           },
           {
-            _id: '2',
-            name: 'Jane Smith',
-            email: 'jane@example.com',
+            _id: 'mock-2',
+            name: 'Test Lead 2',
             phone: '+91 9876543211',
             location: 'Delhi',
-            budget: '30-50 Lakhs',
-            property: '2BHK Flat',
-            status: 'Warm',
-            assignedTo: 'Agent B',
-            lastContact: new Date(Date.now() - 86400000).toISOString()
-          },
-          {
-            _id: '3',
-            name: 'Bob Johnson',
-            email: 'bob@example.com',
-            phone: '+91 9876543212',
-            location: 'Bangalore',
-            budget: '70-90 Lakhs',
+            budget: '₹5 Cr - ₹10 Cr',
             property: '4BHK Villa',
-            status: 'Cold',
-            assignedTo: 'Agent C',
-            lastContact: new Date(Date.now() - 172800000).toISOString()
+            status: 'Warm',
+            createdAt: new Date(Date.now() - 86400000).toISOString()
           }
         ];
         
         setLeads(mockData);
-        
         setStats({
           totalLeads: mockData.length,
-          coldLeads: mockData.filter(lead => lead.status === 'Cold').length,
-          warmLeads: mockData.filter(lead => lead.status === 'Warm').length,
-          hotLeads: mockData.filter(lead => lead.status === 'Hot').length
+          coldLeads: 0,
+          warmLeads: 1,
+          hotLeads: 1
+        });
+        
+        toast({
+          title: "Using Sample Data",
+          description: "API unavailable, showing sample leads",
+          variant: "default"
         });
       }
     } catch (error) {
+      console.error('❌ Error fetching leads:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch leads",
+        description: "Failed to fetch leads. Please try again.",
         variant: "destructive"
       });
     } finally {
