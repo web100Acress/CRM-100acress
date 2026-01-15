@@ -67,11 +67,10 @@ exports.createOrGetChat = async (req, res, next) => {
     if (isCreatedByAllowed && isAssignedToAllowed) {
       console.log('✅ ROLE-BASED PERMISSION: Both users have valid roles - Chat allowed');
 
-      // Check if chat already exists
+      // Check if chat already exists between these users (ignoring leadId to avoid duplicates)
       let chat = await Chat.findOne({
-        leadId,
         participants: { $all: [createdBy, assignedTo] }
-      }).populate('participants', 'name role email')
+      }).populate('participants', 'name role email profileImage about')
         .populate('messages.senderId', 'name role email');
 
       if (!chat) {
@@ -88,7 +87,7 @@ exports.createOrGetChat = async (req, res, next) => {
         await chat.save();
 
         // Populate participants and messages
-        await chat.populate('participants', 'name role email');
+        await chat.populate('participants', 'name role email profileImage about');
         await chat.populate('messages.senderId', 'name role email');
       }
 
@@ -252,11 +251,10 @@ exports.createOrGetChat = async (req, res, next) => {
       });
     }
 
-    // Check if chat already exists
+    // Check if chat already exists between these users (ignoring leadId to avoid duplicates)
     let chat = await Chat.findOne({
-      leadId,
       participants: { $all: [createdBy, assignedTo] }
-    }).populate('participants', 'name role email')
+    }).populate('participants', 'name role email profileImage about')
       .populate('messages.senderId', 'name role email');
 
     if (!chat) {
@@ -273,7 +271,7 @@ exports.createOrGetChat = async (req, res, next) => {
       await chat.save();
 
       // Populate participants and messages
-      await chat.populate('participants', 'name role email');
+      await chat.populate('participants', 'name role email profileImage about');
       await chat.populate('messages.senderId', 'name role email');
     }
 
@@ -415,10 +413,26 @@ exports.getUserChats = async (req, res, next) => {
       .populate('leadId', 'name email phone status')
       .sort({ updatedAt: -1 });
 
+    // Deduplicate chats based on participants (show only one chat per contact pair)
+    const uniqueChatsMap = new Map();
+
+    chats.forEach(chat => {
+      // Find the other participant's ID
+      const otherParticipant = chat.participants.find(u => u._id.toString() !== currentUserId.toString());
+      const otherId = otherParticipant ? otherParticipant._id.toString() : 'unknown';
+
+      // Since they are sorted by updatedAt descending, the first one we find is the latest
+      if (!uniqueChatsMap.has(otherId)) {
+        uniqueChatsMap.set(otherId, chat);
+      }
+    });
+
+    const dedupedChats = Array.from(uniqueChatsMap.values());
+
     // Format for frontend
-    const formattedChats = chats.map(chat => {
-      const oppositeUser = chat.participants.find(u => u._id.toString() !== currentUserId);
-      const unreadCount = chat.unreadCount.get(currentUserId) || 0;
+    const formattedChats = dedupedChats.map(chat => {
+      const oppositeUser = chat.participants.find(u => u._id.toString() !== currentUserId.toString());
+      const unreadCount = chat.unreadCount.get(currentUserId.toString()) || 0;
 
       return {
         _id: chat._id,
