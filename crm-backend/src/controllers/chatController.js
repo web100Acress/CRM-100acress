@@ -6,30 +6,30 @@ const Lead = require('../models/leadModel');
 exports.createOrGetChat = async (req, res, next) => {
   try {
     const { leadId, createdBy, assignedTo } = req.body;
-    
+
     if (!leadId || !createdBy || !assignedTo) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'leadId, createdBy, and assignedTo are required' 
+      return res.status(400).json({
+        success: false,
+        message: 'leadId, createdBy, and assignedTo are required'
       });
     }
 
     // 🚫 Self assignment check
     if (String(createdBy) === String(assignedTo)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Self assignment not allowed' 
+      return res.status(400).json({
+        success: false,
+        message: 'Self assignment not allowed'
       });
     }
 
     // 🔍 Get both users to check their roles
     const createdByUser = await User.findById(createdBy);
     const assignedToUser = await User.findById(assignedTo);
-    
+
     if (!createdByUser || !assignedToUser) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'One or both users not found' 
+      return res.status(404).json({
+        success: false,
+        message: 'One or both users not found'
       });
     }
 
@@ -66,7 +66,7 @@ exports.createOrGetChat = async (req, res, next) => {
     // ✅ PRIORITY 1: If both users have valid roles (Boss/HOD/Team Leader/BD), allow chat
     if (isCreatedByAllowed && isAssignedToAllowed) {
       console.log('✅ ROLE-BASED PERMISSION: Both users have valid roles - Chat allowed');
-      
+
       // Check if chat already exists
       let chat = await Chat.findOne({
         leadId,
@@ -86,29 +86,29 @@ exports.createOrGetChat = async (req, res, next) => {
           }
         });
         await chat.save();
-        
+
         // Populate participants and messages
         await chat.populate('participants', 'name role email');
         await chat.populate('messages.senderId', 'name role email');
       }
 
-      return res.status(200).json({ 
-        success: true, 
-        data: chat 
+      return res.status(200).json({
+        success: true,
+        data: chat
       });
     }
 
     // 🔒 FALLBACK: Assignment chain validation for other cases
     const lead = await Lead.findById(leadId);
     if (!lead) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Lead not found' 
+      return res.status(404).json({
+        success: false,
+        message: 'Lead not found'
       });
     }
 
     const assignmentChain = Array.isArray(lead.assignmentChain) ? lead.assignmentChain : [];
-    
+
     // Helper function to get assigner ID from entry
     const getAssignerId = (entry) => {
       if (!entry?.assignedBy) return null;
@@ -116,7 +116,7 @@ exports.createOrGetChat = async (req, res, next) => {
       if (entry.assignedBy._id) return String(entry.assignedBy._id);
       return null;
     };
-    
+
     // Check if both users are in the assignment chain
     const createdByInChain = assignmentChain.some(
       entry => String(entry.userId) === String(createdBy)
@@ -124,13 +124,13 @@ exports.createOrGetChat = async (req, res, next) => {
     const assignedToInChain = assignmentChain.some(
       entry => String(entry.userId) === String(assignedTo)
     );
-    
+
     // Also check current assigned user and lead.assignedBy
     const isCreatedByCurrentAssigned = String(lead.assignedTo) === String(createdBy);
     const isAssignedToCurrentAssigned = String(lead.assignedTo) === String(assignedTo);
     const isCreatedByAssignedBy = String(lead.assignedBy) === String(createdBy);
     const isAssignedToAssignedBy = String(lead.assignedBy) === String(assignedTo);
-    
+
     console.log('🔍 ASSIGNMENT CHAIN VALIDATION:', {
       leadAssignedTo: lead.assignedTo,
       leadAssignedBy: lead.assignedBy,
@@ -142,25 +142,25 @@ exports.createOrGetChat = async (req, res, next) => {
       isCreatedByAssignedBy,
       isAssignedToAssignedBy
     });
-    
+
     // Both users must be in chain or currently assigned/assignedBy
-    if (!(createdByInChain || isCreatedByCurrentAssigned || isCreatedByAssignedBy) || 
-        !(assignedToInChain || isAssignedToCurrentAssigned || isAssignedToAssignedBy)) {
+    if (!(createdByInChain || isCreatedByCurrentAssigned || isCreatedByAssignedBy) ||
+      !(assignedToInChain || isAssignedToCurrentAssigned || isAssignedToAssignedBy)) {
       console.log('❌ VALIDATION FAILED: Users not in assignment chain and roles not eligible');
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Chat not allowed: Users must have valid roles (Boss/HOD/Team Leader/BD) or be in the assignment chain.' 
+      return res.status(403).json({
+        success: false,
+        message: 'Chat not allowed: Users must have valid roles (Boss/HOD/Team Leader/BD) or be in the assignment chain.'
       });
     }
-    
+
     // Validate: Check if they form a consecutive pair in the chain
     let isValidPair = false;
-    
+
     // Case 1: createdBy assigned to assignedTo (createdBy → assignedTo)
     const assignedToEntry = assignmentChain.find(
       entry => String(entry.userId) === String(assignedTo)
     );
-    
+
     if (assignedToEntry) {
       const assignerId = getAssignerId(assignedToEntry);
       if (assignerId && String(assignerId) === String(createdBy)) {
@@ -168,13 +168,13 @@ exports.createOrGetChat = async (req, res, next) => {
         console.log('✅ Case 1: createdBy is assigner of assignedTo');
       }
     }
-    
+
     // Case 2: assignedTo assigned to createdBy (assignedTo → createdBy)
     if (!isValidPair) {
       const createdByEntry = assignmentChain.find(
         entry => String(entry.userId) === String(createdBy)
       );
-      
+
       if (createdByEntry) {
         const assignerId = getAssignerId(createdByEntry);
         if (assignerId && String(assignerId) === String(assignedTo)) {
@@ -183,7 +183,7 @@ exports.createOrGetChat = async (req, res, next) => {
         }
       }
     }
-    
+
     // Case 3: Direct assignment check (lead.assignedBy → lead.assignedTo)
     if (!isValidPair) {
       if (isCreatedByAssignedBy && isAssignedToCurrentAssigned) {
@@ -194,19 +194,19 @@ exports.createOrGetChat = async (req, res, next) => {
         console.log('✅ Case 3b: Reverse direct assignment (assignedTo → createdBy)');
       }
     }
-    
+
     // Case 4: Both are in chain and could be consecutive (check all pairs)
     if (!isValidPair && createdByInChain && assignedToInChain) {
       for (const entry of assignmentChain) {
         const assignerId = getAssignerId(entry);
         const entryUserId = String(entry.userId);
-        
+
         if (assignerId && String(assignerId) === String(createdBy) && entryUserId === String(assignedTo)) {
           isValidPair = true;
           console.log('✅ Case 4: Found consecutive pair in chain (createdBy → assignedTo)');
           break;
         }
-        
+
         if (assignerId && String(assignerId) === String(assignedTo) && entryUserId === String(createdBy)) {
           isValidPair = true;
           console.log('✅ Case 4b: Found consecutive pair in chain (assignedTo → createdBy)');
@@ -214,7 +214,7 @@ exports.createOrGetChat = async (req, res, next) => {
         }
       }
     }
-    
+
     // Case 5: Check consecutive entries in chain
     if (!isValidPair && assignmentChain.length >= 2) {
       for (let i = 0; i < assignmentChain.length - 1; i++) {
@@ -222,13 +222,13 @@ exports.createOrGetChat = async (req, res, next) => {
         const nextEntry = assignmentChain[i + 1];
         const currentUserIdStr = String(currentEntry.userId);
         const nextUserIdStr = String(nextEntry.userId);
-        
+
         const nextAssignerId = getAssignerId(nextEntry);
         const isActualAssignment = nextAssignerId && String(nextAssignerId) === currentUserIdStr;
-        
+
         if (isActualAssignment) {
           if ((currentUserIdStr === String(createdBy) && nextUserIdStr === String(assignedTo)) ||
-              (currentUserIdStr === String(assignedTo) && nextUserIdStr === String(createdBy))) {
+            (currentUserIdStr === String(assignedTo) && nextUserIdStr === String(createdBy))) {
             isValidPair = true;
             console.log('✅ Case 5: Users are consecutive in assignment chain with valid assignment relationship');
             break;
@@ -236,11 +236,11 @@ exports.createOrGetChat = async (req, res, next) => {
         }
       }
     }
-    
+
     if (!isValidPair) {
       console.log('❌ VALIDATION FAILED: Users do not form a valid consecutive pair');
-      return res.status(403).json({ 
-        success: false, 
+      return res.status(403).json({
+        success: false,
         message: 'Chat not allowed: Users must be consecutive pairs in the assignment chain (assigner ↔ assigned user).',
         debug: {
           createdBy,
@@ -271,15 +271,15 @@ exports.createOrGetChat = async (req, res, next) => {
         }
       });
       await chat.save();
-      
+
       // Populate participants and messages
       await chat.populate('participants', 'name role email');
       await chat.populate('messages.senderId', 'name role email');
     }
 
-    res.status(200).json({ 
-      success: true, 
-      data: chat 
+    res.status(200).json({
+      success: true,
+      data: chat
     });
 
   } catch (err) {
@@ -293,18 +293,18 @@ exports.sendMessage = async (req, res, next) => {
     const { chatId, message, senderId, messageType = 'text', attachmentUrl = null } = req.body;
 
     if (!chatId || !message || !senderId) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'chatId, message, and senderId are required' 
+      return res.status(400).json({
+        success: false,
+        message: 'chatId, message, and senderId are required'
       });
     }
 
     // Security: Check if user is participant
     const chat = await Chat.findById(chatId);
     if (!chat || !chat.participants.map(id => id.toString()).includes(senderId.toString())) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Access denied: Not a participant' 
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Not a participant'
       });
     }
 
@@ -340,8 +340,8 @@ exports.sendMessage = async (req, res, next) => {
     await chat.populate('participants', 'name role email');
     await chat.populate('messages.senderId', 'name role email');
 
-    res.status(201).json({ 
-      success: true, 
+    res.status(201).json({
+      success: true,
       data: {
         chatId: chat._id,
         message: newMessage,
@@ -361,18 +361,18 @@ exports.getChatMessages = async (req, res, next) => {
     const currentUserId = req.user?.userId || req.user?._id;
 
     if (!chatId) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'chatId is required' 
+      return res.status(400).json({
+        success: false,
+        message: 'chatId is required'
       });
     }
 
     // Security: Check if user is participant
     const chat = await Chat.findById(chatId);
     if (!chat || !chat.participants.map(id => id.toString()).includes(currentUserId.toString())) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Access denied: Not a participant' 
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Not a participant'
       });
     }
 
@@ -385,8 +385,8 @@ exports.getChatMessages = async (req, res, next) => {
       .populate('participants', 'name role email')
       .populate('messages.senderId', 'name role email');
 
-    res.status(200).json({ 
-      success: true, 
+    res.status(200).json({
+      success: true,
       data: populatedChat.messages || []
     });
 
@@ -399,11 +399,11 @@ exports.getChatMessages = async (req, res, next) => {
 exports.getUserChats = async (req, res, next) => {
   try {
     const currentUserId = req.user?.userId || req.user?._id;
-    
+
     if (!currentUserId) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'User not authenticated' 
+      return res.status(401).json({
+        success: false,
+        message: 'User not authenticated'
       });
     }
 
@@ -411,15 +411,15 @@ exports.getUserChats = async (req, res, next) => {
     const chats = await Chat.find({
       participants: currentUserId
     })
-    .populate('participants', 'name role email')
-    .populate('leadId', 'name email phone status')
-    .sort({ updatedAt: -1 });
+      .populate('participants', 'name role email profileImage about')
+      .populate('leadId', 'name email phone status')
+      .sort({ updatedAt: -1 });
 
     // Format for frontend
     const formattedChats = chats.map(chat => {
       const oppositeUser = chat.participants.find(u => u._id.toString() !== currentUserId);
       const unreadCount = chat.unreadCount.get(currentUserId) || 0;
-      
+
       return {
         _id: chat._id,
         leadId: chat.leadId,
@@ -428,7 +428,9 @@ exports.getUserChats = async (req, res, next) => {
           _id: oppositeUser?._id,
           name: oppositeUser?.name,
           role: oppositeUser?.role,
-          email: oppositeUser?.email
+          email: oppositeUser?.email,
+          profileImage: oppositeUser?.profileImage,
+          about: oppositeUser?.about
         },
         lastMessage: chat.lastMessage,
         unreadCount,
@@ -436,9 +438,9 @@ exports.getUserChats = async (req, res, next) => {
       };
     });
 
-    res.status(200).json({ 
-      success: true, 
-      data: formattedChats 
+    res.status(200).json({
+      success: true,
+      data: formattedChats
     });
 
   } catch (err) {
@@ -453,17 +455,17 @@ exports.markAsRead = async (req, res, next) => {
     const currentUserId = req.user?.userId || req.user?._id;
 
     if (!chatId) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'chatId is required' 
+      return res.status(400).json({
+        success: false,
+        message: 'chatId is required'
       });
     }
 
     const chat = await Chat.findById(chatId);
     if (!chat || !chat.participants.includes(currentUserId)) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Access denied: Not a participant' 
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Not a participant'
       });
     }
 
@@ -471,9 +473,9 @@ exports.markAsRead = async (req, res, next) => {
     chat.unreadCount.set(currentUserId, 0);
     await chat.save();
 
-    res.status(200).json({ 
-      success: true, 
-      message: 'Messages marked as read' 
+    res.status(200).json({
+      success: true,
+      message: 'Messages marked as read'
     });
 
   } catch (err) {
@@ -486,30 +488,30 @@ exports.createChat = async (req, res, next) => {
   try {
     const { participantId, participantName, participantEmail, participantRole } = req.body;
     const currentUserId = req.user?.userId || req.user?.id || req.user?._id;
-    
+
     if (!participantId) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'participantId is required' 
+      return res.status(400).json({
+        success: false,
+        message: 'participantId is required'
       });
     }
 
     // 🚫 Self assignment check
     if (String(participantId) === String(currentUserId)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Self assignment not allowed' 
+      return res.status(400).json({
+        success: false,
+        message: 'Self assignment not allowed'
       });
     }
 
     // 🔍 Get both users to check their roles
     const currentUser = await User.findById(currentUserId);
     const participantUser = await User.findById(participantId);
-    
+
     if (!currentUser || !participantUser) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'One or both users not found' 
+      return res.status(404).json({
+        success: false,
+        message: 'One or both users not found'
       });
     }
 
@@ -534,17 +536,17 @@ exports.createChat = async (req, res, next) => {
 
     // Allow chat if both users have allowed roles (any combination between Boss, HOD, Team Leader, and BD)
     if (!isCurrentUserAllowed || !isParticipantAllowed) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Chat not allowed between these roles' 
+      return res.status(403).json({
+        success: false,
+        message: 'Chat not allowed between these roles'
       });
     }
 
     // 🔍 Check if chat already exists
     const existingChat = await Chat.findOne({
       participants: { $all: [currentUserId, participantId] }
-    }).populate('participants', 'name role email')
-     .populate('leadId', 'name email phone status');
+    }).populate('participants', 'name role email profileImage about')
+      .populate('leadId', 'name email phone status');
 
     if (existingChat) {
       return res.status(200).json({
@@ -565,7 +567,7 @@ exports.createChat = async (req, res, next) => {
     await newChat.save();
 
     // Populate the new chat
-    await newChat.populate('participants', 'name role email');
+    await newChat.populate('participants', 'name role email profileImage about');
 
     const formattedChat = {
       _id: newChat._id,
@@ -575,7 +577,9 @@ exports.createChat = async (req, res, next) => {
         _id: participantUser._id,
         name: participantUser.name,
         role: participantUser.role,
-        email: participantUser.email
+        email: participantUser.email,
+        profileImage: participantUser.profileImage,
+        about: participantUser.about
       },
       lastMessage: null,
       unreadCount: 0,
@@ -590,9 +594,87 @@ exports.createChat = async (req, res, next) => {
 
   } catch (err) {
     console.error('Error creating chat:', err);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Internal server error' 
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
     });
+  }
+};
+
+// Toggle Mute Chat
+exports.toggleMuteChat = async (req, res) => {
+  try {
+    const { chatId } = req.body;
+    const userId = req.user._id;
+
+    const chat = await Chat.findById(chatId);
+    if (!chat) return res.status(404).json({ success: false, message: 'Chat not found' });
+
+    const index = chat.mutedBy.indexOf(userId);
+    if (index > -1) {
+      chat.mutedBy.splice(index, 1);
+    } else {
+      chat.mutedBy.push(userId);
+    }
+
+    await chat.save();
+    res.json({ success: true, isMuted: chat.mutedBy.includes(userId) });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Block User
+exports.blockUser = async (req, res) => {
+  try {
+    const { targetUserId } = req.body;
+    const myId = req.user._id;
+
+    const user = await User.findById(myId);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    const index = user.blockedUsers.indexOf(targetUserId);
+    if (index === -1) {
+      user.blockedUsers.push(targetUserId);
+      await user.save();
+    }
+
+    res.json({ success: true, message: 'User blocked' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Report User
+exports.reportUser = async (req, res) => {
+  try {
+    const { targetUserId, reason } = req.body;
+    const myId = req.user._id;
+
+    const targetUser = await User.findById(targetUserId);
+    if (!targetUser) return res.status(404).json({ success: false, message: 'User not found' });
+
+    targetUser.reportedUsers.push({
+      reporterId: myId,
+      reason: reason || 'No reason provided'
+    });
+
+    await targetUser.save();
+    res.json({ success: true, message: 'User reported' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Delete Chat
+exports.deleteChat = async (req, res) => {
+  try {
+    const { chatId } = req.params;
+    const chat = await Chat.findByIdAndDelete(chatId);
+    if (!chat) return res.status(404).json({ success: false, message: 'Chat not found' });
+
+    res.json({ success: true, message: 'Chat deleted' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };

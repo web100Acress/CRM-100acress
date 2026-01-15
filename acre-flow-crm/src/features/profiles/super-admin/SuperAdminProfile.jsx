@@ -186,7 +186,8 @@ const SuperAdminProfile = () => {
             name: userData.name || prev.name,
             email: userData.email || prev.email,
             role: userData.role || prev.role,
-            phone: userData.phone || prev.phone
+            phone: userData.phone || prev.phone,
+            profileImage: userData.profileImage || null
           }));
         }
 

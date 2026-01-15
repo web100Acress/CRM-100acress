@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, MessageCircle, Clock, Edit, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useLocation } from 'react-router-dom';
 import WhatsAppChat from './WhatsAppChat';
 import UserSearchModal from './UserSearchModal';
 import { apiUrl } from '@/config/apiConfig';
@@ -13,13 +14,15 @@ const WhatsAppChatList = () => {
   const [selectedChat, setSelectedChat] = useState(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [showUserSearch, setShowUserSearch] = useState(false);
+  const [activeTab, setActiveTab] = useState('All');
+  const location = useLocation();
 
   // Get current user info
   const getCurrentUserInfo = useCallback(() => {
     const token = localStorage.getItem('token');
     const userId = localStorage.getItem('userId');
     const userRole = localStorage.getItem('userRole') || 'bd';
-    
+
     return { token, userId, userRole };
   }, []);
 
@@ -36,6 +39,27 @@ const WhatsAppChatList = () => {
     }
     return localStorage.getItem('userId') || localStorage.getItem('id');
   }, []);
+
+  // Format time
+  const formatTime = (date) => {
+    const now = new Date();
+    const msgDate = new Date(date);
+    const diffInHours = (now - msgDate) / (1000 * 60 * 60);
+
+    if (diffInHours < 24) {
+      return msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase();
+    } else if (diffInHours < 24 * 7) {
+      return msgDate.toLocaleDateString([], { weekday: 'short' });
+    } else {
+      return msgDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+  };
+
+  // Get opposite user info
+  const getOppositeUser = (chat) => {
+    const myId = getCurrentUserId();
+    return chat.participants.find(u => u._id !== myId);
+  };
 
   // Fetch user's chats
   const fetchChats = useCallback(async () => {
@@ -70,37 +94,36 @@ const WhatsAppChatList = () => {
     fetchChats();
   }, [fetchChats]);
 
-  // Filter chats based on search
+  // Filter chats based on search and privacy
   const filteredChats = chats.filter(chat => {
     const myId = getCurrentUserId();
-    const oppositeUser = chat.participants.find(u => u._id !== myId);
-    
-    return (
+
+    // 🛡️ Privacy Check: Ensure user is a participant
+    // The backend should handle this, but we add an extra layer here
+    const isParticipant = chat.participants.some(p => {
+      const pId = typeof p === 'object' ? p._id : p;
+      return pId?.toString() === myId?.toString();
+    });
+
+    if (!isParticipant) return false;
+
+    const oppositeUser = getOppositeUser(chat);
+
+    const matchesSearch = (
       oppositeUser?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       chat.leadId?.name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    if (!matchesSearch) return false;
+
+    // Filter by tab
+    if (activeTab === 'Unread') {
+      return chat.unreadCount > 0;
+    }
+
+    return true;
   });
 
-  // Format time
-  const formatTime = (date) => {
-    const now = new Date();
-    const msgDate = new Date(date);
-    const diffInHours = (now - msgDate) / (1000 * 60 * 60);
-
-    if (diffInHours < 24) {
-      return msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } else if (diffInHours < 24 * 7) {
-      return msgDate.toLocaleDateString([], { weekday: 'short' });
-    } else {
-      return msgDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
-    }
-  };
-
-  // Get opposite user info
-  const getOppositeUser = (chat) => {
-    const myId = getCurrentUserId();
-    return chat.participants.find(u => u._id !== myId);
-  };
 
   // Handle chat selection
   const handleChatSelect = (chat) => {
@@ -115,10 +138,10 @@ const WhatsAppChatList = () => {
   };
 
   // Handle user selection for new chat
-  const handleUserSelect = async (selectedUser) => {
+  const handleUserSelect = useCallback(async (selectedUser) => {
     try {
       const { token } = getCurrentUserInfo();
-      
+
       // Create new chat using the new endpoint
       const response = await fetch(apiUrl('chats/create-chat'), {
         method: 'POST',
@@ -139,14 +162,14 @@ const WhatsAppChatList = () => {
         if (data.success) {
           // Refresh chat list
           await fetchChats();
-          
+
           // Find the newly created chat and open it
           const newChat = data.chat;
           if (newChat) {
             setSelectedChat(newChat);
             setIsChatOpen(true);
           }
-          
+
           toast({
             title: 'Success',
             description: `Chat created with ${selectedUser.name}`,
@@ -175,7 +198,16 @@ const WhatsAppChatList = () => {
         variant: 'destructive'
       });
     }
-  };
+  }, [apiUrl, fetchChats, getCurrentUserInfo, toast]);
+
+  // Handle incoming contact from state (e.g. from RightProfileSidebar)
+  useEffect(() => {
+    if (location.state?.contact) {
+      handleUserSelect(location.state.contact);
+      // Clear state so it doesn't re-trigger on refresh/back
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, handleUserSelect]);
 
   if (loading) {
     return (
@@ -186,95 +218,138 @@ const WhatsAppChatList = () => {
   }
 
   return (
-    <div className="h-full flex">
+    <div className="h-full flex bg-[#f0f2f5]">
       {/* Chat List */}
-      <div className="w-96 border-r bg-white flex flex-col">
-        {/* Header */}
-        <div className="p-4 border-b">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">WhatsApp Chats</h2>
+      <div className="w-[450px] border-r border-gray-200 bg-white flex flex-col shadow-sm">
+        {/* Header Style WhatsApp */}
+        <div className="bg-[#f0f2f5] p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold shadow-md">
+              {localStorage.getItem('userName')?.charAt(0) || 'U'}
+            </div>
+            <h2 className="text-xl font-bold text-slate-800">Chats</h2>
+          </div>
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setShowUserSearch(true)}
-              className="p-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors"
+              className="p-2.5 text-slate-600 hover:bg-black/5 rounded-full transition-all"
               title="New Chat"
             >
-              <Plus size={20} />
+              <Plus size={22} />
+            </button>
+            <button className="p-2.5 text-slate-600 hover:bg-black/5 rounded-full transition-all">
+              <MessageCircle size={20} />
             </button>
           </div>
-          
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+        </div>
+
+        {/* Search WhatsApp Style */}
+        <div className="px-4 py-2 border-b border-gray-100">
+          <div className="relative group">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" size={18} />
             <input
               type="text"
-              placeholder="Search chats..."
+              placeholder="Search or start new chat"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+              className="w-full pl-12 pr-4 py-2 bg-[#f0f2f5] border-0 rounded-xl focus:ring-0 focus:outline-none placeholder:text-slate-500 text-sm font-medium"
             />
+          </div>
+
+          {/* Tabs Chips */}
+          <div className="flex gap-2 mt-3 pb-1 overflow-x-auto no-scrollbar">
+            {['All', 'Unread', 'Favourites', 'Groups'].map(tab => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${activeTab === tab
+                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                  : 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'
+                  }`}
+              >
+                {tab}
+              </button>
+            ))}
           </div>
         </div>
 
         {/* Chat List Items */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto no-scrollbar">
           {filteredChats.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-500">
-              <MessageCircle size={48} className="mb-4 text-gray-300" />
-              <p className="text-center">
-                {searchTerm ? 'No chats found' : 'No chats yet'}
+            <div className="flex flex-col items-center justify-center h-full text-gray-400 p-8 text-center">
+              <MessageCircle size={64} className="mb-4 text-emerald-100" />
+              <p className="font-bold text-slate-600">
+                {searchTerm ? 'No results found' : 'Start a conversation'}
               </p>
-              <p className="text-sm mt-2">
-                {searchTerm ? 'Try a different search term' : 'Assign a lead to start chatting'}
+              <p className="text-xs mt-2 leading-relaxed">
+                Connect with your team members and manage lead communications efficiently.
               </p>
             </div>
           ) : (
-            <div className="divide-y">
+            <div className="flex flex-col divide-y divide-slate-50">
               {filteredChats.map((chat) => {
                 const oppositeUser = getOppositeUser(chat);
+                const isSelected = selectedChat?._id === chat._id;
+
                 return (
                   <div
                     key={chat._id}
                     onClick={() => handleChatSelect(chat)}
-                    className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                    className={`p-4 flex items-center space-x-4 cursor-pointer transition-all border-l-4 ${isSelected
+                      ? 'bg-slate-50 border-emerald-500'
+                      : 'hover:bg-slate-50/80 border-transparent hover:border-slate-200'
+                      }`}
                   >
-                    <div className="flex items-center space-x-3">
-                      {/* Avatar */}
-                      <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
-                        <span className="text-lg font-medium">
-                          {oppositeUser?.name?.charAt(0).toUpperCase() || '?'}
+                    {/* Avatar */}
+                    <div className="relative flex-shrink-0">
+                      <div className="w-14 h-14 bg-gradient-to-br from-slate-200 to-slate-300 rounded-full flex items-center justify-center border-0 shadow-sm overflow-hidden">
+                        {oppositeUser?.profileImage ? (
+                          <img src={oppositeUser.profileImage} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-xl font-black text-slate-600">
+                            {oppositeUser?.name?.charAt(0).toUpperCase() || '?'}
+                          </span>
+                        )}
+                      </div>
+                      <div className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full shadow-sm"></div>
+                    </div>
+
+                    {/* Chat Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className={`font-bold truncate text-[15px] ${chat.unreadCount > 0 ? 'text-slate-900' : 'text-slate-700'}`}>
+                          {oppositeUser?.name || 'Unknown'}
+                        </h3>
+                        <span className={`text-[11px] whitespace-nowrap ${chat.unreadCount > 0 ? 'text-emerald-600 font-black' : 'text-slate-400 font-bold'}`}>
+                          {formatTime(chat.updatedAt)}
                         </span>
                       </div>
 
-                      {/* Chat Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-semibold truncate">
-                            {oppositeUser?.name || 'Unknown'}
-                          </h3>
-                          <span className="text-xs text-gray-500 flex items-center">
-                            <Clock size={12} className="mr-1" />
-                            {formatTime(chat.updatedAt)}
-                          </span>
-                        </div>
-                        
-                        <div className="flex items-center justify-between mt-1">
-                          <p className="text-sm text-gray-600 truncate">
-                            {oppositeUser?.role || 'User'} • {chat.leadId?.name || 'Unknown Lead'}
-                          </p>
-                          {chat.unreadCount > 0 && (
-                            <span className="bg-green-600 text-white text-xs rounded-full px-2 py-1">
-                              {chat.unreadCount}
+                      <div className="flex items-center justify-between gap-1">
+                        <div className="flex items-center min-w-0 flex-1 gap-1">
+                          {chat.lastMessage?.senderId === getCurrentUserId() && (
+                            <span className="text-emerald-500 shrink-0">
+                              <svg viewBox="0 0 18 18" width="16" height="16" fill="currentColor">
+                                <path d="M15.01 3.3L6.41 11.89l-3.42-3.41L1.58 9.9l4.83 4.83 10.01-10.01z" />
+                              </svg>
                             </span>
                           )}
-                        </div>
-                        
-                        {/* Last Message */}
-                        {chat.lastMessage && (
-                          <p className="text-sm text-gray-500 truncate mt-1">
-                            {chat.lastMessage.message}
+                          <p className={`text-sm truncate leading-tight ${chat.unreadCount > 0 ? 'text-slate-900 font-bold' : 'text-slate-500'}`}>
+                            {chat.lastMessage ? chat.lastMessage.message : 'Sent an attachment'}
                           </p>
+                        </div>
+
+                        {chat.unreadCount > 0 && (
+                          <span className="bg-emerald-500 text-white text-[10px] font-black rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5 shadow-sm shadow-emerald-200 animate-pulse">
+                            {chat.unreadCount}
+                          </span>
                         )}
                       </div>
+
+                      {/* Secondary Label (Lead Info) */}
+                      <p className="text-[10px] text-slate-400 font-bold mt-1.5 truncate uppercase tracking-widest">
+                        {chat.leadId?.name || 'Internal Discussion'} • {oppositeUser?.role || 'Team'}
+                      </p>
                     </div>
                   </div>
                 );

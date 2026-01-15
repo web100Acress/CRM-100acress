@@ -728,7 +728,11 @@ exports.searchUsers = async (req, res) => {
 
       // Add role filter if specified
       if (role) {
-        searchCriteria.role = role;
+        if (Array.isArray(role)) {
+          searchCriteria.role = { $in: role };
+        } else {
+          searchCriteria.role = role;
+        }
       }
 
       // Get all users matching criteria
@@ -776,7 +780,11 @@ exports.searchUsers = async (req, res) => {
 
     // Add role filter if specified
     if (role) {
-      searchCriteria.role = role;
+      if (Array.isArray(role)) {
+        searchCriteria.role = { $in: role };
+      } else {
+        searchCriteria.role = role;
+      }
     }
 
     // Search users
@@ -800,4 +808,34 @@ exports.searchUsers = async (req, res) => {
       message: 'Internal server error'
     });
   }
-}; 
+};
+
+exports.updateAbout = async (req, res) => {
+  try {
+    const { about, targetUserId } = req.body;
+    const currentUserId = req.user?.userId || req.user?.id || req.user?._id;
+    const currentUserRole = req.user?.role;
+
+    let userIdToUpdate = currentUserId;
+    if (targetUserId && targetUserId !== currentUserId) {
+      // Only allow admins to update other users
+      const adminRoles = ['admin', 'superadmin', 'super-admin', 'boss', 'hod'];
+      if (!adminRoles.includes(currentUserRole)) {
+        return res.status(403).json({ success: false, message: 'Permission denied' });
+      }
+      userIdToUpdate = targetUserId;
+    }
+
+    if (!userIdToUpdate) {
+      return res.status(401).json({ success: false, message: 'User not authenticated' });
+    }
+
+    const user = await User.findByIdAndUpdate(userIdToUpdate, { about }, { new: true });
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    res.json({ success: true, about: user.about });
+  } catch (error) {
+    console.error('Error updating about:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

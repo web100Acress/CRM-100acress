@@ -6,6 +6,7 @@ const { uploadProfileImage } = require('../middlewares/upload.middleware');
 
 router.get('/me', auth, userController.getMe);
 router.put('/profile', auth, userController.updateProfile);
+router.put('/about', auth, userController.updateAbout);
 router.post('/profile-image', auth, uploadProfileImage, userController.uploadProfileImage);
 router.post('/search', auth, userController.searchUsers);
 

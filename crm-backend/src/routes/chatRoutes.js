@@ -11,5 +11,9 @@ router.get('/user-chats', auth, chatController.getUserChats);
 router.post('/create', auth, chatController.createOrGetChat);
 router.post('/create-chat', auth, chatController.createChat); // New endpoint for user search
 router.post('/read', auth, chatController.markAsRead);
+router.post('/mute', auth, chatController.toggleMuteChat);
+router.post('/block', auth, chatController.blockUser);
+router.post('/report', auth, chatController.reportUser);
+router.delete('/:chatId', auth, chatController.deleteChat);
 
 module.exports = router;

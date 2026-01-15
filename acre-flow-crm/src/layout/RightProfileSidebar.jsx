@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MoreVertical, Bell, Mail, MessageSquare, Plus, Clock, Settings, Camera, Save, X as CloseIcon } from 'lucide-react';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
@@ -10,6 +11,7 @@ import '@/styles/RightProfileSidebar.css';
 import { toast } from "sonner";
 
 const RightProfileSidebar = ({ isOpen, user = {}, isInline = false }) => {
+    const navigate = useNavigate();
     const [greeting, setGreeting] = useState('');
     const [activityData, setActivityData] = useState([]);
     const [teamMembers, setTeamMembers] = useState([]);
@@ -18,6 +20,23 @@ const RightProfileSidebar = ({ isOpen, user = {}, isInline = false }) => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
     const [localProfileImage, setLocalProfileImage] = useState(null);
+    const [showAllTeam, setShowAllTeam] = useState(false);
+
+    const handleSeeAllMembers = () => {
+        const userRole = user.role || localStorage.getItem('userRole');
+
+        // Navigation based on role permissions (matching Sidebar.jsx logic)
+        if (userRole === 'boss' || userRole === 'developer' || userRole === 'admin') {
+            navigate('/users');
+        } else if (userRole === 'hr') {
+            navigate('/hr-all-users');
+        } else if (userRole === 'blog') {
+            navigate('/blog-users');
+        } else {
+            // If no specific management page, or user just wants to expand the list inline
+            setShowAllTeam(!showAllTeam);
+        }
+    };
 
     // Form state for profile update
     const [profileForm, setProfileForm] = useState({
@@ -75,18 +94,22 @@ const RightProfileSidebar = ({ isOpen, user = {}, isInline = false }) => {
                     setActivityStats(prev => ({ ...prev, totalActive: actResult.data.totalItems }));
                 }
 
-                // Fetch Team (limit to 5)
+                // Fetch Team (limit to 5 specific roles)
                 const teamRes = await fetch(`${API_URL}/users/search`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ query: '', excludeSelf: true })
+                    body: JSON.stringify({
+                        query: '',
+                        excludeSelf: true,
+                        role: ['hod', 'team-leader', 'bd'] // Filter by specific roles
+                    })
                 });
                 const teamResult = await teamRes.json();
                 if (teamResult.success) {
-                    setTeamMembers(teamResult.users.slice(0, 5));
+                    setTeamMembers(teamResult.users);
                 }
 
             } catch (error) {
@@ -183,12 +206,7 @@ const RightProfileSidebar = ({ isOpen, user = {}, isInline = false }) => {
         <aside className={`${isInline ? 'w-full bg-white rounded-3xl shadow-xl border border-slate-100 p-8' : `right-profile-sidebar ${isOpen ? 'open' : ''}`}`}>
             <div className="sidebar-header flex items-center justify-between mb-8">
                 <h2 className="text-xl font-bold text-slate-800">Your Profile</h2>
-                <button
-                    onClick={() => setIsEditModalOpen(true)}
-                    className="p-2 rounded-xl bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-indigo-600 transition-all border border-slate-100"
-                >
-                    <Settings size={20} />
-                </button>
+
             </div>
 
             <div className="profile-section flex flex-col items-center mb-10">
@@ -230,6 +248,12 @@ const RightProfileSidebar = ({ isOpen, user = {}, isInline = false }) => {
                 </button>
                 <button className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-indigo-600 transition-all shadow-sm border border-slate-100 group">
                     <Mail size={20} className="group-hover:scale-110" />
+                </button>
+                <button
+                    onClick={() => setIsEditModalOpen(true)}
+                    className="p-2 rounded-xl bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-indigo-600 transition-all border border-slate-100"
+                >
+                    <Settings size={20} />
                 </button>
             </div>
 
@@ -346,7 +370,7 @@ const RightProfileSidebar = ({ isOpen, user = {}, isInline = false }) => {
                 </div>
                 <div className="mentor-list space-y-4">
                     {teamMembers.length > 0 ? (
-                        teamMembers.map((member) => (
+                        (showAllTeam ? teamMembers : teamMembers.slice(0, 3)).map((member) => (
                             <div key={member._id} className="mentor-item flex items-center gap-4 p-3 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 group">
                                 <Avatar className="w-12 h-12 shadow-sm">
                                     <AvatarImage src={member.profileImage} alt={member.name} />
@@ -356,10 +380,17 @@ const RightProfileSidebar = ({ isOpen, user = {}, isInline = false }) => {
                                 </Avatar>
                                 <div className="mentor-info flex-1">
                                     <h5 className="text-sm font-bold text-slate-700">{member.name}</h5>
-                                    <p className="text-[11px] font-semibold text-slate-400 capitalize">{member.role}</p>
+                                    <p className="text-[11px] font-semibold text-slate-400 capitalize">
+                                        {member.role === 'hod' ? 'HOD' :
+                                            member.role === 'team-leader' ? 'Team Leader' :
+                                                member.role === 'bd' ? 'Business Development' : member.role}
+                                    </p>
                                 </div>
-                                <button className="px-4 py-1.5 rounded-xl bg-indigo-50 text-indigo-600 text-[11px] font-black hover:bg-indigo-600 hover:text-white transition-all transform hover:scale-105 active:scale-95">
-                                    Follow
+                                <button
+                                    onClick={() => navigate('/whatsapp-chat', { state: { contact: member } })}
+                                    className="px-4 py-1.5 rounded-xl bg-emerald-50 text-emerald-600 text-[11px] font-black hover:bg-emerald-600 hover:text-white transition-all transform hover:scale-105 active:scale-95 flex items-center gap-1"
+                                >
+                                    <MessageSquare size={12} /> WhatsApp
                                 </button>
                             </div>
                         ))
@@ -369,9 +400,14 @@ const RightProfileSidebar = ({ isOpen, user = {}, isInline = false }) => {
                         </div>
                     )}
                 </div>
-                <button className="w-full mt-6 py-4 rounded-2xl bg-indigo-50 text-indigo-600 text-xs font-black hover:bg-indigo-600 hover:text-white transition-all shadow-sm hover:shadow-indigo-100">
-                    See All Members
-                </button>
+                {teamMembers.length > 3 && (
+                    <button
+                        onClick={handleSeeAllMembers}
+                        className="w-full mt-6 py-4 rounded-2xl bg-indigo-50 text-indigo-600 text-xs font-black hover:bg-indigo-600 hover:text-white transition-all shadow-sm hover:shadow-indigo-100"
+                    >
+                        {showAllTeam ? 'Show Less' : `See All (${teamMembers.length - 3} More)`}
+                    </button>
+                )}
             </div>
         </aside>
     );
