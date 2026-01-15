@@ -1,4 +1,5 @@
 const userService = require('../services/userService');
+const User = require('../models/userModel');
 const { sendMail } = require('../services/emailService');
 const { uploadProfileImage } = require('../middlewares/upload.middleware');
 
@@ -497,7 +498,7 @@ exports.requestPasswordReset = async (req, res) => {
     console.log('Reset token generated for user:', email);
 
     // Send reset email
-    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password/${token}`;
+    const resetUrl = `${process.env.FRONTEND_URL || 'https://crm.100acress.com/'}/reset-password/${token}`;
     console.log('Reset URL:', resetUrl);
 
     const mailOptions = {
