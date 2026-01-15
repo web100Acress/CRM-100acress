@@ -12,6 +12,13 @@ const userSchema = new mongoose.Schema({
     allowedModules: { type: [String], default: [] },
     status: { type: String, enum: ['active', 'inactive'], default: 'active' },
     profileImage: { type: String, default: null },
+    about: { type: String, default: "Available at 100 Acress CRM Team." },
+    blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    reportedUsers: [{
+        reporterId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        reason: String,
+        timestamp: { type: Date, default: Date.now }
+    }],
     lastLogin: { type: Date },
     createdAt: { type: Date, default: Date.now },
     resetPasswordToken: String,

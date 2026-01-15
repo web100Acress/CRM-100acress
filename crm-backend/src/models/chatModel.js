@@ -53,7 +53,11 @@ const chatSchema = new mongoose.Schema({
     type: Map,
     of: Number,
     default: new Map()
-  }
+  },
+  mutedBy: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }]
 }, { timestamps: true });
 
 // Indexes for performance
@@ -62,7 +66,7 @@ chatSchema.index({ participants: 1 });
 chatSchema.index({ updatedAt: -1 });
 
 // Validation: Exactly 2 participants
-chatSchema.pre('save', function(next) {
+chatSchema.pre('save', function (next) {
   if (this.participants.length !== 2) {
     return next(new Error('Chat must have exactly 2 participants'));
   }

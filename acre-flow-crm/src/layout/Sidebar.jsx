@@ -57,6 +57,7 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
       { path: '/leads', icon: Building2, label: 'All Leads' },
       { path: '/users', icon: Users, label: 'Manage Users' },
       { path: '/admin/bd-analytics', icon: BarChart3, label: 'BD Analytics' },
+      { path: '/whatsapp-chat', icon: MessageCircle, label: 'Team Chat' },
     ],
     admin: [
       { path: '/admin-dashboard', icon: Home, label: 'Admin Dashboard', permission: 'admin.dashboard' },
@@ -88,14 +89,16 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
     hod: [
       { path: '/', icon: Home, label: 'Dashboard' },
       { path: '/leads', icon: Building2, label: 'Leads Management' },
-
+      { path: '/users', icon: Users, label: 'Manage Users' },
       { path: '/whatsapp-chat', icon: MessageCircle, label: 'Team Chat' },
+      { path: '/admin/bd-analytics', icon: BarChart3, label: 'BD Analytics' },
     ],
     'team-leader': [
       { path: '/', icon: Home, label: 'Dashboard' },
       { path: '/leads', icon: Building2, label: 'Assigned Leads' },
       { path: '/calls', icon: PhoneCall, label: 'Call Logs' },
       { path: '/whatsapp-chat', icon: MessageCircle, label: 'Management Chat' },
+      { path: '/admin/bd-analytics', icon: BarChart3, label: 'BD Analytics' },
     ],
     bd: [
       { path: '/employee-dashboard', icon: Home, label: 'Dashboard' },
@@ -106,12 +109,8 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
 
   // Build module-based navigation only for roles that should see cross-module items
   const moduleNav = [];
-  if (userRole === 'hod') {
-    // HOD only sees specific modules
-    if (hasModule('Sales')) moduleNav.push(...navigationItems.sales);
-    if (hasModule('HR')) moduleNav.push(...navigationItems.hr);
-  } else if (userRole !== 'team-leader' && userRole !== 'bd') {
-    // Other roles (except team-leader and bd) see all modules
+  if (userRole !== 'team-leader' && userRole !== 'bd' && userRole !== 'hod') {
+    // Other roles (except team-leader, bd, and hod) see all modules
     if (isFullAccess || hasModule('Sales')) moduleNav.push(...navigationItems.sales);
     if (isFullAccess || hasModule('HR')) moduleNav.push(...navigationItems.hr);
     if (isFullAccess || hasModule('Blog')) moduleNav.push(...navigationItems.blog);
@@ -120,11 +119,10 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
 
   const filteredModuleNav = moduleNav.filter((it) => !it.permission || hasPermission(it.permission));
 
-  // For team-leader, employee, and super-admin, always use role-specific navigation
-  // For HOD, use role-specific navigation to avoid module conflicts
+  // For team-leader, employee, super-admin, and HOD, always use role-specific navigation
   const navItems =
-    ['team-leader', 'bd', 'boss', 'head-admin', 'sales', 'hr', 'blog', 'admin'].includes(userRole)
-      ? (navigationItems[userRole] || navigationItems['bd'])
+    ['team-leader', 'bd', 'boss', 'hod', 'head-admin', 'sales', 'hr', 'blog', 'admin'].includes(userRole)
+      ? (navigationItems[userRole] || navigationItems['hod'] || navigationItems['bd'])
       : (filteredModuleNav.length > 0 ? filteredModuleNav : (navigationItems[userRole] || navigationItems['bd']));
 
   const badgeCounts = (() => {
@@ -182,7 +180,7 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
 
   const headerTitle = useMemo(() => {
     if (userRole === 'boss') return 'Boss';
-    if (userRole === 'head-admin') return 'HOD';
+    if (userRole === 'head-admin' || userRole === 'hod') return 'HOD';
     if (userRole === 'team-leader') return 'Team Leader';
     if (userRole === 'bd') return 'BD';
     return 'CRM';
@@ -191,7 +189,8 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
   const getRoleDisplayName = (role) => {
     switch (role) {
       case 'boss': return 'BOSS';
-      case 'head-admin': return 'HOD';
+      case 'head-admin':
+      case 'hod': return 'HOD';
       case 'team-leader': return 'Team Leader';
       case 'bd': return 'BD';
       default: return 'User';
