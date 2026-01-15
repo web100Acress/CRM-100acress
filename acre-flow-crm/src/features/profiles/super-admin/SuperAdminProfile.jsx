@@ -1,8 +1,7 @@
-
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Users, Building2, Mail, Phone, Shield, Settings, Activity,
+  Users, User, Building2, Mail, Phone, Shield, Settings, Activity,
   Database, Briefcase, Share2, Server, TrendingUp, CheckCircle, Eye
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/layout/popover';
@@ -76,6 +75,116 @@ const SuperAdminProfile = () => {
     return () => {
       socket.disconnect();
     };
+  }, []);
+
+  // Real-time data fetching with HTTP APIs
+  useEffect(() => {
+    const fetchRealTimeData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const BASE_URL = window.location.hostname === 'localhost' 
+          ? 'http://localhost:5001' 
+          : 'https://bcrm.100acress.com';
+
+        // Fetch total users count
+        const allUsersResponse = await fetch(`${BASE_URL}/api/users`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (allUsersResponse.ok) {
+          const allUsers = await allUsersResponse.json();
+          console.log('API Response - All Users:', allUsers);
+          setDashboardStats(prev => {
+            const newStats = {
+              ...prev, 
+              totalUsers: Array.isArray(allUsers) ? allUsers.length : (allUsers.users?.length || 0)
+            };
+            console.log('Dashboard Stats after All Users update:', newStats);
+            return newStats;
+          });
+        } else {
+          console.error('Failed to fetch all users');
+        }
+
+        // Fetch all leads to get counts
+        const leadsResponse = await fetch(`${BASE_URL}/api/leads`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        console.log('Leads Response Status:', leadsResponse.status);
+        console.log('Leads Response Headers:', leadsResponse.headers);
+        
+        if (leadsResponse.ok) {
+          const leadsData = await leadsResponse.json();
+          console.log('API Response - All Leads:', leadsData);
+          const allLeads = Array.isArray(leadsData) ? leadsData : leadsData.leads || [];
+          
+          console.log('Processed allLeads array:', allLeads);
+          console.log('allLeads.length:', allLeads.length);
+          
+          // Calculate real-time stats from actual data
+          const activeLeads = allLeads.filter(lead => 
+            lead.status === 'active' || lead.status === 'pending' || lead.status === 'new'
+          ).length;
+          
+          const totalDistributions = allLeads.filter(lead => 
+            lead.assignedTo || lead.assignmentChain?.length > 0
+          ).length;
+
+          console.log('Calculated Stats:', { activeLeads, totalDistributions, totalLeads: allLeads.length });
+
+          setDashboardStats(prev => {
+            const newStats = { 
+              ...prev, 
+              activeLeads: activeLeads,
+              totalDistributions: totalDistributions,
+              leadsOwned: allLeads.length
+            };
+            console.log('Dashboard Stats after Leads update:', newStats);
+            return newStats;
+          });
+        } else {
+          console.error('Failed to fetch leads - Status:', leadsResponse.status);
+          console.error('Failed to fetch leads - Status Text:', leadsResponse.statusText);
+          const errorText = await leadsResponse.text();
+          console.error('Failed to fetch leads - Error Text:', errorText);
+        }
+
+        // Fetch system metrics
+        const metricsResponse = await fetch(`${BASE_URL}/api/system/metrics`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (metricsResponse.ok) {
+          const metricsData = await metricsResponse.json();
+          setDashboardStats(prev => ({ 
+            ...prev, 
+            openTickets: metricsData.openTickets || 0,
+            totalUsers: metricsData.totalUsers || prev.totalUsers
+          }));
+        }
+
+      } catch (error) {
+        console.error('Error fetching real-time data:', error);
+      }
+    };
+
+    // Initial fetch
+    fetchRealTimeData();
+
+    // Set up interval for real-time updates every 30 seconds
+    const interval = setInterval(fetchRealTimeData, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const distributionsOverTime = useMemo(() => weeklyLeadSeries, []);

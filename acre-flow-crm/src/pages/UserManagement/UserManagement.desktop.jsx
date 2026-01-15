@@ -174,11 +174,11 @@ const UserManagementDesktop = ({ userRole = 'super-admin' }) => {
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Roles</option>
-              <option value="super-admin">Super Admin</option>
+              <option value="super-admin">BOSS</option>
               <option value="admin">Admin</option>
-              <option value="head-admin">Head Admin</option>
+              <option value="head-admin">HOD</option>
               <option value="team-leader">Team Leader</option>
-              <option value="employee">Employee</option>
+              <option value="employee">BD</option>
             </select>
             <select
               value={statusFilter}
@@ -194,57 +194,97 @@ const UserManagementDesktop = ({ userRole = 'super-admin' }) => {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3 px-4">Name</th>
-                  <th className="text-left py-3 px-4">Email</th>
-                  <th className="text-left py-3 px-4">Role</th>
-                  <th className="text-left py-3 px-4">Status</th>
-                  <th className="text-left py-3 px-4">Actions</th>
+                <tr className="border-b bg-gray-50">
+                  <th className="text-left py-3 px-2">
+                    <input type="checkbox" className="rounded border-gray-300" />
+                  </th>
+                  <th className="text-left py-3 px-4">USER</th>
+                  <th className="text-left py-3 px-4">LOGIN</th>
+                  <th className="text-left py-3 px-4">ROLE</th>
+                  <th className="text-left py-3 px-4">PROJECTS</th>
+                  <th className="text-left py-3 px-4">TIME</th>
+                  <th className="text-left py-3 px-4">STATUS</th>
+                  <th className="text-left py-3 px-4">ACTION</th>
                 </tr>
               </thead>
               <tbody>
                 {paginatedUsers.map((user) => (
                   <tr key={user._id} className="border-b hover:bg-gray-50">
-                    <td className="py-3 px-4">{user.name}</td>
-                    <td className="py-3 px-4">{user.email}</td>
-                    <td className="py-3 px-4">{user.role}</td>
-                    <td className="py-3 px-4">
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        user.isActive 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {user.isActive ? 'Active' : 'Inactive'}
-                      </span>
+                    <td className="py-3 px-2">
+                      <input type="checkbox" className="rounded border-gray-300" />
                     </td>
                     <td className="py-3 px-4">
-                      <div className="flex space-x-2">
-                        <button
+                      <div className="flex items-center space-x-3">
+                        <div 
+                          className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold cursor-pointer hover:from-blue-600 hover:to-purple-700 transition-all"
                           onClick={() => {
                             setSelectedUser(user);
                             setShowViewModal(true);
                           }}
-                          className="text-blue-600 hover:text-blue-800"
                         >
-                          View
-                        </button>
+                          {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                        </div>
+                        <span className="font-medium text-gray-900">{user.name}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 text-gray-600">{user.email}</td>
+                    <td className="py-3 px-4">
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        user.role === 'super-admin' ? 'bg-purple-100 text-purple-800' :
+                        user.role === 'admin' ? 'bg-blue-100 text-blue-800' :
+                        user.role === 'head-admin' ? 'bg-green-100 text-green-800' :
+                        user.role === 'team-leader' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {user.role === 'super-admin' ? 'Boss' :
+                         user.role === 'admin' ? 'Admin' :
+                         user.role === 'head-admin' ? 'Hod' :
+                         user.role === 'team-leader' ? 'Team Leader' : 'Bd'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-gray-600">--</td>
+                    <td className="py-3 px-4 text-gray-600">
+                      {new Date(user.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center space-x-2">
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs text-gray-600">Profile</span>
+                            <span className="text-xs font-medium text-gray-900">
+                              {user.isActive ? 'Active' : 'Inactive'}
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className={`h-2 rounded-full ${
+                                user.isActive ? 'bg-green-500' : 'bg-red-500'
+                              }`}
+                              style={{ width: user.isActive ? '75%' : '25%' }}
+                            ></div>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center space-x-2">
                         <button
                           onClick={() => {
                             setSelectedUser(user);
                             setShowEditModal(true);
                           }}
-                          className="text-gray-600 hover:text-gray-800"
+                          className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
                         >
-                          <Edit className="w-4 h-4" />
+                          <Edit size={16} />
                         </button>
                         <button
                           onClick={() => {
                             setSelectedUser(user);
                             setShowDeleteModal(true);
                           }}
-                          className="text-red-600 hover:text-red-800"
+                          className="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     </td>
@@ -284,6 +324,92 @@ const UserManagementDesktop = ({ userRole = 'super-admin' }) => {
           )}
         </div>
 
+        {showViewModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">User Profile</h3>
+                <button
+                  onClick={() => setShowViewModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <UserX size={24} />
+                </button>
+              </div>
+              
+              <div className="p-6">
+                <div className="flex items-center space-x-6 mb-6">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold">
+                    {selectedUser?.name?.charAt(0)?.toUpperCase() || 'U'}
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-bold text-gray-900">{selectedUser?.name}</h4>
+                    <p className="text-gray-600">{selectedUser?.email}</p>
+                    <span className={`inline-block px-3 py-1 text-xs font-medium rounded-full ${
+                      selectedUser?.role === 'super-admin' ? 'bg-purple-100 text-purple-800' :
+                      selectedUser?.role === 'admin' ? 'bg-blue-100 text-blue-800' :
+                      selectedUser?.role === 'head-admin' ? 'bg-green-100 text-green-800' :
+                      selectedUser?.role === 'team-leader' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {selectedUser?.role === 'super-admin' ? 'Boss' :
+                       selectedUser?.role === 'admin' ? 'Admin' :
+                       selectedUser?.role === 'head-admin' ? 'Hod' :
+                       selectedUser?.role === 'team-leader' ? 'Team Leader' : 'Bd'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h5 className="text-sm font-medium text-gray-500 mb-2">CONTACT INFORMATION</h5>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Email</span>
+                        <span className="text-sm font-medium">{selectedUser?.email}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Phone</span>
+                        <span className="text-sm font-medium">{selectedUser?.phone || 'Not provided'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Department</span>
+                        <span className="text-sm font-medium">{selectedUser?.department || 'Not assigned'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h5 className="text-sm font-medium text-gray-500 mb-2">SYSTEM INFORMATION</h5>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">User ID</span>
+                        <span className="text-sm font-medium">{selectedUser?._id}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Join Date</span>
+                        <span className="text-sm font-medium">{selectedUser?.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString() : 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Last Active</span>
+                        <span className="text-sm font-medium">{selectedUser?.lastActive ? new Date(selectedUser.lastActive).toLocaleDateString() : 'Never'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Status</span>
+                        <span className={`text-sm font-medium ${
+                          selectedUser?.isActive ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {selectedUser?.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {showAddModal && (
           <AddEditUserModal
             isOpen={showAddModal}
@@ -296,8 +422,9 @@ const UserManagementDesktop = ({ userRole = 'super-admin' }) => {
           />
         )}
 
-        {showEditModal && selectedUser && (
+        {showEditModal && (
           <AddEditUserModal
+            user={selectedUser}
             isOpen={showEditModal}
             onClose={() => setShowEditModal(false)}
             onSuccess={() => {
@@ -305,12 +432,12 @@ const UserManagementDesktop = ({ userRole = 'super-admin' }) => {
               // Refresh users list
               window.location.reload();
             }}
-            user={selectedUser}
           />
         )}
 
-        {showDeleteModal && selectedUser && (
+        {showDeleteModal && (
           <DeleteUserModal
+            user={selectedUser}
             isOpen={showDeleteModal}
             onClose={() => setShowDeleteModal(false)}
             onSuccess={() => {
@@ -318,7 +445,6 @@ const UserManagementDesktop = ({ userRole = 'super-admin' }) => {
               // Refresh users list
               window.location.reload();
             }}
-            user={selectedUser}
           />
         )}
       </div>
