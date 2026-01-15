@@ -12,6 +12,8 @@ import {
   ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar,
   AreaChart, Area, Cell
 } from 'recharts';
+import RightProfileSidebar from '@/layout/RightProfileSidebar';
+import { User as UserIcon } from 'lucide-react';
 
 const SuperAdminProfile = () => {
   const navigate = useNavigate();
@@ -24,6 +26,14 @@ const SuperAdminProfile = () => {
     openTickets: 0
   });
   const [activeUsers, setActiveUsers] = useState([]);
+  const [profileData, setProfileData] = useState({
+    name: 'Super Admin',
+    role: 'Super Admin',
+    company: '100acress',
+    email: 'admin@100acress.com',
+    phone: '+91 9999999999',
+    permissions: ['System Control', 'User Management', 'Data Access', 'Configuration']
+  });
 
   // Mock data for charts
   const weeklyLeadSeries = [
@@ -43,16 +53,19 @@ const SuperAdminProfile = () => {
     { name: 'David', count: 72 }
   ];
 
-  // Retrieve user data from localStorage
-  const user = JSON.parse(localStorage.getItem('user')) || {};
-  const superAdminData = {
-    name: user.name || 'Super Admin',
-    role: user.role || 'Super Admin',
-    company: '100acress',
-    email: user.email || 'admin@100acress.com',
-    phone: user.phone || '+91 9999999999',
-    permissions: ['System Control', 'User Management', 'Data Access', 'Configuration']
-  };
+  // Retrieve user data from localStorage for initial state
+  useEffect(() => {
+    const savedUser = JSON.parse(localStorage.getItem('user')) || {};
+    if (savedUser.name) {
+      setProfileData(prev => ({
+        ...prev,
+        name: savedUser.name,
+        role: savedUser.role || 'Super Admin',
+        email: savedUser.email,
+        phone: savedUser.phone
+      }));
+    }
+  }, []);
 
   useEffect(() => {
     // Determine socket URL based on environment
@@ -82,8 +95,8 @@ const SuperAdminProfile = () => {
     const fetchRealTimeData = async () => {
       try {
         const token = localStorage.getItem('token');
-        const BASE_URL = window.location.hostname === 'localhost' 
-          ? 'http://localhost:5001' 
+        const BASE_URL = window.location.hostname === 'localhost'
+          ? 'http://localhost:5001'
           : 'https://bcrm.100acress.com';
 
         // Fetch total users count
@@ -93,14 +106,16 @@ const SuperAdminProfile = () => {
             'Content-Type': 'application/json'
           }
         });
-        
+
         if (allUsersResponse.ok) {
-          const allUsers = await allUsersResponse.json();
-          console.log('API Response - All Users:', allUsers);
+          const data = await allUsersResponse.json();
+          const usersList = data.data || [];
+          console.log('API Response - All Users:', usersList);
+
           setDashboardStats(prev => {
             const newStats = {
-              ...prev, 
-              totalUsers: Array.isArray(allUsers) ? allUsers.length : (allUsers.users?.length || 0)
+              ...prev,
+              totalUsers: usersList.length
             };
             console.log('Dashboard Stats after All Users update:', newStats);
             return newStats;
@@ -116,60 +131,62 @@ const SuperAdminProfile = () => {
             'Content-Type': 'application/json'
           }
         });
-        
+
         console.log('Leads Response Status:', leadsResponse.status);
-        console.log('Leads Response Headers:', leadsResponse.headers);
-        
+
         if (leadsResponse.ok) {
           const leadsData = await leadsResponse.json();
-          console.log('API Response - All Leads:', leadsData);
-          const allLeads = Array.isArray(leadsData) ? leadsData : leadsData.leads || [];
-          
+          const allLeads = leadsData.data || [];
+
           console.log('Processed allLeads array:', allLeads);
           console.log('allLeads.length:', allLeads.length);
-          
+
           // Calculate real-time stats from actual data
-          const activeLeads = allLeads.filter(lead => 
-            lead.status === 'active' || lead.status === 'pending' || lead.status === 'new'
+          // Active leads are those where workProgress is NOT 'done'
+          const activeLeadsCount = allLeads.filter(lead =>
+            lead.workProgress !== 'done'
           ).length;
-          
-          const totalDistributions = allLeads.filter(lead => 
+
+          const totalDistributions = allLeads.filter(lead =>
             lead.assignedTo || lead.assignmentChain?.length > 0
           ).length;
 
-          console.log('Calculated Stats:', { activeLeads, totalDistributions, totalLeads: allLeads.length });
+          console.log('Calculated Stats:', { activeLeads: activeLeadsCount, totalDistributions, totalLeads: allLeads.length });
 
           setDashboardStats(prev => {
-            const newStats = { 
-              ...prev, 
-              activeLeads: activeLeads,
+            const newStats = {
+              ...prev,
+              activeLeads: activeLeadsCount,
               totalDistributions: totalDistributions,
-              leadsOwned: allLeads.length
+              leadsOwned: allLeads.length,
+              openTickets: activeLeadsCount // Using active leads as synonymous with open tickets for now
             };
             console.log('Dashboard Stats after Leads update:', newStats);
             return newStats;
           });
         } else {
           console.error('Failed to fetch leads - Status:', leadsResponse.status);
-          console.error('Failed to fetch leads - Status Text:', leadsResponse.statusText);
           const errorText = await leadsResponse.text();
           console.error('Failed to fetch leads - Error Text:', errorText);
         }
 
-        // Fetch system metrics
-        const metricsResponse = await fetch(`${BASE_URL}/api/system/metrics`, {
+        // Fetch real-time profile data
+        const profileResponse = await fetch(`${BASE_URL}/api/users/me`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
-        
-        if (metricsResponse.ok) {
-          const metricsData = await metricsResponse.json();
-          setDashboardStats(prev => ({ 
-            ...prev, 
-            openTickets: metricsData.openTickets || 0,
-            totalUsers: metricsData.totalUsers || prev.totalUsers
+
+        if (profileResponse.ok) {
+          const profileResult = await profileResponse.json();
+          const userData = profileResult.data || profileResult;
+          setProfileData(prev => ({
+            ...prev,
+            name: userData.name || prev.name,
+            email: userData.email || prev.email,
+            role: userData.role || prev.role,
+            phone: userData.phone || prev.phone
           }));
         }
 
@@ -193,7 +210,7 @@ const SuperAdminProfile = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50">
       {/* Top Navigation Bar */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+      {/* <div className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
         <div className="max-w-[1920px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -222,7 +239,7 @@ const SuperAdminProfile = () => {
                         <Shield className="text-white" size={28} />
                       </div>
                       <div>
-                        <h3 className="text-lg font-bold text-white mb-1">{superAdminData.name}</h3>
+                        <h3 className="text-lg font-bold text-white mb-1">{profileData.name}</h3>
                         <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 backdrop-blur-sm">System Authority</Badge>
                       </div>
                     </div>
@@ -230,15 +247,15 @@ const SuperAdminProfile = () => {
                   <div className="p-4 space-y-3">
                     <div className="flex items-center gap-3 text-slate-700">
                       <Building2 size={16} className="text-indigo-600" />
-                      <span className="text-sm">{superAdminData.company}</span>
+                      <span className="text-sm">{profileData.company}</span>
                     </div>
                     <div className="flex items-center gap-3 text-slate-700">
                       <Mail size={16} className="text-indigo-600" />
-                      <span className="text-sm">{superAdminData.email}</span>
+                      <span className="text-sm">{profileData.email}</span>
                     </div>
                     <div className="flex items-center gap-3 text-slate-700">
                       <Phone size={16} className="text-indigo-600" />
-                      <span className="text-sm">{superAdminData.phone}</span>
+                      <span className="text-sm">{profileData.phone}</span>
                     </div>
                   </div>
                 </PopoverContent>
@@ -253,7 +270,7 @@ const SuperAdminProfile = () => {
                 <PopoverContent className="w-72 p-4 border-slate-200 shadow-xl">
                   <h4 className="text-sm font-bold text-slate-800 mb-3">System Permissions</h4>
                   <div className="space-y-2">
-                    {superAdminData.permissions.map((permission, i) => (
+                    {profileData.permissions.map((permission, i) => (
                       <div key={i} className="flex items-center gap-2 text-sm text-slate-700">
                         <CheckCircle size={14} className="text-emerald-600" />
                         <span>{permission}</span>
@@ -265,7 +282,7 @@ const SuperAdminProfile = () => {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Main Dashboard Grid */}
       <div className="max-w-[1920px] mx-auto px-6 py-6">
@@ -304,6 +321,7 @@ const SuperAdminProfile = () => {
                       <div className="flex gap-3">
                         <button
                           type="button"
+                          onClick={() => navigate('/users')}
                           className="px-6 py-3 bg-white text-slate-900 font-semibold rounded-xl hover:bg-slate-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                         >
                           Manage Users
@@ -317,7 +335,10 @@ const SuperAdminProfile = () => {
 
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="border-0 shadow-lg bg-white group hover:shadow-xl transition-all duration-300">
+              <Card
+                className="border-0 shadow-lg bg-white group hover:shadow-xl transition-all duration-300 cursor-pointer"
+                onClick={() => navigate('/users')}
+              >
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="w-12 h-12 rounded-xl bg-indigo-50 group-hover:bg-indigo-100 transition-colors flex items-center justify-center">
@@ -330,7 +351,10 @@ const SuperAdminProfile = () => {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-lg bg-white group hover:shadow-xl transition-all duration-300">
+              <Card
+                className="border-0 shadow-lg bg-white group hover:shadow-xl transition-all duration-300 cursor-pointer"
+                onClick={() => navigate('/leads')}
+              >
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="w-12 h-12 rounded-xl bg-blue-50 group-hover:bg-blue-100 transition-colors flex items-center justify-center">
@@ -343,7 +367,10 @@ const SuperAdminProfile = () => {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-lg bg-white group hover:shadow-xl transition-all duration-300">
+              <Card
+                className="border-0 shadow-lg bg-white group hover:shadow-xl transition-all duration-300 cursor-pointer"
+                onClick={() => navigate('/leads')}
+              >
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="w-12 h-12 rounded-xl bg-violet-50 group-hover:bg-violet-100 transition-colors flex items-center justify-center">
@@ -427,78 +454,11 @@ const SuperAdminProfile = () => {
           </div>
 
           {/* Right Sidebar */}
-          <div className="col-span-12 xl:col-span-3 space-y-6">
-
-            {/* System Health */}
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-slate-800 to-slate-900 text-white overflow-hidden">
-              <CardContent className="p-6 relative">
-                <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-500/20 rounded-full blur-3xl -mr-20 -mt-20" />
-
-                <div className="relative">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
-                      <Server size={24} className="text-emerald-400" />
-                    </div>
-                    <span className="px-2 py-1 bg-emerald-500/20 text-emerald-300 text-xs rounded border border-emerald-500/30">Healthy</span>
-                  </div>
-                  <p className="text-slate-400 text-sm mb-2">System Uptime</p>
-                  <p className="text-4xl font-bold mb-2">99.9%</p>
-                  <div className="w-full bg-slate-700/50 rounded-full h-1.5 mt-4">
-                    <div className="bg-emerald-500 h-1.5 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]" style={{ width: '99%' }}></div>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-3 flex justify-between">
-                    <span>Last downtime</span>
-                    <span>32 days ago</span>
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Quick Actions */}
-            <Card className="border-0 shadow-lg">
-              <CardContent className="p-6">
-                <h3 className="text-lg font-bold text-slate-800 mb-4">Admin Actions</h3>
-                <div className="space-y-3">
-                  <button className="w-full py-3 px-4 bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 rounded-xl text-sm font-semibold transition-colors text-left flex items-center gap-3 border border-slate-100 hover:border-indigo-100">
-                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                      <Users size={16} />
-                    </div>
-                    User Management
-                  </button>
-                  <button className="w-full py-3 px-4 bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 rounded-xl text-sm font-semibold transition-colors text-left flex items-center gap-3 border border-slate-100 hover:border-indigo-100">
-                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                      <Database size={16} />
-                    </div>
-                    Data Backup
-                  </button>
-                  <button className="w-full py-3 px-4 bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 rounded-xl text-sm font-semibold transition-colors text-left flex items-center gap-3 border border-slate-100 hover:border-indigo-100">
-                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                      <Settings size={16} />
-                    </div>
-                    System Settings
-                  </button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Recent Logs (Simulated) */}
-            <Card className="border-0 shadow-lg">
-              <CardContent className="p-6">
-                <h3 className="text-lg font-bold text-slate-800 mb-4">Recent Activity</h3>
-                <div className="space-y-4">
-                  {[1, 2, 3].map((_, i) => (
-                    <div key={i} className="flex gap-3">
-                      <div className="w-2 h-2 mt-2 rounded-full bg-slate-300" />
-                      <div>
-                        <p className="text-sm text-slate-600">System backup completed successfully.</p>
-                        <span className="text-xs text-slate-400">2 hours ago</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
+          <div className="col-span-12 xl:col-span-3">
+            <RightProfileSidebar
+              isInline={true}
+              user={profileData}
+            />
           </div>
         </div>
       </div>
