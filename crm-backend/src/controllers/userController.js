@@ -12,7 +12,7 @@ async function sendWelcomeEmail({ email, password, name, role }) {
   };
   const roleDisplay = roleDisplayMap[role] || role;
   const subject = `Welcome to 100acress CRM - Your ${roleDisplay} Account`;
-  
+
   const html = `
     <!DOCTYPE html>
     <html>
@@ -264,18 +264,18 @@ async function sendWelcomeEmail({ email, password, name, role }) {
           <div class="responsibilities-section">
             <div class="responsibilities-title">📋 Your Responsibilities</div>
             <ul class="responsibilities-list">
-              ${role === 'bd' ? 
-                `<li>Manage your assigned leads professionally</li>
+              ${role === 'bd' ?
+      `<li>Manage your assigned leads professionally</li>
                  <li>Update lead status regularly</li>
                  <li>Maintain confidentiality of all customer information</li>
                  <li>Follow up with leads in a timely manner</li>
                  <li>Report progress to your supervisor</li>` :
-                `<li>Use your administrative access responsibly</li>
+      `<li>Use your administrative access responsibly</li>
                  <li>Manage your team effectively</li>
                  <li>Ensure data accuracy and security</li>
                  <li>Monitor system performance</li>
                  <li>Support your team members</li>`
-              }
+    }
             </ul>
           </div>
           
@@ -307,7 +307,7 @@ async function sendWelcomeEmail({ email, password, name, role }) {
     </body>
     </html>
   `;
-  
+
   const text = `Hello ${name || ''},
 
 Welcome to 100acress CRM! Your ${roleDisplay} account has been created.
@@ -326,22 +326,22 @@ Password: ${password}
 - Any unauthorized sharing of credentials or data will result in immediate account suspension
 
 📋 RESPONSIBILITIES:
-${role === 'bd' ? 
-`- Manage your assigned leads professionally
+${role === 'bd' ?
+      `- Manage your assigned leads professionally
 - Update lead status regularly
 - Maintain confidentiality of all customer information
 - Report any suspicious activity immediately` :
-`- Perform your duties professionally and ethically
+      `- Perform your duties professionally and ethically
 - Maintain confidentiality of sensitive information
 - Follow company policies and procedures
 - Report any suspicious activity immediately`
-}
+    }
 
 Please log in and change your password after your first login.
 
 Best regards,
 The 100acress CRM Team`;
-  
+
   await sendMail(email, subject, text, html);
 }
 
@@ -486,20 +486,20 @@ exports.deleteUser = async (req, res, next) => {
 exports.requestPasswordReset = async (req, res) => {
   const { email } = req.body;
   console.log('Password reset request for email:', email);
-  
+
   try {
     const { user, token } = await userService.setResetToken(email);
     if (!user) {
       console.log('User not found for password reset:', email);
       return res.status(404).json({ message: 'User not found' });
     }
-    
+
     console.log('Reset token generated for user:', email);
-    
+
     // Send reset email
     const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password/${token}`;
     console.log('Reset URL:', resetUrl);
-    
+
     const mailOptions = {
       from: process.env.EMAIL_USER || process.env.SMTP_USER || 'your-email@gmail.com',
       to: email,
@@ -520,7 +520,7 @@ exports.requestPasswordReset = async (req, res) => {
       </div>
       `
     };
-    
+
     await sendMail(email, 'Password Reset Request', `Please use this link to reset your password: ${resetUrl}`, mailOptions.html);
     console.log('Password reset email sent successfully to:', email);
     res.json({ message: 'Password reset email sent' });
@@ -545,33 +545,33 @@ exports.updateUserStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    
+
     // Validate status
     if (!['active', 'inactive'].includes(status)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Invalid status. Must be "active" or "inactive"' 
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status. Must be "active" or "inactive"'
       });
     }
-    
+
     const user = await userService.updateUserStatus(id, status);
     if (!user) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'User not found' 
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
       });
     }
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       message: `User status updated to ${status}`,
-      data: user 
+      data: user
     });
   } catch (err) {
     console.error('Error updating user status:', err);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error updating user status' 
+    res.status(500).json({
+      success: false,
+      message: 'Error updating user status'
     });
   }
 };
@@ -581,19 +581,19 @@ exports.updateProfile = async (req, res) => {
   try {
     const userId = req.user?.userId || req.user?.id || req.user?._id;
     const { name, email, phone, profileImage, currentPassword, newPassword } = req.body;
-    
+
     if (!userId) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'User not authenticated' 
+      return res.status(401).json({
+        success: false,
+        message: 'User not authenticated'
       });
     }
 
     // Validate required fields
     if (!name || !email) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Name and email are required' 
+      return res.status(400).json({
+        success: false,
+        message: 'Name and email are required'
       });
     }
 
@@ -613,42 +613,42 @@ exports.updateProfile = async (req, res) => {
     if (newPassword && currentPassword) {
       // Verify current password (in real app, you'd hash and compare)
       if (currentPassword.length < 6) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'Current password is required' 
+        return res.status(400).json({
+          success: false,
+          message: 'Current password is required'
         });
       }
-      
+
       if (newPassword.length < 6) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'New password must be at least 6 characters' 
+        return res.status(400).json({
+          success: false,
+          message: 'New password must be at least 6 characters'
         });
       }
-      
+
       // In real app, you'd verify current password against stored hash
       updateData.password = newPassword;
     }
 
     const updatedUser = await userService.updateProfile(userId, updateData);
-    
+
     if (!updatedUser) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'User not found' 
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
       });
     }
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: 'Profile updated successfully',
-      data: updatedUser 
+      data: updatedUser
     });
   } catch (err) {
     console.error('Error updating profile:', err);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Internal server error' 
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
     });
   }
 };
@@ -657,18 +657,18 @@ exports.updateProfile = async (req, res) => {
 exports.uploadProfileImage = async (req, res) => {
   try {
     const userId = req.user?.userId || req.user?.id || req.user?._id;
-    
+
     if (!userId) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'User not authenticated' 
+      return res.status(401).json({
+        success: false,
+        message: 'User not authenticated'
       });
     }
 
     if (!req.file) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'No file uploaded' 
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded'
       });
     }
 
@@ -678,28 +678,34 @@ exports.uploadProfileImage = async (req, res) => {
     const profileImage = `data:${mimeType};base64,${base64Image}`;
 
     // Update user profile with new image
-    const updatedUser = await userService.updateProfile(userId, { profileImage });
-    
+    // Include name/email/role from req.user to satisfy schema requirements if user record is newly created (upsert)
+    const updatedUser = await userService.updateProfile(userId, {
+      profileImage,
+      name: req.user?.name || 'CRM User',
+      email: req.user?.email,
+      role: req.user?.role || 'user'
+    });
+
     if (!updatedUser) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'User not found' 
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
       });
     }
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: 'Profile image uploaded successfully',
-      data: { 
+      data: {
         profileImage: profileImage,
         user: updatedUser
-      } 
+      }
     });
   } catch (err) {
     console.error('Error uploading profile image:', err);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Internal server error' 
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
     });
   }
 };
@@ -709,12 +715,12 @@ exports.searchUsers = async (req, res) => {
   try {
     const { query, excludeSelf = true, role } = req.body;
     const currentUserId = req.user?.userId || req.user?.id || req.user?._id;
-    
+
     // If query is empty or undefined, return all users (excluding self if requested)
     if (!query || query.trim().length === 0) {
       // Build search criteria for all users
       const searchCriteria = {};
-      
+
       // Exclude current user if requested
       if (excludeSelf && currentUserId) {
         searchCriteria._id = { $ne: currentUserId };
@@ -789,9 +795,9 @@ exports.searchUsers = async (req, res) => {
     });
   } catch (err) {
     console.error('Error searching users:', err);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Internal server error' 
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
     });
   }
 }; 

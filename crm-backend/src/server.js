@@ -13,6 +13,7 @@ const meetingController = require('./controllers/meetingController');
 const User = require('./models/userModel');
 const Lead = require('./models/leadModel');
 const ApiTesterRequest = require('./models/apiTesterRequestModel'); // ✅ Added
+const notificationService = require('./services/notificationService'); // ✅ Added
 
 // ✅ Connect to MongoDB
 connectDB();
@@ -48,6 +49,7 @@ const io = socketio(server, {
 
 // ✅ Attach SocketIO controller
 meetingController.setSocketIO(io);
+notificationService.setSocketIO(io); // ✅ Added
 
 io.on('connection', (socket) => {
   console.log('✅ New client connected:', socket.id);
@@ -122,36 +124,37 @@ app.use('/api/comm-admin', require('./routes/commAdminRoutes'));
 app.use('/api/webhooks', require('./routes/callWebhookRoutes'));
 app.use('/api/whatsapp', require('./routes/whatsappRoutes'));
 app.use('/api/email', require('./routes/emailRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes')); // ✅ Added
 
 // ✅ Temporary route to seed last login data
 app.post('/api/admin/seed-last-login', async (req, res) => {
   try {
     console.log('Seeding last login data...');
-    
+
     // Update all users who don't have lastLogin
     const result = await User.updateMany(
       { lastLogin: { $exists: false } },
-      { 
+      {
         lastLogin: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000)
       }
     );
-    
+
     // Update users who don't have status
     await User.updateMany(
       { status: { $exists: false } },
       { status: 'active' }
     );
-    
+
     console.log(`Updated ${result.modifiedCount} users with last login`);
-    
+
     // Update specific user
     const specificResult = await User.updateOne(
       { email: 'devfoliomarketplace@gmail.com' },
       { lastLogin: new Date() }
     );
-    
+
     console.log(`Updated specific user: ${specificResult.modifiedCount} documents`);
-    
+
     // Get sample users
     const users = await User.find({}).limit(5);
     const userList = users.map(user => ({
@@ -159,20 +162,20 @@ app.post('/api/admin/seed-last-login', async (req, res) => {
       lastLogin: user.lastLogin,
       status: user.status
     }));
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       message: 'Last login data seeded successfully',
       updatedCount: result.modifiedCount,
       users: userList
     });
-    
+
   } catch (error) {
     console.error('Error seeding last login:', error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: 'Error seeding last login data',
-      error: error.message 
+      error: error.message
     });
   }
 });

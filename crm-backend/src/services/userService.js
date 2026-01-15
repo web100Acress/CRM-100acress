@@ -12,7 +12,7 @@ const createUser = async (userData) => {
       mappedRole: userData.role
     });
   }
-  
+
   if (userData.password) {
     const saltRounds = 10;
     userData.password = await bcrypt.hash(userData.password, saltRounds);
@@ -70,17 +70,17 @@ const resetPassword = async (token, newPassword) => {
 
 const updateUserStatus = async (id, status) => {
   return await User.findByIdAndUpdate(
-    id, 
-    { status }, 
+    id,
+    { status },
     { new: true, runValidators: true }
   );
 };
 
 const updateProfile = async (userId, updateData) => {
   return await User.findByIdAndUpdate(
-    userId, 
-    updateData, 
-    { new: true, runValidators: true }
+    userId,
+    updateData,
+    { new: true, runValidators: true, upsert: true, setDefaultsOnInsert: true }
   );
 };
 
