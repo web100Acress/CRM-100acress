@@ -41,7 +41,7 @@ const WhatsAppChatList = () => {
   }, []);
 
   // Format time
-  const formatTime = (date) => {
+  function formatTime(date) {
     const now = new Date();
     const msgDate = new Date(date);
     const diffInHours = (now - msgDate) / (1000 * 60 * 60);
@@ -53,13 +53,13 @@ const WhatsAppChatList = () => {
     } else {
       return msgDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
     }
-  };
+  }
 
   // Get opposite user info
-  const getOppositeUser = (chat) => {
+  function getOppositeUser(chat) {
     const myId = getCurrentUserId();
     return chat.participants.find(u => u._id !== myId);
-  };
+  }
 
   // Fetch user's chats
   const fetchChats = useCallback(async () => {
