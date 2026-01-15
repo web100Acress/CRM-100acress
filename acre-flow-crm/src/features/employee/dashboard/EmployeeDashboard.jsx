@@ -4,14 +4,14 @@ import './EmployeeDashboard.css';
 import DashboardLayout from '@/layout/DashboardLayout';
 
 import {
-  User, Mail, Phone, Shield, Building2, Users, Ticket, Eye, Target, CheckCircle, TrendingUp, Users2, Briefcase
+  User, Mail, Phone, Shield, Building2, Ticket, Eye, CheckCircle, Briefcase
 } from 'lucide-react';
 
 import { Popover, PopoverContent, PopoverTrigger } from '@/layout/popover';
 import { Badge } from '@/layout/badge';
 import { Card, CardContent } from '@/layout/card';
 import io from 'socket.io-client';
-import { Tooltip, ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Bar, LineChart, Line } from 'recharts';
+import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Bar, LineChart, Line } from 'recharts';
 
 const EmployeeDashboard = () => {
   const navigate = useNavigate();
@@ -24,7 +24,7 @@ const EmployeeDashboard = () => {
     myPerformance: 0,
     recentActivities: [],
     announcements: [],
-    myLeads: []  // Add real-time leads data
+    myLeads: []
   });
 
   const [socket, setSocket] = useState(null);
@@ -33,8 +33,7 @@ const EmployeeDashboard = () => {
   useEffect(() => {
     const s = io('https://bcrm.100acress.com');
     setSocket(s);
-    console.log('Socket.IO client connected:', s);
-    
+
     // Request initial data
     s.emit('requestDashboardStats');
     s.emit('requestMyLeads', { userId: currentUserId });
@@ -47,21 +46,16 @@ const EmployeeDashboard = () => {
 
     // Listen for dashboard stats updates
     socket.on('dashboardUpdate', (stats) => {
-      console.log('Received dashboardUpdate:', stats);
       setDashboardStats(prev => ({
         ...prev,
         ...stats
       }));
     });
 
-    // Listen for lead assignments (real-time)
+    // Listen for lead assignments
     socket.on('leadAssigned', (data) => {
-      console.log('New lead assigned:', data);
       if (data.assignedTo === currentUserId) {
-        // Fetch updated leads for this employee
         fetchEmployeeLeads();
-        
-        // Show notification
         setDashboardStats(prev => ({
           ...prev,
           myTasks: prev.myTasks + 1,
@@ -72,7 +66,6 @@ const EmployeeDashboard = () => {
 
     // Listen for lead updates
     socket.on('leadUpdated', (data) => {
-      console.log('Lead updated:', data);
       if (data.assignedTo === currentUserId || data.previousAssignedTo === currentUserId) {
         fetchEmployeeLeads();
       }
@@ -80,7 +73,6 @@ const EmployeeDashboard = () => {
 
     // Listen for my leads data
     socket.on('myLeadsData', (leads) => {
-      console.log('Received my leads:', leads);
       setDashboardStats(prev => ({
         ...prev,
         myLeads: leads || [],
@@ -106,10 +98,10 @@ const EmployeeDashboard = () => {
           'Content-Type': 'application/json',
         },
       });
-      
+
       const data = await response.json();
       const myLeads = (data.data || []).filter(lead => lead.assignedTo === currentUserId);
-      
+
       setDashboardStats(prev => ({
         ...prev,
         myLeads: myLeads,
@@ -117,29 +109,25 @@ const EmployeeDashboard = () => {
         pendingTasks: myLeads.filter(lead => lead.status === 'pending').length,
         completedTasks: myLeads.filter(lead => lead.status === 'completed').length
       }));
-      
+
     } catch (error) {
       console.error('Error fetching employee leads:', error);
     }
   };
 
-  // Initial data fetch
   useEffect(() => {
     fetchEmployeeLeads();
   }, []);
 
   const myTasks = useMemo(() => {
-    // Use real-time leads data from API
     if (dashboardStats.myLeads && dashboardStats.myLeads.length > 0) {
       return dashboardStats.myLeads.map(lead => {
-        // Determine priority based on lead status and budget
         let priority = 'Medium';
         if (lead.status === 'hot') priority = 'High';
         else if (lead.status === 'cold') priority = 'Low';
         else if (lead.budget && parseInt(lead.budget.replace(/[^\d]/g, '')) > 5000000) priority = 'High';
         else if (lead.budget && parseInt(lead.budget.replace(/[^\d]/g, '')) < 2000000) priority = 'Low';
 
-        // Determine status based on work progress and last contact
         let status = 'Pending';
         if (lead.workProgress === 'completed') status = 'Completed';
         else if (lead.workProgress === 'in-progress') status = 'Today';
@@ -165,8 +153,6 @@ const EmployeeDashboard = () => {
         };
       });
     }
-    
-    // Return empty array if no real data - no fallback static data
     return [];
   }, [dashboardStats.myLeads]);
 
@@ -189,19 +175,17 @@ const EmployeeDashboard = () => {
   const myProgress = useMemo(() => {
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const map = new Map(days.map((d) => [d, 0]));
-    
-    // Simulate employee progress data based on real tasks
-    days.forEach((day, index) => {
+
+    days.forEach((day) => {
       map.set(day, Math.floor(Math.random() * 8) + 2);
     });
-    
+
     return days.map((d) => ({ day: d, value: map.get(d) || 0 }));
   }, []);
 
-  // Calculate real-time task status from API data
   const getTaskStatusCounts = () => {
     const leads = dashboardStats.myLeads || [];
-    
+
     const pending = leads.filter(lead => {
       if (lead.workProgress === 'completed') return false;
       if (lead.workProgress === 'in-progress') return false;
@@ -237,289 +221,301 @@ const EmployeeDashboard = () => {
 
   const taskStatusCounts = getTaskStatusCounts();
 
-  const getInitials = (name) => {
-    const s = (name || '').trim();
-    if (!s) return 'EMP';
-    const parts = s.split(/\s+/).slice(0, 2);
-    return parts.map((p) => p[0]?.toUpperCase()).join('') || 'EMP';
-  };
-
   return (
-    <DashboardLayout userRole={userRole}>
-      <div className="superadmin-container sa2" style={{height: '100vh', overflowY: 'auto'}}>
-        <div className="sa2-topbar">
-          <div className="sa2-topbar-title">
-            <div className="sa2-topbar-dot" />
-            <span>Employee Dashboard</span>
-          </div>
-
-          <div className="sa2-topbar-actions">
-            <Popover>
-              <PopoverTrigger asChild>
-                <button className="sa2-icon-btn" aria-label="Profile"><User size={18} /></button>
-              </PopoverTrigger>
-              <PopoverContent className="popover-card">
-                <div className="profile-info">
-                  <div className="profile-avatar"><Briefcase className="icon-white" /></div>
-                  <div>
-                    <h3 className="profile-name">{employeeData.name}</h3>
-                    <Badge className="role-badge">{employeeData.role}</Badge>
-                  </div>
-                </div>
-                <div className="profile-details">
-                  <div className="profile-item"><Building2 className="small-icon" />{employeeData.company}</div>
-                  <div className="profile-item"><Mail className="small-icon" />{employeeData.email}</div>
-                  <div className="profile-item"><Phone className="small-icon" />{employeeData.phone}</div>
-                </div>
-              </PopoverContent>
-            </Popover>
-
-            <Popover>
-              <PopoverTrigger asChild>
-                <button className="sa2-icon-btn" aria-label="Permissions"><Shield size={18} /></button>
-              </PopoverTrigger>
-              <PopoverContent className="popover-card-small">
-                <h4 className="permissions-title">My Permissions</h4>
-                <div className="permissions-list">
-                  {employeeData.permissions.map((permission, i) => (
-                    <div key={i} className="permission-item">
-                      <CheckCircle className="small-icon green" />
-                      <span>{permission}</span>
-                    </div>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
-        </div>
-
-        <div className="sa2-grid">
-          <div className="sa2-main">
-            <div className="sa2-row sa2-row-top">
-              <Card className="sa2-hero">
-                <CardContent className="sa2-hero-content p-6 pt-4" style={{
-                  backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), url('https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=2000&q=80')`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center'
-                }}>
-                  <div className="sa2-hero-badges">
-                    <span className="sa2-pill" style={{backgroundColor: '#3b82f6', color: 'white'}}>Employee</span>
-                    <span className="sa2-pill" style={{backgroundColor: '#10b981', color: 'white'}}>Active</span>
-                  </div>
-
-                  <div className="sa2-hero-bottom">
-                    <div>
-                      <div className="sa2-hero-title" style={{color: 'white'}}>My Work Center</div>
-                    </div>
-                    <button type="button" className="sa2-hero-cta" style={{backgroundColor: '#3b82f6', color: 'white'}} onClick={() => navigate('/leads')}>View My Tasks</button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="sa2-invest">
-                <CardContent className="sa2-invest-content pt-4">
-                  <div className="sa2-card-head">
-                    <div>
-                      <div className="sa2-card-title pt-4">My Progress</div>
-                      <div className="sa2-card-sub">Current performance</div>
-                    </div>
-                  </div>
-                  <div className="sa2-money">
-                    <div className="sa2-money-title">My Tasks</div>
-                    <div className="sa2-money-value">{dashboardStats.myTasks}</div>
-                    <div className="sa2-money-sub">Tasks assigned to me</div>
-                  </div>
-                  <div className="sa2-money-chart">
-                    <ResponsiveContainer width="100%" height={60}>
-                      <LineChart data={myProgress}>
-                        <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2} dot={false} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
+    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-50">
+      {/* Top Navigation Bar */}
+      <div className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <div className="max-w-[1920px] mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 bg-gradient-to-r from-violet-600 to-purple-600 rounded-full animate-pulse" />
+              <h1 className="text-xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
+                Employee Dashboard
+              </h1>
             </div>
 
-            <div className="sa2-row sa2-row-mid">
-              <Card className="sa2-list">
-                <CardContent className="sa2-list-content pt-4">
-                  <div className="sa2-card-head">
-                    <div>
-                      <div className="sa2-card-title pt-4">My Tasks</div>
-                      <div className="sa2-card-sub">Today's priority tasks</div>
-                    </div>
-                  </div>
-                  <div className="sa2-list-items">
-                    {myTasks.length > 0 ? (
-                      myTasks.map((task, i) => (
-                        <div key={i} className="sa2-list-item" onClick={() => task.leadId && navigate(`/leads?highlight=${task.leadId}`)} style={{cursor: 'pointer'}}>
-                          <div className="sa2-list-left">
-                            <span className="sa2-list-bar" style={{
-                              backgroundColor: task.priority === 'High' ? '#ef4444' : 
-                                             task.priority === 'Medium' ? '#f59e42' : '#10b981'
-                            }} />
-                            <div>
-                              <span className="sa2-list-name">{task.name}</span>
-                              {task.budget && (
-                                <span className="sa2-list-sub" style={{fontSize: '11px', color: '#666'}}>
-                                  Budget: {task.budget}
-                                </span>
-                              )}
-                              {task.location && (
-                                <span className="sa2-list-sub" style={{fontSize: '11px', color: '#666', marginLeft: '10px'}}>
-                                  📍 {task.location}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="sa2-list-right">
-                            <span className="sa2-pill" style={{
-                              backgroundColor: task.status === 'Pending' ? '#ef4444' : 
-                                             task.status === 'Today' ? '#f59e42' : 
-                                             task.status === 'This Week' ? '#8b5cf6' :
-                                             task.status === 'Completed' ? '#10b981' : '#3b82f6',
-                              color: 'white',
-                              fontSize: '10px'
-                            }}>{task.status}</span>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div style={{textAlign: 'center', padding: '40px', color: '#666'}}>
-                        <div style={{fontSize: '16px', marginBottom: '8px'}}>No tasks assigned yet</div>
-                        <div style={{fontSize: '12px'}}>Your assigned leads will appear here</div>
+            <div className="flex items-center gap-3">
+              <div className="hidden md:flex items-center px-4 py-2 bg-violet-50 rounded-lg border border-violet-100 mr-2">
+                <Eye size={16} className="text-violet-600 mr-2" />
+                <span className="text-sm font-medium text-violet-700">{dashboardStats.myTasks} Active Tasks</span>
+              </div>
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="p-2.5 rounded-xl bg-gradient-to-br from-violet-50 to-purple-50 hover:from-violet-100 hover:to-purple-100 transition-all duration-200 border border-violet-200/50">
+                    <User size={18} className="text-violet-700" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-0 border-slate-200 shadow-xl">
+                  <div className="p-6 bg-gradient-to-br from-violet-600 to-purple-700">
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border-2 border-white/30">
+                        <Briefcase className="text-white" size={28} />
                       </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="sa2-portfolio">
-                <CardContent className="sa2-portfolio-content">
-                  <div className="sa2-card-head">
-                    <div>
-                      <div className="sa2-card-title pt-4">Completed Tasks</div>
-                      <div className="sa2-card-sub">Tasks completed this week</div>
+                      <div>
+                        <h3 className="text-lg font-bold text-white mb-1">{employeeData.name}</h3>
+                        <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm">{employeeData.role}</Badge>
+                      </div>
                     </div>
                   </div>
-                  <div className="sa2-money">
-                    <div className="sa2-money-title">{dashboardStats.completedTasks}</div>
-                    <div className="sa2-money-sub">Tasks completed</div>
+                  <div className="p-4 space-y-3">
+                    <div className="flex items-center gap-3 text-slate-700">
+                      <Building2 size={16} className="text-violet-600" />
+                      <span className="text-sm">{employeeData.company}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-slate-700">
+                      <Mail size={16} className="text-violet-600" />
+                      <span className="text-sm">{employeeData.email}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-slate-700">
+                      <Phone size={16} className="text-violet-600" />
+                      <span className="text-sm">{employeeData.phone}</span>
+                    </div>
                   </div>
-                  <div className="sa2-money-chart">
-                    <ResponsiveContainer width="100%" height={60}>
-                      <BarChart data={[{name: 'Completed', value: dashboardStats.completedTasks}]}>
-                        <Bar dataKey="value" fill="#10b981" />
-                      </BarChart>
-                    </ResponsiveContainer>
+                </PopoverContent>
+              </Popover>
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-50 to-green-50 hover:from-emerald-100 hover:to-green-100 transition-all duration-200 border border-emerald-200/50">
+                    <Shield size={18} className="text-emerald-700" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 p-4 border-slate-200 shadow-xl">
+                  <h4 className="text-sm font-bold text-slate-800 mb-3">My Permissions</h4>
+                  <div className="space-y-2">
+                    {employeeData.permissions.map((permission, i) => (
+                      <div key={i} className="flex items-center gap-2 text-sm text-slate-700">
+                        <CheckCircle size={14} className="text-emerald-600" />
+                        <span>{permission}</span>
+                      </div>
+                    ))}
                   </div>
-                </CardContent>
-              </Card>
+                </PopoverContent>
+              </Popover>
             </div>
-
-            <Card className="sa2-line">
-              <CardContent className="sa2-line-content">
-                <div className="sa2-card-head">
-                  <div>
-                    <div className="sa2-card-title pt-4">My Performance</div>
-                    <div className="sa2-card-sub">Weekly task completion</div>
-                  </div>
-                </div>
-                <div className="sa2-line-chart">
-                  <ResponsiveContainer width="100%" height={200}>
-                    <LineChart data={myProgress}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis dataKey="day" stroke="#888" fontSize={12} />
-                      <YAxis stroke="#888" fontSize={12} />
-                      <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
           </div>
-
-          <div className="sa2-side">
-            <Card className="sa2-money">
-              <CardContent className="sa2-money-content My pt-4">
-                <div className="sa2-money-title">Performance</div>
-                <div className="sa2-money-value">{dashboardStats.myPerformance}%</div>
-                <div className="sa2-money-sub">Efficiency rate</div>
-              </CardContent>
-            </Card>
-
-            <Card className="sa2-picks">
-              <CardContent className="sa2-picks-content">
-                <div className="sa2-card-head">
-                  <div>
-                    <div className="sa2-card-title pt-4">Task Status</div>
-                    <div className="sa2-card-sub">Current task overview</div>
-                  </div>
-                </div>
-                <div className="sa2-picks">
-                  <div className="sa2-pick-item">
-                    <div className="sa2-pick-left">
-                      <span className="sa2-pick-bar" style={{backgroundColor: '#ef4444'}} />
-                      <span className="sa2-pick-name">Pending</span>
-                    </div>
-                    <div className="sa2-pick-right">{taskStatusCounts.pending}</div>
-                  </div>
-                  <div className="sa2-pick-item">
-                    <div className="sa2-pick-left">
-                      <span className="sa2-pick-bar" style={{backgroundColor: '#f59e42'}} />
-                      <span className="sa2-pick-name">Today</span>
-                    </div>
-                    <div className="sa2-pick-right">{taskStatusCounts.today}</div>
-                  </div>
-                  <div className="sa2-pick-item">
-                    <div className="sa2-pick-left">
-                      <span className="sa2-pick-bar" style={{backgroundColor: '#8b5cf6'}} />
-                      <span className="sa2-pick-name">This Week</span>
-                    </div>
-                    <div className="sa2-pick-right">{taskStatusCounts.thisWeek}</div>
-                  </div>
-                  <div className="sa2-pick-item">
-                    <div className="sa2-pick-left">
-                      <span className="sa2-pick-bar" style={{backgroundColor: '#10b981'}} />
-                      <span className="sa2-pick-name">Completed</span>
-                    </div>
-                    <div className="sa2-pick-right">{taskStatusCounts.completed}</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-        
-        <div className="eye-view-counter">
-          <Eye size={16} color="#666" />
-          <span>{dashboardStats.myTasks} tasks</span>
         </div>
       </div>
 
-      {/* Custom CSS for scrolling fix */}
-      <style>{`
-        .superadmin-container.sa2 {
-          height: 100vh !important;
-          overflow-y: auto !important;
-          overflow-x: hidden !important;
-          position: relative !important;
-        }
-        
-        .sa2-grid {
-          min-height: calc(100vh - 80px) !important;
-          padding-bottom: 20px !important;
-        }
-        
-        /* Ensure proper scrolling on mobile */
-        @media (max-width: 768px) {
-          .superadmin-container.sa2 {
-            height: 100vh !important;
-            overflow-y: auto !important;
-          }
-        }
-      `}</style>
-    </DashboardLayout>
+      {/* Main Dashboard Grid */}
+      <div className="max-w-[1920px] mx-auto px-6 py-6">
+        <div className="grid grid-cols-12 gap-6">
+
+          {/* Left Section - Main Content */}
+          <div className="col-span-12 xl:col-span-9 space-y-6">
+
+            {/* Hero Card */}
+            <Card className="border-0 shadow-lg overflow-hidden">
+              <CardContent className="p-0">
+                <div
+                  className="relative h-64 lg:h-72 min-h-[280px] bg-cover bg-center"
+                  style={{
+                    backgroundImage: `linear-gradient(135deg, rgba(124, 58, 237, 0.95) 0%, rgba(147, 51, 234, 0.85) 50%, rgba(168, 85, 247, 0.75) 100%), url('https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=2000&q=80')`
+                  }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-violet-600/30 via-transparent to-purple-600/30" />
+
+                  <div className="relative h-full p-8 flex flex-col justify-between">
+                    <div className="flex gap-2">
+                      <span className="px-4 py-1.5 bg-white/20 backdrop-blur-md text-white text-xs font-semibold rounded-full border border-white/30">
+                        Employee
+                      </span>
+                      <span className="px-4 py-1.5 bg-white/20 backdrop-blur-md text-white text-xs font-semibold rounded-full border border-white/30">
+                        Active
+                      </span>
+                    </div>
+
+                    <div className="flex items-end justify-between">
+                      <div>
+                        <h2 className="text-3xl font-bold text-white mb-2">My Work Center</h2>
+                        <p className="text-violet-100 text-sm max-w-lg">Manage your leads, track your tasks, and stay on top of your schedule efficiently.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => navigate('/leads')}
+                        className="px-6 py-3 bg-white text-violet-700 font-semibold rounded-xl hover:bg-violet-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                      >
+                        View My Tasks
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Stats Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-rose-500 to-pink-600 text-white">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                      <Briefcase className="text-white" size={24} />
+                    </div>
+                  </div>
+                  <p className="text-rose-100 text-sm mb-1">Pending Tasks</p>
+                  <div className="flex items-end justify-between">
+                    <p className="text-4xl font-bold">{taskStatusCounts.pending}</p>
+                    <div className="w-1/2 bg-black/20 rounded-full h-1.5 mb-2">
+                      <div className="bg-white/90 h-1.5 rounded-full" style={{ width: '60%' }}></div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                      <CheckCircle className="text-white" size={24} />
+                    </div>
+                  </div>
+                  <p className="text-emerald-100 text-sm mb-1">Completed Tasks</p>
+                  <div className="flex items-end justify-between">
+                    <p className="text-4xl font-bold">{dashboardStats.completedTasks}</p>
+                    <div className="w-1/2 bg-black/20 rounded-full h-1.5 mb-2">
+                      <div className="bg-white/90 h-1.5 rounded-full" style={{ width: '80%' }}></div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Task List */}
+            <Card className="border-0 shadow-lg">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-800">My Priority Tasks</h3>
+                    <p className="text-sm text-slate-500">Tasks requiring immediate attention</p>
+                  </div>
+                  <button onClick={() => navigate('/leads')} className="text-sm font-semibold text-violet-600 hover:text-violet-700">View All</button>
+                </div>
+
+                <div className="space-y-3">
+                  {myTasks.length > 0 ? (
+                    myTasks.slice(0, 5).map((task, i) => {
+                      let priorityClass = 'bg-slate-100 text-slate-600 border-slate-200';
+                      if (task.priority === 'High') priorityClass = 'bg-rose-50 text-rose-600 border-rose-200';
+                      if (task.priority === 'Medium') priorityClass = 'bg-amber-50 text-amber-600 border-amber-200';
+                      if (task.priority === 'Low') priorityClass = 'bg-emerald-50 text-emerald-600 border-emerald-200';
+
+                      return (
+                        <div
+                          key={i}
+                          onClick={() => task.leadId && navigate(`/leads?highlight=${task.leadId}`)}
+                          className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-xl hover:border-violet-200 hover:shadow-md transition-all duration-200 cursor-pointer group"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className={`w-1 h-12 rounded-full ${task.priority === 'High' ? 'bg-rose-500' : task.priority === 'Medium' ? 'bg-amber-500' : 'bg-green-500'}`} />
+                            <div>
+                              <p className="font-semibold text-slate-800 group-hover:text-violet-700 transition-colors">{task.name}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                {task.budget && <span className="text-xs px-2 py-0.5 bg-slate-100 text-slate-600 rounded border border-slate-200">{task.budget}</span>}
+                                {task.location && <span className="text-xs px-2 py-0.5 bg-slate-100 text-slate-600 rounded border border-slate-200">📍 {task.location}</span>}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-2">
+                            <span className={`text-xs px-2.5 py-1 rounded-full font-medium border ${priorityClass}`}>
+                              {task.priority} Priority
+                            </span>
+                            <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">{task.status}</span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                      <Briefcase className="mx-auto text-slate-300 mb-2" size={32} />
+                      <p className="text-slate-500 font-medium">No tasks assigned yet</p>
+                      <p className="text-xs text-slate-400">Your assigned leads will appear here</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Sidebar */}
+          <div className="col-span-12 xl:col-span-3 space-y-6">
+
+            {/* Performance Metric */}
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-violet-600 to-indigo-700 text-white overflow-hidden">
+              <CardContent className="p-6 relative">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16" />
+
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                      <Briefcase size={24} />
+                    </div>
+                  </div>
+                  <p className="text-violet-100 text-sm mb-2">Weekly Efficiency</p>
+                  <p className="text-6xl font-bold mb-2">{dashboardStats.myPerformance}%</p>
+                  <p className="text-sm text-violet-100">Performance Score</p>
+
+                  <div className="mt-6 h-24 -mx-6 -mb-6">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={myProgress}>
+                        <Line type="monotone" dataKey="value" stroke="#fff" strokeWidth={3} dot={{ r: 4, fill: '#fff', strokeWidth: 0 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Task Status Breakdown */}
+            <Card className="border-0 shadow-lg">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-800">Task Status</h3>
+                    <p className="text-sm text-slate-500">Current workload breakdown</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 bg-rose-50 rounded-lg border border-rose-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-3 h-3 rounded-full bg-rose-500" />
+                      <span className="font-medium text-slate-700">Pending</span>
+                    </div>
+                    <span className="font-bold text-rose-600">{taskStatusCounts.pending}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg border border-amber-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-3 h-3 rounded-full bg-amber-500" />
+                      <span className="font-medium text-slate-700">Today</span>
+                    </div>
+                    <span className="font-bold text-amber-600">{taskStatusCounts.today}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-violet-50 rounded-lg border border-violet-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-3 h-3 rounded-full bg-violet-500" />
+                      <span className="font-medium text-slate-700">This Week</span>
+                    </div>
+                    <span className="font-bold text-violet-600">{taskStatusCounts.thisWeek}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg border border-emerald-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                      <span className="font-medium text-slate-700">Completed</span>
+                    </div>
+                    <span className="font-bold text-emerald-600">{taskStatusCounts.completed}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

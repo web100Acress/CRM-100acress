@@ -1,442 +1,397 @@
+
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '@/styles/SuperAdminProfile.css';
-
 import {
-  User, Mail, Phone, Shield, Building2, Users, Ticket, Eye
+  Users, Building2, Mail, Phone, Shield, Settings, Activity,
+  Database, Briefcase, Share2, Server, TrendingUp, CheckCircle, Eye
 } from 'lucide-react';
-
 import { Popover, PopoverContent, PopoverTrigger } from '@/layout/popover';
 import { Badge } from '@/layout/badge';
 import { Card, CardContent } from '@/layout/card';
 import io from 'socket.io-client';
-import { Tooltip, ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Bar, LineChart, Line } from 'recharts';
+import {
+  ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar,
+  AreaChart, Area, Cell
+} from 'recharts';
 
 const SuperAdminProfile = () => {
   const navigate = useNavigate();
-
   const [dashboardStats, setDashboardStats] = useState({
     totalUsers: 0,
     activeLeads: 0,
+    leadsOwned: 0,
+    totalDistributions: 0,
     leadsByStatus: {},
-    recentActivities: [],
-    leadSources: [],
-    upcomingTasks: []
+    openTickets: 0
   });
+  const [activeUsers, setActiveUsers] = useState([]);
 
-  const [users, setUsers] = useState([]);
-  const [leads, setLeads] = useState([]);
-  const [socket, setSocket] = useState(null);
+  // Mock data for charts
+  const weeklyLeadSeries = [
+    { day: 'Mon', value: 45 },
+    { day: 'Tue', value: 52 },
+    { day: 'Wed', value: 38 },
+    { day: 'Thu', value: 65 },
+    { day: 'Fri', value: 48 },
+    { day: 'Sat', value: 20 },
+    { day: 'Sun', value: 15 }
+  ];
+
+  const topAssignees = [
+    { name: 'Sarah', count: 124 },
+    { name: 'Mike', count: 98 },
+    { name: 'Jessica', count: 86 },
+    { name: 'David', count: 72 }
+  ];
+
+  // Retrieve user data from localStorage
+  const user = JSON.parse(localStorage.getItem('user')) || {};
+  const superAdminData = {
+    name: user.name || 'Super Admin',
+    role: user.role || 'Super Admin',
+    company: '100acress',
+    email: user.email || 'admin@100acress.com',
+    phone: user.phone || '+91 9999999999',
+    permissions: ['System Control', 'User Management', 'Data Access', 'Configuration']
+  };
 
   useEffect(() => {
-    const s = io('https://bcrm.100acress.com');
-    setSocket(s);
-    console.log('Socket.IO client connected:', s);
-    // Emit initial stats request
-    s.emit('requestDashboardStats');
+    // Determine socket URL based on environment
+    const SOCKET_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://crm-100acress-backend-2.onrender.com';
+    const socket = io(SOCKET_URL);
 
-    return () => s.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (!socket) return;
-
-    socket.on('dashboardUpdate', (stats) => {
-      console.log('Received dashboardUpdate:', stats);
-      setDashboardStats(prev => ({
-        ...prev,
-        ...stats
-      }));
+    socket.on('connect', () => {
+      console.log('Connected to socket server');
+      socket.emit('get-dashboard-stats', { role: 'Super Admin' });
     });
 
-    socket.on('userUpdate', (users) => {
-      console.log('Received userUpdate:', users);
-      setUsers(users);
+    socket.on('dashboard-stats', (data) => {
+      setDashboardStats(data);
     });
-    socket.on('leadUpdate', (leads) => {
-      console.log('Received leadUpdate:', leads);
-      setLeads(leads);
+
+    socket.on('active-users', (users) => {
+      setActiveUsers(users);
     });
 
     return () => {
-      socket.off('dashboardUpdate');
-      socket.off('userUpdate');
-      socket.off('leadUpdate');
+      socket.disconnect();
     };
-  }, [socket]);
-
-  // HTTP fetching as backup
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        
-        // Fetch users
-        const usersResponse = await fetch('https://bcrm.100acress.com/api/users', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        const usersData = await usersResponse.json();
-        setUsers(usersData.data || []);
-
-        // Fetch leads
-        const leadsResponse = await fetch('https://bcrm.100acress.com/api/leads', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        const leadsData = await leadsResponse.json();
-        setLeads(leadsData.data || []);
-
-        // Update dashboard stats
-        setDashboardStats(prev => ({
-          ...prev,
-          totalUsers: usersData.data?.length || 0,
-          activeLeads: leadsData.data?.length || 0,
-          systemHealth: 'Good'
-        }));
-
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      }
-    };
-
-    fetchDashboardData();
   }, []);
 
-  const superAdminData = {
-    name: localStorage.getItem('userName') || 'Super Administrator',
-    email: localStorage.getItem('userEmail') || 'superadmin@100acres.com',
-    phone: '+91 9876543210',
-    role: 'Super Admin',
-    company: '100acres.com',
-    joinDate: '2024-01-01',
-    permissions: [
-      'Full System Access',
-      'Create Head Admins',
-      'Manage All Users',
-      'View All Reports',
-      'System Configuration',
-      'Access All Data'
-    ]
-  };
-
-  const topStatuses = useMemo(() => {
-    const entries = Object.entries(dashboardStats.leadsByStatus || {});
-    return entries
-      .map(([k, v]) => ({
-        key: k,
-        name: k ? (k.charAt(0).toUpperCase() + k.slice(1)) : 'Other',
-        value: typeof v === 'number' ? v : Number(v) || 0,
-      }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5);
-  }, [dashboardStats.leadsByStatus]);
-
-  const weeklyLeadSeries = useMemo(() => {
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const map = new Map(days.map((d) => [d, 0]));
-    (leads || []).forEach((l) => {
-      const dt = l?.createdAt ? new Date(l.createdAt) : null;
-      if (!dt || Number.isNaN(dt.getTime())) return;
-      const jsDay = dt.getDay();
-      const idx = jsDay === 0 ? 6 : jsDay - 1;
-      const key = days[idx];
-      map.set(key, (map.get(key) || 0) + 1);
-    });
-    return days.map((d) => ({ day: d, value: map.get(d) || 0 }));
-  }, [leads]);
-
-  const topAssignees = useMemo(() => {
-    const counts = new Map();
-    (leads || []).forEach((l) => {
-      const name =
-        l?.assignedTo?.name ||
-        l?.assignedToName ||
-        l?.assignedUserName ||
-        l?.assignedTo?.email ||
-        l?.assignedToEmail ||
-        'Unassigned';
-      counts.set(name, (counts.get(name) || 0) + 1);
-    });
-    return [...counts.entries()]
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 6);
-  }, [leads]);
-
-  const moneyCard = useMemo(() => {
-    const total = Number(dashboardStats?.activeLeads || 0);
-    const closed = Number(dashboardStats?.leadsByStatus?.deal || dashboardStats?.leadsByStatus?.closed || 0);
-    const ratio = total > 0 ? Math.round((closed / total) * 100) : 0;
-    return { total, closed, ratio };
-  }, [dashboardStats]);
-
-  const getInitials = (name) => {
-    const s = (name || '').trim();
-    if (!s) return 'U';
-    const parts = s.split(/\s+/).slice(0, 2);
-    return parts.map((p) => p[0]?.toUpperCase()).join('') || 'U';
-  };
+  const distributionsOverTime = useMemo(() => weeklyLeadSeries, []);
+  const leadsByOwner = useMemo(() => topAssignees.map(a => ({ name: a.name, value: a.count })), []);
 
   return (
-    <div className="superadmin-container sa2">
-      <div className="sa2-topbar">
-        <div className="sa2-topbar-title">
-          <div className="sa2-topbar-dot" />
-          <span>Boss Dashboard</span>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50">
+      {/* Top Navigation Bar */}
+      <div className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <div className="max-w-[1920px] mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 bg-gradient-to-r from-slate-800 to-indigo-900 rounded-full animate-pulse" />
+              <h1 className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                Super Admin Console
+              </h1>
+            </div>
 
-        <div className="sa2-topbar-actions">
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="sa2-icon-btn" aria-label="Profile"><User size={18} /></button>
-            </PopoverTrigger>
-            <PopoverContent className="popover-card">
-              <div className="profile-info">
-                <div className="profile-avatar"><Shield className="icon-white" /></div>
-                <div>
-                  <h3 className="profile-name">{superAdminData.name}</h3>
-                  <Badge className="role-badge">{superAdminData.role}</Badge>
-                </div>
+            <div className="flex items-center gap-3">
+              <div className="hidden md:flex items-center px-4 py-2 bg-slate-100 rounded-lg border border-slate-200 mr-2">
+                <Users size={16} className="text-slate-600 mr-2" />
+                <span className="text-sm font-medium text-slate-700">{dashboardStats.totalUsers} Total Users</span>
               </div>
-              <div className="profile-details">
-                <div className="profile-item"><Building2 className="small-icon" />{superAdminData.company}</div>
-                <div className="profile-item"><Mail className="small-icon" />{superAdminData.email}</div>
-                <div className="profile-item"><Phone className="small-icon" />{superAdminData.phone}</div>
-              </div>
-            </PopoverContent>
-          </Popover>
 
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="sa2-icon-btn" aria-label="Permissions"><Shield size={18} /></button>
-            </PopoverTrigger>
-            <PopoverContent className="popover-card-small">
-              <h4 className="permissions-title">System Permissions</h4>
-              <div className="permissions-list">
-                {superAdminData.permissions.map((permission, i) => (
-                  <div key={i} className="permission-item">
-                    <Shield className="small-icon green" />
-                    <span>{permission}</span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="p-2.5 rounded-xl bg-gradient-to-br from-slate-100 to-gray-100 hover:from-slate-200 hover:to-gray-200 transition-all duration-200 border border-slate-200">
+                    <User size={18} className="text-slate-700" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-0 border-slate-200 shadow-xl">
+                  <div className="p-6 bg-gradient-to-br from-slate-800 to-slate-900">
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center border-2 border-white/20">
+                        <Shield className="text-white" size={28} />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-white mb-1">{superAdminData.name}</h3>
+                        <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 backdrop-blur-sm">System Authority</Badge>
+                      </div>
+                    </div>
                   </div>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
+                  <div className="p-4 space-y-3">
+                    <div className="flex items-center gap-3 text-slate-700">
+                      <Building2 size={16} className="text-indigo-600" />
+                      <span className="text-sm">{superAdminData.company}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-slate-700">
+                      <Mail size={16} className="text-indigo-600" />
+                      <span className="text-sm">{superAdminData.email}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-slate-700">
+                      <Phone size={16} className="text-indigo-600" />
+                      <span className="text-sm">{superAdminData.phone}</span>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="p-2.5 rounded-xl bg-gradient-to-br from-indigo-50 to-blue-50 hover:from-indigo-100 hover:to-blue-100 transition-all duration-200 border border-indigo-200/50">
+                    <Settings size={18} className="text-indigo-700" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 p-4 border-slate-200 shadow-xl">
+                  <h4 className="text-sm font-bold text-slate-800 mb-3">System Permissions</h4>
+                  <div className="space-y-2">
+                    {superAdminData.permissions.map((permission, i) => (
+                      <div key={i} className="flex items-center gap-2 text-sm text-slate-700">
+                        <CheckCircle size={14} className="text-emerald-600" />
+                        <span>{permission}</span>
+                      </div>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="sa2-grid">
-        <div className="sa2-main">
-          <div className="sa2-row sa2-row-top">
-            <Card className="sa2-hero">
-              <CardContent className="sa2-hero-content p-6 pt-4" style={{
-                backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=2000&q=80')`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              }}>
-                <div className="sa2-hero-badges">
-                  <span className="sa2-pill" style={{backgroundColor: 'black', color: 'white'}}>Top Picks</span>
-                  <span className="sa2-pill" style={{backgroundColor: 'black', color: 'white'}}>Featured</span>
-                </div>
+      {/* Main Dashboard Grid */}
+      <div className="max-w-[1920px] mx-auto px-6 py-6">
+        <div className="grid grid-cols-12 gap-6">
 
-                <div className="sa2-hero-bottom">
-                  <div>
-                    <div className="sa2-hero-title" style={{color: 'white'}}>100acress CRM</div>
-                   
+          {/* Left Section - Main Content */}
+          <div className="col-span-12 xl:col-span-9 space-y-6">
+
+            {/* Hero Card */}
+            <Card className="border-0 shadow-lg overflow-hidden bg-slate-900">
+              <CardContent className="p-0">
+                <div
+                  className="relative h-64 lg:h-72 min-h-[280px] bg-cover bg-center"
+                  style={{
+                    backgroundImage: `linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.8) 100%), url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=2000&q=80')`
+                  }}
+                >
+                  {/* Gradient Overlay for texture */}
+                  <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/10 via-transparent to-blue-500/10" />
+
+                  <div className="relative h-full p-8 flex flex-col justify-between">
+                    <div className="flex gap-2">
+                      <span className="px-4 py-1.5 bg-white/10 backdrop-blur-md text-white text-xs font-semibold rounded-full border border-white/20">
+                        Version 2.0
+                      </span>
+                      <span className="px-4 py-1.5 bg-emerald-500/20 backdrop-blur-md text-emerald-300 text-xs font-semibold rounded-full border border-emerald-500/30">
+                        System Online
+                      </span>
+                    </div>
+
+                    <div className="flex items-end justify-between">
+                      <div>
+                        <h2 className="text-4xl font-bold text-white mb-2 tracking-tight">System Overview</h2>
+                        <p className="text-slate-300 text-sm max-w-lg">Complete visibility into CRM metrics, user activity, and lead distribution across the organization.</p>
+                      </div>
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          className="px-6 py-3 bg-white text-slate-900 font-semibold rounded-xl hover:bg-slate-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                        >
+                          Manage Users
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <button type="button" className="sa2-hero-cta" style={{backgroundColor: 'black', color: 'white'}} onClick={() => navigate('/leads')}>View Leads</button>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="sa2-invest">
-              <CardContent className="sa2-invest-content pt-4">
-                <div className="sa2-card-head">
-                  <div>
-                    <div className="sa2-card-title">Investment Stats</div>
-                    <div className="sa2-card-sub">CRM key metrics (live)</div>
-                  </div>
-                </div>
-
-                <div className="sa2-invest-body">
-                  <div className="sa2-invest-metrics">
-                    <div className="sa2-metric">
-                      <div className="sa2-metric-icon blue"><Users size={16} /></div>
-                      <div>
-                        <div className="sa2-metric-label">Total Users</div>
-                        <div className="sa2-metric-value">{dashboardStats.totalUsers || 0}</div>
-                      </div>
+            {/* Stats Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card className="border-0 shadow-lg bg-white group hover:shadow-xl transition-all duration-300">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-indigo-50 group-hover:bg-indigo-100 transition-colors flex items-center justify-center">
+                      <Users className="text-indigo-600" size={24} />
                     </div>
+                    <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">+12%</span>
+                  </div>
+                  <p className="text-slate-500 text-sm mb-1">Total Users</p>
+                  <p className="text-3xl font-bold text-slate-800">{dashboardStats.totalUsers}</p>
+                </CardContent>
+              </Card>
 
-                    <div className="sa2-metric">
-                      <div className="sa2-metric-icon green"><Building2 size={16} /></div>
-                      <div>
-                        <div className="sa2-metric-label">Active Leads</div>
-                        <div className="sa2-metric-value">{dashboardStats.activeLeads || 0}</div>
-                      </div>
+              <Card className="border-0 shadow-lg bg-white group hover:shadow-xl transition-all duration-300">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-blue-50 group-hover:bg-blue-100 transition-colors flex items-center justify-center">
+                      <Activity className="text-blue-600" size={24} />
                     </div>
+                    <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">+5.4%</span>
+                  </div>
+                  <p className="text-slate-500 text-sm mb-1">Active Leads</p>
+                  <p className="text-3xl font-bold text-slate-800">{dashboardStats.activeLeads}</p>
+                </CardContent>
+              </Card>
 
-                    <div className="sa2-metric">
-                      <div className="sa2-metric-icon orange"><Ticket size={16} /></div>
-                      <div>
-                        <div className="sa2-metric-label">Open Tickets</div>
-                        <div className="sa2-metric-value">{dashboardStats.openTickets || 0}</div>
-                      </div>
+              <Card className="border-0 shadow-lg bg-white group hover:shadow-xl transition-all duration-300">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-violet-50 group-hover:bg-violet-100 transition-colors flex items-center justify-center">
+                      <Share2 className="text-violet-600" size={24} />
                     </div>
                   </div>
+                  <p className="text-slate-500 text-sm mb-1">Distributions</p>
+                  <p className="text-3xl font-bold text-slate-800">{dashboardStats.totalDistributions}</p>
+                </CardContent>
+              </Card>
+            </div>
 
-                  <div className="sa2-invest-chart">
-                    <ResponsiveContainer width="100%" height={120}>
-                      <BarChart data={topStatuses.slice(0, 4)}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                        <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
-                        <Tooltip />
-                        <Bar dataKey="value" fill="#6366f1" radius={[8, 8, 8, 8]} />
-                      </BarChart>
-                    </ResponsiveContainer>
+            {/* Charts Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Distribution Trend */}
+              <Card className="border-0 shadow-lg">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-800">Distribution Trends</h3>
+                      <p className="text-sm text-slate-500">Lead distribution over time</p>
+                    </div>
+                    <TrendingUp className="text-slate-400" size={20} />
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+
+                  <ResponsiveContainer width="100%" height={300}>
+                    <AreaChart data={distributionsOverTime}>
+                      <defs>
+                        <linearGradient id="colorDist" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.1} />
+                          <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                      <XAxis dataKey="day" axisLine={false} tickLine={false} stroke="#94a3b8" fontSize={12} dy={10} />
+                      <YAxis axisLine={false} tickLine={false} stroke="#94a3b8" fontSize={12} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'white',
+                          border: 'none',
+                          borderRadius: '12px',
+                          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                        }}
+                      />
+                      <Area type="monotone" dataKey="value" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorDist)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              {/* Lead Ownership */}
+              <Card className="border-0 shadow-lg">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-800">Lead Ownership</h3>
+                      <p className="text-sm text-slate-500">Active leads by owner</p>
+                    </div>
+                    <Briefcase className="text-slate-400" size={20} />
+                  </div>
+
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={leadsByOwner} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+                      <XAxis type="number" hide />
+                      <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} stroke="#64748b" fontSize={12} />
+                      <Tooltip cursor={{ fill: '#f8fafc' }} />
+                      <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20}>
+                        {
+                          leadsByOwner.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#6366f1' : '#8b5cf6'} />
+                          ))
+                        }
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
+
           </div>
 
-          <div className="sa2-row sa2-row-mid">
-            <Card className="sa2-list">
-              <CardContent className="sa2-list-content pt-4">
-                <div className="sa2-card-head">
-                  <div>
-                    <div className="sa2-card-title pt-4">Leads Owned</div>
-                    <div className="sa2-card-sub">Top statuses</div>
-                  </div>
-                </div>
+          {/* Right Sidebar */}
+          <div className="col-span-12 xl:col-span-3 space-y-6">
 
-                <div className="sa2-list-items">
-                  {topStatuses.length === 0 ? (
-                    <div className="sa2-empty">No lead status data</div>
-                  ) : (
-                    topStatuses.map((s) => (
-                      <div key={s.key} className="sa2-list-item">
-                        <div className="sa2-list-item-left">
-                          <span className="sa2-dot" />
-                          <span className="sa2-list-item-name">{s.name}</span>
-                        </div>
-                        <div className="sa2-list-item-right">
-                          <span className="sa2-list-item-value">{s.value}</span>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            {/* System Health */}
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-slate-800 to-slate-900 text-white overflow-hidden">
+              <CardContent className="p-6 relative">
+                <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-500/20 rounded-full blur-3xl -mr-20 -mt-20" />
 
-            <Card className="sa2-portfolio">
-              <CardContent className="sa2-portfolio-content">
-                <div className="sa2-card-head">
-                  <div>
-                    <div className="sa2-card-title pt-4">My Portfolio</div>
-                    <div className="sa2-card-sub">Recently active users</div>
-                  </div>
-                </div>
-
-                <div className="sa2-portfolio-scroll">
-                  {(users || []).slice(0, 8).map((u, idx) => {
-                    const name = u?.name || u?.fullName || u?.email || 'User';
-                    const role = u?.role || u?.userRole || 'member';
-                    return (
-                      <div key={u?._id || u?.id || idx} className="sa2-mini-card">
-                        <div className="sa2-mini-avatar">{getInitials(name)}</div>
-                        <div className="sa2-mini-meta">
-                          <div className="sa2-mini-name">{name}</div>
-                          <div className="sa2-mini-sub">{String(role).replace(/-/g, ' ')}</div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {(users || []).length === 0 && <div className="sa2-empty">No users loaded</div>}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card className="sa2-line">
-            <CardContent className="sa2-line-content">
-              <div className="sa2-card-head">
-                <div>
-                  <div className="sa2-card-title pt-4">Total Distributions</div>
-                  <div className="sa2-card-sub">Leads created by weekday</div>
-                </div>
-              </div>
-
-              <div className="sa2-line-chart">
-                <ResponsiveContainer width="100%" height={220}>
-                  <LineChart data={weeklyLeadSeries}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="day" />
-                    <YAxis allowDecimals={false} />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="value" stroke="#8b5cf6" strokeWidth={3} dot={false} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="sa2-side">
-          <Card className="sa2-money">
-            <CardContent className="sa2-money-content My pt-4">
-              <div className="sa2-money-title">My Cards</div>
-              <div className="sa2-money-value">{moneyCard.total}</div>
-              <div className="sa2-money-sub">Total Leads</div>
-              <div className="sa2-money-row">
-                <div>
-                  <div className="sa2-money-small">Closed</div>
-                  <div className="sa2-money-small-val">{moneyCard.closed}</div>
-                </div>
-                <div className="sa2-money-chip">+{moneyCard.ratio}%</div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="sa2-picks">
-            <CardContent className="sa2-picks-content">
-              <div className="sa2-card-head">
-                <div>
-                  <div className="sa2-card-title pt-4">Top Picks</div>
-                  <div className="sa2-card-sub">Top assignees by leads</div>
-                </div>
-              </div>
-
-              <div className="sa2-picks-list">
-                {topAssignees.length === 0 ? (
-                  <div className="sa2-empty">No leads data</div>
-                ) : (
-                  topAssignees.map((a) => (
-                    <div key={a.name} className="sa2-pick-item">
-                      <div className="sa2-pick-left">
-                        <span className="sa2-pick-bar" />
-                        <span className="sa2-pick-name">{a.name}</span>
-                      </div>
-                      <div className="sa2-pick-right">{a.count}</div>
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
+                      <Server size={24} className="text-emerald-400" />
                     </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                    <span className="px-2 py-1 bg-emerald-500/20 text-emerald-300 text-xs rounded border border-emerald-500/30">Healthy</span>
+                  </div>
+                  <p className="text-slate-400 text-sm mb-2">System Uptime</p>
+                  <p className="text-4xl font-bold mb-2">99.9%</p>
+                  <div className="w-full bg-slate-700/50 rounded-full h-1.5 mt-4">
+                    <div className="bg-emerald-500 h-1.5 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]" style={{ width: '99%' }}></div>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-3 flex justify-between">
+                    <span>Last downtime</span>
+                    <span>32 days ago</span>
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Quick Actions */}
+            <Card className="border-0 shadow-lg">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-bold text-slate-800 mb-4">Admin Actions</h3>
+                <div className="space-y-3">
+                  <button className="w-full py-3 px-4 bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 rounded-xl text-sm font-semibold transition-colors text-left flex items-center gap-3 border border-slate-100 hover:border-indigo-100">
+                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                      <Users size={16} />
+                    </div>
+                    User Management
+                  </button>
+                  <button className="w-full py-3 px-4 bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 rounded-xl text-sm font-semibold transition-colors text-left flex items-center gap-3 border border-slate-100 hover:border-indigo-100">
+                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                      <Database size={16} />
+                    </div>
+                    Data Backup
+                  </button>
+                  <button className="w-full py-3 px-4 bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 rounded-xl text-sm font-semibold transition-colors text-left flex items-center gap-3 border border-slate-100 hover:border-indigo-100">
+                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                      <Settings size={16} />
+                    </div>
+                    System Settings
+                  </button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Recent Logs (Simulated) */}
+            <Card className="border-0 shadow-lg">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-bold text-slate-800 mb-4">Recent Activity</h3>
+                <div className="space-y-4">
+                  {[1, 2, 3].map((_, i) => (
+                    <div key={i} className="flex gap-3">
+                      <div className="w-2 h-2 mt-2 rounded-full bg-slate-300" />
+                      <div>
+                        <p className="text-sm text-slate-600">System backup completed successfully.</p>
+                        <span className="text-xs text-slate-400">2 hours ago</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+          </div>
         </div>
-      </div>
-      
-      <div className="eye-view-counter">
-        <Eye size={16} color="#666" />
-        <span>24 bidders</span>
       </div>
     </div>
   );
