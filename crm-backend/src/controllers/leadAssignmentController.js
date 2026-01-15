@@ -6,11 +6,11 @@ const User = require('../models/userModel');
 exports.assignLead = async (req, res, next) => {
   try {
     const { leadId, assigneeId, assigneeName, assigneeRole, notes } = req.body;
-    
+
     // Get current user (assigner)
     const assignerId = req.user?.userId || req.user?._id;
     const assignerRole = req.user?.role;
-    
+
     if (!leadId || !assigneeId) {
       return res.status(400).json({
         success: false,
@@ -55,12 +55,11 @@ exports.assignLead = async (req, res, next) => {
 
     // 🎯 GOLDEN RULE: Create WhatsApp-style chat between assigner and assignee
     const participants = [assignerId, assigneeId];
-    
-    // Check if chat already exists for this assignment
+
+    // Check if chat already exists between these users (ignoring leadId to avoid duplicates)
     let existingChat = await Chat.findOne({
-      leadId,
       participants: { $all: participants }
-    }).populate('participants', 'name role email');
+    }).populate('participants', 'name role email profileImage about');
 
     if (!existingChat) {
       // Create new WhatsApp-style chat
@@ -74,10 +73,10 @@ exports.assignLead = async (req, res, next) => {
         }
       });
       await existingChat.save();
-      
+
       // Populate participants
-      await existingChat.populate('participants', 'name role email');
-      
+      await existingChat.populate('participants', 'name role email profileImage about');
+
       console.log(`✅ WhatsApp Chat created: ${assigner.name} ↔ ${assignee.name} for lead: ${lead.name}`);
     } else {
       console.log(`ℹ️ WhatsApp Chat already exists: ${assigner.name} ↔ ${assignee.name}`);
@@ -86,7 +85,7 @@ exports.assignLead = async (req, res, next) => {
     // Update lead assignment
     lead.assignedTo = assigneeId;
     lead.assignedBy = assignerId;
-    
+
     // Add to assignment chain
     lead.assignmentChain.push({
       userId: assigneeId,
@@ -137,9 +136,9 @@ exports.getUserChats = async (req, res, next) => {
     const currentUserId = req.user?.userId || req.user?._id;
 
     if (!currentUserId) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'User not authenticated' 
+      return res.status(401).json({
+        success: false,
+        message: 'User not authenticated'
       });
     }
 
@@ -147,15 +146,31 @@ exports.getUserChats = async (req, res, next) => {
     const chats = await Chat.find({
       participants: currentUserId
     })
-    .populate('participants', 'name role email')
-    .populate('leadId', 'name email phone status')
-    .sort({ updatedAt: -1 });
+      .populate('participants', 'name role email')
+      .populate('leadId', 'name email phone status')
+      .sort({ updatedAt: -1 });
+
+    // Deduplicate chats based on participants (show only one chat per contact pair)
+    const uniqueChatsMap = new Map();
+
+    chats.forEach(chat => {
+      // Find the other participant's ID
+      const otherParticipant = chat.participants.find(u => u._id.toString() !== currentUserId.toString());
+      const otherId = otherParticipant ? otherParticipant._id.toString() : 'unknown';
+
+      // Since they are sorted by updatedAt descending, the first one we find is the latest
+      if (!uniqueChatsMap.has(otherId)) {
+        uniqueChatsMap.set(otherId, chat);
+      }
+    });
+
+    const dedupedChats = Array.from(uniqueChatsMap.values());
 
     // Format for frontend
-    const formattedChats = chats.map(chat => {
-      const oppositeUser = chat.participants.find(u => u._id.toString() !== currentUserId);
-      const unreadCount = chat.unreadCount.get(currentUserId) || 0;
-      
+    const formattedChats = dedupedChats.map(chat => {
+      const oppositeUser = chat.participants.find(u => u._id.toString() !== currentUserId.toString());
+      const unreadCount = chat.unreadCount.get(currentUserId.toString()) || 0;
+
       return {
         _id: chat._id,
         leadId: chat.leadId,
@@ -164,7 +179,9 @@ exports.getUserChats = async (req, res, next) => {
           _id: oppositeUser?._id,
           name: oppositeUser?.name,
           role: oppositeUser?.role,
-          email: oppositeUser?.email
+          email: oppositeUser?.email,
+          profileImage: oppositeUser?.profileImage,
+          about: oppositeUser?.about
         },
         lastMessage: chat.lastMessage,
         unreadCount,
@@ -172,9 +189,9 @@ exports.getUserChats = async (req, res, next) => {
       };
     });
 
-    res.status(200).json({ 
-      success: true, 
-      data: formattedChats 
+    res.status(200).json({
+      success: true,
+      data: formattedChats
     });
 
   } catch (error) {
