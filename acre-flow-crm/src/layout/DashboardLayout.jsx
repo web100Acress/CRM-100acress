@@ -46,7 +46,7 @@ const DashboardLayout = ({ children, userRole = "employee" }) => {
 
   const SOCKET_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5000'
-    : 'https://crm-100acress-backend-2.onrender.com';
+    : 'https://bcrm.100acress.com';
 
   useEffect(() => {
     const token = localStorage.getItem('token');
