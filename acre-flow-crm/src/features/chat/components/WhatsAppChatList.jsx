@@ -113,7 +113,7 @@ const WhatsAppChatList = () => {
     } else {
       fetchChats();
     }
-  }, [location.state, fetchChats, handleUserSelect]);
+  }, [location.state, fetchChats]);
 
   // Filter chats based on search and privacy
   const filteredChats = chats.filter(chat => {

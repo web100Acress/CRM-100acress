@@ -1903,6 +1903,24 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
   };
 
   const filteredLeads = leads.filter(lead => {
+    const role = (localStorage.getItem("userRole") || "").toLowerCase();
+    const userId = localStorage.getItem("userId");
+
+    // Visibility Logic:
+    // Boss can view ALL leads
+    // Others (HOD, Employee, Team Leader) can view leads they created, are assigned to, or forwarded
+    if (role !== 'boss' && role !== 'super-admin') {
+      const isCreator = String(lead.createdBy) === String(userId);
+      const isAssigned = String(lead.assignedTo) === String(userId);
+      
+      // Check if current user forwarded this lead (check assignment chain)
+      const isForwarder = lead.assignmentChain?.some(assignment => 
+        assignment.assignedBy?._id && String(assignment.assignedBy._id) === String(userId)
+      );
+      
+      if (!isCreator && !isAssigned && !isForwarder) return false;
+    }
+
     const matchesSearch = lead.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          lead.phone?.includes(searchTerm);
@@ -2646,7 +2664,50 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Created By:</span>
-                    <span className="font-medium">Boss</span>
+                    <span className="font-medium">
+                      {(() => {
+                        // Try to get assigner from assignment chain first
+                        if (selectedLead.assignmentChain && selectedLead.assignmentChain.length > 0) {
+                          const lastAssignment = selectedLead.assignmentChain[selectedLead.assignmentChain.length - 1];
+                          if (lastAssignment.assignedBy && lastAssignment.assignedBy.name) {
+                            return `${lastAssignment.assignedBy.name} (${lastAssignment.assignedBy.role})`;
+                          }
+                          if (lastAssignment.assignedBy) {
+                            const assigner = assignableUsers.find(u => String(u._id) === String(lastAssignment.assignedBy._id));
+                            if (assigner) {
+                              return `${assigner.name} (${assigner.role})`;
+                            }
+                          }
+                        }
+                        
+                        // Fallback to creator logic
+                        const currentUser = localStorage.getItem('userName') || localStorage.getItem('name') || 'Boss';
+                        const currentUserRole = localStorage.getItem('userRole');
+                        
+                        // If current user is the creator, show their name
+                        if (String(selectedLead.createdBy) === localStorage.getItem('userId')) {
+                          return `${currentUser} (${currentUserRole || 'Boss'})`;
+                        }
+                        
+                        // Try to find creator in assignable users
+                        const creator = assignableUsers.find(u => String(u._id) === String(selectedLead.createdBy));
+                        if (creator) {
+                          return `${creator.name} (${creator.role})`;
+                        }
+                        
+                        // Check if lead has createdBy object
+                        if (selectedLead.createdBy?.name) {
+                          return selectedLead.createdBy.name;
+                        }
+                        
+                        // Fallback to Boss if role is boss
+                        if (currentUserRole === 'boss') {
+                          return `${currentUser} (Boss)`;
+                        }
+                        
+                        return 'Boss';
+                      })()}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Assigned To:</span>
