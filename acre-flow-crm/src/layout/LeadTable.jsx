@@ -57,13 +57,13 @@ const LeadTable = ({ userRole }) => {
   const [selectedSwapLeadId, setSelectedSwapLeadId] = useState('');
   const [forwardSwapReason, setForwardSwapReason] = useState('');
   const [isExporting, setIsExporting] = useState(false);
-  
+
   // Lead Actions state
   const [showSwapModal, setShowSwapModal] = useState(false);
   const [showSwitchModal, setShowSwitchModal] = useState(false);
   const [showForwardModal, setShowForwardModal] = useState(false);
   const [selectedLeadForActions, setSelectedLeadForActions] = useState(null);
-  
+
   const { toast } = useToast();
   const prevAssignedLeadIds = useRef(new Set());
   const currentUserId = localStorage.getItem("userId");
@@ -394,17 +394,17 @@ const LeadTable = ({ userRole }) => {
 
   const userMap = React.useMemo(() => {
     const map = {};
-    
+
     // Add all assignable users
     assignableUsers.forEach(u => {
       map[u._id] = { name: u.name, role: u.role };
     });
-    
+
     // Add current user (Boss) if not already in assignableUsers
     const currentUserRole = localStorage.getItem("userRole");
     const currentUserId = localStorage.getItem("userId");
     const currentUserName = localStorage.getItem("userName") || localStorage.getItem("name") || 'Boss';
-    
+
     // Debug: Check localStorage values
     console.log('🔍 Debug - UserMap Creation:', {
       currentUserRole,
@@ -412,14 +412,14 @@ const LeadTable = ({ userRole }) => {
       currentUserName,
       localStorageKeys: Object.keys(localStorage).filter(key => key.includes('user') || key.includes('name') || key.includes('role'))
     });
-    
+
     if (currentUserId && !map[currentUserId]) {
-      map[currentUserId] = { 
-        name: currentUserName, 
+      map[currentUserId] = {
+        name: currentUserName,
         role: currentUserRole === 'boss' ? 'boss' : (currentUserRole || 'admin')
       };
     }
-    
+
     return map;
   }, [assignableUsers]);
 
@@ -433,12 +433,12 @@ const LeadTable = ({ userRole }) => {
     if (role !== 'boss' && role !== 'super-admin') {
       const isCreator = String(lead.createdBy) === String(userId);
       const isAssigned = String(lead.assignedTo) === String(userId);
-      
+
       // Check if current user forwarded this lead (check assignment chain)
-      const isForwarder = lead.assignmentChain?.some(assignment => 
+      const isForwarder = lead.assignmentChain?.some(assignment =>
         assignment.assignedBy?._id && String(assignment.assignedBy._id) === String(userId)
       );
-      
+
       if (!isCreator && !isAssigned && !isForwarder) return false;
     }
 
@@ -1263,11 +1263,11 @@ const LeadTable = ({ userRole }) => {
                             userMapKeys: Object.keys(userMap)
                           });
                         }
-                        
+
                         // Try to get assigner from assignment chain first
                         if (lead.assignmentChain && lead.assignmentChain.length > 0) {
                           const lastAssignment = lead.assignmentChain[lead.assignmentChain.length - 1];
-                          
+
                           // Debug: Check assignment structure
                           if (lead.name?.includes('aman') || lead.name?.includes('tiwari')) {
                             console.log('🔍 Debug - Aman Tiwari Lead:', {
@@ -1278,7 +1278,7 @@ const LeadTable = ({ userRole }) => {
                               assignedByType: typeof lastAssignment.assignedBy
                             });
                           }
-                          
+
                           if (lastAssignment.assignedBy && lastAssignment.assignedBy.name) {
                             return `${lastAssignment.assignedBy.name} (${lastAssignment.assignedBy.role})`;
                           }
@@ -1287,10 +1287,10 @@ const LeadTable = ({ userRole }) => {
                             return `${assigner.name} (${assigner.role})`;
                           }
                         }
-                        
+
                         // Fallback to creator
-                        return userMap[lead.createdBy] 
-                          ? `${userMap[lead.createdBy].name} (${userMap[lead.createdBy].role})` 
+                        return userMap[lead.createdBy]
+                          ? `${userMap[lead.createdBy].name} (${userMap[lead.createdBy].role})`
                           : (lead.createdBy?.name || lead.createdByName || 'Boss');
                       })()}</div>
                       <div>
@@ -1397,7 +1397,7 @@ const LeadTable = ({ userRole }) => {
                       {/* Assignment dropdown/buttons logic - Disabled for Boss and BD */}
                       {(((!lead.assignedTo && canReassignLead(lead)) ||
                         String(lead.assignedTo) === String(currentUserId)) &&
-                        localStorage.getItem("userRole") !== 'boss' && userRole !== 'boss' && 
+                        localStorage.getItem("userRole") !== 'boss' && userRole !== 'boss' &&
                         localStorage.getItem("userRole") !== 'bd' && userRole !== 'bd') && (
                           <>
                             <select
@@ -1563,13 +1563,13 @@ const LeadTable = ({ userRole }) => {
                         return null;
                       })()}
 
-                      <button
+                      {/* <button
                         onClick={() => handleEmailLead(lead.email)}
                         title="Email Lead"
                         className="lead-action-button email-btn"
                       >
                         <Mail size={16} />
-                      </button>
+                      </button> */}
 
                       {/* Advanced Options */}
                       <button
@@ -1602,7 +1602,7 @@ const LeadTable = ({ userRole }) => {
                       >
                         <MessageSquare size={16} />
                       </button>
-                      
+
                       {/* Lead Actions - Forward, Swap, Switch */}
                       {canForwardLead(lead).canForward && (
                         <button
@@ -1614,7 +1614,7 @@ const LeadTable = ({ userRole }) => {
                           <ArrowRight size={16} />
                         </button>
                       )}
-                      
+
                       {canSwapLead(lead).canSwap && (
                         <button
                           onClick={() => handleSwapLead(lead)}
@@ -1625,7 +1625,7 @@ const LeadTable = ({ userRole }) => {
                           <Settings size={16} />
                         </button>
                       )}
-                      
+
                       {canSwitchLead(lead).canSwitch && (
                         <button
                           onClick={() => handleSwitchLead(lead)}
@@ -1636,16 +1636,16 @@ const LeadTable = ({ userRole }) => {
                           <UserCheck size={16} />
                         </button>
                       )}
-                      
-                      {((userRole === "super-admin") || (String(lead.createdBy) === currentUserId)) && (
+
+                      {((userRole === "super-admin") || (userRole === "boss") || (String(lead.createdBy) === currentUserId)) && (
                         <button onClick={() => handleDeleteLead(lead._id)} className="lead-action-button delete-lead-btn">
                           <Trash2 size={16} />
                         </button>
                       )}
-                      
+
                       {/* Debug: Check delete button visibility */}
                       {lead.name?.includes('test') && (
-                        <div style={{fontSize: '8px', color: 'red'}}>
+                        <div style={{ fontSize: '8px', color: 'red' }}>
                           Delete: {String(lead.createdBy) === currentUserId ? 'YES' : 'NO'} | Role: {userRole}
                         </div>
                       )}
@@ -2395,7 +2395,7 @@ const LeadTable = ({ userRole }) => {
             const json = await response.json();
             setLeadsList(json.data || []);
             console.log('✅ Leads refreshed successfully after lead creation');
-            
+
             toast({
               title: "Success",
               description: "New lead created and list refreshed",
