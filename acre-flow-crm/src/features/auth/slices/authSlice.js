@@ -100,6 +100,12 @@ const authSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    setAuthData: (state, action) => {
+      state.user = action.payload?.user || null;
+      state.token = action.payload?.token || null;
+      state.isAuthenticated = !!action.payload?.token;
+      state.error = null;
+    },
     setUser: (state, action) => {
       state.user = action.payload;
       state.isAuthenticated = true;
@@ -156,7 +162,7 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError, setUser, clearAuth } = authSlice.actions;
+export const { clearError, setAuthData, setUser, clearAuth } = authSlice.actions;
 
 // Backwards-compatible alias: some pages import `logout` from this slice
 export const logout = logoutUser;

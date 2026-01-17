@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useDispatch } from "react-redux";
 import {
   Eye,
   EyeOff,
@@ -15,8 +16,11 @@ import {
   TrendingUp,
   Shield,
 } from "lucide-react";
+import API_CONFIG from "@/config/apiConfig";
+import { setAuthData } from "@/features/auth/slices/authSlice";
 
 const LoginDesktop = () => {
+  const dispatch = useDispatch();
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -26,6 +30,13 @@ const LoginDesktop = () => {
   const [forgotStatus, setForgotStatus] = useState("");
   const [forgotLoading, setForgotLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+
+  const parseJson = async (res) => {
+    const ct = res.headers.get("content-type") || "";
+    if (ct.includes("application/json")) return res.json();
+    const text = await res.text();
+    throw new Error(text || `Request failed with status ${res.status}`);
+  };
 
   const navigate = null; // Remove navigate for demo
 
@@ -225,14 +236,14 @@ const LoginDesktop = () => {
     // Try Activity Hub Department Login - check if email exists in Activity departments
     try {
       // First check if this email exists in any Activity department
-      const checkResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/activity/departments/check-email`, {
+      const checkResponse = await fetch(`${API_CONFIG.BASE_URL}/api/activity/departments/check-email`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: credentials.email }),
       });
 
       if (checkResponse.ok) {
-        const checkData = await checkResponse.json();
+        const checkData = await parseJson(checkResponse);
         
         // Check if user is admin - skip department login
         if (checkData.success && checkData.isAdmin) {
@@ -240,13 +251,13 @@ const LoginDesktop = () => {
           // Continue to normal CRM login flow
         } else if (checkData.success && checkData.exists) {
           // Email exists in Activity departments, try login
-          const activityResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/activity/departments/login`, {
+          const activityResponse = await fetch(`${API_CONFIG.BASE_URL}/api/activity/departments/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(credentials),
           });
 
-          const activityData = await activityResponse.json();
+          const activityData = await parseJson(activityResponse);
           if (activityResponse.ok && activityData.success && activityData.data) {
             // Activity Hub login successful - use unique session ID for multiple users
             const sessionId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
@@ -290,15 +301,16 @@ const LoginDesktop = () => {
     // Backend login - Try CRM first, then 100acress
     try {
       // Try CRM login first
-      const crmResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/login`, {
+      const crmResponse = await fetch(`${API_CONFIG.BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
         credentials: "include",
       });
 
-      const crmData = await crmResponse.json();
+      const crmData = await parseJson(crmResponse);
       if (crmResponse.ok && crmData.token) {
+        dispatch(setAuthData({ token: crmData.token, user: crmData.user }));
         // CRM login successful
         localStorage.setItem("token", crmData.token);
         localStorage.setItem("userRole", crmData.user.role);
@@ -386,16 +398,17 @@ const LoginDesktop = () => {
         
         if (acressResponse.ok && acressData.token) {
           // 100acress login successful, now verify with CRM backend
-          const verifyResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/verify-100acress-token`, {
+          const verifyResponse = await fetch(`${API_CONFIG.BASE_URL}/api/auth/verify-100acress-token`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token: acressData.token }),
             credentials: "include",
           });
 
-          const verifyData = await verifyResponse.json();
+          const verifyData = await parseJson(verifyResponse);
           
           if (verifyResponse.ok && verifyData.success && verifyData.token) {
+            dispatch(setAuthData({ token: verifyData.token, user: verifyData.user }));
             // Store 100acress token for 100acress API calls
             localStorage.setItem("myToken", acressData.token);
             // Store CRM token for CRM API calls
@@ -462,14 +475,15 @@ const LoginDesktop = () => {
     setForgotStatus("");
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/auth/request-password-reset`,
+        `${API_CONFIG.BASE_URL}/api/auth/request-password-reset`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: forgotEmail }),
         }
       );
-      const data = await res.json();
+
+      const data = await parseJson(res);
       setForgotStatus(res.ok ? "Reset link sent!" : data.message || "Error.");
     } catch {
       setForgotStatus("Error sending reset link.");
