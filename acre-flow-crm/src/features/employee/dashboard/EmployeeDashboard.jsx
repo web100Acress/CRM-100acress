@@ -387,7 +387,7 @@ const EmployeeDashboard = () => {
               />
 
               {/* Performance Metric */}
-              <Card className="border-0 shadow-lg bg-gradient-to-br from-violet-600 to-indigo-700 text-white overflow-hidden">
+              {/* <Card className="border-0 shadow-lg bg-gradient-to-br from-violet-600 to-indigo-700 text-white overflow-hidden">
                 <CardContent className="p-6 relative">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16" />
 
@@ -410,10 +410,10 @@ const EmployeeDashboard = () => {
                     </div>
                   </div>
                 </CardContent>
-              </Card>
+              </Card> */}
 
               {/* Task Status Breakdown */}
-              <Card className="border-0 shadow-lg">
+              {/* <Card className="border-0 shadow-lg">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-6">
                     <div>
@@ -456,7 +456,7 @@ const EmployeeDashboard = () => {
                     </div>
                   </div>
                 </CardContent>
-              </Card>
+              </Card> */}
             </div>
           </div>
         </div>
