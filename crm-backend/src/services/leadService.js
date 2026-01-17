@@ -359,6 +359,13 @@ const forwardLead = async (leadId, currentUserId, action = 'forward', selectedEm
   // Auto-create chat between assigner and assignee
   await createChatForAssignment(leadId, currentUserId, nextAssignee._id.toString());
   
+  // Emit real-time update to all relevant users
+  await emitLeadUpdateToRelevantUsers(leadId, 'forwarded', currentUserId, { 
+    nextAssignee: nextAssignee._id,
+    nextAssigneeName: nextAssignee.name,
+    nextAssigneeRole: nextAssignee.role
+  });
+  
   return lead;
 };
 
@@ -588,7 +595,39 @@ const addFollowUp = async (id, followUpData) => {
     lead.followUps.push(followUpData); // Make sure followUps is defined in schema
     await lead.save();
 
-    // 📢 Send notification to all relevant users for BD activity
+    // � REAL-TIME UPDATES FOR HOD ACTIONS
+    const emitLeadUpdateToRelevantUsers = async (leadId, action, updatedBy, additionalData = {}) => {
+      try {
+        // Get all relevant users for HOD activity
+        const relevantUsers = await notificationService.getRelevantUsersForBDActivity(updatedBy);
+        
+        // Emit real-time update to all relevant users
+        if (io && relevantUsers.length > 0) {
+          relevantUsers.forEach(user => {
+            io.to(user.userId.toString()).emit('leadUpdate', {
+              leadId,
+              action,
+              updatedBy,
+              timestamp: new Date(),
+              data: {
+                leadName: lead.name,
+                assignedTo: lead.assignedTo,
+                status: lead.status,
+                ...additionalData
+              }
+            });
+          });
+        }
+        
+        console.log(`📡 Real-time update sent to ${relevantUsers.length} users for HOD action: ${action}`);
+      } catch (error) {
+        console.error('❌ Error sending real-time update:', error);
+      }
+    };
+
+    await emitLeadUpdateToRelevantUsers(id, 'followup_added', currentUser._id, { followUpData });
+
+    // �� Send notification to all relevant users for BD activity
     try {
       const relevantUsers = await notificationService.getRelevantUsersForBDActivity(followUpData.addedBy);
       
@@ -794,35 +833,42 @@ const forwardSwapLead = async (leadId, requesterId, swapLeadId, reason = '') => 
       console.error('Error sending swap notifications:', error);
     }
     
-    // Auto-create chats for swapped assignments
-    // Chat between requester and new assignee for leadA
-    await createChatForAssignment(leadId, requesterId, bdB._id.toString());
-    // Chat between requester and new assignee for leadB
-    await createChatForAssignment(swapLeadId, requesterId, bdA._id.toString());
-
+    // Emit real-time updates to all relevant users
+    await emitLeadUpdateToRelevantUsers(leadId, 'swapped', requesterId, { 
+      swapLeadId,
+      targetLeadId: swapLeadId,
+      reason
+    });
+    
+    console.log(' Real-time swap updates sent to relevant users');
+    
     return { leadA, leadB };
   };
 
-  const session = await mongoose.startSession();
+  // Database session for transaction
+  const dbSession = await mongoose.startSession();
   try {
     let result = null;
     try {
-      await session.withTransaction(async () => {
-        result = await applySwap(session);
+      await dbSession.withTransaction(async () => {
+        result = await applySwap(dbSession);
       });
       return result;
     } catch (err) {
       try {
-        if (session.inTransaction()) {
-          await session.abortTransaction();
+        if (dbSession.inTransaction()) {
+          await dbSession.abortTransaction();
         }
       } catch {
         // ignore
       }
       return await applySwap(null);
     }
+  } catch (error) {
+    console.error('Error in forwardSwapLead:', error);
+    throw error;
   } finally {
-    session.endSession();
+    dbSession.endSession();
   }
 };
 

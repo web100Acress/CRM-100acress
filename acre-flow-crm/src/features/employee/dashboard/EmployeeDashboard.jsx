@@ -51,6 +51,44 @@ const EmployeeDashboard = () => {
     s.emit('requestDashboardStats');
     s.emit('requestMyLeads', { userId: currentUserId });
 
+    // 🔄 REAL-TIME LEAD UPDATES LISTENERS
+    s.on('leadUpdate', (data) => {
+      console.log('📡 Real-time lead update received:', data);
+      
+      // Refresh dashboard data when lead is updated
+      if (data.action === 'forwarded' || data.action === 'reassigned' || data.action === 'swapped') {
+        fetchDashboardData();
+      }
+      
+      // Show toast notification for lead updates
+      if (data.updatedBy !== currentUserId) {
+        toast({
+          title: 'Lead Updated',
+          description: `Lead "${data.leadName}" has been ${data.action} by ${data.updatedByName}`,
+          variant: 'default'
+        });
+      }
+    });
+
+    // Listen for specific BD activities
+    s.on('bd_activity', (data) => {
+      console.log('📡 BD Activity notification received:', data);
+      
+      // Refresh dashboard when BD performs activities
+      if (data.action === 'followup_added' || data.action === 'bd_reassign' || data.action === 'forward_patch') {
+        fetchDashboardData();
+      }
+      
+      // Show toast for BD activities
+      if (data.addedBy !== currentUserId) {
+        toast({
+          title: 'BD Activity',
+          description: `BD "${data.addedByName}" performed ${data.action} on lead "${data.leadName}"`,
+          variant: 'default'
+        });
+      }
+    });
+
     return () => s.disconnect();
   }, []);
 
