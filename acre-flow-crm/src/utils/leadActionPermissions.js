@@ -35,11 +35,6 @@ export const canForwardLead = (lead, currentUser = null) => {
     return { canForward: false, reason: 'User authentication required' };
   }
 
-  // Boss cannot forward (already at top)
-  if (user.role === 'boss') {
-    return { canForward: false, reason: 'Boss cannot forward leads (already at top level)' };
-  }
-
   // Check if lead exists
   if (!lead) {
     return { canForward: false, reason: 'Lead not found' };
@@ -53,13 +48,38 @@ export const canForwardLead = (lead, currentUser = null) => {
     return { canForward: false, reason: 'You can only forward leads you created or are assigned to' };
   }
 
-  // Check if lead is already at the lowest level
-  const currentLevel = ROLE_HIERARCHY[user.role];
-  if (currentLevel >= 3) { // BD/Employee level
-    return { canForward: false, reason: 'Lead is already at the lowest level' };
+  // Boss can forward to HOD
+  if (user.role === 'boss') {
+    return { canForward: true, nextLevel: 1, targetRole: 'hod' };
   }
 
-  return { canForward: true, nextLevel: currentLevel + 1 };
+  // HOD can forward to TL or other HODs (when BD assigned)
+  if (user.role === 'hod') {
+    // Check if lead is assigned to BD level
+    const chain = Array.isArray(lead?.assignmentChain) ? lead.assignmentChain : [];
+    const lastAssignment = chain.length > 0 ? chain[chain.length - 1] : null;
+    const lastRole = (lastAssignment?.role || '').toString();
+    
+    if (['bd', 'employee'].includes(lastRole)) {
+      // HOD can forward to other HODs when BD is assigned
+      return { canForward: true, nextLevel: 1, targetRole: 'hod' };
+    } else {
+      // HOD can forward to TL
+      return { canForward: true, nextLevel: 2, targetRole: 'team-leader' };
+    }
+  }
+
+  // TL can forward to BD
+  if (user.role === 'team-leader') {
+    return { canForward: true, nextLevel: 3, targetRole: 'bd' };
+  }
+
+  // BD cannot forward (already at lowest level)
+  if (['bd', 'employee'].includes(user.role)) {
+    return { canForward: false, reason: 'Lead is already at lowest level' };
+  }
+
+  return { canForward: false, reason: 'Invalid role for forwarding' };
 };
 
 /**
@@ -82,6 +102,11 @@ export const canSwapLead = (lead, currentUser = null) => {
     return { canSwap: false, reason: 'Lead not found' };
   }
 
+  // NEW: Lead must be assigned to enable swap options
+  if (!lead.assignedTo) {
+    return { canSwap: false, reason: 'Lead must be assigned to enable swap options' };
+  }
+
   // Must be assigned to the lead to swap it
   if (String(lead.assignedTo) !== String(user.userId)) {
     return { canSwap: false, reason: 'You can only swap leads assigned to you' };
@@ -100,43 +125,58 @@ export const canSwitchLead = (lead, currentUser = null) => {
   if (!user.role || !user.userId) {
     return { canSwitch: false, reason: 'User authentication required' };
   }
-
+  
   // Boss cannot switch (already manages all)
   if (user.role === 'boss') {
     return { canSwitch: false, reason: 'Boss cannot switch leads (already manages all)' };
   }
-
+  
   // Only HOD and Team-Leader can switch
   if (!['hod', 'team-leader'].includes(user.role)) {
     return { canSwitch: false, reason: 'Only HOD and Team-Leader can switch leads' };
   }
-
+  
   if (!lead) {
     return { canSwitch: false, reason: 'Lead not found' };
   }
-
-  // Must be assigned to the lead to switch it
+  
+  // NEW: Lead must be assigned to enable switch options
+  if (!lead.assignedTo) {
+    return { canSwitch: false, reason: 'Lead must be assigned to enable switch options' };
+  }
+  
+  // Must be assigned to lead to switch it
   if (String(lead.assignedTo) !== String(user.userId)) {
     return { canSwitch: false, reason: 'You can only switch leads assigned to you' };
   }
-
-  // Check if lead was already forwarded (can only switch forwarded leads)
-  const chain = Array.isArray(lead?.assignmentChain) ? lead.assignmentChain : [];
-  const wasForwarded = chain.some((e) => String(e?.status) === 'forwarded');
   
-  if (!wasForwarded) {
-    return { canSwitch: false, reason: 'You can only switch leads that have been forwarded' };
+  // HOD can switch BD leads (forwarded requirement removed)
+  if (user.role === 'hod') {
+    // Check if lead is assigned to BD level
+    const chain = Array.isArray(lead?.assignmentChain) ? lead.assignmentChain : [];
+    const lastAssignment = chain.length > 0 ? chain[chain.length - 1] : null;
+    const lastRole = (lastAssignment?.role || '').toString();
+    
+    if (['bd', 'employee'].includes(lastRole)) {
+      return { canSwitch: true };
+    }
+    return { canSwitch: false, reason: 'HOD can only switch leads assigned to BD level' };
   }
-
-  // Check if current assignment is at BD level
-  const lastAssignment = chain.length > 0 ? chain[chain.length - 1] : null;
-  const lastRole = (lastAssignment?.role || '').toString();
   
-  if (!['bd', 'employee'].includes(lastRole)) {
-    return { canSwitch: false, reason: 'You can only switch leads assigned to BD/Employee level' };
+  // TL can switch BD leads (no forwarded requirement)
+  if (user.role === 'team-leader') {
+    // Check if lead is assigned to BD level
+    const chain = Array.isArray(lead?.assignmentChain) ? lead.assignmentChain : [];
+    const lastAssignment = chain.length > 0 ? chain[chain.length - 1] : null;
+    const lastRole = (lastAssignment?.role || '').toString();
+    
+    if (['bd', 'employee'].includes(lastRole)) {
+      return { canSwitch: true };
+    }
+    return { canSwitch: false, reason: 'TL can only switch leads assigned to BD level' };
   }
-
-  return { canSwitch: true };
+  
+  return { canSwitch: false, reason: 'Invalid role for switching' };
 };
 
 /**
@@ -156,33 +196,51 @@ export const getAvailableTargets = {
       return [];
     }
     
-    const nextLevel = currentLevel + 1;
-    
     // Safety check for assignableUsers
     if (!assignableUsers || !Array.isArray(assignableUsers)) {
       console.warn('assignableUsers is not available for forward action');
       return [];
     }
     
-    // Map level to role names
-    const levelRoles = {
-      1: ['hod'], // From Boss to HOD
-      2: ['team-leader', 'tl'], // From HOD to TL
-      3: ['bd', 'employee'] // From TL to BD
-    };
-    
-    const targetRoles = levelRoles[nextLevel];
-    
-    // Safety check for target roles
-    if (!targetRoles) {
-      console.warn('No target roles found for level:', nextLevel);
-      return [];
+    // Boss can forward to HOD
+    if (user.role === 'boss') {
+      return assignableUsers.filter(u => 
+        ['hod'].includes(u.role?.toLowerCase()) && 
+        String(u._id) !== String(user.userId)
+      );
     }
     
-    return assignableUsers.filter(user => 
-      targetRoles.includes(user.role?.toLowerCase()) && 
-      String(user._id) !== String(user.userId)
-    );
+    // HOD can forward to TL or other HODs (when BD assigned)
+    if (user.role === 'hod') {
+      // Check if lead is assigned to BD level
+      const chain = Array.isArray(lead?.assignmentChain) ? lead.assignmentChain : [];
+      const lastAssignment = chain.length > 0 ? chain[chain.length - 1] : null;
+      const lastRole = (lastAssignment?.role || '').toString();
+      
+      if (['bd', 'employee'].includes(lastRole)) {
+        // HOD can forward to other HODs when BD is assigned
+        return assignableUsers.filter(u => 
+          ['hod'].includes(u.role?.toLowerCase()) && 
+          String(u._id) !== String(user.userId)
+        );
+      } else {
+        // HOD can forward to TL
+        return assignableUsers.filter(u => 
+          ['team-leader', 'tl'].includes(u.role?.toLowerCase()) && 
+          String(u._id) !== String(user.userId)
+        );
+      }
+    }
+    
+    // TL can forward to BD
+    if (user.role === 'team-leader') {
+      return assignableUsers.filter(u => 
+        ['bd', 'employee'].includes(u.role?.toLowerCase()) && 
+        String(u._id) !== String(user.userId)
+      );
+    }
+    
+    return [];
   },
 
   /**
