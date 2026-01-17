@@ -1316,7 +1316,7 @@ const LeadTable = ({ userRole }) => {
                       onChange={(e) => handleUpdateStatus(lead._id, e.target.value)}
                       className="lead-status-update-select"
                       title="Update Lead Status"
-                      disabled={userRole === 'boss' || localStorage.getItem("userRole") === 'boss'}
+                      disabled={userRole === 'boss' || localStorage.getItem("userRole") === 'boss' || userRole === 'bd' || localStorage.getItem("userRole") === 'bd'}
                     >
                       <option value="Hot">🔥 Hot</option>
                       <option value="Warm">🌡️ Warm</option>
@@ -1356,7 +1356,7 @@ const LeadTable = ({ userRole }) => {
                           }
                         }}
                         className="lead-work-progress-select"
-                        disabled={userRole === 'boss' || localStorage.getItem("userRole") === 'boss'}
+                        disabled={userRole === 'boss' || localStorage.getItem("userRole") === 'boss' || userRole === 'bd' || localStorage.getItem("userRole") === 'bd'}
                       >
                         {(!lead.workProgress ||
                           lead.workProgress === "pending") && (
@@ -1394,10 +1394,11 @@ const LeadTable = ({ userRole }) => {
                       ) : (
                         <span>Unassigned</span>
                       )}
-                      {/* Assignment dropdown/buttons logic - Disabled for Boss */}
+                      {/* Assignment dropdown/buttons logic - Disabled for Boss and BD */}
                       {(((!lead.assignedTo && canReassignLead(lead)) ||
                         String(lead.assignedTo) === String(currentUserId)) &&
-                        localStorage.getItem("userRole") !== 'boss' && userRole !== 'boss') && (
+                        localStorage.getItem("userRole") !== 'boss' && userRole !== 'boss' && 
+                        localStorage.getItem("userRole") !== 'bd' && userRole !== 'bd') && (
                           <>
                             <select
                               value={lead.assignedTo || ""}
@@ -1434,7 +1435,7 @@ const LeadTable = ({ userRole }) => {
                           </>
                         )}
 
-                      {canForwardPatchLead(lead) && localStorage.getItem("userRole") !== 'boss' && (
+                      {canForwardPatchLead(lead) && localStorage.getItem("userRole") !== 'boss' && localStorage.getItem("userRole") !== 'bd' && (
                         <button
                           className="lead-forward-button"
                           onClick={() => {
@@ -1451,7 +1452,7 @@ const LeadTable = ({ userRole }) => {
                         </button>
                       )}
 
-                      {canForwardPatchLead(lead) && localStorage.getItem("userRole") !== 'boss' && (
+                      {canForwardPatchLead(lead) && localStorage.getItem("userRole") !== 'boss' && localStorage.getItem("userRole") !== 'bd' && (
                         <button
                           className="lead-forward-button"
                           onClick={() => {
@@ -2258,6 +2259,7 @@ const LeadTable = ({ userRole }) => {
                         setSelectedLeadForAdvanced({ ...selectedLeadForAdvanced, status: e.target.value });
                       }}
                       className="lead-advanced-status-select"
+                      disabled={userRole === 'boss' || localStorage.getItem("userRole") === 'boss' || userRole === 'bd' || localStorage.getItem("userRole") === 'bd'}
                     >
                       <option value="Hot">🔥 Hot</option>
                       <option value="Warm">🌡️ Warm</option>
