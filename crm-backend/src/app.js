@@ -22,7 +22,9 @@ const allowedOrigins = [
   'https://www.100acress.com',  // ✅ added
   'https://api.100acress.com',
   'https://bcrm.100acress.com',
+  'https://crm.100acress.com',
   'http://localhost:3500',
+  'https://crm-100acress-backend-2.onrender.com', // ✅ Added Render backend for Socket.IO
   'https://bcrm.100acress.com',
   'https://crm.100acress.com',
   'null' // Allow file:// protocol for local HTML files
