@@ -1,5 +1,5 @@
 import React from 'react';
-import S3Manager from '@/features/admin/pages/S3Manager';
+import S3Manager from "@/pages/S3Manager/S3Manager.container";
 
 const S3ManagerDesktop = () => {
   return (

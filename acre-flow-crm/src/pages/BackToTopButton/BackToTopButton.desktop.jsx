@@ -1,5 +1,5 @@
 import React from 'react';
-import BackToTopButton from '@/features/admin/pages/BackToTopButton';
+import BackToTopButton from "@/pages/BackToTopButton/BackToTopButton.container";
 
 const BackToTopButtonDesktop = () => {
   return (

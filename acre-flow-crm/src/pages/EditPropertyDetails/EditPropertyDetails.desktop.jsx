@@ -1,5 +1,5 @@
 import React from 'react';
-import EditPropertyDetails from '@/features/admin/pages/EditPropertyDetails';
+import EditPropertyDetails from "@/pages/EditPropertyDetails/EditPropertyDetails.container";
 
 const EditPropertyDetailsDesktop = () => {
   return (

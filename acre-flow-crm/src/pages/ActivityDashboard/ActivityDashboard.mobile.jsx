@@ -1,5 +1,5 @@
 import React from 'react';
-import ActivityDashboard from '@/features/activity/pages/ActivityDashboard';
+import ActivityDashboard from "@/pages/ActivityDashboard/ActivityDashboard.container";
 
 const ActivityDashboardMobile = () => {
   return (

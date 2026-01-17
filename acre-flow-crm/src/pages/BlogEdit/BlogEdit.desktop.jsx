@@ -1,5 +1,5 @@
 import React from 'react';
-import BlogEdit from '@/features/admin/pages/BlogEdit';
+import BlogEdit from "@/pages/BlogEdit/BlogEdit.container";
 
 const BlogEditDesktop = () => {
   return (

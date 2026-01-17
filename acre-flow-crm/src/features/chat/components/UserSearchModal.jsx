@@ -1,63 +1,56 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, X, User, MessageCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { apiUrl } from '@/config/apiConfig';
+import { useSelector } from 'react-redux';
+import { fetchAssignableUsers } from '@/api/leads.api';
 
 const UserSearchModal = ({ isOpen, onClose, onUserSelect, currentUserRole }) => {
   const { toast } = useToast();
+  const auth = useSelector(state => state.auth);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
 
-  // Get current user info
+  // Get current user info from Redux
   const getCurrentUserInfo = useCallback(() => {
-    const token = localStorage.getItem('token');
-    const userId = localStorage.getItem('userId');
-    const userName = localStorage.getItem('userName') || localStorage.getItem('name');
-    
-    return { token, userId, userName };
-  }, []);
+    return {
+      token: auth.token,
+      userId: auth.user?._id || auth.user?.id,
+      userName: auth.user?.name
+    };
+  }, [auth]);
 
   // Fetch and filter users
-  const fetchUsers = useCallback(async (query = '') => {
+  const fetchUsersData = useCallback(async (query = '') => {
     setSearching(true);
     try {
       const { token, userId } = getCurrentUserInfo();
       
-      // Fetch all users from /api/users endpoint
-      const response = await fetch(apiUrl('users'), {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      // Fetch all users using the leads API
+      const data = await fetchAssignableUsers();
 
-      if (response.ok) {
-        const data = await response.json();
+      if (data.success && Array.isArray(data.data)) {
+        // Filter users by roles: boss, hod, team-leader, bd (actual database role values)
+        // Include variants that might exist in database
+        const allowedRoles = ['boss', 'super-admin', 'superadmin', 'hod', 'head-admin', 'head_admin', 'team-leader', 'team_leader', 'bd', 'employee'];
         
-        if (data.success && Array.isArray(data.data)) {
-          // Filter users by roles: boss, hod, team-leader, bd (actual database role values)
-          // Include variants that might exist in database
-          const allowedRoles = ['boss', 'super-admin', 'superadmin', 'hod', 'head-admin', 'head_admin', 'team-leader', 'team_leader', 'bd', 'employee'];
+        let filteredUsers = data.data
+          .filter(user => {
+            // Exclude current user
+            if (user._id === userId) return false;
+            // Filter by allowed roles (check both exact match and lowercase)
+            const userRole = user.role?.toLowerCase().trim();
+            return allowedRoles.some(allowedRole => userRole === allowedRole.toLowerCase());
+          })
+          .map(user => ({
+            _id: user._id,
+            name: user.name || user.email?.split('@')[0] || 'Unknown',
+            email: user.email,
+            role: user.role,
+            department: user.department
+          }));
           
-          let filteredUsers = data.data
-            .filter(user => {
-              // Exclude current user
-              if (user._id === userId) return false;
-              // Filter by allowed roles (check both exact match and lowercase)
-              const userRole = user.role?.toLowerCase().trim();
-              return allowedRoles.some(allowedRole => userRole === allowedRole.toLowerCase());
-            })
-            .map(user => ({
-              _id: user._id,
-              name: user.name || user.email?.split('@')[0] || 'Unknown',
-              email: user.email,
-              role: user.role,
-              department: user.department
-            }));
-
           // Apply search query filter if provided
           if (query.trim()) {
             const searchLower = query.toLowerCase();
@@ -77,14 +70,6 @@ const UserSearchModal = ({ isOpen, onClose, onUserSelect, currentUserRole }) => 
         } else {
           setSearchResults([]);
         }
-      } else {
-        setSearchResults([]);
-        toast({
-          title: 'Error',
-          description: 'Failed to fetch users',
-          variant: 'destructive'
-        });
-      }
     } catch (error) {
       console.error('Error fetching users:', error);
       setSearchResults([]);
@@ -101,20 +86,20 @@ const UserSearchModal = ({ isOpen, onClose, onUserSelect, currentUserRole }) => 
   // Initial fetch of all users when modal opens
   useEffect(() => {
     if (isOpen) {
-      fetchUsers(''); // Fetch all users on modal open
+      fetchUsersData(''); // Fetch all users on modal open
     }
-  }, [isOpen, fetchUsers]);
+  }, [isOpen, fetchUsersData]);
 
   // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => {
       if (isOpen) {
-        fetchUsers(searchQuery);
+        fetchUsersData(searchQuery);
       }
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, fetchUsers, isOpen]);
+  }, [searchQuery, fetchUsersData, isOpen]);
 
   // Handle user selection
   const handleUserSelect = (user) => {

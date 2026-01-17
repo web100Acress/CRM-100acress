@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import DashboardLayout from '@/layout/DashboardLayout';
-import { commAdminApi } from '@/api/commAdmin.api.js';
+import { fetchFeatureFlags, fetchProviders, updateFeatureFlags, upsertProvider } from '@/api/commAdmin.api.js';
 import { PhoneCall, Save, Shield, ToggleLeft, ToggleRight } from 'lucide-react';
 
 
@@ -31,8 +31,8 @@ const CallingSettings = ({ userRole = 'super-admin' }) => {
   const loadAll = async () => {
     try {
       setLoading(true);
-      const flagsRes = await commAdminApi.fetchFeatureFlags();
-      const providersRes = await commAdminApi.fetchProviders();
+      const flagsRes = await fetchFeatureFlags();
+      const providersRes = await fetchProviders();
 
       setFlags(flagsRes?.data || flagsRes);
       const list = providersRes?.data || providersRes;
@@ -70,7 +70,7 @@ const CallingSettings = ({ userRole = 'super-admin' }) => {
   const saveFlags = async () => {
     try {
       setSaving(true);
-      await commAdminApi.updateFeatureFlags({
+      await updateFeatureFlags({
         CALLING_ENABLED: Boolean(flags.CALLING_ENABLED),
         RECORDING_ENABLED: Boolean(flags.RECORDING_ENABLED),
         MISSED_CALL_LEADS: Boolean(flags.MISSED_CALL_LEADS),
@@ -97,7 +97,7 @@ const CallingSettings = ({ userRole = 'super-admin' }) => {
             }
           : {};
 
-      await commAdminApi.upsertProvider({
+      await upsertProvider({
         providerName: providerForm.providerName,
         isActive: Boolean(providerForm.isActive),
         defaultFromNumber: providerForm.defaultFromNumber || '',

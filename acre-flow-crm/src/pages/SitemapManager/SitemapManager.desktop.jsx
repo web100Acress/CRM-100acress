@@ -1,5 +1,5 @@
 import React from 'react';
-import SitemapManager from '@/features/admin/pages/SitemapManager';
+import SitemapManager from "@/pages/SitemapManager/SitemapManager.container";
 
 const SitemapManagerDesktop = () => {
   return (

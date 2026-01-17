@@ -1,5 +1,5 @@
 import React from 'react';
-import BlogViewAdmin from '@/features/admin/pages/BlogViewAdmin';
+import BlogViewAdmin from "@/pages/BlogViewAdmin/BlogViewAdmin.container";
 
 const BlogViewAdminMobile = () => {
   return (

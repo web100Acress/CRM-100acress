@@ -1,5 +1,5 @@
 import React from 'react';
-import BlogPost from '@/features/admin/pages/BlogPost';
+import BlogPost from "@/pages/BlogPost/BlogPost.container";
 
 const BlogPostDesktop = () => {
   return (

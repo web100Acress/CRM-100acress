@@ -1,5 +1,5 @@
 import React from 'react';
-import ResaleEnquiries from '@/features/admin/pages/ResaleEnquiries';
+import ResaleEnquiries from "@/pages/ResaleEnquiries/ResaleEnquiries.container";
 
 const ResaleEnquiriesDesktop = () => {
   return (

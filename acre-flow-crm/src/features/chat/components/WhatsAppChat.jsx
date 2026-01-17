@@ -6,41 +6,23 @@ import {
   Plus, Image as ImageIcon, Link as LinkIcon, FileText, Check
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { apiUrl } from '@/config/apiConfig';
+import { fetchChatMessages, sendChatMessage } from '@/api/chat.api';
+import { useSelector } from 'react-redux';
 
 const WhatsAppChat = ({ chat, isOpen, onClose }) => {
   const { toast } = useToast();
+  const auth = useSelector(state => state.auth);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [isSending, setIsSending] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-  // Interactive States
-  const [isMuted, setIsMuted] = useState(false);
-  const [isBlocked, setIsBlocked] = useState(false);
-  const [aboutText, setAboutText] = useState('');
-  const [isEditingAbout, setIsEditingAbout] = useState(false);
-  const [newAbout, setNewAbout] = useState('');
+  // Get current user ID from Redux
+  const myId = auth.user?._id || auth.user?.id;
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
-
-  // Get current user info
-  const getCurrentUserId = useCallback(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        return payload.userId || payload.id || payload._id;
-      } catch (error) {
-        console.error('Error parsing token:', error);
-      }
-    }
-    return localStorage.getItem('userId') || localStorage.getItem('id');
-  }, []);
-
-  const myId = getCurrentUserId();
 
   // Find opposite user
   const oppositeUser = React.useMemo(() => {
@@ -54,44 +36,23 @@ const WhatsAppChat = ({ chat, isOpen, onClose }) => {
     return opposite;
   }, [chat, myId]);
 
-  // Sync states when chat or oppositeUser changes
-  useEffect(() => {
-    if (chat) {
-      setIsMuted(chat.mutedBy?.includes(myId) || false);
-    }
-    if (oppositeUser) {
-      setAboutText(oppositeUser.about || "Available at 100 Acress CRM Team.");
-      setNewAbout(oppositeUser.about || "Available at 100 Acress CRM Team.");
-      // Note: isBlocked would typically come from a user profile fetch or similar
-    }
-  }, [chat, oppositeUser, myId]);
-
   // Fetch messages for this chat
   const fetchMessages = useCallback(async () => {
     if (!chat?._id) return;
 
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(apiUrl(`chats/messages?chatId=${chat._id}`), {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          const formattedMessages = data.data.map(msg => ({
-            id: msg._id || Math.random().toString(),
-            text: msg.message,
-            sender: msg.senderId._id === myId ? 'me' : 'other',
-            senderName: msg.senderId._id === myId ? 'You' : msg.senderId.name,
-            timestamp: new Date(msg.timestamp)
-          }));
-          setMessages(formattedMessages);
-        }
+      const data = await fetchChatMessages(chat._id);
+      
+      if (data.success) {
+        const formattedMessages = data.data.map(msg => ({
+          id: msg._id || Math.random().toString(),
+          text: msg.message,
+          sender: msg.senderId._id === myId ? 'me' : 'other',
+          senderName: msg.senderId._id === myId ? 'You' : msg.senderId.name,
+          timestamp: new Date(msg.timestamp)
+        }));
+        setMessages(formattedMessages);
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -100,157 +61,33 @@ const WhatsAppChat = ({ chat, isOpen, onClose }) => {
     }
   }, [chat, myId]);
 
-  // Toggle Mute
-  const handleToggleMute = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(apiUrl('chats/mute'), {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ chatId: chat._id })
-      });
-      const data = await response.json();
-      if (data.success) {
-        setIsMuted(data.isMuted);
-        toast({ title: data.isMuted ? 'Chat Muted' : 'Chat Unmuted' });
-      }
-    } catch (error) {
-      toast({ title: 'Error', description: 'Failed to toggle mute', variant: 'destructive' });
-    }
-  };
-
-  // Block User
-  const handleBlockUser = async () => {
-    if (!oppositeUser?._id) return;
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(apiUrl('chats/block'), {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ targetUserId: oppositeUser._id })
-      });
-      const data = await response.json();
-      if (data.success) {
-        setIsBlocked(true);
-        toast({ title: 'User Blocked', description: `${oppositeUser.name} has been blocked.` });
-      }
-    } catch (error) {
-      toast({ title: 'Error', description: 'Failed to block user', variant: 'destructive' });
-    }
-  };
-
-  // Report User
-  const handleReportUser = async () => {
-    if (!oppositeUser?._id) return;
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(apiUrl('chats/report'), {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ targetUserId: oppositeUser._id, reason: 'Reported from chat sidebar' })
-      });
-      const data = await response.json();
-      if (data.success) {
-        toast({ title: 'User Reported', description: 'Thank you for your report.' });
-      }
-    } catch (error) {
-      toast({ title: 'Error', description: 'Failed to report user', variant: 'destructive' });
-    }
-  };
-
-  // Delete Chat
-  const handleDeleteChat = async () => {
-    if (!chat?._id) return;
-    if (!confirm('Are you sure you want to delete this chat? This action cannot be undone.')) return;
-
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(apiUrl(`chats/${chat._id}`), {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      const data = await response.json();
-      if (data.success) {
-        toast({ title: 'Chat Deleted' });
-        onClose();
-      }
-    } catch (error) {
-      toast({ title: 'Error', description: 'Failed to delete chat', variant: 'destructive' });
-    }
-  };
-
-  // Update About
-  const handleUpdateAbout = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(apiUrl('users/about'), {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          about: newAbout,
-          targetUserId: oppositeUser?._id
-        })
-      });
-      const data = await response.json();
-      if (data.success) {
-        setAboutText(data.about);
-        setIsEditingAbout(false);
-        toast({ title: 'About updated' });
-      } else {
-        toast({ title: 'Error', description: data.message || 'Failed to update about', variant: 'destructive' });
-      }
-    } catch (error) {
-      toast({ title: 'Error', description: 'Failed to update about', variant: 'destructive' });
-    }
-  };
-
   // Send message
   const handleSendMessage = useCallback(async () => {
     if (!message.trim() || isSending || !chat?._id) return;
 
     setIsSending(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(apiUrl('chats/send'), {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          chatId: chat._id,
-          message: message.trim(),
-          senderId: myId
-        })
+      const data = await sendChatMessage(chat._id, {
+        message: message.trim(),
+        senderId: myId
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setMessage('');
-          const newMsg = {
-            id: Math.random().toString(),
-            text: message.trim(),
-            sender: 'me',
-            senderName: 'You',
-            timestamp: new Date()
-          };
-          setMessages(prev => [...prev, newMsg]);
-        }
+      if (data.success) {
+        setMessage('');
+        const newMsg = {
+          id: Math.random().toString(),
+          text: message.trim(),
+          sender: 'me',
+          senderName: 'You',
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, newMsg]);
+      } else {
+        toast({
+          title: 'Error',
+          description: data.message || 'Failed to send message',
+          variant: 'destructive'
+        });
       }
     } catch (error) {
       console.error('Error sending message:', error);
