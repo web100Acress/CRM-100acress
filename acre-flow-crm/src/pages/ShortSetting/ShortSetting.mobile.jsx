@@ -1,5 +1,5 @@
 import React from 'react';
-import ShortSetting from '@/features/admin/pages/ShortSetting';
+import ShortSetting from "@/pages/ShortSetting/ShortSetting.container";
 
 const ShortSettingMobile = () => {
   return (

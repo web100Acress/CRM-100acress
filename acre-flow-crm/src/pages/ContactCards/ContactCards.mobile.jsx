@@ -1,5 +1,5 @@
 import React from 'react';
-import ContactCards from '@/features/admin/pages/ContactCards';
+import ContactCards from "@/pages/ContactCards/ContactCards.container";
 
 const ContactCardsMobile = () => {
   return (

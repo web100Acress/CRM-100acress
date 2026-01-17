@@ -1,5 +1,5 @@
 import React from 'react';
-import ListedProperties from '@/features/admin/pages/ListedProperties';
+import ListedProperties from "@/pages/ListedProperties/ListedProperties.container";
 
 const ListedPropertiesDesktop = () => {
   return (

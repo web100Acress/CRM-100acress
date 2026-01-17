@@ -2,12 +2,14 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Search, MessageCircle, Clock, Edit, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import WhatsAppChat from './WhatsAppChat';
 import UserSearchModal from './UserSearchModal';
-import { apiUrl } from '@/config/apiConfig';
+import { createChat, fetchUserChats } from '@/api/chat.api';
 
 const WhatsAppChatList = () => {
   const { toast } = useToast();
+  const auth = useSelector(state => state.auth);
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -18,28 +20,20 @@ const WhatsAppChatList = () => {
   const [isFiltered, setIsFiltered] = useState(false);
   const location = useLocation();
 
-  // Get current user info
+  // Get current user info from Redux
   const getCurrentUserInfo = useCallback(() => {
-    const token = localStorage.getItem('token');
-    const userId = localStorage.getItem('userId');
-    const userRole = localStorage.getItem('userRole') || 'bd';
+    return {
+      token: auth.token,
+      userId: auth.user?._id || auth.user?.id,
+      userName: auth.user?.name,
+      userRole: auth.user?.role
+    };
+  }, [auth]);
 
-    return { token, userId, userRole };
-  }, []);
-
-  // Get current user ID
+  // Get current user ID from Redux
   const getCurrentUserId = useCallback(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        return payload.userId || payload.id || payload._id;
-      } catch (error) {
-        console.error('Error parsing token:', error);
-      }
-    }
-    return localStorage.getItem('userId') || localStorage.getItem('id');
-  }, []);
+    return auth.user?._id || auth.user?.id;
+  }, [auth]);
 
   // Format time
   function formatTime(date) {
@@ -65,24 +59,9 @@ const WhatsAppChatList = () => {
   // Fetch user's chats
   const fetchChats = useCallback(async (otherUserId = null) => {
     try {
-      const token = localStorage.getItem('token');
-      let url = apiUrl('lead-assignment/user-chats');
-      if (otherUserId) {
-        url += `?otherUserId=${otherUserId}`;
-      }
-
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setChats(data.data);
-        }
+      const data = await fetchUserChats();
+      if (data.success) {
+        setChats(data.data);
       }
     } catch (error) {
       console.error('Error fetching chats:', error);
@@ -168,23 +147,17 @@ const WhatsAppChatList = () => {
     try {
       const { token } = getCurrentUserInfo();
 
-      // Create new chat using the new endpoint
-      const response = await fetch(apiUrl('chats/create-chat'), {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
+      // Create new chat using the chat API
+      try {
+        const chatData = {
           participantId: selectedUser._id,
           participantName: selectedUser.name,
           participantEmail: selectedUser.email,
           participantRole: selectedUser.role
-        })
-      });
+        };
 
-      if (response.ok) {
-        const data = await response.json();
+        const data = await createChat(chatData);
+        
         if (data.success) {
           // Refresh chat list
           await fetchChats();
@@ -208,13 +181,23 @@ const WhatsAppChatList = () => {
             variant: 'destructive'
           });
         }
-      } else {
-        const errorData = await response.json();
-        toast({
-          title: 'Error',
-          description: errorData.message || 'Failed to create chat',
-          variant: 'destructive'
-        });
+      } catch (error) {
+        console.error('Error creating chat:', error);
+        
+        // Check if it's a 404 error (endpoint doesn't exist)
+        if (error.response?.status === 404) {
+          toast({
+            title: 'Chat Feature Coming Soon',
+            description: `Chat creation with ${selectedUser.name} will be available soon. For now, you can use WhatsApp to communicate.`,
+            variant: 'default'
+          });
+        } else {
+          toast({
+            title: 'Error',
+            description: error.response?.data?.message || 'Failed to create chat',
+            variant: 'destructive'
+          });
+        }
       }
     } catch (error) {
       console.error('Error creating chat:', error);
@@ -224,7 +207,7 @@ const WhatsAppChatList = () => {
         variant: 'destructive'
       });
     }
-  }, [apiUrl, fetchChats, getCurrentUserInfo, toast]);
+  }, [fetchChats, getCurrentUserInfo, toast]);
 
 
 
@@ -244,7 +227,7 @@ const WhatsAppChatList = () => {
         <div className="bg-[#f0f2f5] p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold shadow-md">
-              {localStorage.getItem('userName')?.charAt(0) || 'U'}
+              {auth.user?.name?.charAt(0) || 'U'}
             </div>
             <h2 className="text-xl font-bold text-slate-800">Chats</h2>
           </div>

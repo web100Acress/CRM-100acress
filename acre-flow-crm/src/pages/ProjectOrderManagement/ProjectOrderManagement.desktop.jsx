@@ -1,5 +1,5 @@
 import React from 'react';
-import ProjectOrderManagement from '@/features/admin/pages/ProjectOrderManagement';
+import ProjectOrderManagement from "@/pages/ProjectOrderManagement/ProjectOrderManagement.container";
 
 const ProjectOrderManagementDesktop = () => {
   return (

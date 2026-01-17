@@ -1,5 +1,5 @@
 import React from 'react';
-import BannerManagement from '@/features/admin/pages/BannerManagement';
+import BannerManagement from "@/pages/BannerManagement/BannerManagement.container";
 
 const BannerManagementDesktop = () => {
   return (
