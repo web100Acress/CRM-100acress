@@ -72,7 +72,7 @@ const SuperAdminProfile = () => {
 
   useEffect(() => {
     // Determine socket URL based on environment
-    const SOCKET_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://crm-100acress-backend-2.onrender.com';
+    const SOCKET_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://bcrm.100acress.com';
     const socket = io(SOCKET_URL);
 
     socket.on('connect', () => {
