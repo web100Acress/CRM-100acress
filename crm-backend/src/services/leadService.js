@@ -580,8 +580,55 @@ const addFollowUp = async (id, followUpData) => {
   const lead = await Lead.findById(id);
   if (!lead) return null;
 
-  lead.followUps.push(followUpData); // Make sure followUps is defined in schema
-  await lead.save();
+  // Get current user info for notification
+  const currentUser = await User.findById(followUpData.addedBy);
+  if (!currentUser) {
+    console.log('⚠️ Follow-up added by unknown user, skipping notification');
+  } else {
+    lead.followUps.push(followUpData); // Make sure followUps is defined in schema
+    await lead.save();
+
+    // 📢 Send notification to all relevant users for BD activity
+    try {
+      const relevantUsers = await notificationService.getRelevantUsersForBDActivity(followUpData.addedBy);
+      
+      // Send to specific assignee if different from current user
+      if (followUpData.addedBy !== currentUser._id.toString()) {
+        await notificationService.createNotification({
+          title: 'Follow-up Added',
+          message: `Follow-up added to lead "${lead.name}": "${followUpData.comment}" by ${currentUser.name}`,
+          type: 'followup_added',
+          recipientId: lead.assignedTo, // Send to lead's assigned BD
+          data: { 
+            leadId: id,
+            addedBy: currentUser._id,
+            action: 'followup_added',
+            followUpData: followUpData
+          }
+        });
+        console.log('📢 Follow-up notification sent to assigned BD:', lead.assignedTo);
+      } else {
+        console.log('ℹ️ Follow-up added by same user, skipping notification');
+      }
+
+      // Send to all relevant users (Boss, HOD, TL, other BDs)
+      await notificationService.createNotification({
+        title: 'BD Activity - Follow-up Added',
+        message: `BD "${currentUser.name}" added follow-up to lead "${lead.name}": "${followUpData.comment}"`,
+        type: 'lead_bd_activity',
+        recipients: relevantUsers,
+        data: { 
+          leadId: id,
+          addedBy: currentUser._id,
+          action: 'followup_added',
+          followUpData: followUpData
+        }
+      });
+      console.log('📢 BD Follow-up Activity notification sent to relevant users:', relevantUsers.length);
+    } catch (error) {
+      console.error('❌ Error sending follow-up notification:', error);
+    }
+  }
   return lead;
 };
 
