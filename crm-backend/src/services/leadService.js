@@ -416,12 +416,13 @@ const getAssignableUsers = async (currentUserRole, currentUserId) => {
     return self ? [...employees, self] : employees;
   }
 
-  // If bd, include HOD users for chat hierarchy
+  // If bd, include other BDs for assignment and HODs/TLs for hierarchy
   if (currentUserRole === 'bd') {
     const self = await User.findById(currentUserId);
+    const otherBDs = await User.find({ role: 'bd', _id: { $ne: currentUserId } }); // Other BDs except self
     const hods = await User.find({ role: 'hod' });
     const teamLeaders = await User.find({ role: 'team-leader' });
-    const allUsers = [...hods, ...teamLeaders];
+    const allUsers = [...otherBDs, ...hods, ...teamLeaders];
     return self ? [...allUsers, self] : allUsers;
   }
 
