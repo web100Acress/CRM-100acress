@@ -15,6 +15,7 @@ const WhatsAppChatList = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [showUserSearch, setShowUserSearch] = useState(false);
   const [activeTab, setActiveTab] = useState('All');
+  const [isFiltered, setIsFiltered] = useState(false);
   const location = useLocation();
 
   // Get current user info
@@ -62,10 +63,15 @@ const WhatsAppChatList = () => {
   }
 
   // Fetch user's chats
-  const fetchChats = useCallback(async () => {
+  const fetchChats = useCallback(async (otherUserId = null) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(apiUrl('lead-assignment/user-chats'), {
+      let url = apiUrl('lead-assignment/user-chats');
+      if (otherUserId) {
+        url += `?otherUserId=${otherUserId}`;
+      }
+
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -90,16 +96,30 @@ const WhatsAppChatList = () => {
     }
   }, [toast]);
 
+  // Handle incoming contact from state (e.g. from RightProfileSidebar or User Profile)
   useEffect(() => {
-    fetchChats();
-  }, [fetchChats]);
+    if (location.state?.contact) {
+      const contactId = location.state.contact._id;
+      setIsFiltered(true);
+      fetchChats(contactId);
+      handleUserSelect(location.state.contact);
+
+      // Clear state after short delay to avoid re-triggering, 
+      // but keep it long enough for handleUserSelect to finish
+      const timer = setTimeout(() => {
+        window.history.replaceState({}, document.title);
+      }, 500);
+      return () => clearTimeout(timer);
+    } else {
+      fetchChats();
+    }
+  }, [location.state, fetchChats, handleUserSelect]);
 
   // Filter chats based on search and privacy
   const filteredChats = chats.filter(chat => {
     const myId = getCurrentUserId();
 
     // 🛡️ Privacy Check: Ensure user is a participant
-    // The backend should handle this, but we add an extra layer here
     const isParticipant = chat.participants.some(p => {
       const pId = typeof p === 'object' ? p._id : p;
       return pId?.toString() === myId?.toString();
@@ -135,6 +155,12 @@ const WhatsAppChatList = () => {
   const handleChatClose = () => {
     setIsChatOpen(false);
     setSelectedChat(null);
+  };
+
+  // Clear user profile filter
+  const clearFilter = () => {
+    setIsFiltered(false);
+    fetchChats();
   };
 
   // Handle user selection for new chat
@@ -200,14 +226,7 @@ const WhatsAppChatList = () => {
     }
   }, [apiUrl, fetchChats, getCurrentUserInfo, toast]);
 
-  // Handle incoming contact from state (e.g. from RightProfileSidebar)
-  useEffect(() => {
-    if (location.state?.contact) {
-      handleUserSelect(location.state.contact);
-      // Clear state so it doesn't re-trigger on refresh/back
-      window.history.replaceState({}, document.title);
-    }
-  }, [location.state, handleUserSelect]);
+
 
   if (loading) {
     return (
@@ -257,7 +276,15 @@ const WhatsAppChatList = () => {
           </div>
 
           {/* Tabs Chips */}
-          <div className="flex gap-2 mt-3 pb-1 overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-2 mt-3 pb-1 overflow-x-auto no-scrollbar">
+            {isFiltered && (
+              <button
+                onClick={clearFilter}
+                className="px-4 py-1.5 rounded-full text-xs font-black bg-emerald-600 text-white border border-emerald-700 hover:bg-emerald-700 transition-all flex items-center gap-1 shrink-0"
+              >
+                Clear Filter <span className="opacity-70">×</span>
+              </button>
+            )}
             {['All', 'Unread', 'Favourites', 'Groups'].map(tab => (
               <button
                 key={tab}
