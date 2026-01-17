@@ -6,14 +6,60 @@ const setSocketIO = (ioInstance) => {
     io = ioInstance;
 };
 
+const getRelevantUsersForBDActivity = async (currentUserId) => {
+    try {
+        const currentUser = await User.findById(currentUserId);
+        if (!currentUser || currentUser.role !== 'bd') {
+            return [];
+        }
+
+        // Get all relevant users for BD activities
+        const bossUsers = await User.find({ role: 'boss' });
+        const hodUsers = await User.find({ role: 'hod' });
+        const teamLeaderUsers = await User.find({ role: 'team-leader' });
+        const bdUsers = await User.find({ role: 'bd', _id: { $ne: currentUserId } }); // Other BDs except self
+
+        const recipients = [
+            ...bossUsers.map(u => ({ userId: u._id, role: 'boss' })),
+            ...hodUsers.map(u => ({ userId: u._id, role: 'hod' })),
+            ...teamLeaderUsers.map(u => ({ userId: u._id, role: 'team-leader' })),
+            ...bdUsers.map(u => ({ userId: u._id, role: 'bd' }))
+        ];
+
+        console.log('🔔 BD Activity - Notifying relevant users:', {
+            total: recipients.length,
+            boss: bossUsers.length,
+            hod: hodUsers.length,
+            teamLeader: teamLeaderUsers.length,
+            bd: bdUsers.length
+        });
+
+        return recipients;
+    } catch (error) {
+        console.error('Error getting relevant users for BD activity:', error);
+        return [];
+    }
+};
+
 const createNotification = async (data) => {
     try {
         const notification = new Notification(data);
         await notification.save();
 
         if (io) {
-            // Emit to whole role or specific user
-            if (data.recipientRole === 'all') {
+            // Handle multiple recipients for BD activities
+            if (data.recipients && Array.isArray(data.recipients)) {
+                // Send to multiple specific users
+                data.recipients.forEach(recipient => {
+                    if (recipient.userId) {
+                        io.to(recipient.userId.toString()).emit('newNotification', notification);
+                    } else if (recipient.role) {
+                        io.emit(`newNotification_${recipient.role}`, notification);
+                    }
+                });
+            }
+            // Emit to whole role or specific user (existing logic)
+            else if (data.recipientRole === 'all') {
                 io.emit('newNotification', notification);
             } else if (data.recipientId) {
                 io.to(data.recipientId.toString()).emit('newNotification', notification);
@@ -51,5 +97,6 @@ module.exports = {
     createNotification,
     getNotifications,
     markAsRead,
-    markAllAsRead
+    markAllAsRead,
+    getRelevantUsersForBDActivity
 };
