@@ -106,7 +106,7 @@ exports.updateLead = async (req, res, next) => {
     if (assignedTo && requesterRole && !(await isValidAssignment(requesterRole, assignedTo, req.user._id.toString()))) {
       return res.status(403).json({ success: false, message: 'You can only assign leads to users at your level or below.' });
     }
-    const updatedLead = await leadService.updateLead(req.params.id, req.body);
+    const updatedLead = await leadService.updateLead(req.params.id, req.body, req);
     if (!updatedLead) return res.status(404).json({ success: false, message: 'Lead not found' });
     res.json({ success: true, data: updatedLead });
     // Real-time emit for leads and dashboard

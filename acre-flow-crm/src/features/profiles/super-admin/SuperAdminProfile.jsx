@@ -23,8 +23,11 @@ const SuperAdminProfile = () => {
     leadsOwned: 0,
     totalDistributions: 0,
     leadsByStatus: {},
-    openTickets: 0
+    openTickets: 0,
+    leadsByOwner: [],
+    userIdToNameMap: {}
   });
+  const [currentTime, setCurrentTime] = useState(new Date());
   const [activeUsers, setActiveUsers] = useState([]);
   const [profileData, setProfileData] = useState({
     name: 'Super Admin',
@@ -99,6 +102,8 @@ const SuperAdminProfile = () => {
           ? 'http://localhost:5001'
           : 'https://bcrm.100acress.com';
 
+        let userIdToNameMap = {};
+
         // Fetch total users count
         const allUsersResponse = await fetch(`${BASE_URL}/api/users`, {
           headers: {
@@ -112,10 +117,19 @@ const SuperAdminProfile = () => {
           const usersList = data.data || [];
           console.log('API Response - All Users:', usersList);
 
+          // Create a mapping of user IDs to user names
+          usersList.forEach(user => {
+            if (user._id && user.name) {
+              userIdToNameMap[user._id] = user.name;
+            }
+          });
+          console.log('User ID to Name Map:', userIdToNameMap);
+
           setDashboardStats(prev => {
             const newStats = {
               ...prev,
-              totalUsers: usersList.length
+              totalUsers: usersList.length,
+              userIdToNameMap: userIdToNameMap
             };
             console.log('Dashboard Stats after All Users update:', newStats);
             return newStats;
@@ -151,7 +165,36 @@ const SuperAdminProfile = () => {
             lead.assignedTo || lead.assignmentChain?.length > 0
           ).length;
 
-          console.log('Calculated Stats:', { activeLeads: activeLeadsCount, totalDistributions, totalLeads: allLeads.length });
+          // Calculate leads by owner
+          const ownershipMap = {};
+          allLeads.forEach(lead => {
+            if (lead.assignedTo) {
+              let ownerName;
+              // If assignedTo is an object with a name property
+              if (typeof lead.assignedTo === 'object' && lead.assignedTo.name) {
+                ownerName = lead.assignedTo.name;
+              }
+              // If assignedTo is a user ID string, look up the name from the mapping
+              else if (typeof lead.assignedTo === 'string') {
+                // Use the local userIdToNameMap variable
+                ownerName = userIdToNameMap[lead.assignedTo] || lead.assignedTo;
+              }
+              // Fallback
+              else {
+                ownerName = String(lead.assignedTo);
+              }
+
+              ownershipMap[ownerName] = (ownershipMap[ownerName] || 0) + 1;
+            }
+          });
+
+          // Convert to array and sort by count (descending), take top 5
+          const leadsByOwnerArray = Object.entries(ownershipMap)
+            .map(([name, count]) => ({ name, value: count }))
+            .sort((a, b) => b.value - a.value)
+            .slice(0, 5);
+
+          console.log('Calculated Stats:', { activeLeads: activeLeadsCount, totalDistributions, totalLeads: allLeads.length, leadsByOwner: leadsByOwnerArray });
 
           setDashboardStats(prev => {
             const newStats = {
@@ -159,7 +202,8 @@ const SuperAdminProfile = () => {
               activeLeads: activeLeadsCount,
               totalDistributions: totalDistributions,
               leadsOwned: allLeads.length,
-              openTickets: activeLeadsCount // Using active leads as synonymous with open tickets for now
+              openTickets: activeLeadsCount, // Using active leads as synonymous with open tickets for now
+              leadsByOwner: leadsByOwnerArray
             };
             console.log('Dashboard Stats after Leads update:', newStats);
             return newStats;
@@ -205,8 +249,22 @@ const SuperAdminProfile = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Update clock every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   const distributionsOverTime = useMemo(() => weeklyLeadSeries, []);
-  const leadsByOwner = useMemo(() => topAssignees.map(a => ({ name: a.name, value: a.count })), []);
+  // Use real-time data if available, otherwise fall back to mock data
+  const leadsByOwner = useMemo(() =>
+    dashboardStats.leadsByOwner.length > 0
+      ? dashboardStats.leadsByOwner
+      : topAssignees.map(a => ({ name: a.name, value: a.count })),
+    [dashboardStats.leadsByOwner]
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50">
@@ -427,8 +485,20 @@ const SuperAdminProfile = () => {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-6">
                     <div>
-                      <h3 className="text-lg font-bold text-slate-800">Lead Ownership</h3>
-                      <p className="text-sm text-slate-500">Active leads by owner</p>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-lg font-bold text-slate-800">Lead Ownership</h3>
+                        <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 border border-emerald-100 rounded-full">
+                          <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                          <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Live</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm text-slate-500">Active leads by owner</p>
+                        <span className="text-xs text-slate-400">•</span>
+                        <p className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">
+                          {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                        </p>
+                      </div>
                     </div>
                     <Briefcase className="text-slate-400" size={20} />
                   </div>

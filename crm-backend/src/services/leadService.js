@@ -133,11 +133,11 @@ const getLeadById = async (id) => {
   return await Lead.findById(id);
 };
 
-const updateLead = async (id, updateData) => {
+const updateLead = async (id, updateData, req = null) => {
   const lead = await Lead.findById(id);
   if (!lead) return null;
   
-    // If assignedTo is changing, add new assignee to assignmentChain if not already present
+    // If assignedTo is changing, add new assignee to assignment chain if not already present
     if (updateData.assignedTo) {
       const alreadyInChain = lead.assignmentChain.some(
         entry => entry.userId === updateData.assignedTo
@@ -145,7 +145,14 @@ const updateLead = async (id, updateData) => {
       if (!alreadyInChain) {
         const assignee = await User.findById(updateData.assignedTo);
         if (assignee) {
-          const assignerId = updateData.assignedBy || lead.assignedBy || lead.assignmentChain[lead.assignmentChain.length - 1]?.userId;
+          // Get assigner from request user (who is making this assignment)
+          const assignerId = req?.user?._id?.toString() || updateData.assignedBy || lead.assignedBy || lead.assignmentChain[lead.assignmentChain.length - 1]?.userId;
+          
+          // Get assigner user data
+          let assignerUser = null;
+          if (assignerId) {
+            assignerUser = await User.findById(assignerId);
+          }
           
           lead.assignmentChain.push({
             userId: assignee._id.toString(),
@@ -153,10 +160,10 @@ const updateLead = async (id, updateData) => {
             name: assignee.name,
             assignedAt: new Date(),
             status: 'assigned',
-            assignedBy: assignerId ? {
-              _id: assignerId,
-              name: (await User.findById(assignerId))?.name || 'Unknown',
-              role: (await User.findById(assignerId))?.role || 'Unknown'
+            assignedBy: assignerUser ? {
+              _id: assignerUser._id.toString(),
+              name: assignerUser.name || 'Unknown',
+              role: assignerUser.role || 'Unknown'
             } : undefined
           });
           

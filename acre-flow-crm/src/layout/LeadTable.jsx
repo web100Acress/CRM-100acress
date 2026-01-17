@@ -24,6 +24,11 @@ import CreateLeadForm from "./CreateLeadForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/layout/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/layout/button";
+// Lead Actions imports
+import SwapLeadModal from '@/components/lead-actions/SwapLeadModal';
+import SwitchLeadModal from '@/components/lead-actions/SwitchLeadModal';
+import ForwardLeadModal from '@/components/lead-actions/ForwardLeadModal';
+import { canForwardLead, canSwapLead, canSwitchLead } from '@/utils/leadActionPermissions';
 
 const LeadTable = ({ userRole }) => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -52,6 +57,13 @@ const LeadTable = ({ userRole }) => {
   const [selectedSwapLeadId, setSelectedSwapLeadId] = useState('');
   const [forwardSwapReason, setForwardSwapReason] = useState('');
   const [isExporting, setIsExporting] = useState(false);
+  
+  // Lead Actions state
+  const [showSwapModal, setShowSwapModal] = useState(false);
+  const [showSwitchModal, setShowSwitchModal] = useState(false);
+  const [showForwardModal, setShowForwardModal] = useState(false);
+  const [selectedLeadForActions, setSelectedLeadForActions] = useState(null);
+  
   const { toast } = useToast();
   const prevAssignedLeadIds = useRef(new Set());
   const currentUserId = localStorage.getItem("userId");
@@ -61,9 +73,9 @@ const LeadTable = ({ userRole }) => {
     const token = localStorage.getItem("token");
     const localUrl = `http://localhost:5001${endpoint}`;
     const prodUrl = `https://bcrm.100acress.com${endpoint}`;
-    
+
     console.log(`🔍 API Call: ${endpoint}`);
-    
+
     // Try local API first
     let response = await fetch(localUrl, {
       ...options,
@@ -73,9 +85,9 @@ const LeadTable = ({ userRole }) => {
         ...options.headers
       }
     });
-    
+
     console.log(`📡 Local API response: ${response.status}`);
-    
+
     // If local fails, try production
     if (!response.ok) {
       console.log(`❌ Local API failed, trying production...`);
@@ -89,8 +101,18 @@ const LeadTable = ({ userRole }) => {
       });
       console.log(`📡 Production API response: ${response.status}`);
     }
-    
+
     return response;
+  };
+
+  // Generate short numeric-only ID from MongoDB _id
+  const generateShortId = (mongoId) => {
+    if (!mongoId) return '0000';
+    // Extract last 6 chars of MongoDB ID and convert hex to decimal
+    const hex = mongoId.slice(-6);
+    const decimal = parseInt(hex, 16);
+    // Take last 4 digits to keep it short
+    return String(decimal).slice(-4).padStart(4, '0');
   };
 
   const [chainModalLead, setChainModalLead] = useState(null);
@@ -314,14 +336,14 @@ const LeadTable = ({ userRole }) => {
     const fetchLeads = async () => {
       try {
         console.log('🔍 Desktop: Starting to fetch leads...');
-        
+
         const response = await apiCall('/api/leads');
-        
+
         const json = await response.json();
         console.log('📊 Desktop: Fetch leads response:', json);
-        
+
         setLeadsList(json.data || []);
-        
+
         console.log('✅ Desktop: Leads loaded successfully:', (json.data || []).length, 'leads');
 
         // --- Notification logic ---
@@ -353,12 +375,12 @@ const LeadTable = ({ userRole }) => {
     const fetchAssignableUsers = async () => {
       try {
         console.log('🔍 Desktop: Fetching assignable users...');
-        
+
         const response = await apiCall('/api/leads/assignable-users');
-        
+
         const json = await response.json();
         console.log('📊 Desktop: Assignable users response:', json);
-        
+
         setAssignableUsers(json.data || []);
         console.log('✅ Desktop: Assignable users loaded:', (json.data || []).length, 'users');
       } catch (error) {
@@ -370,7 +392,56 @@ const LeadTable = ({ userRole }) => {
     fetchAssignableUsers();
   }, []);
 
+  const userMap = React.useMemo(() => {
+    const map = {};
+    
+    // Add all assignable users
+    assignableUsers.forEach(u => {
+      map[u._id] = { name: u.name, role: u.role };
+    });
+    
+    // Add current user (Boss) if not already in assignableUsers
+    const currentUserRole = localStorage.getItem("userRole");
+    const currentUserId = localStorage.getItem("userId");
+    const currentUserName = localStorage.getItem("userName") || localStorage.getItem("name") || 'Boss';
+    
+    // Debug: Check localStorage values
+    console.log('🔍 Debug - UserMap Creation:', {
+      currentUserRole,
+      currentUserId,
+      currentUserName,
+      localStorageKeys: Object.keys(localStorage).filter(key => key.includes('user') || key.includes('name') || key.includes('role'))
+    });
+    
+    if (currentUserId && !map[currentUserId]) {
+      map[currentUserId] = { 
+        name: currentUserName, 
+        role: currentUserRole === 'boss' ? 'boss' : (currentUserRole || 'admin')
+      };
+    }
+    
+    return map;
+  }, [assignableUsers]);
+
   const filteredLeads = leadsList.filter((lead) => {
+    const role = (localStorage.getItem("userRole") || userRole || "").toLowerCase();
+    const userId = localStorage.getItem("userId");
+
+    // Visibility Logic:
+    // Boss can view ALL leads
+    // Others (HOD, Employee, Team Leader) can view leads they created, are assigned to, or forwarded
+    if (role !== 'boss' && role !== 'super-admin') {
+      const isCreator = String(lead.createdBy) === String(userId);
+      const isAssigned = String(lead.assignedTo) === String(userId);
+      
+      // Check if current user forwarded this lead (check assignment chain)
+      const isForwarder = lead.assignmentChain?.some(assignment => 
+        assignment.assignedBy?._id && String(assignment.assignedBy._id) === String(userId)
+      );
+      
+      if (!isCreator && !isAssigned && !isForwarder) return false;
+    }
+
     const matchesSearch =
       lead.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -452,8 +523,9 @@ const LeadTable = ({ userRole }) => {
 
   const canForwardPatchLead = (lead) => {
     const currentUserRole = localStorage.getItem("userRole");
-    const role = (currentUserRole || userRole || '').toString();
-    if (!['boss', 'hod', 'team-leader'].includes(role)) return false;
+    const role = (currentUserRole || userRole || '').toString().toLowerCase();
+    if (role === 'boss') return false;
+    if (!['hod', 'team-leader'].includes(role)) return false;
     if (!lead?.assignedTo) return false;
 
     const chain = Array.isArray(lead?.assignmentChain) ? lead.assignmentChain : [];
@@ -474,6 +546,35 @@ const LeadTable = ({ userRole }) => {
   };
 
   const handleCreateLead = () => setShowCreateLead(true);
+
+  // Lead Actions handlers
+  const handleForwardLead = (lead) => {
+    setSelectedLeadForActions(lead);
+    setShowForwardModal(true);
+  };
+
+  const handleSwapLead = (lead) => {
+    setSelectedLeadForActions(lead);
+    setShowSwapModal(true);
+  };
+
+  const handleSwitchLead = (lead) => {
+    setSelectedLeadForActions(lead);
+    setShowSwitchModal(true);
+  };
+
+  const handleActionComplete = async () => {
+    // Refresh leads after any action completion
+    try {
+      console.log('🔄 Refreshing leads after action completion...');
+      const response = await apiCall('/api/leads');
+      const json = await response.json();
+      setLeadsList(json.data || []);
+      console.log('✅ Leads refreshed successfully after action');
+    } catch (error) {
+      console.error('❌ Error refreshing leads after action:', error);
+    }
+  };
 
   const handleUpdateStatus = async (leadId, newStatus) => {
     try {
@@ -506,7 +607,7 @@ const LeadTable = ({ userRole }) => {
       // Start call tracking
       const callStartTime = new Date();
       const callId = `call_${leadId}_${Date.now()}`;
-      
+
       setCallTracking(prev => {
         const next = {
           ...prev,
@@ -540,7 +641,7 @@ const LeadTable = ({ userRole }) => {
 
       // Open phone dialer
       window.location.href = `tel:${phone}`;
-      
+
       // Show toast notification
       toast({
         title: "Call Started",
@@ -553,7 +654,7 @@ const LeadTable = ({ userRole }) => {
         const callEndTime = new Date();
         const callDuration = Math.round((callEndTime - callStartTime) / 1000); // in seconds
         const callStatus = Number(callDuration) >= 3 ? 'completed' : 'missed';
-        
+
         // Check if call is still ongoing to avoid duplicate saves
         if (callTrackingRef.current?.[callId]?.status === 'ongoing') {
           setCallTracking(prev => {
@@ -633,14 +734,14 @@ const LeadTable = ({ userRole }) => {
         });
         return false;
       }
-      
+
       // Use localhost for testing, change back to production when ready
-      const apiUrl = process.env.NODE_ENV === 'development' 
-        ? "http://localhost:5001/api/leads/calls" 
+      const apiUrl = process.env.NODE_ENV === 'development'
+        ? "http://localhost:5001/api/leads/calls"
         : "https://bcrm.100acress.com/api/leads/calls";
-      
+
       console.log("Using API URL:", apiUrl);
-      
+
       const response = await fetch(apiUrl, {
         method: "POST",
         headers: {
@@ -649,10 +750,10 @@ const LeadTable = ({ userRole }) => {
         },
         body: JSON.stringify(callData),
       });
-      
+
       console.log("Response status:", response.status);
       console.log("Response ok:", response.ok);
-      
+
       if (response.ok) {
         const result = await response.json();
         console.log("Call record saved successfully:", result);
@@ -667,11 +768,11 @@ const LeadTable = ({ userRole }) => {
         const leadData = data.find(lead => String(lead._id) === String(callData.leadId));
         if (leadData) {
           console.log('📞 Opening call history for called lead:', leadData.name);
-          
+
           // Set selected lead and show lead details modal
           setSelectedLeadForDetails(leadData);
           setShowLeadDetails(true);
-          
+
           // Fetch call history for this lead after a short delay
           setTimeout(() => {
             fetchLeadDetailsCallHistory(callData.leadId);
@@ -784,22 +885,22 @@ const LeadTable = ({ userRole }) => {
       console.log("Fetching call history for lead:", leadId);
       const token = localStorage.getItem("token");
       console.log("Token found for fetch:", token ? "Yes" : "No");
-      
+
       // Use localhost for testing, change back to production when ready
-      const apiUrl = process.env.NODE_ENV === 'development' 
-        ? `http://localhost:5001/api/leads/${leadId}/calls` 
+      const apiUrl = process.env.NODE_ENV === 'development'
+        ? `http://localhost:5001/api/leads/${leadId}/calls`
         : `https://bcrm.100acress.com/api/leads/${leadId}/calls`;
-      
+
       console.log("Using API URL:", apiUrl);
-      
+
       const response = await fetch(apiUrl, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      
+
       console.log("Fetch response status:", response.status);
-      
+
       if (response.ok) {
         const data = await response.json();
         console.log("Call history fetched:", data);
@@ -821,29 +922,29 @@ const LeadTable = ({ userRole }) => {
       console.log('No leadId provided for call history');
       return;
     }
-    
+
     console.log('Fetching call history for Lead Details modal, leadId:', leadId);
     setLoadingLeadDetailsCallHistory(true);
     try {
       const token = localStorage.getItem("token");
-      const apiUrl = process.env.NODE_ENV === 'development' 
-        ? `http://localhost:5001/api/leads/${leadId}/calls` 
+      const apiUrl = process.env.NODE_ENV === 'development'
+        ? `http://localhost:5001/api/leads/${leadId}/calls`
         : `https://bcrm.100acress.com/api/leads/${leadId}/calls`;
-      
+
       console.log('Call history API URL:', apiUrl);
-      
+
       const response = await fetch(apiUrl, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-      
+
       console.log('Call history response status:', response.status);
-      
+
       const data = await response.json();
       console.log('Call history response data:', data);
-      
+
       if (response.ok && data.success) {
         setLeadDetailsCallHistory(data.data || []);
         console.log('Call history fetched successfully:', data.data?.length || 0, 'records');
@@ -961,7 +1062,7 @@ const LeadTable = ({ userRole }) => {
         try {
           const errData = await res.json();
           if (errData && errData.message) errMsg += ": " + errData.message;
-        } catch {}
+        } catch { }
         throw new Error(errMsg);
       }
       setLeadsList((prev) =>
@@ -974,95 +1075,11 @@ const LeadTable = ({ userRole }) => {
     }
   };
 
-  const handleForwardLead = async (leadId) => {
-    try {
-      setForwardingLead(leadId);
-      const token = localStorage.getItem("token");
-      
-      console.log('Attempting to forward lead:', leadId);
-      console.log('Token:', token ? 'Present' : 'Missing');
-      
-      const res = await fetch(
-        `https://bcrm.100acress.com/api/leads/${leadId}/forward`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({}),
-        }
-      );
-
-      console.log('Response status:', res.status);
-      console.log('Response ok:', res.ok);
-      
-      let data;
-      try {
-        data = await res.json();
-        console.log('Response data:', data);
-      } catch (parseError) {
-        console.error('Error parsing response:', parseError);
-        const text = await res.text();
-        console.error('Response text:', text);
-        throw new Error('Invalid response from server');
-      }
-      
-      if (res.ok) {
-        // Refresh the leads list
-        const leadsResponse = await fetch("https://bcrm.100acress.com/api/leads", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-        const leadsJson = await leadsResponse.json();
-        setLeadsList(leadsJson.data || []);
-        alert(data.message || "Lead forwarded successfully");
-      } else {
-        console.error('Forward failed:', data);
-        alert(data.message || data.error || "Failed to forward lead");
-      }
-    } catch (err) {
-      console.error('Forward lead error:', err);
-      alert(err.message || "Failed to forward lead");
-    } finally {
-      setForwardingLead(null);
-    }
-  };
-
-  const canForwardLead = (lead) => {
-    const currentUserId = localStorage.getItem("userId");
-    const currentUserRole = localStorage.getItem("userRole");
-
-    // Only the current assignee can forward the lead
-    if (lead.assignedTo !== currentUserId) return false;
-
-    const chain = Array.isArray(lead?.assignmentChain) ? lead.assignmentChain : [];
-    const wasForwarded = chain.some((e) => String(e?.status) === 'forwarded');
-    if (wasForwarded) return false;
-
-    // Define forwarding hierarchy - only BD and team-leader can forward
-    const forwardHierarchy = {
-      "super-admin": ["head-admin"],
-      "head-admin": ["employee", "employee"], // head-admin can forward to sales_head and employee
-   // sales_head (BD) can forward to employee
-      "team-leader": ["employee"], // team-leader can forward to employee
-      "boss": ["head-admin"],
-     
-    };
-
-    const possibleRoles = forwardHierarchy[currentUserRole];
-    
-    if (!possibleRoles) return false;
-    
-    // Check if there are any assignable users with the target roles
-    return assignableUsers.some((user) => possibleRoles.includes(user.role));
-  };
-
   const canAssignToSelf = (lead) => {
     const currentUserId = localStorage.getItem("userId");
     const currentUserRole = localStorage.getItem("userRole");
+
+    if (currentUserRole === 'boss') return false;
     // Only team-leader and employee can assign to themselves, and only if the lead is unassigned
     return (
       ["team-leader", "employee"].includes(currentUserRole) && !lead.assignedTo
@@ -1072,6 +1089,8 @@ const LeadTable = ({ userRole }) => {
   const canReassignLead = (lead) => {
     const currentUserId = localStorage.getItem("userId");
     const currentUserRole = localStorage.getItem("userRole");
+
+    if (currentUserRole === 'boss') return false;
 
     // Users can reassign leads they are assigned to
     // Or if they have higher role than the current assignee
@@ -1199,8 +1218,8 @@ const LeadTable = ({ userRole }) => {
           <option value="cold">Cold</option>
         </select>
 
-      
-      
+
+
 
         {(userRole === "boss" || userRole === "hod") && (
           <button className="lead-create-button" onClick={handleCreateLead}>
@@ -1231,15 +1250,60 @@ const LeadTable = ({ userRole }) => {
               currentLeads.map((lead) => (
                 <tr key={lead._id}>
                   <td data-label="Lead Info">
-                    <div className="lead-info-display">{lead.name}</div>
-                    <div className="lead-info-display">ID: #{lead.id}</div>
+                    <div className="lead-info-display font-medium text-slate-900">{lead.name}</div>
+                    <div className="lead-info-display text-xs text-slate-500">ID: #{generateShortId(lead._id)}</div>
+                    <div className="flex flex-col gap-0.5 text-[10px] text-slate-400 mt-1">
+                      <div>by: {(() => {
+                        // Debug: Log assignment chain data
+                        if (lead._id === 'test-lead-id' || lead.name?.includes('test')) {
+                          console.log('🔍 Debug - Assignment Chain for lead:', lead.name, {
+                            assignmentChain: lead.assignmentChain,
+                            createdBy: lead.createdBy,
+                            assignedTo: lead.assignedTo,
+                            userMapKeys: Object.keys(userMap)
+                          });
+                        }
+                        
+                        // Try to get assigner from assignment chain first
+                        if (lead.assignmentChain && lead.assignmentChain.length > 0) {
+                          const lastAssignment = lead.assignmentChain[lead.assignmentChain.length - 1];
+                          
+                          // Debug: Check assignment structure
+                          if (lead.name?.includes('aman') || lead.name?.includes('tiwari')) {
+                            console.log('🔍 Debug - Aman Tiwari Lead:', {
+                              leadName: lead.name,
+                              assignmentChain: lead.assignmentChain,
+                              lastAssignment: lastAssignment,
+                              assignedByData: lastAssignment.assignedBy,
+                              assignedByType: typeof lastAssignment.assignedBy
+                            });
+                          }
+                          
+                          if (lastAssignment.assignedBy && lastAssignment.assignedBy.name) {
+                            return `${lastAssignment.assignedBy.name} (${lastAssignment.assignedBy.role})`;
+                          }
+                          if (lastAssignment.assignedBy && userMap[lastAssignment.assignedBy._id]) {
+                            const assigner = userMap[lastAssignment.assignedBy._id];
+                            return `${assigner.name} (${assigner.role})`;
+                          }
+                        }
+                        
+                        // Fallback to creator
+                        return userMap[lead.createdBy] 
+                          ? `${userMap[lead.createdBy].name} (${userMap[lead.createdBy].role})` 
+                          : (lead.createdBy?.name || lead.createdByName || 'Boss');
+                      })()}</div>
+                      <div>
+                        Date: {lead.createdAt ? new Date(lead.createdAt).toLocaleDateString() : 'N/A'}
+                      </div>
+                    </div>
                   </td>
                   <td data-label="Contact">
                     <div className="lead-info-display">
                       <Phone size={14} /> {lead.phone}
                     </div>
                     <div className="lead-info-display">
-                      <MapPin size={14} /> {lead.location}
+                      <MapPin size={14} /> {lead.location?.split(' ')[0]}{lead.location?.split(' ').length > 1 ? '...' : ''}
                     </div>
                   </td>
                   <td data-label="Property">
@@ -1247,9 +1311,18 @@ const LeadTable = ({ userRole }) => {
                     <div className="lead-info-display">{lead.budget}</div>
                   </td>
                   <td data-label="Status">
-                    <span className={`lead-status-badge ${getStatusClass(lead.status)}`}>
-                      {lead.status}
-                    </span>
+                    <select
+                      value={lead.status}
+                      onChange={(e) => handleUpdateStatus(lead._id, e.target.value)}
+                      className="lead-status-update-select"
+                      title="Update Lead Status"
+                      disabled={userRole === 'boss' || localStorage.getItem("userRole") === 'boss'}
+                    >
+                      <option value="Hot">🔥 Hot</option>
+                      <option value="Warm">🌡️ Warm</option>
+                      <option value="Cold">❄️ Cold</option>
+                      <option value="Patch">🔧 Patch</option>
+                    </select>
                   </td>
                   <td data-label="Work Progress">
                     {/* Work Progress: Only editable by current assignee */}
@@ -1283,11 +1356,12 @@ const LeadTable = ({ userRole }) => {
                           }
                         }}
                         className="lead-work-progress-select"
+                        disabled={userRole === 'boss' || localStorage.getItem("userRole") === 'boss'}
                       >
                         {(!lead.workProgress ||
                           lead.workProgress === "pending") && (
-                          <option value="pending">Pending</option>
-                        )}
+                            <option value="pending">Pending</option>
+                          )}
                         {lead.workProgress !== "done" && (
                           <option value="inprogress">In Progress</option>
                         )}
@@ -1298,8 +1372,8 @@ const LeadTable = ({ userRole }) => {
                         {lead.workProgress === "inprogress"
                           ? "In Progress"
                           : lead.workProgress === "done"
-                          ? "Done"
-                          : "Pending"}
+                            ? "Done"
+                            : "Pending"}
                       </span>
                     )}
                   </td>
@@ -1320,46 +1394,47 @@ const LeadTable = ({ userRole }) => {
                       ) : (
                         <span>Unassigned</span>
                       )}
-                      {/* Assignment dropdown/buttons logic remains unchanged below */}
-                      {((!lead.assignedTo && canReassignLead(lead)) ||
-                        String(lead.assignedTo) === String(currentUserId)) && (
-                        <>
-                          <select
-                            value={lead.assignedTo || ""}
-                            onChange={(e) =>
-                              handleAssignLead(lead._id, e.target.value)
-                            }
-                            disabled={
-                              String(lead.assignedTo) !== String(currentUserId) &&
-                              !canReassignLead(lead)
-                            }
-                            className="lead-assignment-select"
-                          >
-                            <option value="">Unassigned</option>
-                            {assignableUsers.map((u) => (
-                              <option key={u._id} value={u._id}>
-                                {u.name} ({u.role})
-                              </option>
-                            ))}
-                          </select>
-                          {/* Forward button */}
-                          {canForwardLead(lead) && (
-                            <button
-                              className="lead-forward-button"
-                              onClick={() => handleForwardLead(lead._id)}
-                              disabled={forwardingLead === lead._id}
-                              title="Forward to next level"
+                      {/* Assignment dropdown/buttons logic - Disabled for Boss */}
+                      {(((!lead.assignedTo && canReassignLead(lead)) ||
+                        String(lead.assignedTo) === String(currentUserId)) &&
+                        localStorage.getItem("userRole") !== 'boss' && userRole !== 'boss') && (
+                          <>
+                            <select
+                              value={lead.assignedTo || ""}
+                              onChange={(e) =>
+                                handleAssignLead(lead._id, e.target.value)
+                              }
+                              disabled={
+                                String(lead.assignedTo) !== String(currentUserId) &&
+                                !canReassignLead(lead)
+                              }
+                              className="lead-assignment-select"
                             >
-                              <ArrowRight size={14} />
-                              {forwardingLead === lead._id
-                                ? "Forwarding..."
-                                : "Forward"}
-                            </button>
-                          )}
-                        </>
-                      )}
+                              <option value="">Unassigned</option>
+                              {assignableUsers.map((u) => (
+                                <option key={u._id} value={u._id}>
+                                  {u.name} ({u.role})
+                                </option>
+                              ))}
+                            </select>
+                            {/* Forward button */}
+                            {canForwardLead(lead).canForward && (
+                              <button
+                                className="lead-forward-button"
+                                onClick={() => handleForwardLead(lead)}
+                                disabled={forwardingLead === lead._id}
+                                title="Forward to next level"
+                              >
+                                <ArrowRight size={14} />
+                                {forwardingLead === lead._id
+                                  ? "Forwarding..."
+                                  : "Forward"}
+                              </button>
+                            )}
+                          </>
+                        )}
 
-                      {canForwardPatchLead(lead) && (
+                      {canForwardPatchLead(lead) && localStorage.getItem("userRole") !== 'boss' && (
                         <button
                           className="lead-forward-button"
                           onClick={() => {
@@ -1376,7 +1451,7 @@ const LeadTable = ({ userRole }) => {
                         </button>
                       )}
 
-                      {canForwardPatchLead(lead) && (
+                      {canForwardPatchLead(lead) && localStorage.getItem("userRole") !== 'boss' && (
                         <button
                           className="lead-forward-button"
                           onClick={() => {
@@ -1417,24 +1492,13 @@ const LeadTable = ({ userRole }) => {
                   </td>
                   <td data-label="Actions">
                     <div className="lead-action-buttons-group">
-                      {/* Status Update Dropdown */}
-                      <select
-                        value={lead.status}
-                        onChange={(e) => handleUpdateStatus(lead._id, e.target.value)}
-                        className="lead-status-update-select"
-                        title="Update Lead Status"
-                      >
-                        <option value="Hot">🔥 Hot</option>
-                        <option value="Warm">🌡️ Warm</option>
-                        <option value="Cold">❄️ Cold</option>
-                      </select>
 
                       {/* Call/Call History Button - Based on user role and assignment */}
                       {(() => {
                         const currentUserRole = localStorage.getItem("userRole");
                         const isLeadCreator = lead.createdBy === currentUserId;
                         const isAssignedToUser = String(lead.assignedTo) === String(currentUserId);
-                        
+
                         // Boss who created lead - Show Call History (not Call button)
                         if ((currentUserRole === 'boss' || currentUserRole === 'super-admin') && isLeadCreator && !isAssignedToUser) {
                           return (
@@ -1457,7 +1521,7 @@ const LeadTable = ({ userRole }) => {
                             </button>
                           );
                         }
-                        
+
                         // Assigned user working on lead - Show Call History
                         if (isAssignedToUser && lead.workProgress && lead.workProgress !== 'pending') {
                           return (
@@ -1480,7 +1544,7 @@ const LeadTable = ({ userRole }) => {
                             </button>
                           );
                         }
-                        
+
                         // Assigned user with pending work - Show Call button
                         if (isAssignedToUser) {
                           return (
@@ -1493,11 +1557,11 @@ const LeadTable = ({ userRole }) => {
                             </button>
                           );
                         }
-                        
+
                         // Other users - No Call button
                         return null;
                       })()}
-                      
+
                       <button
                         onClick={() => handleEmailLead(lead.email)}
                         title="Email Lead"
@@ -1537,10 +1601,52 @@ const LeadTable = ({ userRole }) => {
                       >
                         <MessageSquare size={16} />
                       </button>
-                      {(userRole === "boss" || userRole === "super-admin") && (
+                      
+                      {/* Lead Actions - Forward, Swap, Switch */}
+                      {canForwardLead(lead).canForward && (
+                        <button
+                          onClick={() => handleForwardLead(lead)}
+                          title="Forward Lead"
+                          className="lead-action-button forward-lead-btn"
+                          style={{ backgroundColor: '#3B82F6', color: 'white' }}
+                        >
+                          <ArrowRight size={16} />
+                        </button>
+                      )}
+                      
+                      {canSwapLead(lead).canSwap && (
+                        <button
+                          onClick={() => handleSwapLead(lead)}
+                          title="Swap Lead"
+                          className="lead-action-button swap-lead-btn"
+                          style={{ backgroundColor: '#10B981', color: 'white' }}
+                        >
+                          <Settings size={16} />
+                        </button>
+                      )}
+                      
+                      {canSwitchLead(lead).canSwitch && (
+                        <button
+                          onClick={() => handleSwitchLead(lead)}
+                          title="Switch Lead"
+                          className="lead-action-button switch-lead-btn"
+                          style={{ backgroundColor: '#8B5CF6', color: 'white' }}
+                        >
+                          <UserCheck size={16} />
+                        </button>
+                      )}
+                      
+                      {((userRole === "super-admin") || (String(lead.createdBy) === currentUserId)) && (
                         <button onClick={() => handleDeleteLead(lead._id)} className="lead-action-button delete-lead-btn">
                           <Trash2 size={16} />
                         </button>
+                      )}
+                      
+                      {/* Debug: Check delete button visibility */}
+                      {lead.name?.includes('test') && (
+                        <div style={{fontSize: '8px', color: 'red'}}>
+                          Delete: {String(lead.createdBy) === currentUserId ? 'YES' : 'NO'} | Role: {userRole}
+                        </div>
                       )}
                     </div>
                   </td>
@@ -1613,11 +1719,11 @@ const LeadTable = ({ userRole }) => {
                   const currentUserRole = localStorage.getItem("userRole");
                   const isLeadCreator = lead.createdBy === currentUserId;
                   const isAssignedToUser = String(lead.assignedTo) === String(currentUserId);
-                  
+
                   // Boss who created lead - Show Call History (not Call button)
                   if ((currentUserRole === 'boss' || currentUserRole === 'super-admin') && isLeadCreator && !isAssignedToUser) {
                     return (
-                      <button 
+                      <button
                         className="mobile-call-history-btn"
                         onClick={() => {
                           setSelectedLeadForDetails(lead);
@@ -1635,11 +1741,11 @@ const LeadTable = ({ userRole }) => {
                       </button>
                     );
                   }
-                  
+
                   // Assigned user working on lead - Show Call History
                   if (isAssignedToUser && lead.workProgress && lead.workProgress !== 'pending') {
                     return (
-                      <button 
+                      <button
                         className="mobile-call-history-btn"
                         onClick={() => {
                           setSelectedLeadForDetails(lead);
@@ -1657,11 +1763,11 @@ const LeadTable = ({ userRole }) => {
                       </button>
                     );
                   }
-                  
+
                   // Assigned user with pending work - Show Call button
                   if (isAssignedToUser) {
                     return (
-                      <button 
+                      <button
                         className="mobile-call-btn"
                         onClick={() => {
                           handleCallLead(lead.phone, lead._id, lead.name);
@@ -1672,12 +1778,12 @@ const LeadTable = ({ userRole }) => {
                       </button>
                     );
                   }
-                  
+
                   // Other users - No Call button
                   return null;
                 })()}
-                
-                <button 
+
+                <button
                   className="mobile-followup-btn"
                   onClick={() => {
                     handleFollowUp(lead);
@@ -1686,7 +1792,7 @@ const LeadTable = ({ userRole }) => {
                   <MessageSquare size={14} />
                   Follow-up
                 </button>
-                <button 
+                <button
                   className="mobile-view-details-btn"
                   onClick={() => {
                     setSelectedLeadForDetails(lead);
@@ -1705,8 +1811,8 @@ const LeadTable = ({ userRole }) => {
       </div>
 
       {/* Lead Details Modal */}
-      <Dialog 
-        open={showLeadDetails} 
+      <Dialog
+        open={showLeadDetails}
         onOpenChange={(open) => {
           setShowLeadDetails(open);
           if (open && selectedLeadForDetails?._id) {
@@ -1734,7 +1840,7 @@ const LeadTable = ({ userRole }) => {
                   {selectedLeadForDetails.status}
                 </div>
               </div>
-              
+
               <div className="lead-details-grid">
                 <div className="lead-details-section">
                   <h4><User size={16} /> Lead Information</h4>
@@ -1742,20 +1848,20 @@ const LeadTable = ({ userRole }) => {
                   <p><strong>Status:</strong> {selectedLeadForDetails.status}</p>
                   <p><strong>Work Progress:</strong> {selectedLeadForDetails.workProgress || 'Pending'}</p>
                 </div>
-                
+
                 <div className="lead-details-section">
                   <h4><Phone size={16} /> Contact Information</h4>
                   <p><strong>Phone:</strong> {selectedLeadForDetails.phone}</p>
                   <p><strong>Email:</strong> {selectedLeadForDetails.email}</p>
                   <p><strong>Location:</strong> {selectedLeadForDetails.location}</p>
                 </div>
-                
+
                 <div className="lead-details-section">
                   <h4><MapPin size={16} /> Property Details</h4>
                   <p><strong>Property Type:</strong> {selectedLeadForDetails.property}</p>
                   <p><strong>Budget:</strong> {selectedLeadForDetails.budget}</p>
                 </div>
-                
+
                 <div className="lead-details-section">
                   <h4><UserCheck size={16} /> Assignment</h4>
                   <p><strong>Assigned To:</strong> {
@@ -1765,12 +1871,12 @@ const LeadTable = ({ userRole }) => {
                   }</p>
                 </div>
               </div>
-              
+
               {/* Actions Section */}
               <div className="lead-details-actions-section">
                 <h4>Actions</h4>
                 <div className="lead-details-actions-grid">
-                  <button 
+                  <button
                     className="lead-details-action-btn primary"
                     onClick={() => {
                       handleFollowUp(selectedLeadForDetails);
@@ -1780,8 +1886,8 @@ const LeadTable = ({ userRole }) => {
                     <MessageSquare size={16} />
                     Add Follow-up
                   </button>
-                  
-                  <button 
+
+                  <button
                     className="lead-details-action-btn secondary"
                     onClick={() => {
                       handleViewFollowUps(selectedLeadForDetails);
@@ -1797,11 +1903,11 @@ const LeadTable = ({ userRole }) => {
                     const currentUserRole = localStorage.getItem("userRole");
                     const isLeadCreator = selectedLeadForDetails.createdBy === currentUserId;
                     const isAssignedToUser = String(selectedLeadForDetails.assignedTo) === String(currentUserId);
-                    
+
                     // Boss who created lead - Show Call History (not Call button)
                     if ((currentUserRole === 'boss' || currentUserRole === 'super-admin') && isLeadCreator && !isAssignedToUser) {
                       return (
-                        <button 
+                        <button
                           className="lead-details-action-btn secondary"
                           onClick={() => {
                             // Scroll to call history section
@@ -1818,11 +1924,11 @@ const LeadTable = ({ userRole }) => {
                         </button>
                       );
                     }
-                    
+
                     // Assigned user working on lead - Show Call History
                     if (isAssignedToUser && selectedLeadForDetails.workProgress && selectedLeadForDetails.workProgress !== 'pending') {
                       return (
-                        <button 
+                        <button
                           className="lead-details-action-btn secondary"
                           onClick={() => {
                             // Scroll to call history section
@@ -1839,11 +1945,11 @@ const LeadTable = ({ userRole }) => {
                         </button>
                       );
                     }
-                    
+
                     // Assigned user with pending work - Show Call button
                     if (isAssignedToUser) {
                       return (
-                        <button 
+                        <button
                           className="lead-details-action-btn secondary"
                           onClick={() => {
                             handleCallLead(selectedLeadForDetails.phone, selectedLeadForDetails._id, selectedLeadForDetails.name);
@@ -1855,12 +1961,12 @@ const LeadTable = ({ userRole }) => {
                         </button>
                       );
                     }
-                    
+
                     // Other users - No Call button
                     return null;
                   })()}
 
-                  <button 
+                  <button
                     className="lead-details-action-btn secondary"
                     onClick={() => {
                       handleEmailLead(selectedLeadForDetails.email);
@@ -1871,7 +1977,7 @@ const LeadTable = ({ userRole }) => {
                     Email Lead
                   </button>
 
-                  <button 
+                  <button
                     className="lead-details-action-btn secondary"
                     onClick={() => {
                       handleAdvancedOptions(selectedLeadForDetails);
@@ -1881,8 +1987,8 @@ const LeadTable = ({ userRole }) => {
                     <Settings size={16} />
                     Advanced Options
                   </button>
-                  
-                  <button 
+
+                  <button
                     className="lead-details-action-btn secondary"
                     onClick={() => {
                       setChainModalLead(selectedLeadForDetails);
@@ -1892,9 +1998,9 @@ const LeadTable = ({ userRole }) => {
                     <LinkIcon size={16} />
                     Assignment Chain
                   </button>
-                  
-                  {(userRole === "boss" || userRole === "super-admin") && (
-                    <button 
+
+                  {((userRole === "boss") || (userRole === "super-admin") || (String(selectedLeadForDetails.createdBy) === currentUserId)) && (
+                    <button
                       className="lead-details-action-btn danger"
                       onClick={() => {
                         if (window.confirm('Are you sure you want to delete this lead?')) {
@@ -1921,12 +2027,12 @@ const LeadTable = ({ userRole }) => {
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
                   )}
                 </div>
-                
+
                 {!loadingLeadDetailsCallHistory && leadDetailsCallHistory.length > 0 ? (
                   <div className="space-y-2 max-h-60 overflow-y-auto">
                     {leadDetailsCallHistory.map((call, index) => (
-                      <div 
-                        key={call._id || index} 
+                      <div
+                        key={call._id || index}
                         className="bg-gray-50 rounded-lg p-3 border border-gray-200"
                       >
                         <div className="flex items-start justify-between mb-2">
@@ -1945,13 +2051,12 @@ const LeadTable = ({ userRole }) => {
                             <p className="text-xs text-gray-500">{call.phone}</p>
                           </div>
                           <div className="text-right">
-                            <span className={`text-xs px-2 py-0.5 rounded ${
-                              call.status === 'completed' 
-                                ? 'bg-green-100 text-green-700' 
-                                : call.status === 'missed'
+                            <span className={`text-xs px-2 py-0.5 rounded ${call.status === 'completed'
+                              ? 'bg-green-100 text-green-700'
+                              : call.status === 'missed'
                                 ? 'bg-red-100 text-red-700'
                                 : 'bg-gray-100 text-gray-700'
-                            }`}>
+                              }`}>
                               {call.status}
                             </span>
                           </div>
@@ -2128,15 +2233,15 @@ const LeadTable = ({ userRole }) => {
               <div className="lead-advanced-actions">
                 <h4>Quick Actions</h4>
                 <div className="lead-advanced-buttons-grid">
-                  <button 
+                  <button
                     className="lead-advanced-btn call-advanced-btn"
                     onClick={() => handleCallLead(selectedLeadForAdvanced.phone, selectedLeadForAdvanced._id, selectedLeadForAdvanced.name)}
                   >
                     <PhoneCall size={18} />
                     Call Now
                   </button>
-                  
-                  <button 
+
+                  <button
                     className="lead-advanced-btn email-advanced-btn"
                     onClick={() => handleEmailLead(selectedLeadForAdvanced.email)}
                   >
@@ -2150,7 +2255,7 @@ const LeadTable = ({ userRole }) => {
                       value={selectedLeadForAdvanced.status}
                       onChange={(e) => {
                         handleUpdateStatus(selectedLeadForAdvanced._id, e.target.value);
-                        setSelectedLeadForAdvanced({...selectedLeadForAdvanced, status: e.target.value});
+                        setSelectedLeadForAdvanced({ ...selectedLeadForAdvanced, status: e.target.value });
                       }}
                       className="lead-advanced-status-select"
                     >
@@ -2165,7 +2270,7 @@ const LeadTable = ({ userRole }) => {
               {/* Call History Section */}
               <div className="lead-advanced-call-history">
                 <h4>Call History & Follow-up Analytics</h4>
-                
+
                 {/* Statistics Cards */}
                 <div className="call-history-stats">
                   <div className="stat-card">
@@ -2178,14 +2283,14 @@ const LeadTable = ({ userRole }) => {
                       </div>
                       <div className="stat-label">Total Calls</div>
                     </div>
-                    <CircularChart 
-                      percentage={Math.min((callHistory[selectedLeadForAdvanced._id]?.length || 0) * 20, 100)} 
-                      size={50} 
-                      strokeWidth={4} 
-                      color="#10b981" 
+                    <CircularChart
+                      percentage={Math.min((callHistory[selectedLeadForAdvanced._id]?.length || 0) * 20, 100)}
+                      size={50}
+                      strokeWidth={4}
+                      color="#10b981"
                     />
                   </div>
-                  
+
                   <div className="stat-card">
                     <div className="stat-icon">
                       <MessageSquare size={20} color="#3b82f6" />
@@ -2196,35 +2301,35 @@ const LeadTable = ({ userRole }) => {
                       </div>
                       <div className="stat-label">Follow-ups</div>
                     </div>
-                    <CircularChart 
-                      percentage={Math.min((selectedLeadForAdvanced.followUps?.length || 0) * 25, 100)} 
-                      size={50} 
-                      strokeWidth={4} 
-                      color="#3b82f6" 
+                    <CircularChart
+                      percentage={Math.min((selectedLeadForAdvanced.followUps?.length || 0) * 25, 100)}
+                      size={50}
+                      strokeWidth={4}
+                      color="#3b82f6"
                     />
                   </div>
-                  
+
                   <div className="stat-card">
                     <div className="stat-icon">
                       <PieChart size={20} color="#8b5cf6" />
                     </div>
                     <div className="stat-info">
                       <div className="stat-number">
-                        {callHistory[selectedLeadForAdvanced._id]?.length > 0 
+                        {callHistory[selectedLeadForAdvanced._id]?.length > 0
                           ? Math.round(callHistory[selectedLeadForAdvanced._id].reduce((acc, call) => acc + call.duration, 0) / callHistory[selectedLeadForAdvanced._id].length)
                           : 0
                         }s
                       </div>
                       <div className="stat-label">Avg Duration</div>
                     </div>
-                    <CircularChart 
-                      percentage={callHistory[selectedLeadForAdvanced._id]?.length > 0 
+                    <CircularChart
+                      percentage={callHistory[selectedLeadForAdvanced._id]?.length > 0
                         ? Math.min((callHistory[selectedLeadForAdvanced._id].reduce((acc, call) => acc + call.duration, 0) / callHistory[selectedLeadForAdvanced._id].length) * 2, 100)
                         : 0
-                      } 
-                      size={50} 
-                      strokeWidth={4} 
-                      color="#8b5cf6" 
+                      }
+                      size={50}
+                      strokeWidth={4}
+                      color="#8b5cf6"
                     />
                   </div>
                 </div>
@@ -2258,7 +2363,7 @@ const LeadTable = ({ userRole }) => {
                 )}
               </div>
             </div>
-            
+
             <div className="lead-advanced-footer">
               <Button variant="outline" onClick={handleCloseAdvancedOptions}>
                 Close
@@ -2280,8 +2385,28 @@ const LeadTable = ({ userRole }) => {
       <CreateLeadForm
         isOpen={showCreateLead}
         onClose={() => setShowCreateLead(false)}
-        onSave={() => {
-          /* Consider re-fetching leads here after a new lead is created */
+        onSave={async () => {
+          // Refresh leads list after creating new lead
+          try {
+            console.log('🔄 Refreshing leads after creating new lead...');
+            const response = await apiCall('/api/leads');
+            const json = await response.json();
+            setLeadsList(json.data || []);
+            console.log('✅ Leads refreshed successfully after lead creation');
+            
+            toast({
+              title: "Success",
+              description: "New lead created and list refreshed",
+              status: "success"
+            });
+          } catch (error) {
+            console.error('❌ Error refreshing leads after creation:', error);
+            toast({
+              title: "Warning",
+              description: "Lead created but failed to refresh list",
+              variant: "destructive"
+            });
+          }
         }}
       />
 
@@ -2378,8 +2503,8 @@ const LeadTable = ({ userRole }) => {
                         <td className="lead-chain-table-date">
                           {next?.assignedAt || entry?.assignedAt
                             ? new Date(
-                                next?.assignedAt || entry.assignedAt
-                              ).toLocaleString()
+                              next?.assignedAt || entry.assignedAt
+                            ).toLocaleString()
                             : "—"}
                         </td>
                       </tr>
@@ -2556,6 +2681,46 @@ const LeadTable = ({ userRole }) => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Lead Actions Modals */}
+      <SwapLeadModal
+        open={showSwapModal}
+        onOpenChange={setShowSwapModal}
+        selectedLead={selectedLeadForActions}
+        assignableUsers={assignableUsers}
+        currentUser={{
+          userId: currentUserId,
+          role: localStorage.getItem('userRole'),
+          userName: localStorage.getItem('userName') || localStorage.getItem('name')
+        }}
+        onSwapComplete={handleActionComplete}
+      />
+
+      <SwitchLeadModal
+        open={showSwitchModal}
+        onOpenChange={setShowSwitchModal}
+        selectedLead={selectedLeadForActions}
+        assignableUsers={assignableUsers}
+        currentUser={{
+          userId: currentUserId,
+          role: localStorage.getItem('userRole'),
+          userName: localStorage.getItem('userName') || localStorage.getItem('name')
+        }}
+        onSwitchComplete={handleActionComplete}
+      />
+
+      <ForwardLeadModal
+        open={showForwardModal}
+        onOpenChange={setShowForwardModal}
+        selectedLead={selectedLeadForActions}
+        assignableUsers={assignableUsers}
+        currentUser={{
+          userId: currentUserId,
+          role: localStorage.getItem('userRole'),
+          userName: localStorage.getItem('userName') || localStorage.getItem('name')
+        }}
+        onForwardComplete={handleActionComplete}
+      />
     </div>
   );
 };

@@ -405,10 +405,18 @@ exports.getUserChats = async (req, res, next) => {
       });
     }
 
+    const { otherUserId } = req.query;
+
+    // Build query
+    let query = { participants: currentUserId };
+
+    // If otherUserId is provided, filter chats to include both users
+    if (otherUserId) {
+      query.participants = { $all: [currentUserId, otherUserId] };
+    }
+
     // Get all chats where user is participant
-    const chats = await Chat.find({
-      participants: currentUserId
-    })
+    const chats = await Chat.find(query)
       .populate('participants', 'name role email profileImage about')
       .populate('leadId', 'name email phone status')
       .sort({ updatedAt: -1 });
