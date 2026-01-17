@@ -1,6 +1,7 @@
 const Lead = require('../models/leadModel');
 const User = require('../models/userModel');
 const Chat = require('../models/chatModel');
+const notificationService = require('../services/notificationService');
 const mongoose = require('mongoose');
 
 // Helper function to create chat between two users for a lead
@@ -85,6 +86,26 @@ const createLead = async (leadData, creator) => {
   // 🎯 Auto-create chat between creator and assignee if assigned
   if (leadData.assignedTo && creator) {
     await createChatForAssignment(lead._id.toString(), creator._id.toString(), leadData.assignedTo);
+  }
+  
+  // 📢 Send notification to assigned user
+  if (leadData.assignedTo) {
+    try {
+      await notificationService.createNotification({
+        title: 'New Lead Assigned',
+        message: `A new lead "${lead.name}" has been assigned to you by ${creator.name}.`,
+        type: 'lead_assigned',
+        recipientId: leadData.assignedTo,
+        data: { 
+          leadId: lead._id,
+          assignedBy: creator._id,
+          action: 'assigned'
+        }
+      });
+      console.log('📢 Notification sent to assigned user:', leadData.assignedTo);
+    } catch (error) {
+      console.error('❌ Error sending notification:', error);
+    }
   }
   
   return lead;
@@ -181,6 +202,30 @@ const updateLead = async (id, updateData, req = null) => {
   }
   Object.assign(lead, updateData);
   await lead.save();
+  
+  // 📢 Send notification to new assignee if assignment changed
+  if (updateData.assignedTo && updateData.assignedTo !== lead.assignedTo) {
+    try {
+      const assignerUser = req?.user ? await User.findById(req.user._id) : null;
+      const assigneeUser = await User.findById(updateData.assignedTo);
+      
+      await notificationService.createNotification({
+        title: 'Lead Reassigned',
+        message: `Lead "${lead.name}" has been reassigned to you by ${assignerUser?.name || 'Unknown'}.`,
+        type: 'lead_reassigned',
+        recipientId: updateData.assignedTo,
+        data: { 
+          leadId: id,
+          assignedBy: req?.user?._id,
+          action: 'reassigned'
+        }
+      });
+      console.log('📢 Notification sent to new assignee:', updateData.assignedTo);
+    } catch (error) {
+      console.error('❌ Error sending notification:', error);
+    }
+  }
+  
   return lead;
 };
 
@@ -277,26 +322,32 @@ const forwardLead = async (leadId, currentUserId, action = 'forward', selectedEm
 
   await lead.save();
   
-  // 🎯 Auto-create chat between assigner and assignee
+  // Send notification to next assignee
+  try {
+    await notificationService.createNotification({
+      title: `Lead ${action === 'forward' ? 'Forwarded' : 'Reassigned'}`,
+      message: `Lead "${lead.name}" has been ${action === 'forward' ? 'forwarded' : 'reassigned'} to you by ${currentUser.name}.`,
+      type: 'lead_forwarded',
+      recipientId: nextAssignee._id.toString(),
+      data: { 
+        leadId: leadId,
+        assignedBy: currentUser._id,
+        action: action
+      }
+    });
+    console.log('📢 Notification sent to next assignee:', nextAssignee._id);
+  } catch (error) {
+    console.error('❌ Error sending notification:', error);
+  }
+  
+  // Auto-create chat between assigner and assignee
   await createChatForAssignment(leadId, currentUserId, nextAssignee._id.toString());
   
   return lead;
 };
 
-// Function to get next assignable users based on role hierarchy
-const getNextAssignableUsers = async (currentUserRole) => {
-  const nextRole = roleHierarchy[currentUserRole];
-  if (!nextRole) return [];
-  
-  return await User.find({ role: nextRole });
-};
-
-// --- BD Analytics ---
-// Get summary for all BDs (employees) who have assigned leads
+// Get summary of all BDs with their lead statistics
 const getBDSummary = async () => {
-  console.log('🔍 Fetching BD Summary...');
-  
-  // Include all roles that can have leads assigned (bd, team-leader, etc.)
   const bds = await User.find({ 
     role: { $in: ['bd', 'team-leader', 'hod', 'admin', 'crm_admin'] }
   });
@@ -461,7 +512,26 @@ const forwardPatchLead = async (leadId, requesterId, newAssigneeId, reason = '')
 
   await lead.save();
   
-  // 🎯 Auto-create chat between assigner and assignee
+  // Send notification to new BD
+  try {
+    await notificationService.createNotification({
+      title: 'Lead Reassigned',
+      message: `Lead "${lead.name}" has been reassigned to you by ${requester.name}. Reason: ${reason || 'Forward patch'}`,
+      type: 'lead_reassigned',
+      recipientId: newAssignee._id.toString(),
+      data: { 
+        leadId: leadId,
+        assignedBy: requester._id,
+        action: 'forward_patch',
+        reason: reason
+      }
+    });
+    console.log('Notification sent to new BD:', newAssignee._id);
+  } catch (error) {
+    console.error('Error sending notification:', error);
+  }
+  
+  // Auto-create chat between assigner and assignee
   await createChatForAssignment(leadId, requesterId, newAssignee._id.toString());
   
   return lead;
@@ -607,7 +677,42 @@ const forwardSwapLead = async (leadId, requesterId, swapLeadId, reason = '') => 
       await leadB.save();
     }
     
-    // 🎯 Auto-create chats for swapped assignments
+    // Send notifications to swapped BDs
+    try {
+      // Notification to BD A (getting lead B)
+      await notificationService.createNotification({
+        title: 'Lead Swapped',
+        message: `Lead "${leadB.name}" has been swapped to you by ${requester.name}. Reason: ${reason || 'Lead swap'}`,
+        type: 'lead_swapped',
+        recipientId: bdA._id.toString(),
+        data: { 
+          leadId: swapLeadId,
+          assignedBy: requester._id,
+          action: 'swap',
+          reason: reason
+        }
+      });
+      
+      // Notification to BD B (getting lead A)
+      await notificationService.createNotification({
+        title: 'Lead Swapped',
+        message: `Lead "${leadA.name}" has been swapped to you by ${requester.name}. Reason: ${reason || 'Lead swap'}`,
+        type: 'lead_swapped',
+        recipientId: bdB._id.toString(),
+        data: { 
+          leadId: leadId,
+          assignedBy: requester._id,
+          action: 'swap',
+          reason: reason
+        }
+      });
+      
+      console.log('Swap notifications sent to both BDs');
+    } catch (error) {
+      console.error('Error sending swap notifications:', error);
+    }
+    
+    // Auto-create chats for swapped assignments
     // Chat between requester and new assignee for leadA
     await createChatForAssignment(leadId, requesterId, bdB._id.toString());
     // Chat between requester and new assignee for leadB
