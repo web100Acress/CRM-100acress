@@ -758,6 +758,5 @@ module.exports = {
   forwardLead,
   forwardPatchLead,
   forwardSwapLead,
-  getNextAssignableUsers,
   getAssignableUsers,
 };
