@@ -51,6 +51,44 @@ const EmployeeDashboard = () => {
     s.emit('requestDashboardStats');
     s.emit('requestMyLeads', { userId: currentUserId });
 
+    // 🔄 REAL-TIME LEAD UPDATES LISTENERS
+    s.on('leadUpdate', (data) => {
+      console.log('📡 Real-time lead update received:', data);
+      
+      // Refresh dashboard data when lead is updated
+      if (data.action === 'forwarded' || data.action === 'reassigned' || data.action === 'swapped') {
+        fetchDashboardData();
+      }
+      
+      // Show toast notification for lead updates
+      if (data.updatedBy !== currentUserId) {
+        toast({
+          title: 'Lead Updated',
+          description: `Lead "${data.leadName}" has been ${data.action} by ${data.updatedByName}`,
+          variant: 'default'
+        });
+      }
+    });
+
+    // Listen for specific BD activities
+    s.on('bd_activity', (data) => {
+      console.log('📡 BD Activity notification received:', data);
+      
+      // Refresh dashboard when BD performs activities
+      if (data.action === 'followup_added' || data.action === 'bd_reassign' || data.action === 'forward_patch') {
+        fetchDashboardData();
+      }
+      
+      // Show toast for BD activities
+      if (data.addedBy !== currentUserId) {
+        toast({
+          title: 'BD Activity',
+          description: `BD "${data.addedByName}" performed ${data.action} on lead "${data.leadName}"`,
+          variant: 'default'
+        });
+      }
+    });
+
     return () => s.disconnect();
   }, []);
 
@@ -387,7 +425,7 @@ const EmployeeDashboard = () => {
               />
 
               {/* Performance Metric */}
-              <Card className="border-0 shadow-lg bg-gradient-to-br from-violet-600 to-indigo-700 text-white overflow-hidden">
+              {/* <Card className="border-0 shadow-lg bg-gradient-to-br from-violet-600 to-indigo-700 text-white overflow-hidden">
                 <CardContent className="p-6 relative">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16" />
 
@@ -410,10 +448,10 @@ const EmployeeDashboard = () => {
                     </div>
                   </div>
                 </CardContent>
-              </Card>
+              </Card> */}
 
               {/* Task Status Breakdown */}
-              <Card className="border-0 shadow-lg">
+              {/* <Card className="border-0 shadow-lg">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-6">
                     <div>
@@ -456,7 +494,7 @@ const EmployeeDashboard = () => {
                     </div>
                   </div>
                 </CardContent>
-              </Card>
+              </Card> */}
             </div>
           </div>
         </div>

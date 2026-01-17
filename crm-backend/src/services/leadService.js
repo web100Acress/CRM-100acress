@@ -203,27 +203,25 @@ const updateLead = async (id, updateData, req = null) => {
   Object.assign(lead, updateData);
   await lead.save();
   
-  // 📢 Send notification to new assignee if assignment changed
-  if (updateData.assignedTo && updateData.assignedTo !== lead.assignedTo) {
-    try {
-      const assignerUser = req?.user ? await User.findById(req.user._id) : null;
-      const assigneeUser = await User.findById(updateData.assignedTo);
-      
-      await notificationService.createNotification({
-        title: 'Lead Reassigned',
-        message: `Lead "${lead.name}" has been reassigned to you by ${assignerUser?.name || 'Unknown'}.`,
-        type: 'lead_reassigned',
-        recipientId: updateData.assignedTo,
-        data: { 
-          leadId: id,
-          assignedBy: req?.user?._id,
-          action: 'reassigned'
-        }
-      });
-      console.log('📢 Notification sent to new assignee:', updateData.assignedTo);
-    } catch (error) {
-      console.error('❌ Error sending notification:', error);
-    }
+  // Send notification to all relevant users for BD activity
+  try {
+    const relevantUsers = await notificationService.getRelevantUsersForBDActivity(req.user._id);
+    
+    await notificationService.createNotification({
+      title: 'Lead Activity by BD',
+      message: `Lead "${lead.name}" has been reassigned by ${req.user.name} (BD).`,
+      type: 'lead_bd_activity',
+      recipients: relevantUsers, // Send to Boss, HOD, TL, and other BDs
+      data: { 
+        leadId: id,
+        assignedBy: req.user._id,
+        action: 'bd_reassign',
+        originalAssignee: updateData.assignedTo
+      }
+    });
+    console.log('BD Activity notification sent to relevant users:', relevantUsers.length);
+  } catch (error) {
+    console.error('Error sending BD activity notification:', error);
   }
   
   return lead;
@@ -322,26 +320,51 @@ const forwardLead = async (leadId, currentUserId, action = 'forward', selectedEm
 
   await lead.save();
   
-  // Send notification to next assignee
+  // Send notification to next assignee and all relevant users for BD activity
   try {
+    const relevantUsers = await notificationService.getRelevantUsersForBDActivity(currentUserId);
+    
+    // Send to specific assignee
     await notificationService.createNotification({
       title: `Lead ${action === 'forward' ? 'Forwarded' : 'Reassigned'}`,
-      message: `Lead "${lead.name}" has been ${action === 'forward' ? 'forwarded' : 'reassigned'} to you by ${currentUser.name}.`,
+      message: `Lead "${lead.name}" has been ${action === 'forward' ? 'forwarded' : 'reassigned'} to you by ${currentUser.name} (BD).`,
       type: 'lead_forwarded',
       recipientId: nextAssignee._id.toString(),
       data: { 
         leadId: leadId,
-        assignedBy: currentUser._id,
+        assignedBy: currentUserId,
         action: action
       }
     });
-    console.log('📢 Notification sent to next assignee:', nextAssignee._id);
+    
+    // Send to all relevant users (Boss, HOD, TL, other BDs)
+    await notificationService.createNotification({
+      title: 'BD Activity - Lead Forwarded',
+      message: `BD "${currentUser.name}" ${action === 'forward' ? 'forwarded' : 'reassigned'} lead "${lead.name}" to ${nextAssignee.name}`,
+      type: 'lead_bd_activity',
+      recipients: relevantUsers,
+      data: { 
+        leadId: leadId,
+        assignedBy: currentUserId,
+        action: action,
+        targetAssignee: nextAssignee._id,
+        activityType: 'forward'
+      }
+    });
+    console.log('📢 BD Forward Activity notification sent to relevant users:', relevantUsers.length);
   } catch (error) {
-    console.error('❌ Error sending notification:', error);
+    console.error('❌ Error sending BD activity notification:', error);
   }
   
   // Auto-create chat between assigner and assignee
   await createChatForAssignment(leadId, currentUserId, nextAssignee._id.toString());
+  
+  // Emit real-time update to all relevant users
+  await emitLeadUpdateToRelevantUsers(leadId, 'forwarded', currentUserId, { 
+    nextAssignee: nextAssignee._id,
+    nextAssigneeName: nextAssignee.name,
+    nextAssigneeRole: nextAssignee.role
+  });
   
   return lead;
 };
@@ -416,12 +439,13 @@ const getAssignableUsers = async (currentUserRole, currentUserId) => {
     return self ? [...employees, self] : employees;
   }
 
-  // If bd, include HOD users for chat hierarchy
+  // If bd, include other BDs for assignment and HODs/TLs for hierarchy
   if (currentUserRole === 'bd') {
     const self = await User.findById(currentUserId);
+    const otherBDs = await User.find({ role: 'bd', _id: { $ne: currentUserId } }); // Other BDs except self
     const hods = await User.find({ role: 'hod' });
     const teamLeaders = await User.find({ role: 'team-leader' });
-    const allUsers = [...hods, ...teamLeaders];
+    const allUsers = [...otherBDs, ...hods, ...teamLeaders];
     return self ? [...allUsers, self] : allUsers;
   }
 
@@ -512,8 +536,11 @@ const forwardPatchLead = async (leadId, requesterId, newAssigneeId, reason = '')
 
   await lead.save();
   
-  // Send notification to new BD
+  // Send notification to new BD and all relevant users for BD activity
   try {
+    const relevantUsers = await notificationService.getRelevantUsersForBDActivity(requesterId);
+    
+    // Send to specific new BD
     await notificationService.createNotification({
       title: 'Lead Reassigned',
       message: `Lead "${lead.name}" has been reassigned to you by ${requester.name}. Reason: ${reason || 'Forward patch'}`,
@@ -521,14 +548,29 @@ const forwardPatchLead = async (leadId, requesterId, newAssigneeId, reason = '')
       recipientId: newAssignee._id.toString(),
       data: { 
         leadId: leadId,
-        assignedBy: requester._id,
+        assignedBy: requesterId,
         action: 'forward_patch',
         reason: reason
       }
     });
-    console.log('Notification sent to new BD:', newAssignee._id);
+    
+    // Send to all relevant users (Boss, HOD, TL, other BDs)
+    await notificationService.createNotification({
+      title: 'BD Activity - Forward Patch',
+      message: `BD "${requester.name}" forward patched lead "${lead.name}" to ${newAssignee.name}. Reason: ${reason || 'Forward patch'}`,
+      type: 'lead_bd_activity',
+      recipients: relevantUsers,
+      data: { 
+        leadId: leadId,
+        assignedBy: requesterId,
+        action: 'forward_patch',
+        targetAssignee: newAssignee._id,
+        reason: reason
+      }
+    });
+    console.log('📢 BD Forward Patch Activity notification sent to relevant users:', relevantUsers.length);
   } catch (error) {
-    console.error('Error sending notification:', error);
+    console.error('Error sending BD activity notification:', error);
   }
   
   // Auto-create chat between assigner and assignee
@@ -545,8 +587,87 @@ const addFollowUp = async (id, followUpData) => {
   const lead = await Lead.findById(id);
   if (!lead) return null;
 
-  lead.followUps.push(followUpData); // Make sure followUps is defined in schema
-  await lead.save();
+  // Get current user info for notification
+  const currentUser = await User.findById(followUpData.addedBy);
+  if (!currentUser) {
+    console.log('⚠️ Follow-up added by unknown user, skipping notification');
+  } else {
+    lead.followUps.push(followUpData); // Make sure followUps is defined in schema
+    await lead.save();
+
+    // � REAL-TIME UPDATES FOR HOD ACTIONS
+    const emitLeadUpdateToRelevantUsers = async (leadId, action, updatedBy, additionalData = {}) => {
+      try {
+        // Get all relevant users for HOD activity
+        const relevantUsers = await notificationService.getRelevantUsersForBDActivity(updatedBy);
+        
+        // Emit real-time update to all relevant users
+        if (io && relevantUsers.length > 0) {
+          relevantUsers.forEach(user => {
+            io.to(user.userId.toString()).emit('leadUpdate', {
+              leadId,
+              action,
+              updatedBy,
+              timestamp: new Date(),
+              data: {
+                leadName: lead.name,
+                assignedTo: lead.assignedTo,
+                status: lead.status,
+                ...additionalData
+              }
+            });
+          });
+        }
+        
+        console.log(`📡 Real-time update sent to ${relevantUsers.length} users for HOD action: ${action}`);
+      } catch (error) {
+        console.error('❌ Error sending real-time update:', error);
+      }
+    };
+
+    await emitLeadUpdateToRelevantUsers(id, 'followup_added', currentUser._id, { followUpData });
+
+    // �� Send notification to all relevant users for BD activity
+    try {
+      const relevantUsers = await notificationService.getRelevantUsersForBDActivity(followUpData.addedBy);
+      
+      // Send to specific assignee if different from current user
+      if (followUpData.addedBy !== currentUser._id.toString()) {
+        await notificationService.createNotification({
+          title: 'Follow-up Added',
+          message: `Follow-up added to lead "${lead.name}": "${followUpData.comment}" by ${currentUser.name}`,
+          type: 'followup_added',
+          recipientId: lead.assignedTo, // Send to lead's assigned BD
+          data: { 
+            leadId: id,
+            addedBy: currentUser._id,
+            action: 'followup_added',
+            followUpData: followUpData
+          }
+        });
+        console.log('📢 Follow-up notification sent to assigned BD:', lead.assignedTo);
+      } else {
+        console.log('ℹ️ Follow-up added by same user, skipping notification');
+      }
+
+      // Send to all relevant users (Boss, HOD, TL, other BDs)
+      await notificationService.createNotification({
+        title: 'BD Activity - Follow-up Added',
+        message: `BD "${currentUser.name}" added follow-up to lead "${lead.name}": "${followUpData.comment}"`,
+        type: 'lead_bd_activity',
+        recipients: relevantUsers,
+        data: { 
+          leadId: id,
+          addedBy: currentUser._id,
+          action: 'followup_added',
+          followUpData: followUpData
+        }
+      });
+      console.log('📢 BD Follow-up Activity notification sent to relevant users:', relevantUsers.length);
+    } catch (error) {
+      console.error('❌ Error sending follow-up notification:', error);
+    }
+  }
   return lead;
 };
 
@@ -712,35 +833,42 @@ const forwardSwapLead = async (leadId, requesterId, swapLeadId, reason = '') => 
       console.error('Error sending swap notifications:', error);
     }
     
-    // Auto-create chats for swapped assignments
-    // Chat between requester and new assignee for leadA
-    await createChatForAssignment(leadId, requesterId, bdB._id.toString());
-    // Chat between requester and new assignee for leadB
-    await createChatForAssignment(swapLeadId, requesterId, bdA._id.toString());
-
+    // Emit real-time updates to all relevant users
+    await emitLeadUpdateToRelevantUsers(leadId, 'swapped', requesterId, { 
+      swapLeadId,
+      targetLeadId: swapLeadId,
+      reason
+    });
+    
+    console.log(' Real-time swap updates sent to relevant users');
+    
     return { leadA, leadB };
   };
 
-  const session = await mongoose.startSession();
+  // Database session for transaction
+  const dbSession = await mongoose.startSession();
   try {
     let result = null;
     try {
-      await session.withTransaction(async () => {
-        result = await applySwap(session);
+      await dbSession.withTransaction(async () => {
+        result = await applySwap(dbSession);
       });
       return result;
     } catch (err) {
       try {
-        if (session.inTransaction()) {
-          await session.abortTransaction();
+        if (dbSession.inTransaction()) {
+          await dbSession.abortTransaction();
         }
       } catch {
         // ignore
       }
       return await applySwap(null);
     }
+  } catch (error) {
+    console.error('Error in forwardSwapLead:', error);
+    throw error;
   } finally {
-    session.endSession();
+    dbSession.endSession();
   }
 };
 
