@@ -22,9 +22,19 @@ const WhatsAppChatList = () => {
 
   // Get current user info from Redux
   const getCurrentUserInfo = useCallback(() => {
+    let tokenUserId = null;
+    if (auth.token) {
+      try {
+        const payload = JSON.parse(atob(auth.token.split('.')[1]));
+        tokenUserId = payload.userId || payload.id || payload._id || null;
+      } catch (e) {
+        tokenUserId = null;
+      }
+    }
+
     return {
       token: auth.token,
-      userId: auth.user?._id || auth.user?.id,
+      userId: auth.user?._id || auth.user?.id || tokenUserId,
       userName: auth.user?.name,
       userRole: auth.user?.role
     };
@@ -32,7 +42,14 @@ const WhatsAppChatList = () => {
 
   // Get current user ID from Redux
   const getCurrentUserId = useCallback(() => {
-    return auth.user?._id || auth.user?.id;
+    if (auth.user?._id || auth.user?.id) return auth.user?._id || auth.user?.id;
+    if (!auth.token) return null;
+    try {
+      const payload = JSON.parse(atob(auth.token.split('.')[1]));
+      return payload.userId || payload.id || payload._id || null;
+    } catch (e) {
+      return null;
+    }
   }, [auth]);
 
   // Format time
@@ -145,9 +162,9 @@ const WhatsAppChatList = () => {
   // Handle user selection for new chat
   const handleUserSelect = useCallback(async (selectedUser) => {
     try {
-      const { token } = getCurrentUserInfo();
+      const { token, userId } = getCurrentUserInfo();
 
-      // Create new chat using the chat API
+      // Create new chat using the chat API with correct backend format
       try {
         const chatData = {
           participantId: selectedUser._id,

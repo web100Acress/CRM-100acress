@@ -19,7 +19,18 @@ const WhatsAppChat = ({ chat, isOpen, onClose }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   // Get current user ID from Redux
-  const myId = auth.user?._id || auth.user?.id;
+  const myId = React.useMemo(() => {
+    const direct = auth.user?._id || auth.user?.id;
+    if (direct) return direct;
+    const token = auth.token;
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.userId || payload.id || payload._id || null;
+    } catch (e) {
+      return null;
+    }
+  }, [auth.user, auth.token]);
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -64,6 +75,14 @@ const WhatsAppChat = ({ chat, isOpen, onClose }) => {
   // Send message
   const handleSendMessage = useCallback(async () => {
     if (!message.trim() || isSending || !chat?._id) return;
+    if (!myId) {
+      toast({
+        title: 'Error',
+        description: 'User not loaded yet. Please wait and try again.',
+        variant: 'destructive'
+      });
+      return;
+    }
 
     setIsSending(true);
     try {

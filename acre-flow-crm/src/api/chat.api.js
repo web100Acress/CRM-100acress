@@ -54,8 +54,8 @@ export const fetchUserChats = async () => {
 
 export const createChat = async (chatData) => {
   try {
-    // Use the existing backend endpoint with the correct format
-    const response = await chatApi.post('/api/chats/create', chatData);
+    // Use the correct endpoint for user search chats
+    const response = await chatApi.post('/api/chats/create-chat', chatData);
     console.log('✅ Chat created successfully:', response.data);
     return response.data;
   } catch (error) {
@@ -66,7 +66,31 @@ export const createChat = async (chatData) => {
 
 export const sendChatMessage = async (chatId, messageData) => {
   try {
-    const response = await chatApi.post(`/api/chats/${chatId}/messages`, messageData);
+    const state = store.getState();
+    let senderId =
+      messageData?.senderId || state?.auth?.user?._id || state?.auth?.user?.id;
+
+    if (!senderId && state?.auth?.token) {
+      try {
+        const payload = JSON.parse(atob(state.auth.token.split('.')[1]));
+        senderId = payload.userId || payload.id || payload._id || null;
+      } catch (e) {
+        senderId = null;
+      }
+    }
+
+    if (!chatId || !messageData?.message || !senderId) {
+      throw new Error('chatId, message, and senderId are required');
+    }
+
+    // Use the correct endpoint and data format for sending messages
+    const response = await chatApi.post('/api/chats/send', {
+      chatId: chatId,
+      message: messageData.message,
+      senderId: senderId,
+      messageType: messageData.messageType || 'text',
+      attachmentUrl: messageData.attachmentUrl || null
+    });
     return response.data;
   } catch (error) {
     console.error('Error sending message:', error);

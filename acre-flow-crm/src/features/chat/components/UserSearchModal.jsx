@@ -14,9 +14,19 @@ const UserSearchModal = ({ isOpen, onClose, onUserSelect, currentUserRole }) => 
 
   // Get current user info from Redux
   const getCurrentUserInfo = useCallback(() => {
+    let tokenUserId = null;
+    if (auth.token) {
+      try {
+        const payload = JSON.parse(atob(auth.token.split('.')[1]));
+        tokenUserId = payload.userId || payload.id || payload._id || null;
+      } catch (e) {
+        tokenUserId = null;
+      }
+    }
+
     return {
       token: auth.token,
-      userId: auth.user?._id || auth.user?.id,
+      userId: auth.user?._id || auth.user?.id || tokenUserId,
       userName: auth.user?.name
     };
   }, [auth]);
