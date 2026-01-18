@@ -1,8 +1,9 @@
 import axios from 'axios';
+import { apiUrl } from '@/config/apiConfig';
 
 // Create axios instance for 100acress API
 const api100acress = axios.create({
-  baseURL: 'https://bcrm.100acress.com',
+  baseURL: apiUrl,
   headers: {
     'Content-Type': 'application/json',
   },

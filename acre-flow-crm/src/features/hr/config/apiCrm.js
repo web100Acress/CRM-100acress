@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { apiUrl } from '@/config/apiConfig';
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://bcrm.100acress.com';
+const baseURL = apiUrl;
 
 const apiCrm = axios.create({
   baseURL,

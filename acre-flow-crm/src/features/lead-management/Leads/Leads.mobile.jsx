@@ -88,28 +88,28 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     const fetchStats = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(apiUrl("leads"), {
+        const response = await fetch(`${apiUrl}/api/leads`, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         });
-        
+
         console.log('Response status:', response.status);
         console.log('Response ok:', response.ok);
-        
+
         const json = await response.json();
         console.log('API response:', json);
-        
+
         const leads = json.data || json.payload || json || [];
         console.log('Leads extracted:', leads);
-        
+
         // Calculate real stats
         const totalLeads = leads.length;
         const coldLeads = leads.filter(lead => lead.status === 'Cold').length;
         const warmLeads = leads.filter(lead => lead.status === 'Warm').length;
         const hotLeads = leads.filter(lead => lead.status === 'Hot').length;
-        
+
         setStats({
           totalLeads,
           coldLeads,
@@ -127,7 +127,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       try {
         const token = localStorage.getItem('token');
         const response = await fetch(
-          apiUrl("leads/assignable-users"),
+          `${apiUrl}/api/leads/assignable-users`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -145,7 +145,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         try {
           const token = localStorage.getItem('token');
           const response = await fetch(
-            apiUrl("users"),
+            `${apiUrl}/api/users`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -178,7 +178,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    
+
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
@@ -217,13 +217,13 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     try {
       const token = localStorage.getItem('token');
       const currentUserId = localStorage.getItem('userId');
-      const response = await fetch(apiUrl("chats/list"), {
+      const response = await fetch(`${apiUrl}/api/chats/list`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         if (data.success && Array.isArray(data.data)) {
@@ -233,14 +233,14 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
             const userName = oppositeUser?.name || 'Unknown User';
             const userEmail = oppositeUser?.email || '';
             const lastMsg = chat.lastMessage;
-            
+
             // Format time
             const formatTime = (date) => {
               if (!date) return '';
               const now = new Date();
               const msgDate = new Date(date);
               const diffInHours = (now - msgDate) / (1000 * 60 * 60);
-              
+
               if (diffInHours < 24) {
                 return msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
               } else if (diffInHours < 24 * 7) {
@@ -249,7 +249,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                 return msgDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
               }
             };
-            
+
             return {
               id: chat._id,
               name: userName,
@@ -263,7 +263,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
               participantId: oppositeUser?._id
             };
           });
-          
+
           setChatList(formattedChatList);
         }
       }
@@ -282,15 +282,15 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
   // Filter chat list based on search and filter
   const getFilteredChatList = () => {
     let filtered = chatList;
-    
+
     // Apply search filter
     if (chatSearchQuery) {
-      filtered = filtered.filter(chat => 
+      filtered = filtered.filter(chat =>
         chat.name.toLowerCase().includes(chatSearchQuery.toLowerCase()) ||
         chat.lastMessage.toLowerCase().includes(chatSearchQuery.toLowerCase())
       );
     }
-    
+
     // Apply chat filter
     switch (chatFilter) {
       case 'unread':
@@ -306,7 +306,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         // 'all' - no filtering
         break;
     }
-    
+
     return filtered;
   };
 
@@ -314,9 +314,9 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
   const handleUserSelect = async (selectedUser) => {
     try {
       const token = localStorage.getItem('token');
-      
+
       // Create new chat using the new endpoint
-      const response = await fetch(apiUrl('chats/create-chat'), {
+      const response = await fetch(`${apiUrl}/api/chats/create-chat`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -335,7 +335,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         if (data.success) {
           // Refresh chat list
           await fetchChatList();
-          
+
           // Open WhatsApp modal with the created chat data
           setWhatsAppRecipient({
             _id: selectedUser._id,
@@ -346,7 +346,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
             chatId: data.chat?._id || null // Set chatId directly
           });
           setShowWhatsAppModal(true);
-          
+
           toast({
             title: 'Success',
             description: `Chat created with ${selectedUser.name}`,
@@ -385,7 +385,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold">Chats</h2>
           <div className="flex items-center gap-3">
-            <button 
+            <button
               onClick={() => setShowUserSearch(true)}
               className="p-2 hover:bg-green-700 rounded-full transition-colors"
               title="New Chat"
@@ -400,11 +400,11 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
             </button>
           </div>
         </div>
-        
+
         {/* Search Bar */}
         <div className="relative">
           <Search className="absolute left-3 top-3 text-gray-400" size={16} />
-          <input  
+          <input
             type="text"
             placeholder="Ask Meta AI or Search"
             value={chatSearchQuery}
@@ -421,11 +421,10 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
             <button
               key={filter}
               onClick={() => setChatFilter(filter)}
-              className={`flex-1 py-3 text-sm font-medium capitalize transition-colors ${
-                chatFilter === filter
-                  ? 'text-green-600 border-b-2 border-green-600'
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
+              className={`flex-1 py-3 text-sm font-medium capitalize transition-colors ${chatFilter === filter
+                ? 'text-green-600 border-b-2 border-green-600'
+                : 'text-gray-600 hover:text-gray-800'
+                }`}
             >
               {filter}
             </button>
@@ -495,7 +494,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     try {
       setSwapBdLeadsLoading(true);
       const token = localStorage.getItem('token');
-      const res = await fetch(apiUrl(`leads/bd-status/${bdId}`), {
+      const res = await fetch(`${apiUrl}/api/leads/bd-status/${bdId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -529,7 +528,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       setPatchingLead(leadId);
       const token = localStorage.getItem('token');
 
-      const res = await fetch(apiUrl(`leads/${leadId}/forward-swap`), {
+      const res = await fetch(`${apiUrl}/api/leads/${leadId}/forward-swap`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -543,7 +542,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         throw new Error(data?.message || 'Failed to swap leads');
       }
 
-      const leadsResponse = await fetch(apiUrl('leads'), {
+      const leadsResponse = await fetch(`${apiUrl}/api/leads`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -598,7 +597,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
   const bannerImages = [
     'https://100acress-media-bucket.s3.ap-south-1.amazonaws.com/small-banners/1766217374273-max-antara-361.webp'
   ];
-  
+
   const [currentBannerIndex] = useState(0);
 
   // Function to check if lead was forwarded by head admin
@@ -610,14 +609,14 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       console.log('No assignment chain found or chain is empty.');
       return false;
     }
-    
+
     const result = lead.assignmentChain.some(assignment => {
       const assignedBy = assignment.assignedBy || assignment.assignedByUser;
       console.log('Current assignment:', assignment);
       console.log('Assigned by:', assignedBy);
       const isHeadAdmin = assignedBy && (
         assignedBy.role === 'hod' ||
-        assignedBy.role === 'head-admin' || 
+        assignedBy.role === 'head-admin' ||
         assignedBy.role === 'head' ||
         (assignedBy.name && assignedBy.name.toLowerCase().includes('head admin'))
       );
@@ -634,7 +633,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     if (typeof lead.assignedTo === 'string' && lead.assignedTo !== 'Unassigned' && !lead.assignedTo.match(/^[0-9a-fA-F]{24}$/)) {
       return lead.assignedTo;
     }
-    
+
     // Check assignmentChain for user info
     if (lead.assignmentChain && lead.assignmentChain.length > 0) {
       const currentAssignment = lead.assignmentChain[lead.assignmentChain.length - 1];
@@ -642,7 +641,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         return currentAssignment.name;
       }
     }
-    
+
     // If assignedTo is a MongoDB ObjectId, look up the user name from assignableUsers
     if (lead.assignedTo && assignableUsers && assignableUsers.length > 0) {
       const assignedUser = assignableUsers.find(user => String(user._id) === String(lead.assignedTo));
@@ -650,7 +649,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         return assignedUser.name;
       }
     }
-    
+
     return 'Unassigned';
   };
 
@@ -658,38 +657,38 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      
+
       console.log('🔍 Starting to fetch leads...');
       console.log('🔍 Token present:', token ? 'Yes' : 'No');
       console.log('🔍 Current hostname:', window.location.hostname);
-      
+
       // Use the apiUrl helper function which automatically detects localhost vs production
-      const apiEndpoint = apiUrl('leads');
+      const apiEndpoint = `${apiUrl}/api/leads`;
       console.log('📡 API URL being used:', apiEndpoint);
-      
+
       let response = await fetch(apiEndpoint, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-      
+
       console.log('📡 API response status:', response.status);
       console.log('📡 API response ok:', response.ok);
-      
+
       if (response.ok) {
         const data = await response.json();
         console.log('📊 Fetch leads response:', data);
-        
+
         // Sort leads by createdAt (newest first)
         const sortedLeads = (data.data || data.payload || data || []).sort((a, b) => {
           const dateA = new Date(a.createdAt || 0);
           const dateB = new Date(b.createdAt || 0);
           return dateB - dateA; // Newest first
         });
-        
+
         console.log('✅ Leads loaded successfully:', sortedLeads.length, 'leads');
-        
+
         if (sortedLeads.length > 0) {
           console.log('📝 Sample leads:', sortedLeads.slice(0, 3).map(lead => ({
             id: lead._id,
@@ -699,17 +698,17 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
             location: lead.location
           })));
         }
-        
+
         setLeads(sortedLeads);
-        
+
         // Calculate stats
         const totalLeads = sortedLeads?.length || 0;
         const coldLeads = sortedLeads?.filter(lead => lead.status === 'Cold').length || 0;
         const warmLeads = sortedLeads?.filter(lead => lead.status === 'Warm').length || 0;
         const hotLeads = sortedLeads?.filter(lead => lead.status === 'Hot').length || 0;
-        
+
         console.log('📈 Stats calculated:', { totalLeads, coldLeads, warmLeads, hotLeads });
-        
+
         setStats({
           totalLeads,
           coldLeads,
@@ -720,7 +719,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         console.error('❌ API response not ok:', response.status, response.statusText);
         const errorText = await response.text();
         console.error('❌ Error response:', errorText);
-        
+
         // Show specific error based on status
         let errorMessage = "Failed to fetch leads. Please try again.";
         if (response.status === 401) {
@@ -732,13 +731,13 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         } else if (response.status >= 500) {
           errorMessage = "Server error. Please try again later.";
         }
-        
+
         toast({
           title: "Error",
           description: errorMessage,
           variant: "destructive"
         });
-        
+
         // Show mock data for testing
         console.log('🔄 Using mock data for testing...');
         const mockData = [
@@ -763,7 +762,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
             createdAt: new Date(Date.now() - 86400000).toISOString()
           }
         ];
-        
+
         setLeads(mockData);
         setStats({
           totalLeads: mockData.length,
@@ -771,7 +770,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
           warmLeads: 1,
           hotLeads: 1
         });
-        
+
         toast({
           title: "Using Sample Data",
           description: "API unavailable, showing sample leads",
@@ -785,7 +784,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         stack: error.stack,
         name: error.name
       });
-      
+
       // Check if it's a network error
       if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
         toast({
@@ -848,13 +847,13 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
 
       {/* Banner Section */}
       <div className="relative h-32 overflow-hidden">
-        <img 
-          src={bannerImages[currentBannerIndex]} 
+        <img
+          src={bannerImages[currentBannerIndex]}
           alt="Dashboard Banner"
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-        
+
         {/* Banner Text Overlay */}
         {/* <div className="absolute bottom-4 left-4 right-4">
           <h2 className="text-white text-xl font-bold drop-shadow-lg">
@@ -1004,22 +1003,20 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         <div className="flex mt-4 bg-white/10 backdrop-blur-sm rounded-lg p-1">
           <button
             onClick={() => setActiveTab('all-leads')}
-            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200 ${
-              activeTab === 'all-leads'
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-white hover:bg-white/20'
-            }`}
+            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200 ${activeTab === 'all-leads'
+              ? 'bg-white text-blue-600 shadow-sm'
+              : 'text-white hover:bg-white/20'
+              }`}
           >
             <MessageCircle size={16} className="inline mr-1" />
             Leads
           </button>
           <button
             onClick={() => setActiveTab('chats')}
-            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200 ${
-              activeTab === 'chats'
-                ? 'bg-white text-green-600 shadow-sm'
-                : 'text-white hover:bg-white/20'
-            }`}
+            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200 ${activeTab === 'chats'
+              ? 'bg-white text-green-600 shadow-sm'
+              : 'text-white hover:bg-white/20'
+              }`}
           >
             <MessageSquare size={16} className="inline mr-1" />
             Chats
@@ -1028,10 +1025,10 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       </div>
 
       {/* Mobile Sidebar */}
-      <MobileSidebar 
-        userRole={userRole} 
-        isOpen={rightMenuOpen} 
-        onClose={() => setRightMenuOpen(false)} 
+      <MobileSidebar
+        userRole={userRole}
+        isOpen={rightMenuOpen}
+        onClose={() => setRightMenuOpen(false)}
       />
     </div>
   );
@@ -1039,10 +1036,10 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
   const handleExportLeads = async () => {
     setIsExporting(true);
     try {
-      const filteredLeads = leads.filter(lead => 
+      const filteredLeads = leads.filter(lead =>
         statusFilter === 'all' || lead.status === statusFilter
       );
-      
+
       const headers = ["ID", "Name", "Email", "Phone", "Location", "Budget", "Property", "Status", "Assigned To"];
       const csvData = filteredLeads.map((lead) => [
         lead._id || lead.id,
@@ -1089,11 +1086,11 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
 
   const handleCallLead = (phone, leadId, leadName) => {
     console.log('handleCallLead called with:', { phone, leadId, leadName });
-    
+
     if (phone) {
       // Clean phone number (remove spaces, dashes, etc.)
       const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
-      
+
       // Set call data with accurate start time
       const startTime = new Date();
       const callInfo = {
@@ -1104,33 +1101,33 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         duration: 0,
         status: 'connecting'
       };
-      
+
       setCallData(callInfo);
       setCallDuration(0);
       setCallStatus('connecting');
       setShowCallPopup(true);
-      
+
       // Start the call timer
       const timer = setInterval(() => {
         setCallDuration(prev => prev + 1);
       }, 1000);
-      
+
       // Store timer in callData for cleanup
       callInfo.timer = timer;
-      
+
       // Initiate the actual call
       window.location.href = `tel:${cleanPhone}`;
-      
+
       // Handle visibility change to detect when user returns from call
       const handleVisibilityChange = () => {
         if (!document.hidden && callStatus === 'connecting') {
           // User returned to app after call
           const endTime = new Date();
           const duration = Math.floor((endTime - startTime) / 1000);
-          
+
           setCallStatus('ended');
           setCallDuration(duration);
-          
+
           // Save call record
           saveCallRecord({
             leadId: callInfo.leadId,
@@ -1141,19 +1138,19 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
             duration: duration,
             status: duration >= 3 ? 'completed' : 'missed'
           });
-          
+
           document.removeEventListener('visibilitychange', handleVisibilityChange);
         }
       };
-      
+
       document.addEventListener('visibilitychange', handleVisibilityChange);
-      
+
       // Also simulate connection after 2 seconds for UI
       setTimeout(() => {
         if (callStatus === 'connecting') {
           console.log('Call connected');
           setCallStatus('connected');
-          
+
           // Start duration timer
           const interval = setInterval(() => {
             setCallDuration(prev => {
@@ -1161,12 +1158,12 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
               return newDuration;
             });
           }, 1000);
-          
+
           // Save interval for cleanup
           setCallData(prev => ({ ...prev, interval }));
         }
       }, 2000);
-      
+
       toast({
         title: "Calling Lead",
         description: `Opening dialer for ${leadName} at ${phone}...`,
@@ -1182,10 +1179,10 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
 
   const handleLeadAnalytics = (lead) => {
     console.log('📊 Opening lead analytics for:', lead.name);
-    
+
     // Set selected lead for analytics
     setSelectedLead(lead);
-    
+
     // Show analytics modal or navigate to analytics view
     // For now, let's show a comprehensive analytics modal
     setShowLeadAnalytics(true);
@@ -1196,12 +1193,12 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     if (callData?.interval) {
       clearInterval(callData.interval);
     }
-    
+
     const endTime = new Date();
     const finalDuration = callDuration || Math.floor((endTime.getTime() - callData?.startTime?.getTime()) / 1000) || 0;
-    
+
     setCallStatus('ended');
-    
+
     // Save call record with accurate duration
     if (callData) {
       saveCallRecord({
@@ -1213,7 +1210,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         duration: finalDuration,
         status: finalDuration >= 3 ? 'completed' : 'missed'
       });
-      
+
       // Refresh call history if lead details modal is open
       if (showLeadDetails && selectedLead && String(selectedLead._id) === String(callData.leadId)) {
         setTimeout(() => {
@@ -1221,7 +1218,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         }, 1000);
       }
     }
-    
+
     // Close popup after a delay
     setTimeout(() => {
       const savedLeadId = callData?.leadId;
@@ -1229,7 +1226,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       setCallData(null);
       setCallDuration(0);
       setCallStatus('connecting');
-      
+
       // Scroll to the lead that was called
       if (savedLeadId) {
         setTimeout(() => {
@@ -1250,8 +1247,8 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
   const saveCallRecord = async (callRecord) => {
     try {
       const token = localStorage.getItem('token');
-      
-      const response = await fetch(apiUrl('leads/calls'), {
+
+      const response = await fetch(`${apiUrl}/api/leads/calls`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1259,7 +1256,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         },
         body: JSON.stringify(callRecord)
       });
-      
+
       if (response.ok) {
         const result = await response.json();
         console.log("Call record saved successfully:", result);
@@ -1273,11 +1270,11 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         const calledLead = leads.find(lead => String(lead._id) === String(callRecord.leadId));
         if (calledLead) {
           console.log('📞 Opening call history for called lead:', calledLead.name);
-          
+
           // Set the selected lead and show lead details modal
           setSelectedLead(calledLead);
           setShowLeadDetails(true);
-          
+
           // Fetch call history for this lead after a short delay
           setTimeout(() => {
             fetchLeadDetailsCallHistory(callRecord.leadId);
@@ -1295,26 +1292,26 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       console.log('No leadId provided for call history');
       return;
     }
-    
+
     console.log('Fetching call history for leadId:', leadId);
     setLoadingCallHistory(true);
     try {
       const token = localStorage.getItem('token');
-      const url = apiUrl(`leads/${leadId}/calls`);
+      const url = `${apiUrl}/api/leads/${leadId}/calls`;
       console.log('Call history API URL:', url);
-      
+
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-      
+
       console.log('Call history response status:', response.status);
-      
+
       const data = await response.json();
       console.log('Call history response data:', data);
-      
+
       if (response.ok && data.success) {
         setCallHistory(data.data || []);
         console.log('Call history fetched successfully:', data.data?.length || 0, 'records');
@@ -1375,12 +1372,12 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
 
     let recipientUser = null;
     const currentUserIdStr = String(currentUserId);
-    
+
     // Simple logic: Find chat partner based on assignment
     if (currentUserRole === 'hod' || currentUserRole === 'boss') {
       // HOD/Boss chats with assigned BD
       recipientUser = users.find(u => String(u._id) === String(lead.assignedTo));
-      
+
       // Add leadId to found user
       if (recipientUser) {
         recipientUser = {
@@ -1388,7 +1385,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
           leadId: lead._id
         };
       }
-      
+
       // If not found, create recipient from lead data
       if (!recipientUser && lead.assignedTo) {
         recipientUser = {
@@ -1405,12 +1402,12 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         // Look for assigner in assignment chain
         if (lead.assignmentChain && lead.assignmentChain.length > 0) {
           const firstAssignment = lead.assignmentChain[0];
-          const assignerId = typeof firstAssignment.assignedBy === 'string' 
-            ? firstAssignment.assignedBy 
+          const assignerId = typeof firstAssignment.assignedBy === 'string'
+            ? firstAssignment.assignedBy
             : firstAssignment.assignedBy?._id;
-          
+
           recipientUser = users.find(u => String(u._id) === String(assignerId));
-          
+
           // Add leadId to found user
           if (recipientUser) {
             recipientUser = {
@@ -1418,7 +1415,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
               leadId: lead._id
             };
           }
-          
+
           // If not found, create from assignment chain
           if (!recipientUser && firstAssignment.assignedBy) {
             recipientUser = {
@@ -1470,13 +1467,12 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
   const updateLeadStatus = async (newStatus) => {
     try {
       const token = localStorage.getItem('token');
-      
+
       // Use localhost for development, change back to production when ready
-      const apiUrl = process.env.NODE_ENV === 'development' 
-        apiUrl(`leads/${selectedLeadForStatus._id}`);
-      
+      const apiUrlFormatted = `${apiUrl}/api/leads/${selectedLeadForStatus._id}`;
+
       const response = await fetch(
-        apiUrl,
+        apiUrlFormatted,
         {
           method: "PUT",
           headers: {
@@ -1489,25 +1485,25 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
 
       if (response.ok) {
         // Update the lead in local state
-        setLeads(prevLeads => 
-          prevLeads.map(lead => 
-            lead._id === selectedLeadForStatus._id 
+        setLeads(prevLeads =>
+          prevLeads.map(lead =>
+            lead._id === selectedLeadForStatus._id
               ? { ...lead, workProgress: newStatus }
               : lead
           )
         );
-        
+
         // Update selected lead for status
         setSelectedLeadForStatus(prev => ({ ...prev, workProgress: newStatus }));
-        
+
         // Trigger dashboard refresh
         window.dispatchEvent(new CustomEvent('dashboard-refresh'));
-        
+
         toast({
           title: "Status Updated",
           description: `Lead status updated to ${newStatus}`,
         });
-        
+
         setShowStatusUpdate(false);
         setSelectedLeadForStatus(null);
       } else {
@@ -1528,20 +1524,20 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       setForwardingLead(leadId);
       const token = localStorage.getItem('token');
       const currentUserName = localStorage.getItem('userName') || localStorage.getItem('name') || 'Current User';
-      
+
       console.log('Attempting to forward lead:', leadId);
       console.log('Token:', token ? 'Present' : 'Missing');
       console.log('Selected employee:', selectedEmployeeId);
-      
+
       const res = await fetch(
-        apiUrl(`lead-assignment/assign`),
+        `${apiUrl}/api/lead-assignment/assign`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             leadId: leadId,
             assigneeId: selectedEmployeeId,
             assigneeName: selectedEmployee?.name,
@@ -1553,7 +1549,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
 
       console.log('Response status:', res.status);
       console.log('Response ok:', res.ok);
-      
+
       let data;
       try {
         data = await res.json();
@@ -1564,10 +1560,10 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         console.error('Response text:', text);
         throw new Error('Invalid response from server');
       }
-      
+
       if (res.ok) {
         // Refresh the leads list
-        const leadsResponse = await fetch(apiUrl("leads"), {
+        const leadsResponse = await fetch(`${apiUrl}/api/leads`, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -1575,16 +1571,16 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         });
         const leadsJson = await leadsResponse.json();
         setLeads(leadsJson.data || []);
-        
+
         // Get the assigned user details
         const assignedUser = assignableUsers.find(u => u._id === selectedEmployeeId);
-        
+
         toast({
           title: "Success",
           description: data.message || "Lead forwarded successfully",
           status: "success",
         });
-        
+
         // Set success state and forwarded lead data
         setForwardSuccess(true);
         setForwardedLeadData({
@@ -1592,11 +1588,11 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
           employeeName: assignedUser?.name,
           employeeRole: assignedUser?.role
         });
-        
+
         // Auto-open WhatsApp chat with the assigned user
         if (assignedUser) {
           console.log('Auto-opening WhatsApp chat with assigned user:', assignedUser);
-          
+
           // Set the recipient for WhatsApp chat
           const recipientData = {
             _id: assignedUser._id,
@@ -1606,17 +1602,17 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
             role: assignedUser.role || assignedUser.userRole,
             leadId: selectedLeadForForward?._id // Add leadId
           };
-          
+
           console.log('Setting auto-open WhatsApp recipient:', recipientData);
           setWhatsAppRecipient(recipientData);
-          
+
           // Open WhatsApp modal after a short delay
           setTimeout(() => {
             console.log('Opening WhatsApp modal...');
             setShowWhatsAppModal(true);
           }, 1000);
         }
-        
+
         // Close dropdown and reset selection after delay
         setTimeout(() => {
           setShowForwardDropdown(false);
@@ -1696,7 +1692,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     if (currentUserRole === 'bd' || currentUserRole === 'employee') {
       const isAssignedToCurrentUser = String(lead.assignedTo) === String(currentUserId);
       const isVisible = isAssignedLead(lead) && isAssignedToCurrentUser;
-      
+
       console.log('WhatsApp button visibility (BD):', {
         leadId: lead._id,
         leadName: lead.name,
@@ -1707,15 +1703,15 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         isAssignedToCurrentUser,
         finalVisibility: isVisible
       });
-      
+
       return isVisible;
     }
-    
+
     // For HODs/Boss: Show WhatsApp button for leads assigned to others (not themselves)
-    const isVisible = isAssignedLead(lead) && 
-      String(lead.assignedTo) !== String(currentUserId) && 
+    const isVisible = isAssignedLead(lead) &&
+      String(lead.assignedTo) !== String(currentUserId) &&
       !((currentUserRole === 'hod' || currentUserRole === 'head-admin') && isBossToHodLead(lead));
-    
+
     console.log('WhatsApp button visibility (HOD/Boss):', {
       leadId: lead._id,
       leadName: lead.name,
@@ -1727,7 +1723,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       isNotBossToHodLead: !((currentUserRole === 'hod' || currentUserRole === 'head-admin') && isBossToHodLead(lead)),
       finalVisibility: isVisible
     });
-    
+
     return isVisible;
   };
 
@@ -1841,7 +1837,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     try {
       // Find the lead in existing leads data
       const lead = leads.find(l => (l._id || l.id) === leadId);
-      
+
       console.log('🔍 Lead found in leads array:', {
         leadFound: !!lead,
         leadId: lead?._id || lead?.id,
@@ -1850,7 +1846,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         assignmentChainLength: lead?.assignmentChain?.length || 0,
         fullAssignmentChain: lead?.assignmentChain
       });
-      
+
       if (lead && lead.assignmentChain) {
         console.log('✅ Using existing assignment chain from lead data');
         setAssignmentChain(lead.assignmentChain);
@@ -1858,20 +1854,20 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         console.log('⚠️ No assignment chain in lead data, trying API...');
         // Try to fetch from API as fallback
         const token = localStorage.getItem('token');
-        
+
         const response = await fetch(apiUrl(`leads/${leadId}/assignment-chain`), {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
-        
+
         console.log('🔍 Assignment chain API response:', {
           status: response.status,
           ok: response.ok,
           statusText: response.statusText
         });
-        
+
         if (response.ok) {
           const data = await response.json();
           console.log('✅ Assignment chain API response:', {
@@ -1912,18 +1908,18 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     if (role !== 'boss' && role !== 'super-admin') {
       const isCreator = String(lead.createdBy) === String(userId);
       const isAssigned = String(lead.assignedTo) === String(userId);
-      
+
       // Check if current user forwarded this lead (check assignment chain)
-      const isForwarder = lead.assignmentChain?.some(assignment => 
+      const isForwarder = lead.assignmentChain?.some(assignment =>
         assignment.assignedBy?._id && String(assignment.assignedBy._id) === String(userId)
       );
-      
+
       if (!isCreator && !isAssigned && !isForwarder) return false;
     }
 
     const matchesSearch = lead.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.phone?.includes(searchTerm);
+      lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.phone?.includes(searchTerm);
     const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
     return matchesSearch && matchesStatus;
   }).sort((a, b) => {
@@ -1949,64 +1945,64 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
   return (
     <div className="min-h-screen bg-gray-50">
       {renderMobileHeader()}
-      
+
       <div className="relative">
-      {/* Conditional Content Based on Active Tab */}
-      {activeTab === 'chats' ? (
-        <WhatsAppChatList />
-      ) : (
-        /* Leads List */
-        <div className="p-4 space-y-4 pb-20 md:pb-4">
-          {filteredLeads.map((lead) => (
-          <Card key={lead._id || lead.id} id={`lead-${lead._id || lead.id}`} className="shadow-lg hover:shadow-xl transition-all duration-300 border-0 overflow-hidden">
-            <CardContent className="p-0">
-              {/* Lead Header with Gradient */}
-              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 relative">
-                {/* Forwarded By Badge - Show at top */}
-                {(() => {
-                  const chain = Array.isArray(lead?.assignmentChain) ? lead.assignmentChain : [];
-                  const wasForwarded = chain.some((e) => String(e?.status) === 'forwarded');
-                  if (!wasForwarded) return null;
+        {/* Conditional Content Based on Active Tab */}
+        {activeTab === 'chats' ? (
+          <WhatsAppChatList />
+        ) : (
+          /* Leads List */
+          <div className="p-4 space-y-4 pb-20 md:pb-4">
+            {filteredLeads.map((lead) => (
+              <Card key={lead._id || lead.id} id={`lead-${lead._id || lead.id}`} className="shadow-lg hover:shadow-xl transition-all duration-300 border-0 overflow-hidden">
+                <CardContent className="p-0">
+                  {/* Lead Header with Gradient */}
+                  <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 relative">
+                    {/* Forwarded By Badge - Show at top */}
+                    {(() => {
+                      const chain = Array.isArray(lead?.assignmentChain) ? lead.assignmentChain : [];
+                      const wasForwarded = chain.some((e) => String(e?.status) === 'forwarded');
+                      if (!wasForwarded) return null;
 
-                  const lastAssignedEntry = [...chain]
-                    .reverse()
-                    .find((e) => String(e?.status) === 'assigned');
+                      const lastAssignedEntry = [...chain]
+                        .reverse()
+                        .find((e) => String(e?.status) === 'assigned');
 
-                  const assignedByName =
-                    lastAssignedEntry?.assignedBy?.name ||
-                    lastAssignedEntry?.assignedByUser?.name ||
-                    lastAssignedEntry?.forwardedBy?.name ||
-                    lastAssignedEntry?.fromUser?.name ||
-                    lastAssignedEntry?.sender?.name ||
-                    lastAssignedEntry?.assignedByName ||
-                    lastAssignedEntry?.forwarderName ||
-                    lastAssignedEntry?.name ||
-                    'Admin';
+                      const assignedByName =
+                        lastAssignedEntry?.assignedBy?.name ||
+                        lastAssignedEntry?.assignedByUser?.name ||
+                        lastAssignedEntry?.forwardedBy?.name ||
+                        lastAssignedEntry?.fromUser?.name ||
+                        lastAssignedEntry?.sender?.name ||
+                        lastAssignedEntry?.assignedByName ||
+                        lastAssignedEntry?.forwarderName ||
+                        lastAssignedEntry?.name ||
+                        'Admin';
 
-                  return (
-                    <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
-                      <ForwardIcon size={12} />
-                      Forwarded by {assignedByName}
-                    </div>
-                  );
-                })()}
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-white/30 shadow-lg">
-                      <span className="text-white text-xl font-bold">{getInitials(lead.name)}</span>
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-bold text-white text-lg">{lead.name}</h3>
-                      <p className="text-blue-100 text-sm">{lead.phone}</p>
-                      <div className="flex gap-2 mt-2">
-                        <Badge className={`text-xs px-2 py-1 rounded-full ${getStatusColor(lead.status)}`}>
-                          {lead.status || 'New'}
-                        </Badge>
+                      return (
+                        <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                          <ForwardIcon size={12} />
+                          Forwarded by {assignedByName}
+                        </div>
+                      );
+                    })()}
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-white/30 shadow-lg">
+                          <span className="text-white text-xl font-bold">{getInitials(lead.name)}</span>
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-bold text-white text-lg">{lead.name}</h3>
+                          <p className="text-blue-100 text-sm">{lead.phone}</p>
+                          <div className="flex gap-2 mt-2">
+                            <Badge className={`text-xs px-2 py-1 rounded-full ${getStatusColor(lead.status)}`}>
+                              {lead.status || 'New'}
+                            </Badge>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                  <div className="text-right ">
-                    {/* <button
+                      <div className="text-right ">
+                        {/* <button
                       onClick={() => {
                         setSelectedLeadForSettings(lead);
                         setShowSettings(true);
@@ -2016,436 +2012,469 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                       <p className="text-white font-semibold text-sm">Lead Status</p>
                       <p className="text-blue-100 text-xs">View Options</p>
                     </button> */}
-                    <button
-                      onClick={() => {
-                        setSelectedLeadForChain(lead);
-                        setShowAssignmentChain(true);
-                        fetchAssignmentChain(lead._id || lead.id);
-                      }}
-                      className="mt-6 w-full bg-white/20 backdrop-blur-sm text-white rounded-lg px-3 py-2 text-xs font-medium hover:bg-white/30 transition-colors flex items-center justify-center gap-1"
-                    >
-                      <Activity size={12} />
-                      Lead Chain
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Lead Details Section */}
-              <div className="p-4 bg-white">
-                {/* Property and Budget Info */}
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-3 rounded-lg border border-purple-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Building2 size={16} className="text-purple-600" />
-                      <span className="text-xs font-medium text-purple-700">Property</span>
-                    </div>
-                    <p className="text-sm font-semibold text-gray-900">{lead.property || 'Not specified'}</p>
-                  </div>
-                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-3 rounded-lg border border-green-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <DollarSign size={16} className="text-green-600" />
-                      <span className="text-xs font-medium text-green-700">Budget</span>
-                    </div>
-                    <p className="text-sm font-semibold text-gray-900">{lead.budget || 'Not specified'}</p>
-                  </div>
-                </div>
-
-                {/* Assignment and Contact Info */}
-                <div className="space-y-3 mb-4">
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <UserCheck size={16} className="text-gray-600" />
-                      <div>
-                        <p className="text-xs text-gray-600">Assigned To</p>
-                        <p className="text-sm font-medium text-gray-900">
-                          {getAssignedUserName(lead)}
-                        </p>
+                        <button
+                          onClick={() => {
+                            setSelectedLeadForChain(lead);
+                            setShowAssignmentChain(true);
+                            fetchAssignmentChain(lead._id || lead.id);
+                          }}
+                          className="mt-6 w-full bg-white/20 backdrop-blur-sm text-white rounded-lg px-3 py-2 text-xs font-medium hover:bg-white/30 transition-colors flex items-center justify-center gap-1"
+                        >
+                          <Activity size={12} />
+                          Lead Chain
+                        </button>
                       </div>
                     </div>
-                    {lead.lastContact && (
-                      <div className="text-right">
-                        <div className="flex items-center gap-1 text-gray-500">
-                          <Clock size={14} />
-                          <span className="text-xs">Last Contact</span>
+                  </div>
+
+                  {/* Lead Details Section */}
+                  <div className="p-4 bg-white">
+                    {/* Property and Budget Info */}
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-3 rounded-lg border border-purple-200">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Building2 size={16} className="text-purple-600" />
+                          <span className="text-xs font-medium text-purple-700">Property</span>
                         </div>
-                        <p className="text-sm font-medium text-gray-900">
-                          {new Date(lead.lastContact).toLocaleDateString()}
-                        </p>
+                        <p className="text-sm font-semibold text-gray-900">{lead.property || 'Not specified'}</p>
+                      </div>
+                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-3 rounded-lg border border-green-200">
+                        <div className="flex items-center gap-2 mb-1">
+                          <DollarSign size={16} className="text-green-600" />
+                          <span className="text-xs font-medium text-green-700">Budget</span>
+                        </div>
+                        <p className="text-sm font-semibold text-gray-900">{lead.budget || 'Not specified'}</p>
+                      </div>
+                    </div>
+
+                    {/* Assignment and Contact Info */}
+                    <div className="space-y-3 mb-4">
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <UserCheck size={16} className="text-gray-600" />
+                          <div>
+                            <p className="text-xs text-gray-600">Assigned To</p>
+                            <p className="text-sm font-medium text-gray-900">
+                              {getAssignedUserName(lead)}
+                            </p>
+                          </div>
+                        </div>
+                        {lead.lastContact && (
+                          <div className="text-right">
+                            <div className="flex items-center gap-1 text-gray-500">
+                              <Clock size={14} />
+                              <span className="text-xs">Last Contact</span>
+                            </div>
+                            <p className="text-sm font-medium text-gray-900">
+                              {new Date(lead.lastContact).toLocaleDateString()}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Enhanced Action Buttons */}
+                    <div className={`grid ${currentUserRole === 'bd' || currentUserRole === 'employee' ? 'grid-cols-4' : 'grid-cols-4'} gap-2`}>
+                      {(() => {
+                        const isLeadCreator = lead.createdBy === currentUserId;
+                        const isAssignedToUser = String(lead.assignedTo) === String(currentUserId);
+
+                        // Boss who created lead - Show Call History (not Call button)
+                        if ((currentUserRole === 'boss' || currentUserRole === 'super-admin') && isLeadCreator && !isAssignedToUser) {
+                          return (
+                            <button
+                              onClick={() => {
+                                setSelectedLead(lead);
+                                setShowLeadDetails(true);
+                                setTimeout(() => {
+                                  const callHistorySection = document.querySelector('.lead-details-call-history-section');
+                                  if (callHistorySection) {
+                                    callHistorySection.scrollIntoView({ behavior: 'smooth' });
+                                  }
+                                }, 300);
+                              }}
+                              className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                              title="View Call History"
+                            >
+                              <Clock size={18} />
+                              <span className="text-xs mt-1 font-medium">Call History</span>
+                            </button>
+                          );
+                        }
+
+                        // HOD who created lead and forwarded to BD/TL - Show Call History (not Call button)
+                        if (currentUserRole === 'hod' && isLeadCreator && isAssignedToUser && lead.assignedTo !== currentUserId) {
+                          return (
+                            <button
+                              onClick={() => {
+                                setSelectedLead(lead);
+                                setShowLeadDetails(true);
+                                setTimeout(() => {
+                                  const callHistorySection = document.querySelector('.lead-details-call-history-section');
+                                  if (callHistorySection) {
+                                    callHistorySection.scrollIntoView({ behavior: 'smooth' });
+                                  }
+                                }, 300);
+                              }}
+                              className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                              title="View Call History"
+                            >
+                              <Clock size={18} />
+                              <span className="text-xs mt-1 font-medium">Call History</span>
+                            </button>
+                          );
+                        }
+
+                        // Assigned user with pending work - Show Call button
+                        if (isAssignedToUser && (!lead.workProgress || lead.workProgress === 'pending')) {
+                          return (
+                            <button
+                              onClick={() => handleCallLead(lead.phone, lead._id, lead.name)}
+                              className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200 shadow-md hover:shadow-lg"
+                            >
+                              <PhoneCall size={18} />
+                              <span className="text-xs mt-1 font-medium">Call</span>
+                            </button>
+                          );
+                        }
+
+                        // Assigned user working on lead - Show Call History
+                        if (isAssignedToUser && lead.workProgress && lead.workProgress !== 'pending') {
+                          return (
+                            <button
+                              onClick={() => {
+                                setSelectedLead(lead);
+                                setShowLeadDetails(true);
+                                setTimeout(() => {
+                                  const callHistorySection = document.querySelector('.lead-details-call-history-section');
+                                  if (callHistorySection) {
+                                    callHistorySection.scrollIntoView({ behavior: 'smooth' });
+                                  }
+                                }, 300);
+                              }}
+                              className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                              title="View Call History"
+                            >
+                              <Clock size={18} />
+                              <span className="text-xs mt-1 font-medium">Call History</span>
+                            </button>
+                          );
+                        }
+
+                        // Default Call button for other cases
+                        return (
+                          <button
+                            onClick={() => handleCallLead(lead.phone, lead._id, lead.name)}
+                            className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200 shadow-md hover:shadow-lg"
+                          >
+                            <PhoneCall size={18} />
+                            <span className="text-xs mt-1 font-medium">Call</span>
+                          </button>
+                        );
+                      })()}
+                      {/* WhatsApp button for assigned leads */}
+                      {isWhatsAppButtonVisible(lead) && (
+                        <button
+                          onClick={() => handleWhatsAppChat(lead)}
+                          className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-lg hover:from-green-600 hover:to-teal-600 transition-all duration-200 shadow-md hover:shadow-lg"
+                          title={currentUserRole === 'bd' || currentUserRole === 'employee' ? "WhatsApp (Your Lead)" : "WhatsApp (Forwarded Lead)"}
+                        >
+                          <MessageCircle size={18} />
+                          <span className="text-xs mt-1 font-medium">WhatsApp</span>
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleFollowUp(lead)}
+                        className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-all duration-200 shadow-md hover:shadow-lg"
+                      >
+                        <MessageSquare size={18} />
+                        <span className="text-xs mt-1 font-medium">Follow-up</span>
+                      </button>
+                      <button
+                        onClick={() => handleLeadAnalytics(lead)}
+                        className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                        title="Lead Performance & Analytics"
+                      >
+                        <TrendingUp size={18} />
+                        <span className="text-xs mt-1 font-medium">Analytics</span>
+                      </button>
+                      {canForwardLead(lead) && (
+                        <button
+                          onClick={() => handleForwardClick(lead)}
+                          disabled={forwardingLead === lead._id}
+                          className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Forward"
+                        >
+                          <ForwardIcon size={18} />
+                          <span className="text-xs mt-1 font-medium">
+                            {forwardingLead === lead._id ? "..." : "Forward"}
+                          </span>
+                        </button>
+                      )}
+
+                      {canForwardPatchLead(lead) && (
+                        <button
+                          onClick={() => {
+                            setSelectedLeadForForwardPatch(lead);
+                            setSelectedPatchEmployeeId('');
+                            setForwardPatchReason('');
+                            setShowForwardPatchDropdown(true);
+                          }}
+                          disabled={patchingLead === lead._id}
+                          className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-orange-600 to-rose-600 text-white rounded-lg hover:from-orange-700 hover:to-rose-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Forward Patch"
+                        >
+                          <ForwardIcon size={18} />
+                          <span className="text-xs mt-1 font-medium">
+                            {patchingLead === lead._id ? "..." : "Patch"}
+                          </span>
+                        </button>
+                      )}
+
+                      {canForwardSwapLead(lead) && (
+                        <button
+                          onClick={() => {
+                            setSelectedLeadForForwardSwap(lead);
+                            setSelectedSwapBdId('');
+                            setSwapBdLeads([]);
+                            setSelectedSwapLeadId('');
+                            setForwardSwapReason('');
+                            setShowForwardSwapDropdown(true);
+                          }}
+                          disabled={patchingLead === lead._id}
+                          className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Swap"
+                        >
+                          <ForwardIcon size={18} />
+                          <span className="text-xs mt-1 font-medium">
+                            {patchingLead === lead._id ? "..." : "Swap"}
+                          </span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Status Update Button - Only for Employees */}
+                    {(currentUserRole === 'bd' || currentUserRole === 'employee' || currentUserRole === 'sales_head' || currentUserRole === 'team-leader') && (
+                      <div className="mt-3 pt-3 border-t border-gray-100">
+                        <button
+                          onClick={() => handleStatusUpdate(lead)}
+                          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg hover:from-amber-600 hover:to-orange-600 transition-all duration-200 shadow-md hover:shadow-lg"
+                        >
+                          <Edit size={18} />
+                          <span className="text-sm font-medium">Update Status</span>
+                        </button>
                       </div>
                     )}
+
+                    {/* Additional Actions Row */}
+                    <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100">
+                      <button
+                        onClick={() => {
+                          window.location.href = `tel:${lead.phone}`;
+                        }}
+                        className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
+                      >
+                        <Phone size={14} />
+                        <span>{lead.phone}</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (lead.location) {
+                            window.open(`https://maps.google.com/?q=${encodeURIComponent(lead.location)}`, '_blank');
+                          }
+                        }}
+                        className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
+                      >
+                        <MapPin size={14} />
+                        <span>{lead.location}</span>
+                      </button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+
+            {/* No Results */}
+            {filteredLeads.length === 0 && !loading && (
+              <div className="text-center py-8">
+                <div className="text-gray-400 mb-2">
+                  <Users size={48} className="mx-auto" />
+                </div>
+                <p className="text-gray-500">No leads found</p>
+                <p className="text-sm text-gray-400">Try adjusting your search or filters</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* User Search Modal */}
+        <UserSearchModal
+          isOpen={showUserSearch}
+          onClose={() => setShowUserSearch(false)}
+          onUserSelect={handleUserSelect}
+          currentUserRole={currentUserRole}
+        />
+
+        {/* Modals */}
+        {showFollowUp && selectedLead && (
+          <FollowUpModal
+            isOpen={showFollowUp}
+            onClose={() => setShowFollowUp(false)}
+            lead={selectedLead}
+            userRole={currentUserRole}
+            onSuccess={() => {
+              setShowFollowUp(false);
+              fetchLeads();
+            }}
+          />
+        )}
+
+        {showCreateLead && (
+          <CreateLeadFormMobile
+            isOpen={showCreateLead}
+            onClose={() => setShowCreateLead(false)}
+            onSuccess={() => {
+              setShowCreateLead(false);
+              fetchLeads();
+            }}
+            onCancel={() => setShowCreateLead(false)}
+          />
+        )}
+
+        {showLeadDetails && selectedLead && (
+          <Dialog
+            open={showLeadDetails}
+            onOpenChange={(open) => {
+              setShowLeadDetails(open);
+              if (open && selectedLead?._id) {
+                // Fetch call history when modal opens
+                console.log('📞 Opening lead details modal, fetching call history for leadId:', selectedLead._id);
+                setTimeout(() => {
+                  fetchLeadCallHistory(selectedLead._id);
+                }, 200);
+              } else {
+                // Clear call history when modal closes
+                setCallHistory([]);
+              }
+            }}
+          >
+            <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Lead Details</DialogTitle>
+                <DialogDescription>
+                  View detailed information about this lead
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span className="text-white text-xl font-bold">{getInitials(selectedLead.name)}</span>
+                  </div>
+                  <h3 className="font-semibold text-gray-900">{selectedLead.name}</h3>
+                  <p className="text-sm text-gray-500">{selectedLead.email}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600">Phone</p>
+                    <p className="font-medium">{selectedLead.phone}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Location</p>
+                    <p className="font-medium">{selectedLead.location}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Property</p>
+                    <p className="font-medium">{selectedLead.property}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Budget</p>
+                    <p className="font-medium">{selectedLead.budget}</p>
                   </div>
                 </div>
 
-                {/* Enhanced Action Buttons */}
-                <div className={`grid ${currentUserRole === 'bd' || currentUserRole === 'employee' ? 'grid-cols-4' : 'grid-cols-4'} gap-2`}>
+                <div className="flex gap-2">
                   {(() => {
-                    const isLeadCreator = lead.createdBy === currentUserId;
-                    const isAssignedToUser = String(lead.assignedTo) === String(currentUserId);
-                    
+                    const isLeadCreator = selectedLead.createdBy === currentUserId;
+                    const isAssignedToUser = String(selectedLead.assignedTo) === String(currentUserId);
+
                     // Boss who created lead - Show Call History (not Call button)
                     if ((currentUserRole === 'boss' || currentUserRole === 'super-admin') && isLeadCreator && !isAssignedToUser) {
                       return (
                         <button
                           onClick={() => {
-                            setSelectedLead(lead);
-                            setShowLeadDetails(true);
                             setTimeout(() => {
                               const callHistorySection = document.querySelector('.lead-details-call-history-section');
                               if (callHistorySection) {
                                 callHistorySection.scrollIntoView({ behavior: 'smooth' });
                               }
-                            }, 300);
+                            }, 100);
                           }}
-                          className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
                           title="View Call History"
                         >
-                          <Clock size={18} />
-                          <span className="text-xs mt-1 font-medium">Call History</span>
+                          <Clock size={16} />
+                          <span>Call History</span>
                         </button>
                       );
                     }
-                    
+
                     // HOD who created lead and forwarded to BD/TL - Show Call History (not Call button)
-                    if (currentUserRole === 'hod' && isLeadCreator && isAssignedToUser && lead.assignedTo !== currentUserId) {
+                    if (currentUserRole === 'hod' && isLeadCreator && isAssignedToUser && selectedLead.assignedTo !== currentUserId) {
                       return (
                         <button
                           onClick={() => {
-                            setSelectedLead(lead);
-                            setShowLeadDetails(true);
                             setTimeout(() => {
                               const callHistorySection = document.querySelector('.lead-details-call-history-section');
                               if (callHistorySection) {
                                 callHistorySection.scrollIntoView({ behavior: 'smooth' });
                               }
-                            }, 300);
+                            }, 100);
                           }}
-                          className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
                           title="View Call History"
                         >
-                          <Clock size={18} />
-                          <span className="text-xs mt-1 font-medium">Call History</span>
+                          <Clock size={16} />
+                          <span>Call History</span>
                         </button>
                       );
                     }
-                    
+
                     // Assigned user with pending work - Show Call button
-                    if (isAssignedToUser && (!lead.workProgress || lead.workProgress === 'pending')) {
+                    if (isAssignedToUser && (!selectedLead.workProgress || selectedLead.workProgress === 'pending')) {
                       return (
                         <button
-                          onClick={() => handleCallLead(lead.phone, lead._id, lead.name)}
-                          className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200 shadow-md hover:shadow-lg"
+                          onClick={() => handleCallLead(selectedLead.phone, selectedLead._id, selectedLead.name)}
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                         >
-                          <PhoneCall size={18} />
-                          <span className="text-xs mt-1 font-medium">Call</span>
+                          <PhoneCall size={16} />
+                          <span>Call</span>
                         </button>
                       );
                     }
-                    
+
                     // Assigned user working on lead - Show Call History
-                    if (isAssignedToUser && lead.workProgress && lead.workProgress !== 'pending') {
+                    if (isAssignedToUser && selectedLead.workProgress && selectedLead.workProgress !== 'pending') {
                       return (
                         <button
                           onClick={() => {
-                            setSelectedLead(lead);
-                            setShowLeadDetails(true);
                             setTimeout(() => {
                               const callHistorySection = document.querySelector('.lead-details-call-history-section');
                               if (callHistorySection) {
                                 callHistorySection.scrollIntoView({ behavior: 'smooth' });
                               }
-                            }, 300);
+                            }, 100);
                           }}
-                          className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
                           title="View Call History"
                         >
-                          <Clock size={18} />
-                          <span className="text-xs mt-1 font-medium">Call History</span>
+                          <Clock size={16} />
+                          <span>Call History</span>
                         </button>
                       );
                     }
-                    
+
                     // Default Call button for other cases
-                    return (
-                      <button
-                        onClick={() => handleCallLead(lead.phone, lead._id, lead.name)}
-                        className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200 shadow-md hover:shadow-lg"
-                      >
-                        <PhoneCall size={18} />
-                        <span className="text-xs mt-1 font-medium">Call</span>
-                      </button>
-                    );
-                  })()}
-                  {/* WhatsApp button for assigned leads */}
-                  {isWhatsAppButtonVisible(lead) && (
-                    <button
-                      onClick={() => handleWhatsAppChat(lead)}
-                      className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-lg hover:from-green-600 hover:to-teal-600 transition-all duration-200 shadow-md hover:shadow-lg"
-                      title={currentUserRole === 'bd' || currentUserRole === 'employee' ? "WhatsApp (Your Lead)" : "WhatsApp (Forwarded Lead)"}
-                    >
-                      <MessageCircle size={18} />
-                      <span className="text-xs mt-1 font-medium">WhatsApp</span>
-                    </button>
-                  )}
-                  <button
-                    onClick={() => handleFollowUp(lead)}
-                    className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-all duration-200 shadow-md hover:shadow-lg"
-                  >
-                    <MessageSquare size={18} />
-                    <span className="text-xs mt-1 font-medium">Follow-up</span>
-                  </button>
-                  <button
-                    onClick={() => handleLeadAnalytics(lead)}
-                    className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
-                    title="Lead Performance & Analytics"
-                  >
-                    <TrendingUp size={18} />
-                    <span className="text-xs mt-1 font-medium">Analytics</span>
-                  </button>
-                  {canForwardLead(lead) && (
-                    <button
-                      onClick={() => handleForwardClick(lead)}
-                      disabled={forwardingLead === lead._id}
-                      className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Forward"
-                    >
-                      <ForwardIcon size={18} />
-                      <span className="text-xs mt-1 font-medium">
-                        {forwardingLead === lead._id ? "..." : "Forward"}
-                      </span>
-                    </button>
-                  )}
-
-                  {canForwardPatchLead(lead) && (
-                    <button
-                      onClick={() => {
-                        setSelectedLeadForForwardPatch(lead);
-                        setSelectedPatchEmployeeId('');
-                        setForwardPatchReason('');
-                        setShowForwardPatchDropdown(true);
-                      }}
-                      disabled={patchingLead === lead._id}
-                      className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-orange-600 to-rose-600 text-white rounded-lg hover:from-orange-700 hover:to-rose-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Forward Patch"
-                    >
-                      <ForwardIcon size={18} />
-                      <span className="text-xs mt-1 font-medium">
-                        {patchingLead === lead._id ? "..." : "Patch"}
-                      </span>
-                    </button>
-                  )}
-
-                  {canForwardSwapLead(lead) && (
-                    <button
-                      onClick={() => {
-                        setSelectedLeadForForwardSwap(lead);
-                        setSelectedSwapBdId('');
-                        setSwapBdLeads([]);
-                        setSelectedSwapLeadId('');
-                        setForwardSwapReason('');
-                        setShowForwardSwapDropdown(true);
-                      }}
-                      disabled={patchingLead === lead._id}
-                      className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Swap"
-                    >
-                      <ForwardIcon size={18} />
-                      <span className="text-xs mt-1 font-medium">
-                        {patchingLead === lead._id ? "..." : "Swap"}
-                      </span>
-                    </button>
-                  )}
-                </div>
-
-                {/* Status Update Button - Only for Employees */}
-                {(currentUserRole === 'bd' || currentUserRole === 'employee' || currentUserRole === 'sales_head' || currentUserRole === 'team-leader') && (
-                  <div className="mt-3 pt-3 border-t border-gray-100">
-                    <button
-                      onClick={() => handleStatusUpdate(lead)}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg hover:from-amber-600 hover:to-orange-600 transition-all duration-200 shadow-md hover:shadow-lg"
-                    >
-                      <Edit size={18} />
-                      <span className="text-sm font-medium">Update Status</span>
-                    </button>
-                  </div>
-                )}
-
-                {/* Additional Actions Row */}
-                <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100">
-                  <button
-                    onClick={() => {
-                      window.location.href = `tel:${lead.phone}`;
-                    }}
-                    className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
-                  >
-                    <Phone size={14} />
-                    <span>{lead.phone}</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (lead.location) {
-                        window.open(`https://maps.google.com/?q=${encodeURIComponent(lead.location)}`, '_blank');
-                      }
-                    }}
-                    className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
-                  >
-                    <MapPin size={14} />
-                    <span>{lead.location}</span>
-                  </button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-
-        {/* No Results */}
-        {filteredLeads.length === 0 && !loading && (
-          <div className="text-center py-8">
-            <div className="text-gray-400 mb-2">
-              <Users size={48} className="mx-auto" />
-            </div>
-            <p className="text-gray-500">No leads found</p>
-            <p className="text-sm text-gray-400">Try adjusting your search or filters</p>
-          </div>
-        )}
-        </div>
-      )}
-
-      {/* User Search Modal */}
-      <UserSearchModal
-        isOpen={showUserSearch}
-        onClose={() => setShowUserSearch(false)}
-        onUserSelect={handleUserSelect}
-        currentUserRole={currentUserRole}
-      />
-
-      {/* Modals */}
-      {showFollowUp && selectedLead && (
-        <FollowUpModal
-          isOpen={showFollowUp}
-          onClose={() => setShowFollowUp(false)}
-          lead={selectedLead}
-          userRole={currentUserRole}
-          onSuccess={() => {
-            setShowFollowUp(false);
-            fetchLeads();
-          }}
-        />
-      )}
-
-      {showCreateLead && (
-        <CreateLeadFormMobile
-          isOpen={showCreateLead}
-          onClose={() => setShowCreateLead(false)}
-          onSuccess={() => {
-            setShowCreateLead(false);
-            fetchLeads();
-          }}
-          onCancel={() => setShowCreateLead(false)}
-        />
-      )}
-
-      {showLeadDetails && selectedLead && (
-        <Dialog 
-          open={showLeadDetails} 
-          onOpenChange={(open) => {
-            setShowLeadDetails(open);
-            if (open && selectedLead?._id) {
-              // Fetch call history when modal opens
-              console.log('📞 Opening lead details modal, fetching call history for leadId:', selectedLead._id);
-              setTimeout(() => {
-                fetchLeadCallHistory(selectedLead._id);
-              }, 200);
-            } else {
-              // Clear call history when modal closes
-              setCallHistory([]);
-            }
-          }}
-        >
-          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Lead Details</DialogTitle>
-              <DialogDescription>
-                View detailed information about this lead
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <span className="text-white text-xl font-bold">{getInitials(selectedLead.name)}</span>
-                </div>
-                <h3 className="font-semibold text-gray-900">{selectedLead.name}</h3>
-                <p className="text-sm text-gray-500">{selectedLead.email}</p>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-600">Phone</p>
-                  <p className="font-medium">{selectedLead.phone}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Location</p>
-                  <p className="font-medium">{selectedLead.location}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Property</p>
-                  <p className="font-medium">{selectedLead.property}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Budget</p>
-                  <p className="font-medium">{selectedLead.budget}</p>
-                </div>
-              </div>
-              
-              <div className="flex gap-2">
-                {(() => {
-                  const isLeadCreator = selectedLead.createdBy === currentUserId;
-                  const isAssignedToUser = String(selectedLead.assignedTo) === String(currentUserId);
-                  
-                  // Boss who created lead - Show Call History (not Call button)
-                  if ((currentUserRole === 'boss' || currentUserRole === 'super-admin') && isLeadCreator && !isAssignedToUser) {
-                    return (
-                      <button
-                        onClick={() => {
-                          setTimeout(() => {
-                            const callHistorySection = document.querySelector('.lead-details-call-history-section');
-                            if (callHistorySection) {
-                              callHistorySection.scrollIntoView({ behavior: 'smooth' });
-                            }
-                          }, 100);
-                        }}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
-                        title="View Call History"
-                      >
-                        <Clock size={16} />
-                        <span>Call History</span>
-                      </button>
-                    );
-                  }
-                  
-                  // HOD who created lead and forwarded to BD/TL - Show Call History (not Call button)
-                  if (currentUserRole === 'hod' && isLeadCreator && isAssignedToUser && selectedLead.assignedTo !== currentUserId) {
-                    return (
-                      <button
-                        onClick={() => {
-                          setTimeout(() => {
-                            const callHistorySection = document.querySelector('.lead-details-call-history-section');
-                            if (callHistorySection) {
-                              callHistorySection.scrollIntoView({ behavior: 'smooth' });
-                            }
-                          }, 100);
-                        }}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
-                        title="View Call History"
-                      >
-                        <Clock size={16} />
-                        <span>Call History</span>
-                      </button>
-                    );
-                  }
-                  
-                  // Assigned user with pending work - Show Call button
-                  if (isAssignedToUser && (!selectedLead.workProgress || selectedLead.workProgress === 'pending')) {
                     return (
                       <button
                         onClick={() => handleCallLead(selectedLead.phone, selectedLead._id, selectedLead.name)}
@@ -2455,717 +2484,723 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                         <span>Call</span>
                       </button>
                     );
-                  }
-                  
-                  // Assigned user working on lead - Show Call History
-                  if (isAssignedToUser && selectedLead.workProgress && selectedLead.workProgress !== 'pending') {
-                    return (
-                      <button
-                        onClick={() => {
-                          setTimeout(() => {
-                            const callHistorySection = document.querySelector('.lead-details-call-history-section');
-                            if (callHistorySection) {
-                              callHistorySection.scrollIntoView({ behavior: 'smooth' });
-                            }
-                          }, 100);
-                        }}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
-                        title="View Call History"
-                      >
-                        <Clock size={16} />
-                        <span>Call History</span>
-                      </button>
-                    );
-                  }
-                  
-                  // Default Call button for other cases
-                  return (
-                    <button
-                      onClick={() => handleCallLead(selectedLead.phone, selectedLead._id, selectedLead.name)}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                    >
-                      <PhoneCall size={16} />
-                      <span>Call</span>
-                    </button>
-                  );
-                })()}
-                <button
-                  onClick={() => {
-                    setShowLeadDetails(false);
-                    handleFollowUp(selectedLead);
-                  }}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <MessageSquare size={16} />
-                  <span>Follow-up</span>
-                </button>
-              </div>
-
-              {/* Call History Section */}
-              <div className="border-t pt-4 mt-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                    <PhoneCall size={16} className="text-green-600" />
-                    Call History
-                  </h4>
-                  {loadingCallHistory && (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                  )}
+                  })()}
+                  <button
+                    onClick={() => {
+                      setShowLeadDetails(false);
+                      handleFollowUp(selectedLead);
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <MessageSquare size={16} />
+                    <span>Follow-up</span>
+                  </button>
                 </div>
-                
-                {!loadingCallHistory && callHistory.length > 0 ? (
-                  <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {callHistory.map((call, index) => (
-                      <div 
-                        key={call._id || index} 
-                        className="bg-gray-50 rounded-lg p-3 border border-gray-200"
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <PhoneCall size={14} className="text-green-600" />
-                              <span className="text-sm font-medium text-gray-900">
-                                {call.userId?.name || 'Unknown User'}
-                              </span>
-                              {call.userId?.role && (
-                                <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
-                                  {call.userId.role.toUpperCase()}
+
+                {/* Call History Section */}
+                <div className="border-t pt-4 mt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                      <PhoneCall size={16} className="text-green-600" />
+                      Call History
+                    </h4>
+                    {loadingCallHistory && (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    )}
+                  </div>
+
+                  {!loadingCallHistory && callHistory.length > 0 ? (
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {callHistory.map((call, index) => (
+                        <div
+                          key={call._id || index}
+                          className="bg-gray-50 rounded-lg p-3 border border-gray-200"
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <PhoneCall size={14} className="text-green-600" />
+                                <span className="text-sm font-medium text-gray-900">
+                                  {call.userId?.name || 'Unknown User'}
                                 </span>
-                              )}
+                                {call.userId?.role && (
+                                  <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
+                                    {call.userId.role.toUpperCase()}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-gray-500">{call.phone}</p>
                             </div>
-                            <p className="text-xs text-gray-500">{call.phone}</p>
-                          </div>
-                          <div className="text-right">
-                            <span className={`text-xs px-2 py-0.5 rounded ${
-                              call.status === 'completed' 
-                                ? 'bg-green-100 text-green-700' 
+                            <div className="text-right">
+                              <span className={`text-xs px-2 py-0.5 rounded ${call.status === 'completed'
+                                ? 'bg-green-100 text-green-700'
                                 : call.status === 'missed'
-                                ? 'bg-red-100 text-red-700'
-                                : 'bg-gray-100 text-gray-700'
-                            }`}>
-                              {call.status}
-                            </span>
+                                  ? 'bg-red-100 text-red-700'
+                                  : 'bg-gray-100 text-gray-700'
+                                }`}>
+                                {call.status}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-center justify-between text-xs text-gray-600">
-                          <div className="flex items-center gap-3">
-                            <span className="flex items-center gap-1">
-                              <Clock size={12} />
-                              {formatDuration(call.duration)}
-                            </span>
+                          <div className="flex items-center justify-between text-xs text-gray-600">
+                            <div className="flex items-center gap-3">
+                              <span className="flex items-center gap-1">
+                                <Clock size={12} />
+                                {formatDuration(call.duration)}
+                              </span>
+                              <span>
+                                {new Date(call.callDate || call.createdAt).toLocaleDateString('en-IN', {
+                                  day: '2-digit',
+                                  month: 'short',
+                                  year: 'numeric'
+                                })}
+                              </span>
+                            </div>
                             <span>
-                              {new Date(call.callDate || call.createdAt).toLocaleDateString('en-IN', {
-                                day: '2-digit',
-                                month: 'short',
-                                year: 'numeric'
+                              {new Date(call.callDate || call.createdAt).toLocaleTimeString('en-IN', {
+                                hour: '2-digit',
+                                minute: '2-digit'
                               })}
                             </span>
                           </div>
-                          <span>
-                            {new Date(call.callDate || call.createdAt).toLocaleTimeString('en-IN', {
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : !loadingCallHistory ? (
+                    <div className="text-center py-4 text-gray-500 text-sm">
+                      <PhoneCall size={24} className="mx-auto mb-2 text-gray-300" />
+                      <p>No call history available</p>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {/* Lead Analytics Modal */}
+        {showLeadAnalytics && selectedLead && (
+          <Dialog
+            open={showLeadAnalytics}
+            onOpenChange={setShowLeadAnalytics}
+          >
+            <DialogContent className="max-w-lg w-[95vw] max-h-[85vh] overflow-y-auto mx-4">
+              <DialogHeader className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4">
+                <DialogTitle className="flex items-center gap-2 text-base">
+                  <TrendingUp size={18} />
+                  <span className="font-semibold">Lead Analytics - {selectedLead.name}</span>
+                </DialogTitle>
+                <DialogDescription className="text-indigo-100">
+
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="p-4 space-y-4">
+                {/* Lead Overview */}
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                    <Target size={16} className="text-indigo-600" />
+                    Lead Overview
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-gray-600">Status:</span>
+                      <span className="ml-2 font-medium">{selectedLead.status || 'N/A'}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Budget:</span>
+                      <span className="ml-2 font-medium">{selectedLead.budget || 'N/A'}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Property:</span>
+                      <span className="ml-2 font-medium">{selectedLead.property || 'N/A'}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Location:</span>
+                      <span className="ml-2 font-medium">{selectedLead.location || 'N/A'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Performance Metrics */}
+                <div className="bg-blue-50 rounded-lg p-3">
+                  <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                    <Activity size={16} className="text-blue-600" />
+                    Performance Metrics
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Total Calls:</span>
+                      <span className="font-medium">{callHistory.length || 0}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Follow-ups:</span>
+                      <span className="font-medium">0</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Last Contact:</span>
+                      <span className="font-medium">
+                        {selectedLead.lastContact ? new Date(selectedLead.lastContact).toLocaleDateString() : 'Never'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Work Progress:</span>
+                      <span className="font-medium capitalize">{selectedLead.workProgress || 'pending'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Assignment Information */}
+                <div className="bg-purple-50 rounded-lg p-3">
+                  <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                    <Users size={16} className="text-purple-600" />
+                    Assignment Information
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Created By:</span>
+                      <span className="font-medium">
+                        {(() => {
+                          // Try to get assigner from assignment chain first
+                          if (selectedLead.assignmentChain && selectedLead.assignmentChain.length > 0) {
+                            const lastAssignment = selectedLead.assignmentChain[selectedLead.assignmentChain.length - 1];
+                            if (lastAssignment.assignedBy && lastAssignment.assignedBy.name) {
+                              return `${lastAssignment.assignedBy.name} (${lastAssignment.assignedBy.role})`;
+                            }
+                            if (lastAssignment.assignedBy) {
+                              const assigner = assignableUsers.find(u => String(u._id) === String(lastAssignment.assignedBy._id));
+                              if (assigner) {
+                                return `${assigner.name} (${assigner.role})`;
+                              }
+                            }
+                          }
+
+                          // Fallback to creator logic
+                          const currentUser = localStorage.getItem('userName') || localStorage.getItem('name') || 'Boss';
+                          const currentUserRole = localStorage.getItem('userRole');
+
+                          // If current user is the creator, show their name
+                          if (String(selectedLead.createdBy) === localStorage.getItem('userId')) {
+                            return `${currentUser} (${currentUserRole || 'Boss'})`;
+                          }
+
+                          // Try to find creator in assignable users
+                          const creator = assignableUsers.find(u => String(u._id) === String(selectedLead.createdBy));
+                          if (creator) {
+                            return `${creator.name} (${creator.role})`;
+                          }
+
+                          // Check if lead has createdBy object
+                          if (selectedLead.createdBy?.name) {
+                            return selectedLead.createdBy.name;
+                          }
+
+                          // Fallback to Boss if role is boss
+                          if (currentUserRole === 'boss') {
+                            return `${currentUser} (Boss)`;
+                          }
+
+                          return 'Boss';
+                        })()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Assigned To:</span>
+                      <span className="font-medium">
+                        {assignableUsers.find(u => String(u._id) === String(selectedLead.assignedTo))?.name || 'Unassigned'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Created Date:</span>
+                      <span className="font-medium">
+                        {selectedLead.createdAt ? new Date(selectedLead.createdAt).toLocaleDateString() : 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Insights */}
+                <div className="bg-green-50 rounded-lg p-3">
+                  <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                    <Award size={16} className="text-green-600" />
+                    Action Insights
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle size={14} className="text-green-600" />
+                      <span>Lead is actively being worked on</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <PhoneCall size={14} className="text-blue-600" />
+                      <span>Regular follow-up recommended</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <TrendingUp size={14} className="text-purple-600" />
+                      <span>High conversion potential</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2 p-4 border-t">
+                <button
+                  onClick={() => setShowLeadAnalytics(false)}
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200 font-medium text-sm"
+                >
+                  <X size={14} />
+                  <span>Close</span>
+                </button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {showForwardPatchDropdown && selectedLeadForForwardPatch && (
+          <Dialog open={showForwardPatchDropdown} onOpenChange={setShowForwardPatchDropdown}>
+            <DialogContent className="max-w-sm w-[95vw] max-h-[85vh] overflow-y-auto mx-4">
+              <DialogHeader className="bg-gradient-to-r from-orange-600 to-rose-600 text-white p-4">
+                <DialogTitle className="flex items-center gap-2 text-base">
+                  <ForwardIcon size={18} />
+                  <span className="font-semibold">Forward Patch - {selectedLeadForForwardPatch.name}</span>
+                </DialogTitle>
+                <DialogDescription className="text-orange-100">
+                  Switch this forwarded lead to a different BD
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="p-3 space-y-3">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-900">Select New BD</label>
+                  <select
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    value={selectedPatchEmployeeId}
+                    onChange={(e) => setSelectedPatchEmployeeId(e.target.value)}
+                  >
+                    <option value="">Select BD</option>
+                    {assignableUsers
+                      .filter((u) => (u?.role || u?.userRole) === 'bd')
+                      .filter((u) => String(u?._id) !== String(selectedLeadForForwardPatch?.assignedTo))
+                      .map((u) => (
+                        <option key={u._id} value={u._id}>
+                          {u.name} ({u.role})
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-900">Reason (optional)</label>
+                  <input
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    value={forwardPatchReason}
+                    onChange={(e) => setForwardPatchReason(e.target.value)}
+                    placeholder="Reason for switching BD"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-3 border-t">
+                  <button
+                    onClick={() => {
+                      setShowForwardPatchDropdown(false);
+                      setSelectedLeadForForwardPatch(null);
+                      setSelectedPatchEmployeeId('');
+                      setForwardPatchReason('');
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200 font-medium text-sm"
+                  >
+                    <X size={14} />
+                    <span>Cancel</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!selectedLeadForForwardPatch?._id || !selectedPatchEmployeeId) return;
+                      handleForwardPatchLead(
+                        selectedLeadForForwardPatch._id,
+                        selectedPatchEmployeeId,
+                        forwardPatchReason
+                      );
+                    }}
+                    disabled={!selectedPatchEmployeeId || !!patchingLead}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-gradient-to-r from-orange-600 to-rose-600 text-white rounded-lg hover:from-orange-700 hover:to-rose-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg hover:shadow-xl transform hover:scale-105 text-sm"
+                  >
+                    {patchingLead ? (
+                      <>
+                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <ForwardIcon size={14} />
+                        <span>Reassign</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {showForwardSwapDropdown && selectedLeadForForwardSwap && (
+          <Dialog open={showForwardSwapDropdown} onOpenChange={setShowForwardSwapDropdown}>
+            <DialogContent className="max-w-sm w-[95vw] max-h-[85vh] overflow-y-auto mx-4">
+              <DialogHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-4">
+                <DialogTitle className="flex items-center gap-2 text-base">
+                  <ForwardIcon size={18} />
+                  <span className="font-semibold">Swap Lead - {selectedLeadForForwardSwap.name}</span>
+                </DialogTitle>
+                <DialogDescription className="text-purple-100">
+                  Pick a BD and one of their leads to swap assignments
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="p-3 space-y-3">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-900">Select Target BD</label>
+                  <select
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    value={selectedSwapBdId}
+                    onChange={(e) => {
+                      const nextBdId = e.target.value;
+                      setSelectedSwapBdId(nextBdId);
+                      setSelectedSwapLeadId('');
+                      setSwapBdLeads([]);
+                      if (nextBdId) {
+                        fetchBdLeadsForSwap(nextBdId, selectedLeadForForwardSwap?._id);
+                      }
+                    }}
+                  >
+                    <option value="">Select BD</option>
+                    {assignableUsers
+                      .filter((u) => (u?.role || u?.userRole) === 'bd')
+                      .filter((u) => String(u?._id) !== String(selectedLeadForForwardSwap?.assignedTo))
+                      .map((u) => (
+                        <option key={u._id} value={u._id}>
+                          {u.name} ({u.role})
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-900">Select BD Lead to Swap With</label>
+                  {swapBdLeadsLoading ? (
+                    <div className="text-sm text-gray-500">Loading BD leads...</div>
+                  ) : (
+                    <select
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      value={selectedSwapLeadId}
+                      onChange={(e) => setSelectedSwapLeadId(e.target.value)}
+                      disabled={!selectedSwapBdId || swapBdLeads.length === 0}
+                    >
+                      <option value="">Select Lead</option>
+                      {swapBdLeads.map((l) => (
+                        <option key={l._id} value={l._id}>
+                          {l.name} {l.phone ? `(${l.phone})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-900">Reason (optional)</label>
+                  <input
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    value={forwardSwapReason}
+                    onChange={(e) => setForwardSwapReason(e.target.value)}
+                    placeholder="Reason for swapping"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-3 border-t">
+                  <button
+                    onClick={() => {
+                      setShowForwardSwapDropdown(false);
+                      setSelectedLeadForForwardSwap(null);
+                      setSelectedSwapBdId('');
+                      setSwapBdLeads([]);
+                      setSelectedSwapLeadId('');
+                      setForwardSwapReason('');
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200 font-medium text-sm"
+                  >
+                    <X size={14} />
+                    <span>Cancel</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!selectedLeadForForwardSwap?._id || !selectedSwapLeadId) return;
+                      handleForwardSwapLead(selectedLeadForForwardSwap._id, selectedSwapLeadId, forwardSwapReason);
+                    }}
+                    disabled={!selectedSwapLeadId || !!patchingLead}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg hover:shadow-xl transform hover:scale-105 text-sm"
+                  >
+                    {patchingLead ? (
+                      <>
+                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                        <span>Swapping...</span>
+                      </>
+                    ) : (
+                      <>
+                        <ForwardIcon size={14} />
+                        <span>Swap</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {showWhatsAppModal && whatsAppRecipient && (
+          <WhatsAppMessageModal
+            isOpen={showWhatsAppModal}
+            onClose={() => {
+              setShowWhatsAppModal(false);
+              setWhatsAppRecipient(null);
+            }}
+            recipient={whatsAppRecipient}
+            onMessageSent={fetchChatList}
+            onChatDeleted={fetchChatList}
+          />
+        )}
+        {showAssignmentChain && selectedLeadForChain && (
+          <Dialog open={showAssignmentChain} onOpenChange={setShowAssignmentChain}>
+            <DialogContent
+              hideCloseButton
+              className="max-w-md max-h-[90vh] overflow-hidden rounded-2xl p-0 shadow-2xl border border-gray-200"
+            >
+              {/* Header */}
+              <div className="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-5 py-5 text-white">
+                <div className="flex items-center gap-3">
+                  <div className="bg-white/20 p-2 rounded-lg">
+                    <Activity size={18} />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold leading-tight">
+                      Assignment Chain
+                    </h2>
+                    <p className="text-xs text-white/80 truncate max-w-[220px]">
+                      {selectedLeadForChain.name}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Close */}
+                <button
+                  onClick={() => setShowAssignmentChain(false)}
+                  className="absolute top-4 right-4 rounded-full bg-white/20 hover:bg-white/30 p-2 transition"
+                >
+                  <X size={16} strokeWidth={2.5} />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-4 space-y-4 overflow-y-auto max-h-[calc(90vh-90px)]">
+                <div className="flex items-center gap-2 text-gray-800">
+                  <Users size={18} />
+                  <h4 className="font-semibold">Assignment Timeline</h4>
+                </div>
+
+                {/* Loading */}
+                {chainLoading ? (
+                  <div className="flex items-center justify-center py-10 gap-3">
+                    <div className="animate-spin h-6 w-6 rounded-full border-2 border-blue-600 border-t-transparent" />
+                    <span className="text-sm text-gray-500">
+                      Loading assignment chain...
+                    </span>
+                  </div>
+                ) : assignmentChain.length > 0 ? (
+                  <div className="space-y-3">
+                    {assignmentChain.map((chain, index) => (
+                      <div
+                        key={chain.id || index}
+                        className="group flex gap-3 rounded-xl border bg-white p-3 shadow-sm hover:shadow-md transition"
+                      >
+                        {/* Index */}
+                        <div
+                          className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold text-white ${index === 0 ? "bg-green-600" : "bg-blue-600"
+                            }`}
+                        >
+                          {index + 1}
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 space-y-1">
+                          <div className="flex justify-between items-center">
+                            <p className="font-medium text-gray-900">
+                              {chain.assignedBy?.name || chain.assignedByUser?.name || chain.forwardedBy?.name || chain.name || 'Unknown'}
+                            </p>
+                            <span className="text-[11px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                              {chain.assignedBy?.role || chain.assignedByUser?.role || chain.forwardedBy?.role || chain.role || 'User'}
+                            </span>
+                          </div>
+
+                          {/* Show action type */}
+                          <p className="text-xs text-gray-600 font-medium">
+                            {chain.status === 'forwarded' ? (
+                              <span className="text-blue-600">
+                                <ForwardIcon size={10} className="inline mr-1" />
+                                Forwarded by {chain.assignedBy?.name || chain.assignedByUser?.name || 'Unknown'}
+                              </span>
+                            ) : chain.status === 'assigned' ? (
+                              <span className="text-green-600">
+                                <UserCheck size={10} className="inline mr-1" />
+                                Patched by {chain.assignedBy?.name || chain.assignedByUser?.name || 'Unknown'}
+                              </span>
+                            ) : (
+                              <span className="text-gray-600">
+                                Action by {chain.assignedBy?.name || chain.assignedByUser?.name || 'Unknown'}
+                              </span>
+                            )}
+                          </p>
+
+                          {chain.assignedTo ? (
+                            <p className="text-xs text-gray-600">
+                              Assigned to{" "}
+                              <span className="font-medium">
+                                {chain.assignedTo}
+                              </span>{" "}
+                              ({chain.assignedToRole})
+                            </p>
+                          ) : (
+                            <p className="text-xs text-green-600 font-medium">
+                              Currently Assigned
+                            </p>
+                          )}
+
+                          <p className="text-[11px] text-gray-400">
+                            {new Date(chain.assignedAt).toLocaleDateString()} •{" "}
+                            {new Date(chain.assignedAt).toLocaleTimeString()}
+                          </p>
+
+                          {chain.notes && (
+                            <p className="text-xs italic text-gray-500 bg-gray-50 rounded-md px-2 py-1">
+                              {chain.notes}
+                            </p>
+                          )}
                         </div>
                       </div>
                     ))}
                   </div>
-                ) : !loadingCallHistory ? (
-                  <div className="text-center py-4 text-gray-500 text-sm">
-                    <PhoneCall size={24} className="mx-auto mb-2 text-gray-300" />
-                    <p>No call history available</p>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {/* Lead Analytics Modal */}
-      {showLeadAnalytics && selectedLead && (
-        <Dialog 
-          open={showLeadAnalytics} 
-          onOpenChange={setShowLeadAnalytics}
-        >
-          <DialogContent className="max-w-lg w-[95vw] max-h-[85vh] overflow-y-auto mx-4">
-            <DialogHeader className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4">
-              <DialogTitle className="flex items-center gap-2 text-base">
-                <TrendingUp size={18} />
-                <span className="font-semibold">Lead Analytics - {selectedLead.name}</span>
-              </DialogTitle>
-              <DialogDescription className="text-indigo-100">
-               
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="p-4 space-y-4">
-              {/* Lead Overview */}
-              <div className="bg-gray-50 rounded-lg p-3">
-                <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                  <Target size={16} className="text-indigo-600" />
-                  Lead Overview
-                </h4>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>
-                    <span className="text-gray-600">Status:</span>
-                    <span className="ml-2 font-medium">{selectedLead.status || 'N/A'}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Budget:</span>
-                    <span className="ml-2 font-medium">{selectedLead.budget || 'N/A'}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Property:</span>
-                    <span className="ml-2 font-medium">{selectedLead.property || 'N/A'}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Location:</span>
-                    <span className="ml-2 font-medium">{selectedLead.location || 'N/A'}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Performance Metrics */}
-              <div className="bg-blue-50 rounded-lg p-3">
-                <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                  <Activity size={16} className="text-blue-600" />
-                  Performance Metrics
-                </h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Total Calls:</span>
-                    <span className="font-medium">{callHistory.length || 0}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Follow-ups:</span>
-                    <span className="font-medium">0</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Last Contact:</span>
-                    <span className="font-medium">
-                      {selectedLead.lastContact ? new Date(selectedLead.lastContact).toLocaleDateString() : 'Never'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Work Progress:</span>
-                    <span className="font-medium capitalize">{selectedLead.workProgress || 'pending'}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Assignment Information */}
-              <div className="bg-purple-50 rounded-lg p-3">
-                <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                  <Users size={16} className="text-purple-600" />
-                  Assignment Information
-                </h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Created By:</span>
-                    <span className="font-medium">
-                      {(() => {
-                        // Try to get assigner from assignment chain first
-                        if (selectedLead.assignmentChain && selectedLead.assignmentChain.length > 0) {
-                          const lastAssignment = selectedLead.assignmentChain[selectedLead.assignmentChain.length - 1];
-                          if (lastAssignment.assignedBy && lastAssignment.assignedBy.name) {
-                            return `${lastAssignment.assignedBy.name} (${lastAssignment.assignedBy.role})`;
-                          }
-                          if (lastAssignment.assignedBy) {
-                            const assigner = assignableUsers.find(u => String(u._id) === String(lastAssignment.assignedBy._id));
-                            if (assigner) {
-                              return `${assigner.name} (${assigner.role})`;
-                            }
-                          }
-                        }
-                        
-                        // Fallback to creator logic
-                        const currentUser = localStorage.getItem('userName') || localStorage.getItem('name') || 'Boss';
-                        const currentUserRole = localStorage.getItem('userRole');
-                        
-                        // If current user is the creator, show their name
-                        if (String(selectedLead.createdBy) === localStorage.getItem('userId')) {
-                          return `${currentUser} (${currentUserRole || 'Boss'})`;
-                        }
-                        
-                        // Try to find creator in assignable users
-                        const creator = assignableUsers.find(u => String(u._id) === String(selectedLead.createdBy));
-                        if (creator) {
-                          return `${creator.name} (${creator.role})`;
-                        }
-                        
-                        // Check if lead has createdBy object
-                        if (selectedLead.createdBy?.name) {
-                          return selectedLead.createdBy.name;
-                        }
-                        
-                        // Fallback to Boss if role is boss
-                        if (currentUserRole === 'boss') {
-                          return `${currentUser} (Boss)`;
-                        }
-                        
-                        return 'Boss';
-                      })()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Assigned To:</span>
-                    <span className="font-medium">
-                      {assignableUsers.find(u => String(u._id) === String(selectedLead.assignedTo))?.name || 'Unassigned'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Created Date:</span>
-                    <span className="font-medium">
-                      {selectedLead.createdAt ? new Date(selectedLead.createdAt).toLocaleDateString() : 'N/A'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Insights */}
-              <div className="bg-green-50 rounded-lg p-3">
-                <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                  <Award size={16} className="text-green-600" />
-                  Action Insights
-                </h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle size={14} className="text-green-600" />
-                    <span>Lead is actively being worked on</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <PhoneCall size={14} className="text-blue-600" />
-                    <span>Regular follow-up recommended</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <TrendingUp size={14} className="text-purple-600" />
-                    <span>High conversion potential</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-2 p-4 border-t">
-              <button
-                onClick={() => setShowLeadAnalytics(false)}
-                className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200 font-medium text-sm"
-              >
-                <X size={14} />
-                <span>Close</span>
-              </button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-
-    {showForwardPatchDropdown && selectedLeadForForwardPatch && (
-      <Dialog open={showForwardPatchDropdown} onOpenChange={setShowForwardPatchDropdown}>
-        <DialogContent className="max-w-sm w-[95vw] max-h-[85vh] overflow-y-auto mx-4">
-          <DialogHeader className="bg-gradient-to-r from-orange-600 to-rose-600 text-white p-4">
-            <DialogTitle className="flex items-center gap-2 text-base">
-              <ForwardIcon size={18} />
-              <span className="font-semibold">Forward Patch - {selectedLeadForForwardPatch.name}</span>
-            </DialogTitle>
-            <DialogDescription className="text-orange-100">
-              Switch this forwarded lead to a different BD
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="p-3 space-y-3">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-900">Select New BD</label>
-              <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                value={selectedPatchEmployeeId}
-                onChange={(e) => setSelectedPatchEmployeeId(e.target.value)}
-              >
-                <option value="">Select BD</option>
-                {assignableUsers
-                  .filter((u) => (u?.role || u?.userRole) === 'bd')
-                  .filter((u) => String(u?._id) !== String(selectedLeadForForwardPatch?.assignedTo))
-                  .map((u) => (
-                    <option key={u._id} value={u._id}>
-                      {u.name} ({u.role})
-                    </option>
-                  ))}
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-900">Reason (optional)</label>
-              <input
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                value={forwardPatchReason}
-                onChange={(e) => setForwardPatchReason(e.target.value)}
-                placeholder="Reason for switching BD"
-              />
-            </div>
-
-            <div className="flex gap-2 pt-3 border-t">
-              <button
-                onClick={() => {
-                  setShowForwardPatchDropdown(false);
-                  setSelectedLeadForForwardPatch(null);
-                  setSelectedPatchEmployeeId('');
-                  setForwardPatchReason('');
-                }}
-                className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200 font-medium text-sm"
-              >
-                <X size={14} />
-                <span>Cancel</span>
-              </button>
-              <button
-                onClick={() => {
-                  if (!selectedLeadForForwardPatch?._id || !selectedPatchEmployeeId) return;
-                  handleForwardPatchLead(
-                    selectedLeadForForwardPatch._id,
-                    selectedPatchEmployeeId,
-                    forwardPatchReason
-                  );
-                }}
-                disabled={!selectedPatchEmployeeId || !!patchingLead}
-                className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-gradient-to-r from-orange-600 to-rose-600 text-white rounded-lg hover:from-orange-700 hover:to-rose-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg hover:shadow-xl transform hover:scale-105 text-sm"
-              >
-                {patchingLead ? (
-                  <>
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                    <span>Saving...</span>
-                  </>
                 ) : (
-                  <>
-                    <ForwardIcon size={14} />
-                    <span>Reassign</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    )}
-
-    {showForwardSwapDropdown && selectedLeadForForwardSwap && (
-      <Dialog open={showForwardSwapDropdown} onOpenChange={setShowForwardSwapDropdown}>
-        <DialogContent className="max-w-sm w-[95vw] max-h-[85vh] overflow-y-auto mx-4">
-          <DialogHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-4">
-            <DialogTitle className="flex items-center gap-2 text-base">
-              <ForwardIcon size={18} />
-              <span className="font-semibold">Swap Lead - {selectedLeadForForwardSwap.name}</span>
-            </DialogTitle>
-            <DialogDescription className="text-purple-100">
-              Pick a BD and one of their leads to swap assignments
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="p-3 space-y-3">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-900">Select Target BD</label>
-              <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                value={selectedSwapBdId}
-                onChange={(e) => {
-                  const nextBdId = e.target.value;
-                  setSelectedSwapBdId(nextBdId);
-                  setSelectedSwapLeadId('');
-                  setSwapBdLeads([]);
-                  if (nextBdId) {
-                    fetchBdLeadsForSwap(nextBdId, selectedLeadForForwardSwap?._id);
-                  }
-                }}
-              >
-                <option value="">Select BD</option>
-                {assignableUsers
-                  .filter((u) => (u?.role || u?.userRole) === 'bd')
-                  .filter((u) => String(u?._id) !== String(selectedLeadForForwardSwap?.assignedTo))
-                  .map((u) => (
-                    <option key={u._id} value={u._id}>
-                      {u.name} ({u.role})
-                    </option>
-                  ))}
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-900">Select BD Lead to Swap With</label>
-              {swapBdLeadsLoading ? (
-                <div className="text-sm text-gray-500">Loading BD leads...</div>
-              ) : (
-                <select
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                  value={selectedSwapLeadId}
-                  onChange={(e) => setSelectedSwapLeadId(e.target.value)}
-                  disabled={!selectedSwapBdId || swapBdLeads.length === 0}
-                >
-                  <option value="">Select Lead</option>
-                  {swapBdLeads.map((l) => (
-                    <option key={l._id} value={l._id}>
-                      {l.name} {l.phone ? `(${l.phone})` : ''}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-900">Reason (optional)</label>
-              <input
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                value={forwardSwapReason}
-                onChange={(e) => setForwardSwapReason(e.target.value)}
-                placeholder="Reason for swapping"
-              />
-            </div>
-
-            <div className="flex gap-2 pt-3 border-t">
-              <button
-                onClick={() => {
-                  setShowForwardSwapDropdown(false);
-                  setSelectedLeadForForwardSwap(null);
-                  setSelectedSwapBdId('');
-                  setSwapBdLeads([]);
-                  setSelectedSwapLeadId('');
-                  setForwardSwapReason('');
-                }}
-                className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200 font-medium text-sm"
-              >
-                <X size={14} />
-                <span>Cancel</span>
-              </button>
-              <button
-                onClick={() => {
-                  if (!selectedLeadForForwardSwap?._id || !selectedSwapLeadId) return;
-                  handleForwardSwapLead(selectedLeadForForwardSwap._id, selectedSwapLeadId, forwardSwapReason);
-                }}
-                disabled={!selectedSwapLeadId || !!patchingLead}
-                className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg hover:shadow-xl transform hover:scale-105 text-sm"
-              >
-                {patchingLead ? (
-                  <>
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                    <span>Swapping...</span>
-                  </>
-                ) : (
-                  <>
-                    <ForwardIcon size={14} />
-                    <span>Swap</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    )}
-
-      {showWhatsAppModal && whatsAppRecipient && (
-        <WhatsAppMessageModal
-          isOpen={showWhatsAppModal}
-          onClose={() => {
-            setShowWhatsAppModal(false);
-            setWhatsAppRecipient(null);
-          }}
-          recipient={whatsAppRecipient}
-          onMessageSent={fetchChatList}
-          onChatDeleted={fetchChatList}
-        />
-      )}
-    {showAssignmentChain && selectedLeadForChain && (
-        <Dialog open={showAssignmentChain} onOpenChange={setShowAssignmentChain}>
-  <DialogContent
-    hideCloseButton
-    className="max-w-md max-h-[90vh] overflow-hidden rounded-2xl p-0 shadow-2xl border border-gray-200"
-  >
-    {/* Header */}
-    <div className="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-5 py-5 text-white">
-      <div className="flex items-center gap-3">
-        <div className="bg-white/20 p-2 rounded-lg">
-          <Activity size={18} />
-        </div>
-        <div>
-          <h2 className="text-lg font-semibold leading-tight">
-            Assignment Chain
-          </h2>
-          <p className="text-xs text-white/80 truncate max-w-[220px]">
-            {selectedLeadForChain.name}
-          </p>
-        </div>
-      </div>
-
-      {/* Close */}
-      <button
-        onClick={() => setShowAssignmentChain(false)}
-        className="absolute top-4 right-4 rounded-full bg-white/20 hover:bg-white/30 p-2 transition"
-      >
-        <X size={16} strokeWidth={2.5} />
-      </button>
-    </div>
-
-    {/* Body */}
-    <div className="p-4 space-y-4 overflow-y-auto max-h-[calc(90vh-90px)]">
-      <div className="flex items-center gap-2 text-gray-800">
-        <Users size={18} />
-        <h4 className="font-semibold">Assignment Timeline</h4>
-      </div>
-
-      {/* Loading */}
-      {chainLoading ? (
-        <div className="flex items-center justify-center py-10 gap-3">
-          <div className="animate-spin h-6 w-6 rounded-full border-2 border-blue-600 border-t-transparent" />
-          <span className="text-sm text-gray-500">
-            Loading assignment chain...
-          </span>
-        </div>
-      ) : assignmentChain.length > 0 ? (
-        <div className="space-y-3">
-          {assignmentChain.map((chain, index) => (
-            <div
-              key={chain.id || index}
-              className="group flex gap-3 rounded-xl border bg-white p-3 shadow-sm hover:shadow-md transition"
-            >
-              {/* Index */}
-              <div
-                className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold text-white ${
-                  index === 0 ? "bg-green-600" : "bg-blue-600"
-                }`}
-              >
-                {index + 1}
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 space-y-1">
-                <div className="flex justify-between items-center">
-                  <p className="font-medium text-gray-900">
-                    {chain.assignedBy?.name || chain.assignedByUser?.name || chain.forwardedBy?.name || chain.name || 'Unknown'}
-                  </p>
-                  <span className="text-[11px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                    {chain.assignedBy?.role || chain.assignedByUser?.role || chain.forwardedBy?.role || chain.role || 'User'}
-                  </span>
-                </div>
-
-                {/* Show action type */}
-                <p className="text-xs text-gray-600 font-medium">
-                  {chain.status === 'forwarded' ? (
-                    <span className="text-blue-600">
-                      <ForwardIcon size={10} className="inline mr-1" />
-                      Forwarded by {chain.assignedBy?.name || chain.assignedByUser?.name || 'Unknown'}
-                    </span>
-                  ) : chain.status === 'assigned' ? (
-                    <span className="text-green-600">
-                      <UserCheck size={10} className="inline mr-1" />
-                      Patched by {chain.assignedBy?.name || chain.assignedByUser?.name || 'Unknown'}
-                    </span>
-                  ) : (
-                    <span className="text-gray-600">
-                      Action by {chain.assignedBy?.name || chain.assignedByUser?.name || 'Unknown'}
-                    </span>
-                  )}
-                </p>
-
-                {chain.assignedTo ? (
-                  <p className="text-xs text-gray-600">
-                    Assigned to{" "}
-                    <span className="font-medium">
-                      {chain.assignedTo}
-                    </span>{" "}
-                    ({chain.assignedToRole})
-                  </p>
-                ) : (
-                  <p className="text-xs text-green-600 font-medium">
-                    Currently Assigned
-                  </p>
+                  <div className="text-center py-10">
+                    <Users size={40} className="mx-auto text-gray-300 mb-2" />
+                    <p className="text-gray-500 font-medium">
+                      No assignment chain found
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      This lead hasn’t been assigned yet
+                    </p>
+                  </div>
                 )}
 
-                <p className="text-[11px] text-gray-400">
-                  {new Date(chain.assignedAt).toLocaleDateString()} •{" "}
-                  {new Date(chain.assignedAt).toLocaleTimeString()}
-                </p>
+                {/* Actions */}
+                <div className="pt-4 border-t flex gap-3">
 
-                {chain.notes && (
-                  <p className="text-xs italic text-gray-500 bg-gray-50 rounded-md px-2 py-1">
-                    {chain.notes}
-                  </p>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-10">
-          <Users size={40} className="mx-auto text-gray-300 mb-2" />
-          <p className="text-gray-500 font-medium">
-            No assignment chain found
-          </p>
-          <p className="text-xs text-gray-400">
-            This lead hasn’t been assigned yet
-          </p>
-        </div>
-      )}
+                  <button
+                    onClick={() => {
+                      setShowAssignmentChain(false);
+                      handleFollowUp(selectedLeadForChain);
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-2.5 text-white font-medium hover:bg-blue-700 transition"
+                  >
+                    <MessageSquare size={16} />
+                    Follow Up
+                  </button>
+                  {(() => {
+                    const isLeadCreator = selectedLeadForChain.createdBy === currentUserId;
+                    const isAssignedToUser = String(selectedLeadForChain.assignedTo) === String(currentUserId);
 
-      {/* Actions */}
-      <div className="pt-4 border-t flex gap-3">
-    
-        <button
-          onClick={() => {
-            setShowAssignmentChain(false);
-            handleFollowUp(selectedLeadForChain);
-          }}
-          className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-2.5 text-white font-medium hover:bg-blue-700 transition"
-        >
-          <MessageSquare size={16} />
-          Follow Up
-        </button>
-        {(() => {
-                  const isLeadCreator = selectedLeadForChain.createdBy === currentUserId;
-                  const isAssignedToUser = String(selectedLeadForChain.assignedTo) === String(currentUserId);
-                  
-                  // Boss who created lead - Show Call History (not Call button)
-                  if ((currentUserRole === 'boss' || currentUserRole === 'super-admin') && isLeadCreator && !isAssignedToUser) {
-                    return (
-                      <button
-                        onClick={() => {
-                          setShowAssignmentChain(false);
-                          setTimeout(() => {
-                            const callHistorySection = document.querySelector('.lead-details-call-history-section');
-                            if (callHistorySection) {
-                              callHistorySection.scrollIntoView({ behavior: 'smooth' });
-                            }
-                          }, 100);
-                        }}
-                        className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 py-2.5 text-white font-medium hover:from-purple-600 hover:to-purple-700 transition"
-                        title="View Call History"
-                      >
-                        <Clock size={16} />
-                        Call History
-                      </button>
-                    );
-                  }
-                  
-                  // HOD who created lead and forwarded to BD/TL - Show Call History (not Call button)
-                  if (currentUserRole === 'hod' && isLeadCreator && isAssignedToUser && selectedLeadForChain.assignedTo !== currentUserId) {
-                    return (
-                      <button
-                        onClick={() => {
-                          setShowAssignmentChain(false);
-                          setTimeout(() => {
-                            const callHistorySection = document.querySelector('.lead-details-call-history-section');
-                            if (callHistorySection) {
-                              callHistorySection.scrollIntoView({ behavior: 'smooth' });
-                            }
-                          }, 100);
-                        }}
-                        className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 py-2.5 text-white font-medium hover:from-purple-600 hover:to-purple-700 transition"
-                        title="View Call History"
-                      >
-                        <Clock size={16} />
-                        Call History
-                      </button>
-                    );
-                  }
-                  
-                  // Assigned user with pending work - Show Call button
-                  if (isAssignedToUser && (!selectedLeadForChain.workProgress || selectedLeadForChain.workProgress === 'pending')) {
+                    // Boss who created lead - Show Call History (not Call button)
+                    if ((currentUserRole === 'boss' || currentUserRole === 'super-admin') && isLeadCreator && !isAssignedToUser) {
+                      return (
+                        <button
+                          onClick={() => {
+                            setShowAssignmentChain(false);
+                            setTimeout(() => {
+                              const callHistorySection = document.querySelector('.lead-details-call-history-section');
+                              if (callHistorySection) {
+                                callHistorySection.scrollIntoView({ behavior: 'smooth' });
+                              }
+                            }, 100);
+                          }}
+                          className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 py-2.5 text-white font-medium hover:from-purple-600 hover:to-purple-700 transition"
+                          title="View Call History"
+                        >
+                          <Clock size={16} />
+                          Call History
+                        </button>
+                      );
+                    }
+
+                    // HOD who created lead and forwarded to BD/TL - Show Call History (not Call button)
+                    if (currentUserRole === 'hod' && isLeadCreator && isAssignedToUser && selectedLeadForChain.assignedTo !== currentUserId) {
+                      return (
+                        <button
+                          onClick={() => {
+                            setShowAssignmentChain(false);
+                            setTimeout(() => {
+                              const callHistorySection = document.querySelector('.lead-details-call-history-section');
+                              if (callHistorySection) {
+                                callHistorySection.scrollIntoView({ behavior: 'smooth' });
+                              }
+                            }, 100);
+                          }}
+                          className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 py-2.5 text-white font-medium hover:from-purple-600 hover:to-purple-700 transition"
+                          title="View Call History"
+                        >
+                          <Clock size={16} />
+                          Call History
+                        </button>
+                      );
+                    }
+
+                    // Assigned user with pending work - Show Call button
+                    if (isAssignedToUser && (!selectedLeadForChain.workProgress || selectedLeadForChain.workProgress === 'pending')) {
+                      return (
+                        <button
+                          onClick={() => {
+                            setShowAssignmentChain(false);
+                            handleCallLead(
+                              selectedLeadForChain.phone,
+                              selectedLeadForChain._id,
+                              selectedLeadForChain.name
+                            );
+                          }}
+                          className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-green-600 py-2.5 text-white font-medium hover:bg-green-700 transition"
+                        >
+                          <PhoneCall size={16} />
+                          Call Now
+                        </button>
+                      );
+                    }
+
+                    // Assigned user working on lead - Show Call History
+                    if (isAssignedToUser && selectedLeadForChain.workProgress && selectedLeadForChain.workProgress !== 'pending') {
+                      return (
+                        <button
+                          onClick={() => {
+                            setShowAssignmentChain(false);
+                            setTimeout(() => {
+                              const callHistorySection = document.querySelector('.lead-details-call-history-section');
+                              if (callHistorySection) {
+                                callHistorySection.scrollIntoView({ behavior: 'smooth' });
+                              }
+                            }, 100);
+                          }}
+                          className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 py-2.5 text-white font-medium hover:from-purple-600 hover:to-purple-700 transition"
+                          title="View Call History"
+                        >
+                          <Clock size={16} />
+                          Call History
+                        </button>
+                      );
+                    }
+
+                    // Default Call button for other cases
                     return (
                       <button
                         onClick={() => {
@@ -3176,527 +3211,480 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                             selectedLeadForChain.name
                           );
                         }}
-                        className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-green-600 py-2.5 text-white font-medium hover:bg-green-700 transition"
+                        className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-purple-600 py-2.5 text-white font-medium hover:bg-purple-700 transition"
                       >
                         <PhoneCall size={16} />
                         Call Now
                       </button>
                     );
-                  }
-                  
-                  // Assigned user working on lead - Show Call History
-                  if (isAssignedToUser && selectedLeadForChain.workProgress && selectedLeadForChain.workProgress !== 'pending') {
-                    return (
-                      <button
-                        onClick={() => {
-                          setShowAssignmentChain(false);
-                          setTimeout(() => {
-                            const callHistorySection = document.querySelector('.lead-details-call-history-section');
-                            if (callHistorySection) {
-                              callHistorySection.scrollIntoView({ behavior: 'smooth' });
-                            }
-                          }, 100);
-                        }}
-                        className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 py-2.5 text-white font-medium hover:from-purple-600 hover:to-purple-700 transition"
-                        title="View Call History"
-                      >
-                        <Clock size={16} />
-                        Call History
-                      </button>
-                    );
-                  }
-                  
-                  // Default Call button for other cases
-                  return (
-                    <button
-                      onClick={() => {
-                        setShowAssignmentChain(false);
-                        handleCallLead(
-                          selectedLeadForChain.phone,
-                          selectedLeadForChain._id,
-                          selectedLeadForChain.name
-                        );
-                      }}
-                      className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-purple-600 py-2.5 text-white font-medium hover:bg-purple-700 transition"
-                    >
-                      <PhoneCall size={16} />
-                      Call Now
-                    </button>
-                  );
-                })()}
-      </div>
-    </div>
-  </DialogContent>
-</Dialog>
+                  })()}
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
-      )}
-    {showSettings && selectedLeadForSettings && (
-        <LeadAdvancedOptionsMobile
-          isOpen={showSettings}
-          onClose={() => setShowSettings(false)}
-          lead={selectedLeadForSettings}
-          onUpdateStatus={(leadId, newStatus) => {
-            // Update lead status logic here
-            toast({
-              title: "Status Updated",
-              description: `Lead status changed to ${newStatus}`,
-            });
-          }}
-          onCallLead={(phone, leadId, leadName) => {
-            handleCallLead(phone, leadId, leadName);
-            setShowSettings(false);
-          }}
-          onEmailLead={(email) => {
-            window.location.href = `mailto:${email}`;
-          }}
-        />
-      )}
-    {showCallPopup && callData && (
-        <>
-          {console.log('Rendering call popup with data:', callData)}
-        <Dialog open={showCallPopup} onOpenChange={setShowCallPopup}>
-  <DialogContent className="max-w-sm max-h-[90vh] p-0 overflow-hidden rounded-2xl shadow-2xl border border-gray-200">
-    
-    {/* Header */}
-    <div className="relative bg-gradient-to-br from-green-600 via-emerald-600 to-teal-600 px-5 py-6 text-white">
-      <div className="text-center">
-        <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-inner">
-          <PhoneCall size={30} className="animate-pulse" />
-        </div>
-
-        <h3 className="text-lg font-semibold leading-tight">
-          {callData.leadName}
-        </h3>
-        <p className="text-sm text-green-100">{callData.phone}</p>
-
-        <div className="mt-3 flex justify-center">
-          <span
-            className={`rounded-full px-3 py-1 text-xs font-medium text-white ${
-              callStatus === "connecting"
-                ? "bg-yellow-500"
-                : callStatus === "connected"
-                ? "bg-green-500"
-                : "bg-red-500"
-            }`}
-          >
-            {callStatus === "connecting"
-              ? "🔄 Connecting"
-              : callStatus === "connected"
-              ? "📞 Connected"
-              : "📴 Call Ended"}
-          </span>
-        </div>
-      </div>
-    </div>
-
-    {/* Body */}
-    <div className="p-6 text-center">
-      
-      {/* Duration */}
-      <div className="mb-6">
-        <p className="text-3xl font-bold text-gray-900 tracking-wide">
-          {formatDuration(callDuration)}
-        </p>
-        <p className="text-xs uppercase tracking-wider text-gray-500">
-          Call Duration
-        </p>
-      </div>
-
-      {/* Main Action */}
-      <div className="flex justify-center">
-        {callStatus === "connected" ? (
-          <button
-            onClick={endCall}
-            className="flex h-16 w-16 items-center justify-center rounded-full bg-red-600 text-white shadow-xl transition hover:bg-red-700"
-          >
-            <Phone size={24} className="rotate-135" />
-          </button>
-        ) : callStatus === "connecting" ? (
-          <button
-            onClick={endCall}
-            className="flex h-16 w-16 items-center justify-center rounded-full bg-red-600 text-white shadow-xl transition hover:bg-red-700"
-          >
-            <X size={24} />
-          </button>
-        ) : (
-          <div className="space-y-3">
-            <p className="text-sm font-medium text-gray-600">
-              Call Completed
-            </p>
-            <button
-              onClick={() => setShowCallPopup(false)}
-              className="rounded-xl bg-blue-600 px-6 py-2 text-white transition hover:bg-blue-700"
-            >
-              Close
-            </button>
-          </div>
         )}
-      </div>
+        {showSettings && selectedLeadForSettings && (
+          <LeadAdvancedOptionsMobile
+            isOpen={showSettings}
+            onClose={() => setShowSettings(false)}
+            lead={selectedLeadForSettings}
+            onUpdateStatus={(leadId, newStatus) => {
+              // Update lead status logic here
+              toast({
+                title: "Status Updated",
+                description: `Lead status changed to ${newStatus}`,
+              });
+            }}
+            onCallLead={(phone, leadId, leadName) => {
+              handleCallLead(phone, leadId, leadName);
+              setShowSettings(false);
+            }}
+            onEmailLead={(email) => {
+              window.location.href = `mailto:${email}`;
+            }}
+          />
+        )}
+        {showCallPopup && callData && (
+          <>
+            {console.log('Rendering call popup with data:', callData)}
+            <Dialog open={showCallPopup} onOpenChange={setShowCallPopup}>
+              <DialogContent className="max-w-sm max-h-[90vh] p-0 overflow-hidden rounded-2xl shadow-2xl border border-gray-200">
 
-      {/* Controls */}
-      {callStatus === "connected" && (
-        <div className="mt-6 flex justify-center gap-4">
-          <button className="rounded-full bg-gray-100 p-3 transition hover:bg-gray-200">
-            <Mic size={18} className="text-gray-600" />
-          </button>
-          <button className="rounded-full bg-gray-100 p-3 transition hover:bg-gray-200">
-            <Volume2 size={18} className="text-gray-600" />
-          </button>
-          <button className="rounded-full bg-gray-100 p-3 transition hover:bg-gray-200">
-            <Video size={18} className="text-gray-600" />
-          </button>
-        </div>
-      )}
-    </div>
-  </DialogContent>
-</Dialog>
+                {/* Header */}
+                <div className="relative bg-gradient-to-br from-green-600 via-emerald-600 to-teal-600 px-5 py-6 text-white">
+                  <div className="text-center">
+                    <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-inner">
+                      <PhoneCall size={30} className="animate-pulse" />
+                    </div>
 
-        </>
-      )}
-    {showForwardDropdown && selectedLeadForForward && (
-        <Dialog open={showForwardDropdown} onOpenChange={setShowForwardDropdown}>
-          <DialogContent className="max-w-sm w-[95vw] max-h-[85vh] overflow-y-auto mx-4">
-            {!forwardSuccess ? (
-              <>
-                <DialogHeader className="bg-gradient-to-r from-orange-600 to-red-600 text-white p-4">
-                  <DialogTitle className="flex items-center gap-2 text-base">
-                    <ForwardIcon size={18} />
-                    <span className="font-semibold">Forward Lead - {selectedLeadForForward.name}</span>
-                  </DialogTitle>
-                  <DialogDescription className="text-orange-100">
-                   
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <div className="p-3 space-y-3">
-                  {/* Enhanced Lead Summary */}
-                  <div className="bg-gradient-to-r from-orange-50 to-red-50 p-3 rounded-lg border border-orange-200 shadow-sm">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-r from-orange-600 to-red-600 rounded-full flex items-center justify-center shadow-lg">
-                        <span className="text-white text-sm font-bold">{getInitials(selectedLeadForForward.name)}</span>
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900 text-sm">{selectedLeadForForward.name}</h3>
-                        <p className="text-xs text-gray-600 flex items-center gap-1">
-                          <Phone size={10} />
-                          {selectedLeadForForward.phone}
-                        </p>
-                        <p className="text-xs text-gray-500 flex items-center gap-1">
-                          <Mail size={10} />
-                          {selectedLeadForForward.email}
-                        </p>
-                        {selectedLeadForForward.budget && (
-                          <p className="text-xs text-gray-500 flex items-center gap-1">
-                            <DollarSign size={10} />
-                            Budget: {selectedLeadForForward.budget}
-                          </p>
-                        )}
-                      </div>
+                    <h3 className="text-lg font-semibold leading-tight">
+                      {callData.leadName}
+                    </h3>
+                    <p className="text-sm text-green-100">{callData.phone}</p>
+
+                    <div className="mt-3 flex justify-center">
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-medium text-white ${callStatus === "connecting"
+                          ? "bg-yellow-500"
+                          : callStatus === "connected"
+                            ? "bg-green-500"
+                            : "bg-red-500"
+                          }`}
+                      >
+                        {callStatus === "connecting"
+                          ? "🔄 Connecting"
+                          : callStatus === "connected"
+                            ? "📞 Connected"
+                            : "📴 Call Ended"}
+                      </span>
                     </div>
                   </div>
+                </div>
 
-                  {/* Enhanced Employee Selection */}
-                  <div className="space-y-3">
-                    <h4 className="font-semibold text-gray-900 flex items-center gap-2 text-sm">
-                      <Users size={16} className="text-orange-600" />
-                      Select Employee to Forward
-                    </h4>
-                    
-                    {/* Search Input */}
-                    <div className="mb-3">
-                      <div className="relative">
-                        <input
-                          type="text"
-                          placeholder="Search employees..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                        />
-                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                          <Search size={16} className="text-gray-400" />
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {assignableUsers.length > 0 ? (
-                      <div className="space-y-3 max-h-48 overflow-y-auto">
-                        {assignableUsers
-                          .filter(user => {
-                            // Filter employees that can be forwarded to based on role hierarchy
-                            const forwardHierarchy = {
-                              "super-admin": ["head-admin"],
-                              "head-admin": ["sales_head", "employee"],
-                              "boss": ["hod"],
-                              "hod": ["sales_head", "bd"],
-                              "sales_head": ["bd"],
-                              "team-leader": ["bd"],
-                              "admin": ["sales_head"],
-                              "crm_admin": ["hod"],
-                            };
-                            const possibleRoles = forwardHierarchy[currentUserRole];
-                            return possibleRoles && possibleRoles.includes(user.role) && 
-                                   (user.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                                    user.email.toLowerCase().includes(searchQuery.toLowerCase()));
-                          })
-                          .map((employee) => (
-                          <div
-                            key={employee._id}
-                            onClick={() => handleEmployeeSelect(employee)}
-                            className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 transform hover:scale-102 ${
-                              selectedEmployee?._id === employee._id || selectedEmployees.some(emp => emp._id === employee._id)
-                                ? 'bg-gradient-to-r from-orange-100 to-red-100 border-orange-300 ring-2 ring-orange-500 shadow-md'
-                                : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:shadow-sm'
-                            }`}
-                          >
-                            <div className="flex flex-col items-center gap-3">
-                              <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-sm">
-                                <span className="text-white text-sm font-bold">{getInitials(employee.name)}</span>
-                              </div>
-                              <div className="text-center">
-                                <p className="font-medium text-gray-900 text-sm">{employee.name}</p>
-                                <Badge className={`text-xs font-medium shadow-sm mt-1 ${
-                                  (employee.role === 'bd' || employee.role === 'employee') ? 'bg-blue-100 text-blue-800 border-blue-200' :
-                                  employee.role === 'sales_head' ? 'bg-green-100 text-green-800 border-green-200' :
-                                  employee.role === 'team-leader' ? 'bg-purple-100 text-purple-800 border-purple-200' :
-                                  'bg-gray-100 text-gray-800 border-gray-200'
-                                }`}>
-                                  {(employee.role === 'bd' || employee.role === 'employee') ? 'BD' : employee.role.replace('_', ' ').toUpperCase()}
-                                </Badge>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                {/* Body */}
+                <div className="p-6 text-center">
+
+                  {/* Duration */}
+                  <div className="mb-6">
+                    <p className="text-3xl font-bold text-gray-900 tracking-wide">
+                      {formatDuration(callDuration)}
+                    </p>
+                    <p className="text-xs uppercase tracking-wider text-gray-500">
+                      Call Duration
+                    </p>
+                  </div>
+
+                  {/* Main Action */}
+                  <div className="flex justify-center">
+                    {callStatus === "connected" ? (
+                      <button
+                        onClick={endCall}
+                        className="flex h-16 w-16 items-center justify-center rounded-full bg-red-600 text-white shadow-xl transition hover:bg-red-700"
+                      >
+                        <Phone size={24} className="rotate-135" />
+                      </button>
+                    ) : callStatus === "connecting" ? (
+                      <button
+                        onClick={endCall}
+                        className="flex h-16 w-16 items-center justify-center rounded-full bg-red-600 text-white shadow-xl transition hover:bg-red-700"
+                      >
+                        <X size={24} />
+                      </button>
                     ) : (
-                      <div className="text-center py-8">
-                        <Users size={40} className="text-gray-300 mx-auto mb-2" />
-                        <p className="text-gray-500 font-medium">No employees available</p>
-                        <p className="text-xs text-gray-400 mt-1">There are no employees that can be forwarded to</p>
+                      <div className="space-y-3">
+                        <p className="text-sm font-medium text-gray-600">
+                          Call Completed
+                        </p>
+                        <button
+                          onClick={() => setShowCallPopup(false)}
+                          className="rounded-xl bg-blue-600 px-6 py-2 text-white transition hover:bg-blue-700"
+                        >
+                          Close
+                        </button>
                       </div>
                     )}
                   </div>
 
-                  {/* Enhanced Action Buttons */}
-                  <div className="flex gap-2 pt-3 border-t">
-                    <button
-                      onClick={() => {
-                        setShowForwardDropdown(false);
-                        setSelectedEmployee(null);
-                      }}
-                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200 font-medium text-sm"
-                    >
-                      <X size={14} />
-                      <span>Cancel</span>
-                    </button>
-                    <button
-                      onClick={confirmForward}
-                      disabled={!selectedEmployee || forwardingLead}
-                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-lg hover:from-orange-700 hover:to-red-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg hover:shadow-xl transform hover:scale-105 text-sm"
-                    >
-                      {forwardingLead ? (
-                        <>
-                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                          <span>Forwarding...</span>
-                        </>
+                  {/* Controls */}
+                  {callStatus === "connected" && (
+                    <div className="mt-6 flex justify-center gap-4">
+                      <button className="rounded-full bg-gray-100 p-3 transition hover:bg-gray-200">
+                        <Mic size={18} className="text-gray-600" />
+                      </button>
+                      <button className="rounded-full bg-gray-100 p-3 transition hover:bg-gray-200">
+                        <Volume2 size={18} className="text-gray-600" />
+                      </button>
+                      <button className="rounded-full bg-gray-100 p-3 transition hover:bg-gray-200">
+                        <Video size={18} className="text-gray-600" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+
+          </>
+        )}
+        {showForwardDropdown && selectedLeadForForward && (
+          <Dialog open={showForwardDropdown} onOpenChange={setShowForwardDropdown}>
+            <DialogContent className="max-w-sm w-[95vw] max-h-[85vh] overflow-y-auto mx-4">
+              {!forwardSuccess ? (
+                <>
+                  <DialogHeader className="bg-gradient-to-r from-orange-600 to-red-600 text-white p-4">
+                    <DialogTitle className="flex items-center gap-2 text-base">
+                      <ForwardIcon size={18} />
+                      <span className="font-semibold">Forward Lead - {selectedLeadForForward.name}</span>
+                    </DialogTitle>
+                    <DialogDescription className="text-orange-100">
+
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="p-3 space-y-3">
+                    {/* Enhanced Lead Summary */}
+                    <div className="bg-gradient-to-r from-orange-50 to-red-50 p-3 rounded-lg border border-orange-200 shadow-sm">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-r from-orange-600 to-red-600 rounded-full flex items-center justify-center shadow-lg">
+                          <span className="text-white text-sm font-bold">{getInitials(selectedLeadForForward.name)}</span>
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900 text-sm">{selectedLeadForForward.name}</h3>
+                          <p className="text-xs text-gray-600 flex items-center gap-1">
+                            <Phone size={10} />
+                            {selectedLeadForForward.phone}
+                          </p>
+                          <p className="text-xs text-gray-500 flex items-center gap-1">
+                            <Mail size={10} />
+                            {selectedLeadForForward.email}
+                          </p>
+                          {selectedLeadForForward.budget && (
+                            <p className="text-xs text-gray-500 flex items-center gap-1">
+                              <DollarSign size={10} />
+                              Budget: {selectedLeadForForward.budget}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Enhanced Employee Selection */}
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-gray-900 flex items-center gap-2 text-sm">
+                        <Users size={16} className="text-orange-600" />
+                        Select Employee to Forward
+                      </h4>
+
+                      {/* Search Input */}
+                      <div className="mb-3">
+                        <div className="relative">
+                          <input
+                            type="text"
+                            placeholder="Search employees..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                          />
+                          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <Search size={16} className="text-gray-400" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {assignableUsers.length > 0 ? (
+                        <div className="space-y-3 max-h-48 overflow-y-auto">
+                          {assignableUsers
+                            .filter(user => {
+                              // Filter employees that can be forwarded to based on role hierarchy
+                              const forwardHierarchy = {
+                                "super-admin": ["head-admin"],
+                                "head-admin": ["sales_head", "employee"],
+                                "boss": ["hod"],
+                                "hod": ["sales_head", "bd"],
+                                "sales_head": ["bd"],
+                                "team-leader": ["bd"],
+                                "admin": ["sales_head"],
+                                "crm_admin": ["hod"],
+                              };
+                              const possibleRoles = forwardHierarchy[currentUserRole];
+                              return possibleRoles && possibleRoles.includes(user.role) &&
+                                (user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                  user.email.toLowerCase().includes(searchQuery.toLowerCase()));
+                            })
+                            .map((employee) => (
+                              <div
+                                key={employee._id}
+                                onClick={() => handleEmployeeSelect(employee)}
+                                className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 transform hover:scale-102 ${selectedEmployee?._id === employee._id || selectedEmployees.some(emp => emp._id === employee._id)
+                                  ? 'bg-gradient-to-r from-orange-100 to-red-100 border-orange-300 ring-2 ring-orange-500 shadow-md'
+                                  : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:shadow-sm'
+                                  }`}
+                              >
+                                <div className="flex flex-col items-center gap-3">
+                                  <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-sm">
+                                    <span className="text-white text-sm font-bold">{getInitials(employee.name)}</span>
+                                  </div>
+                                  <div className="text-center">
+                                    <p className="font-medium text-gray-900 text-sm">{employee.name}</p>
+                                    <Badge className={`text-xs font-medium shadow-sm mt-1 ${(employee.role === 'bd' || employee.role === 'employee') ? 'bg-blue-100 text-blue-800 border-blue-200' :
+                                      employee.role === 'sales_head' ? 'bg-green-100 text-green-800 border-green-200' :
+                                        employee.role === 'team-leader' ? 'bg-purple-100 text-purple-800 border-purple-200' :
+                                          'bg-gray-100 text-gray-800 border-gray-200'
+                                      }`}>
+                                      {(employee.role === 'bd' || employee.role === 'employee') ? 'BD' : employee.role.replace('_', ' ').toUpperCase()}
+                                    </Badge>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                        </div>
                       ) : (
-                        <>
-                          <ForwardIcon size={14} />
-                          <span>Forward Lead</span>
-                        </>
+                        <div className="text-center py-8">
+                          <Users size={40} className="text-gray-300 mx-auto mb-2" />
+                          <p className="text-gray-500 font-medium">No employees available</p>
+                          <p className="text-xs text-gray-400 mt-1">There are no employees that can be forwarded to</p>
+                        </div>
                       )}
+                    </div>
+
+                    {/* Enhanced Action Buttons */}
+                    <div className="flex gap-2 pt-3 border-t">
+                      <button
+                        onClick={() => {
+                          setShowForwardDropdown(false);
+                          setSelectedEmployee(null);
+                        }}
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200 font-medium text-sm"
+                      >
+                        <X size={14} />
+                        <span>Cancel</span>
+                      </button>
+                      <button
+                        onClick={confirmForward}
+                        disabled={!selectedEmployee || forwardingLead}
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-lg hover:from-orange-700 hover:to-red-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg hover:shadow-xl transform hover:scale-105 text-sm"
+                      >
+                        {forwardingLead ? (
+                          <>
+                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                            <span>Forwarding...</span>
+                          </>
+                        ) : (
+                          <>
+                            <ForwardIcon size={14} />
+                            <span>Forward Lead</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                /* Success State */
+                <div className="p-4 text-center">
+                  <div className="w-14 h-14 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg">
+                    <CheckCircle size={28} className="text-white" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">Lead Forwarded Successfully!</h3>
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-3 rounded-lg border border-green-200 mb-3">
+                    <p className="text-gray-700 font-medium mb-2 text-sm">
+                      <span className="text-orange-600 font-semibold">{forwardedLeadData?.leadName}</span> has been assigned to
+                    </p>
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-6 h-6 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">{getInitials(forwardedLeadData?.employeeName)}</span>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900 text-sm">{forwardedLeadData?.employeeName}</p>
+                        <Badge className="text-xs bg-blue-100 text-blue-800 border-blue-200">
+                          {forwardedLeadData?.employeeRole?.replace('_', ' ').toUpperCase()}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    <p>The assigned employee will be notified</p>
+                    <p className="mt-1">This dialog will close automatically...</p>
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+        )}
+
+
+        {/* Status Update Dialog - Only for Employees */}
+        {showStatusUpdate && selectedLeadForStatus && (
+          <Dialog open={showStatusUpdate} onOpenChange={setShowStatusUpdate}>
+            <DialogContent className="max-w-sm w-[95vw] max-h-[85vh] overflow-y-auto mx-4">
+              <DialogHeader className="bg-gradient-to-r from-amber-500 to-orange-500 text-white p-4">
+                <DialogTitle className="flex items-center gap-2 text-base">
+                  <Edit size={18} />
+                  <span className="font-semibold">Update Lead Status</span>
+
+                </DialogTitle>
+                <DialogDescription className="text-amber-100">
+                  Update the status for {selectedLeadForStatus.name}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="p-3 space-y-3">
+                {/* Lead Summary */}
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-3 rounded-lg border border-amber-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-sm font-bold">{getInitials(selectedLeadForStatus.name)}</span>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 text-sm">{selectedLeadForStatus.name}</h3>
+                      <p className="text-xs text-gray-600">{selectedLeadForStatus.phone}</p>
+                      <p className="text-xs text-gray-500 truncate">{selectedLeadForStatus.email}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status Options */}
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-gray-900 text-sm">Select Work Progress</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => updateLeadStatus('pending')}
+                      className={`p-3 rounded-lg border transition-all duration-200 ${selectedLeadForStatus.workProgress === 'pending'
+                        ? 'bg-yellow-100 border-yellow-200 text-yellow-800'
+                        : 'bg-white border-gray-200 text-gray-700 hover:bg-yellow-50 hover:border-yellow-300'
+                        }`}
+                    >
+                      <div className="text-center">
+                        <span className="text-base mb-1">⏳</span>
+                        <p className="text-xs font-medium">Pending</p>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => updateLeadStatus('inprogress')}
+                      className={`p-3 rounded-lg border transition-all duration-200 ${selectedLeadForStatus.workProgress === 'inprogress'
+                        ? 'bg-blue-100 border-blue-200 text-blue-800'
+                        : 'bg-white border-gray-200 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
+                        }`}
+                    >
+                      <div className="text-center">
+                        <span className="text-base mb-1">🔄</span>
+                        <p className="text-xs font-medium">In Progress</p>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => updateLeadStatus('done')}
+                      className={`p-3 rounded-lg border transition-all duration-200 ${selectedLeadForStatus.workProgress === 'done'
+                        ? 'bg-green-100 border-green-200 text-green-800'
+                        : 'bg-white border-gray-200 text-gray-700 hover:bg-green-50 hover:border-green-300'
+                        }`}
+                    >
+                      <div className="text-center">
+                        <span className="text-base mb-1">✅</span>
+                        <p className="text-xs font-medium">Done</p>
+                      </div>
                     </button>
                   </div>
                 </div>
-              </>
-            ) : (
-              /* Success State */
-              <div className="p-4 text-center">
-                <div className="w-14 h-14 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg">
-                  <CheckCircle size={28} className="text-white" />
-                </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">Lead Forwarded Successfully!</h3>
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-3 rounded-lg border border-green-200 mb-3">
-                  <p className="text-gray-700 font-medium mb-2 text-sm">
-                    <span className="text-orange-600 font-semibold">{forwardedLeadData?.leadName}</span> has been assigned to
-                  </p>
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="w-6 h-6 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">{getInitials(forwardedLeadData?.employeeName)}</span>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900 text-sm">{forwardedLeadData?.employeeName}</p>
-                      <Badge className="text-xs bg-blue-100 text-blue-800 border-blue-200">
-                        {forwardedLeadData?.employeeRole?.replace('_', ' ').toUpperCase()}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-                <div className="text-sm text-gray-500">
-                  <p>The assigned employee will be notified</p>
-                  <p className="mt-1">This dialog will close automatically...</p>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 pt-3 border-t">
+                  <button
+                    onClick={() => setShowStatusUpdate(false)}
+                    className="flex-1 h-10 text-sm bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      updateLeadStatus(selectedLeadForStatus.workProgress);
+                      setShowStatusUpdate(false);
+                    }}
+                    className="flex-1 h-10 bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 text-sm"
+                  >
+                    Update Progress
+                  </button>
                 </div>
               </div>
-            )}
-          </DialogContent>
-        </Dialog>
-      )}
+            </DialogContent>
+          </Dialog>
+        )}
 
-
-    {/* Status Update Dialog - Only for Employees */}
-    {showStatusUpdate && selectedLeadForStatus && (
-      <Dialog open={showStatusUpdate} onOpenChange={setShowStatusUpdate}>
-        <DialogContent className="max-w-sm w-[95vw] max-h-[85vh] overflow-y-auto mx-4">
-          <DialogHeader className="bg-gradient-to-r from-amber-500 to-orange-500 text-white p-4">
-            <DialogTitle className="flex items-center gap-2 text-base">
-              <Edit size={18} />
-              <span className="font-semibold">Update Lead Status</span>
-             
-            </DialogTitle>
-            <DialogDescription className="text-amber-100">
-              Update the status for {selectedLeadForStatus.name}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="p-3 space-y-3">
-            {/* Lead Summary */}
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-3 rounded-lg border border-amber-200">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-bold">{getInitials(selectedLeadForStatus.name)}</span>
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 text-sm">{selectedLeadForStatus.name}</h3>
-                  <p className="text-xs text-gray-600">{selectedLeadForStatus.phone}</p>
-                  <p className="text-xs text-gray-500 truncate">{selectedLeadForStatus.email}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Status Options */}
-            <div className="space-y-2">
-              <h4 className="font-semibold text-gray-900 text-sm">Select Work Progress</h4>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => updateLeadStatus('pending')}
-                  className={`p-3 rounded-lg border transition-all duration-200 ${
-                    selectedLeadForStatus.workProgress === 'pending'
-                      ? 'bg-yellow-100 border-yellow-200 text-yellow-800'
-                      : 'bg-white border-gray-200 text-gray-700 hover:bg-yellow-50 hover:border-yellow-300'
-                  }`}
-                >
-                  <div className="text-center">
-                    <span className="text-base mb-1">⏳</span>
-                    <p className="text-xs font-medium">Pending</p>
-                  </div>
-                </button>
-                
-                <button
-                  onClick={() => updateLeadStatus('inprogress')}
-                  className={`p-3 rounded-lg border transition-all duration-200 ${
-                    selectedLeadForStatus.workProgress === 'inprogress'
-                      ? 'bg-blue-100 border-blue-200 text-blue-800'
-                      : 'bg-white border-gray-200 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
-                  }`}
-                >
-                  <div className="text-center">
-                    <span className="text-base mb-1">🔄</span>
-                    <p className="text-xs font-medium">In Progress</p>
-                  </div>
-                </button>
-                
-                <button
-                  onClick={() => updateLeadStatus('done')}
-                  className={`p-3 rounded-lg border transition-all duration-200 ${
-                    selectedLeadForStatus.workProgress === 'done'
-                      ? 'bg-green-100 border-green-200 text-green-800'
-                      : 'bg-white border-gray-200 text-gray-700 hover:bg-green-50 hover:border-green-300'
-                  }`}
-                >
-                  <div className="text-center">
-                    <span className="text-base mb-1">✅</span>
-                    <p className="text-xs font-medium">Done</p>
-                  </div>
-                </button>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-2 pt-3 border-t">
-              <button
-                onClick={() => setShowStatusUpdate(false)}
-                className="flex-1 h-10 text-sm bg-gray-100 text-gray-700 hover:bg-gray-200"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  updateLeadStatus(selectedLeadForStatus.workProgress);
-                  setShowStatusUpdate(false);
-                }}
-                className="flex-1 h-10 bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 text-sm"
-              >
-                Update Progress
-              </button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    )}
-
-    </div>
-
-    {/* Mobile Bottom Navigation */}
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg md:hidden">
-      <div className="flex justify-around items-center py-2">
-        <button
-          onClick={() => navigate('/dashboard')}
-          className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
-        >
-          <Home size={20} />
-          <span className="text-xs mt-1">Home</span>
-        </button>
-        
-        <button
-          onClick={() => navigate('/leads')}
-          className="flex flex-col items-center p-2 text-blue-600 hover:text-blue-700 transition-colors"
-        >
-          <Briefcase size={20} />
-          <span className="text-xs mt-1">Tasks</span>
-        </button>
-        
-        <button
-          onClick={() => navigate('/reports')}
-          className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
-        >
-          <BarChart3 size={20} />
-          <span className="text-xs mt-1">Reports</span>
-        </button>
-        
-        <button
-          onClick={() => navigate('/calendar')}
-          className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
-        >
-          <Calendar size={20} />
-          <span className="text-xs mt-1">Calendar</span>
-        </button>
-        
-        <button
-          onClick={() => navigate('/team')}
-          className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
-        >
-          <Users size={20} />
-          <span className="text-xs mt-1">Team</span>
-        </button>
-        
-        <button
-          onClick={() => setRightMenuOpen(!rightMenuOpen)}
-          className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
-        >
-          <Menu size={20} />
-          <span className="text-xs mt-1">Menu</span>
-        </button>
       </div>
-    </div>
+
+      {/* Mobile Bottom Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg md:hidden">
+        <div className="flex justify-around items-center py-2">
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <Home size={20} />
+            <span className="text-xs mt-1">Home</span>
+          </button>
+
+          <button
+            onClick={() => navigate('/leads')}
+            className="flex flex-col items-center p-2 text-blue-600 hover:text-blue-700 transition-colors"
+          >
+            <Briefcase size={20} />
+            <span className="text-xs mt-1">Tasks</span>
+          </button>
+
+          <button
+            onClick={() => navigate('/reports')}
+            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <BarChart3 size={20} />
+            <span className="text-xs mt-1">Reports</span>
+          </button>
+
+          <button
+            onClick={() => navigate('/calendar')}
+            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <Calendar size={20} />
+            <span className="text-xs mt-1">Calendar</span>
+          </button>
+
+          <button
+            onClick={() => navigate('/team')}
+            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <Users size={20} />
+            <span className="text-xs mt-1">Team</span>
+          </button>
+
+          <button
+            onClick={() => setRightMenuOpen(!rightMenuOpen)}
+            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <Menu size={20} />
+            <span className="text-xs mt-1">Menu</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

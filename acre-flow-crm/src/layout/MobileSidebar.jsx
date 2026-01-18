@@ -27,11 +27,12 @@ import {
   Bell
 } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
+import { apiUrl } from '@/config/apiConfig';
 
 const MobileSidebar = ({ userRole, isOpen, onClose }) => {
   const navigate = useNavigate();
   const { isDark, toggleTheme } = useTheme();
-  
+
   // WhatsApp Chat State
   const [chatOpen, setChatOpen] = useState(false);
   const [messages, setMessages] = useState([]);
@@ -82,18 +83,18 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
   const fetchChatUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://bcrm.100acress.com/api/messages/conversations', {
+      const response = await fetch(`${apiUrl}/api/messages/conversations`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
           // Filter for super-admin, head-admin, team-leader
-          const filteredUsers = data.data.filter(user => 
+          const filteredUsers = data.data.filter(user =>
             user.recipientName && (
               user.recipientName.toLowerCase().includes('admin') ||
               user.recipientName.toLowerCase().includes('head') ||
@@ -102,7 +103,7 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
             )
           );
           setChatUsers(filteredUsers);
-          
+
           // Count unread messages
           const unread = filteredUsers.reduce((acc, user) => acc + (user.unreadCount || 0), 0);
           setUnreadCount(unread);
@@ -116,13 +117,13 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
   const fetchMessages = async (userId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://bcrm.100acress.com/api/messages/conversation/${userId}`, {
+      const response = await fetch(`${apiUrl}/api/messages/conversation/${userId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
@@ -136,10 +137,10 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedUser) return;
-    
+
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://bcrm.100acress.com/api/messages/send', {
+      const response = await fetch(`${apiUrl}/api/messages/send`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -152,7 +153,7 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
           message: newMessage.trim()
         })
       });
-      
+
       if (response.ok) {
         setNewMessage('');
         fetchMessages(selectedUser._id);
@@ -176,7 +177,7 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
       }
       fetchChatUsers();
     }, 30000);
-    
+
     return () => clearInterval(interval);
   }, [chatOpen, selectedUser]);
 
@@ -296,11 +297,11 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
   return (
     <>
       {/* Overlay */}
-      <div 
+      <div
         className="fixed inset-0 bg-black/50 z-40"
         onClick={onClose}
       />
-      
+
       {/* Sidebar */}
       <div className="fixed top-0 left-0 h-full w-72 bg-white shadow-2xl transform transition-transform z-50">
         {/* Header */}
@@ -423,10 +424,10 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
                 </div>
               </div>
             </div> */}
-            
+
             <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Account</h4>
             <nav className="space-y-2">
-              <button 
+              <button
                 onClick={() => navigate('/edit-profile')}
                 className="w-full text-left p-3 rounded-xl hover:bg-blue-50 transition-all duration-200 flex items-center gap-3 group border border-transparent hover:border-blue-200"
               >
@@ -439,8 +440,8 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
                 </div>
                 <ChevronRight size={16} className="text-gray-400 group-hover:text-blue-600 transition-colors" />
               </button>
-              
-              <button 
+
+              <button
                 onClick={handleLogout}
                 className="w-full text-left p-3 rounded-xl hover:bg-red-50 text-red-600 transition-all duration-200 flex items-center gap-3 group border border-transparent hover:border-red-200"
               >
@@ -462,11 +463,11 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
       {chatOpen && (
         <>
           {/* Chat Overlay */}
-          <div 
+          <div
             className="fixed inset-0 bg-black/50 z-50"
             onClick={() => setChatOpen(false)}
           />
-          
+
           {/* Chat Window */}
           <div className="fixed bottom-0 left-0 right-0 h-[80vh] bg-white rounded-t-2xl shadow-2xl z-50 flex flex-col">
             {/* Chat Header */}
@@ -548,7 +549,7 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
                       <p className="text-xs text-gray-500">Online</p>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-3">
                     {messages.length === 0 ? (
                       <div className="text-center py-8">
@@ -564,11 +565,10 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
                             className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
                           >
                             <div
-                              className={`max-w-[70%] p-3 rounded-2xl ${
-                                isMe
+                              className={`max-w-[70%] p-3 rounded-2xl ${isMe
                                   ? 'bg-green-600 text-white'
                                   : 'bg-white text-gray-800 border border-gray-200'
-                              }`}
+                                }`}
                             >
                               <p className="text-sm">{msg.message}</p>
                               <p className={`text-xs mt-1 ${isMe ? 'text-green-100' : 'text-gray-500'}`}>

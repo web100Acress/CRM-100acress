@@ -1,12 +1,11 @@
 import axios from 'axios';
 import { ENDPOINTS } from './endpoints.js';
 import store from '@/store';
+import { apiUrl } from '@/config/apiConfig';
 
 // Create axios instance for chat API
 const chatApi = axios.create({
-  baseURL: process.env.NODE_ENV === 'production' 
-    ? 'https://bcrm.100acress.com' 
-    : 'http://localhost:5001',
+  baseURL: apiUrl,
   headers: {
     'Content-Type': 'application/json',
   },

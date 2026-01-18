@@ -1326,7 +1326,7 @@ const LeadTable = ({ userRole }) => {
                       onChange={(e) => handleUpdateStatus(lead._id, e.target.value)}
                       className="lead-status-update-select"
                       title="Update Lead Status"
-                      disabled={userRole === 'boss' || localStorage.getItem("userRole") === 'boss' || userRole === 'bd' || localStorage.getItem("userRole") === 'bd'}
+                      disabled={userRole === 'boss' || localStorage.getItem("userRole") === 'boss'}
                     >
                       <option value="Hot">🔥 Hot</option>
                       <option value="Warm">🌡️ Warm</option>
