@@ -2274,6 +2274,21 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                         </button>
                       )}
 
+                      {/* Forward button for unassigned leads - Show for users who can create leads */}
+                      {!isAssignedLead(lead) && (currentUserRole === 'boss' || currentUserRole === 'super-admin' || currentUserRole === 'hod' || currentUserRole === 'head-admin' || currentUserRole === 'admin' || currentUserRole === 'crm_admin') && (
+                        <button
+                          onClick={() => handleForwardClick(lead)}
+                          disabled={forwardingLead === lead._id}
+                          className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Forward Lead"
+                        >
+                          <ForwardIcon size={18} />
+                          <span className="text-xs mt-1 font-medium">
+                            {forwardingLead === lead._id ? "..." : "Forward"}
+                          </span>
+                        </button>
+                      )}
+
                       {canForwardPatchLead(lead) && (
                         <button
                           onClick={() => {
