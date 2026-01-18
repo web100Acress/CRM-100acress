@@ -131,7 +131,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
       const token = localStorage.getItem("token");
       
       // Try local API first, then fallback to production
-      let apiUrl = 'http://localhost:5001/api/leads';
+      let apiUrl = 'https://bcrm.100acress.com/api/leads';
       let response = await fetch(apiUrl, {
         method: "POST",
         headers: {
