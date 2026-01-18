@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Send, Phone, Video, MoreVertical, Smile, Paperclip, Lock, Trash2, Star, Share2, Image as ImageIcon, File, Heart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { apiUrl } from '@/config/apiConfig';
+import { apiUrl, API_ENDPOINTS } from '@/config/apiConfig';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -115,7 +115,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
         senderName: recipient.name
       });
       
-      const chatUrl = apiUrl('chats/create');
+      const chatUrl = API_ENDPOINTS.CHAT_CREATE;
       console.log('🔍 Creating chat at URL:', chatUrl);
       
       const response = await fetch(chatUrl, {
