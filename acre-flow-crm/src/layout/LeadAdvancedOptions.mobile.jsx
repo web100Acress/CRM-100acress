@@ -3,11 +3,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/layout/dialo
 import { Button } from '@/layout/button';
 import { Eye, PhoneCall, Mail, MessageSquare, Calendar, Clock, TrendingUp, PieChart, User, MapPin, Building2, DollarSign, Settings, X } from 'lucide-react';
 import { Badge } from '@/layout/badge';
+import { apiUrl } from "@/config/apiConfig";
 
-const LeadAdvancedOptionsMobile = ({ 
-  isOpen, 
-  onClose, 
-  lead, 
+const LeadAdvancedOptionsMobile = ({
+  isOpen,
+  onClose,
+  lead,
   onUpdateStatus,
   onCallLead,
   onEmailLead,
@@ -31,15 +32,15 @@ const LeadAdvancedOptionsMobile = ({
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      
+
       // Fetch call history
-      const callResponse = await fetch(`https://bcrm.100acress.com/api/leads/${lead._id}/calls`, {
+      const callResponse = await fetch(`${apiUrl}/api/leads/${lead._id}/calls`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-      
+
       if (callResponse.ok) {
         const callData = await callResponse.json();
         setRealCallHistory(callData.calls || []);
@@ -73,13 +74,13 @@ const LeadAdvancedOptionsMobile = ({
       }
 
       // Fetch follow-ups
-      const followUpResponse = await fetch(`https://bcrm.100acress.com/api/leads/${lead._id}/follow-ups`, {
+      const followUpResponse = await fetch(`${apiUrl}/api/leads/${lead._id}/follow-ups`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-      
+
       if (followUpResponse.ok) {
         const followUpData = await followUpResponse.json();
         setRealFollowUps(followUpData.followUps || []);
@@ -234,7 +235,7 @@ const LeadAdvancedOptionsMobile = ({
                 <PhoneCall size={18} className="text-green-600 mb-1" />
                 <span className="text-xs font-medium text-gray-900">Call Now</span>
               </button>
-              
+
               <button
                 onClick={() => {
                   onEmailLead(lead.email);
@@ -254,39 +255,36 @@ const LeadAdvancedOptionsMobile = ({
             <div className="grid grid-cols-3 gap-1.5">
               <button
                 onClick={() => handleStatusUpdate('Hot')}
-                className={`p-2 rounded-lg border transition-colors ${
-                  status === 'Hot' 
-                    ? 'bg-red-100 border-red-200 text-red-800' 
+                className={`p-2 rounded-lg border transition-colors ${status === 'Hot'
+                    ? 'bg-red-100 border-red-200 text-red-800'
                     : 'bg-white border-gray-200 text-gray-700 hover:bg-red-50'
-                }`}
+                  }`}
               >
                 <div className="text-center">
                   <span className="text-base">🔥</span>
                   <p className="text-xs mt-0.5">Hot</p>
                 </div>
               </button>
-              
+
               <button
                 onClick={() => handleStatusUpdate('Warm')}
-                className={`p-2 rounded-lg border transition-colors ${
-                  status === 'Warm' 
-                    ? 'bg-yellow-100 border-yellow-200 text-yellow-800' 
+                className={`p-2 rounded-lg border transition-colors ${status === 'Warm'
+                    ? 'bg-yellow-100 border-yellow-200 text-yellow-800'
                     : 'bg-white border-gray-200 text-gray-700 hover:bg-yellow-50'
-                }`}
+                  }`}
               >
                 <div className="text-center">
                   <span className="text-base">🌡️</span>
                   <p className="text-xs mt-0.5">Warm</p>
                 </div>
               </button>
-              
+
               <button
                 onClick={() => handleStatusUpdate('Cold')}
-                className={`p-2 rounded-lg border transition-colors ${
-                  status === 'Cold' 
-                    ? 'bg-blue-100 border-blue-200 text-blue-800' 
+                className={`p-2 rounded-lg border transition-colors ${status === 'Cold'
+                    ? 'bg-blue-100 border-blue-200 text-blue-800'
                     : 'bg-white border-gray-200 text-gray-700 hover:bg-blue-50'
-                }`}
+                  }`}
               >
                 <div className="text-center">
                   <span className="text-base">❄️</span>
@@ -299,7 +297,7 @@ const LeadAdvancedOptionsMobile = ({
           {/* Analytics Section */}
           <div className="space-y-2">
             <h4 className="font-semibold text-gray-900 text-sm">Call History & Follow-up Analytics</h4>
-            
+
             {loading ? (
               <div className="flex justify-center items-center py-6">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div>
@@ -319,7 +317,7 @@ const LeadAdvancedOptionsMobile = ({
                     </p>
                     <p className="text-xs text-green-600">Total Calls</p>
                   </div>
-                  
+
                   <div className="bg-blue-50 p-2.5 rounded-lg border border-blue-200">
                     <div className="flex items-center justify-between mb-1.5">
                       <MessageSquare size={14} className="text-blue-600" />
@@ -345,14 +343,14 @@ const LeadAdvancedOptionsMobile = ({
                       </p>
                       <p className="text-xs text-purple-600">Avg Duration</p>
                     </div>
-                    
+
                     <div className="bg-orange-50 p-1.5 rounded-lg border border-orange-200 text-center">
                       <p className="text-sm font-bold text-orange-800">
                         {realCallHistory.filter(call => call.duration > 0).length}
                       </p>
                       <p className="text-xs text-orange-600">Connected</p>
                     </div>
-                    
+
                     <div className="bg-red-50 p-1.5 rounded-lg border border-red-200 text-center">
                       <p className="text-sm font-bold text-red-800">
                         {realCallHistory.filter(call => call.duration === 0).length}
@@ -378,9 +376,8 @@ const LeadAdvancedOptionsMobile = ({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <p className="text-xs font-medium text-gray-900">Call</p>
-                        <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                          call.duration > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
+                        <span className={`text-xs px-1.5 py-0.5 rounded-full ${call.duration > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}>
                           {call.duration > 0 ? 'Connected' : 'Missed'}
                         </span>
                       </div>
@@ -388,7 +385,7 @@ const LeadAdvancedOptionsMobile = ({
                         Duration: {formatDuration(call.duration || 0)}
                       </p>
                       <p className="text-xs text-gray-500">
-                        {new Date(call.startTime).toLocaleDateString()} • {new Date(call.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        {new Date(call.startTime).toLocaleDateString()} • {new Date(call.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </p>
                       {call.calledBy && (
                         <p className="text-xs text-gray-400 mt-1">
@@ -403,7 +400,7 @@ const LeadAdvancedOptionsMobile = ({
                     </div>
                   </div>
                 ))}
-                
+
                 {realFollowUps.slice(0, 3).map((followUp, index) => (
                   <div key={index} className="flex items-start gap-2 p-2 bg-gray-50 rounded-lg">
                     <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -415,7 +412,7 @@ const LeadAdvancedOptionsMobile = ({
                         {followUp.note || 'No note'}
                       </p>
                       <p className="text-xs text-gray-500">
-                        {new Date(followUp.date).toLocaleDateString()} • {new Date(followUp.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        {new Date(followUp.date).toLocaleDateString()} • {new Date(followUp.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </p>
                       {followUp.createdBy && (
                         <p className="text-xs text-gray-400 mt-1">

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { apiUrl } from "@/config/apiConfig";
 import '@/styles/LeadTable.css'; // Correct path to your CSS file
 import { User } from "lucide-react";
 import {
@@ -68,16 +69,43 @@ const LeadTable = ({ userRole }) => {
   const prevAssignedLeadIds = useRef(new Set());
   const currentUserId = localStorage.getItem("userId");
 
-  // Helper function for API calls with fallback
+  // Helper function for API calls using centralized config
   const apiCall = async (endpoint, options = {}) => {
     const token = localStorage.getItem("token");
-    const localUrl = `http://localhost:5001${endpoint}`;
-    const prodUrl = `https://bcrm.100acress.com${endpoint}`;
+    // endpoint should be the relative path, e.g., 'leads' (no slash at start if apiUrl expects that, or check apiUrl implementation)
+    // Looking at apiConfig, apiUrl seems to be a constant, not a function in the file user showed earlier? 
+    // Wait, let me double check apiConfig.js content again.
+    // In apiConfig.js: export const apiUrl = API_BASE_URL; (It's a string!)
+    // But in Leads.mobile.jsx usage: apiUrl("leads") -> It is being used as a function?
+    // Let me check apiConfig.js one more time.
 
-    console.log(`🔍 API Call: ${endpoint}`);
+    // Actually, looking at previous steps:
+    // 10: export const apiUrl = API_BASE_URL;
+    // It is exported as a string constant. 
+    // BUT Leads.mobile.jsx imports { apiUrl } and calls it: apiUrl("leads")
+    // This implies there might be a misinterpretation or I need to check if it's a default import or named.
+    // Checking file content from Step 22:
+    // export const apiUrl = API_BASE_URL;
+    // It is definitely a string. 
+    // IF Leads.mobile.jsx is calling it as a function, that code IS BROKEN too unless I missed something.
+    // OR local Leads.mobile.jsx might be importing from somewhere else?
+    // Lines 16: import { apiUrl } from '@/config/apiConfig';
+    // Line 91: const response = await fetch(apiUrl("leads"), {
 
-    // Try local API first
-    let response = await fetch(localUrl, {
+    // Warning: If apiUrl is a string, apiUrl("leads") will throw "apiUrl is not a function".
+    // I must verify if apiConfig.js was changed or if I misread.
+    // Ah, wait. checking Step 46 (my edit).
+    // export const apiUrl = API_BASE_URL;
+    // It remains a string.
+
+    // I need to be careful. I will use it as a base string URL construction.
+
+    const url = `${apiUrl}${endpoint}`; // endpoint should start with / usually if apiUrl doesn't end with one.
+    // API_BASE_URL doesn't have trailing slash.
+
+    console.log(`🔍 API Call: ${url}`);
+
+    const response = await fetch(url, {
       ...options,
       headers: {
         Authorization: `Bearer ${token}`,
@@ -85,22 +113,6 @@ const LeadTable = ({ userRole }) => {
         ...options.headers
       }
     });
-
-    console.log(`📡 Local API response: ${response.status}`);
-
-    // If local fails, try production
-    if (!response.ok) {
-      console.log(`❌ Local API failed, trying production...`);
-      response = await fetch(prodUrl, {
-        ...options,
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-          ...options.headers
-        }
-      });
-      console.log(`📡 Production API response: ${response.status}`);
-    }
 
     return response;
   };
@@ -150,7 +162,7 @@ const LeadTable = ({ userRole }) => {
     try {
       setSwapBdLeadsLoading(true);
       const token = localStorage.getItem("token");
-      const res = await fetch(`https://bcrm.100acress.com/api/leads/bd-status/${bdId}`, {
+      const res = await fetch(`${apiUrl}/api/leads/bd-status/${bdId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -184,7 +196,7 @@ const LeadTable = ({ userRole }) => {
       setPatchingLead(leadId);
       const token = localStorage.getItem("token");
 
-      const res = await fetch(`https://bcrm.100acress.com/api/leads/${leadId}/forward-swap`, {
+      const res = await fetch(`${apiUrl}/api/leads/${leadId}/forward-swap`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -198,7 +210,7 @@ const LeadTable = ({ userRole }) => {
         throw new Error(data?.message || 'Failed to swap leads');
       }
 
-      const leadsResponse = await fetch("https://bcrm.100acress.com/api/leads", {
+      const leadsResponse = await fetch(`${apiUrl}/api/leads`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -470,7 +482,7 @@ const LeadTable = ({ userRole }) => {
       const token = localStorage.getItem("token");
 
       const res = await fetch(
-        `https://bcrm.100acress.com/api/leads/${leadId}/forward-patch`,
+        `${apiUrl}/api/leads/${leadId}/forward-patch`,
         {
           method: "POST",
           headers: {
@@ -492,7 +504,7 @@ const LeadTable = ({ userRole }) => {
         throw new Error(data?.message || "Failed to reassign lead");
       }
 
-      const leadsResponse = await fetch("https://bcrm.100acress.com/api/leads", {
+      const leadsResponse = await fetch(`${apiUrl}/api/leads`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -735,14 +747,12 @@ const LeadTable = ({ userRole }) => {
         return false;
       }
 
-      // Use localhost for testing, change back to production when ready
-      const apiUrl = process.env.NODE_ENV === 'development'
-        ? "http://localhost:5001/api/leads/calls"
-        : "https://bcrm.100acress.com/api/leads/calls";
+      // Use dynamic apiUrl
+      const apiEndpoint = `${apiUrl}/api/leads/calls`;
 
       console.log("Using API URL:", apiUrl);
 
-      const response = await fetch(apiUrl, {
+      const response = await fetch(apiEndpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/layout/card';
 import { Button } from '@/layout/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/layout/dialog';
 import { useToast } from '@/hooks/use-toast';
+import { apiUrl } from "@/config/apiConfig";
 
 const LeadTableMobile = ({ userRole }) => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -31,7 +32,7 @@ const LeadTableMobile = ({ userRole }) => {
     const fetchLeads = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch("https://bcrm.100acress.com/api/leads", {
+        const response = await fetch(`${apiUrl}/api/leads`, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -55,7 +56,7 @@ const LeadTableMobile = ({ userRole }) => {
       try {
         const token = localStorage.getItem("token");
         const response = await fetch(
-          "https://bcrm.100acress.com/api/leads/assignable-users",
+          `${apiUrl}/api/leads/assignable-users`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -163,14 +164,14 @@ const LeadTableMobile = ({ userRole }) => {
     if (window.confirm(`Are you sure you want to delete ${lead.name}?`)) {
       try {
         const token = localStorage.getItem("token");
-        await fetch(`https://bcrm.100acress.com/api/leads/${lead._id}`, {
+        await fetch(`${apiUrl}/api/leads/${lead._id}`, {
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         });
-        
+
         // Remove from local state
         setLeadsList(leadsList.filter(l => l._id !== lead._id));
         toast({
@@ -191,7 +192,7 @@ const LeadTableMobile = ({ userRole }) => {
   const handleStatusChange = async (lead, newStatus) => {
     try {
       const token = localStorage.getItem("token");
-      await fetch(`https://bcrm.100acress.com/api/leads/${lead._id}`, {
+      await fetch(`${apiUrl}/api/leads/${lead._id}`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -199,12 +200,12 @@ const LeadTableMobile = ({ userRole }) => {
         },
         body: JSON.stringify({ status: newStatus }),
       });
-      
+
       // Update local state
-      setLeadsList(leadsList.map(l => 
+      setLeadsList(leadsList.map(l =>
         l._id === lead._id ? { ...l, status: newStatus } : l
       ));
-      
+
       toast({
         title: "Status Updated",
         description: `Lead status changed to ${newStatus}`,
@@ -241,7 +242,7 @@ const LeadTableMobile = ({ userRole }) => {
   const handleUpdateStatus = async (leadId, newStatus) => {
     try {
       const token = localStorage.getItem("token");
-      await fetch(`https://bcrm.100acress.com/api/leads/${leadId}`, {
+      await fetch(`${apiUrl}/api/leads/${leadId}`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -249,12 +250,12 @@ const LeadTableMobile = ({ userRole }) => {
         },
         body: JSON.stringify({ status: newStatus }),
       });
-      
+
       // Update local state
-      setLeadsList(leadsList.map(lead => 
+      setLeadsList(leadsList.map(lead =>
         lead._id === leadId ? { ...lead, status: newStatus } : lead
       ));
-      
+
       toast({
         title: "Status Updated",
         description: `Lead status changed to ${newStatus}`,
@@ -272,12 +273,12 @@ const LeadTableMobile = ({ userRole }) => {
     try {
       setForwardingLead(leadId);
       const token = localStorage.getItem("token");
-      
+
       console.log('Attempting to forward lead:', leadId);
       console.log('Token:', token ? 'Present' : 'Missing');
-      
+
       const res = await fetch(
-        `https://bcrm.100acress.com/api/leads/${leadId}/forward`,
+        `${apiUrl}/api/leads/${leadId}/forward`,
         {
           method: "POST",
           headers: {
@@ -290,7 +291,7 @@ const LeadTableMobile = ({ userRole }) => {
 
       console.log('Response status:', res.status);
       console.log('Response ok:', res.ok);
-      
+
       let data;
       try {
         data = await res.json();
@@ -301,10 +302,10 @@ const LeadTableMobile = ({ userRole }) => {
         console.error('Response text:', text);
         throw new Error('Invalid response from server');
       }
-      
+
       if (res.ok) {
         // Refresh the leads list
-        const leadsResponse = await fetch("https://bcrm.100acress.com/api/leads", {
+        const leadsResponse = await fetch(`${apiUrl}/api/leads`, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -353,9 +354,9 @@ const LeadTableMobile = ({ userRole }) => {
     };
 
     const possibleRoles = forwardHierarchy[currentUserRole];
-    
+
     if (!possibleRoles) return false;
-    
+
     // Check if there are any assignable users with the target roles
     return assignableUsers.some((user) => possibleRoles.includes(user.role));
   };
@@ -403,61 +404,55 @@ const LeadTableMobile = ({ userRole }) => {
           <div className="flex flex-wrap gap-2 mb-3">
             <button
               onClick={() => setStatusFilter("all")}
-              className={`px-3 py-1 rounded-full text-xs ${
-                statusFilter === "all"
+              className={`px-3 py-1 rounded-full text-xs ${statusFilter === "all"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-200 text-gray-700"
-              }`}
+                }`}
             >
               All ({filteredLeads.length})
             </button>
             <button
               onClick={() => setStatusFilter("new")}
-              className={`px-3 py-1 rounded-full text-xs ${
-                statusFilter === "new"
+              className={`px-3 py-1 rounded-full text-xs ${statusFilter === "new"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-200 text-gray-700"
-              }`}
+                }`}
             >
               New
             </button>
             <button
               onClick={() => setStatusFilter("hot")}
-              className={`px-3 py-1 rounded-full text-xs ${
-                statusFilter === "hot"
+              className={`px-3 py-1 rounded-full text-xs ${statusFilter === "hot"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-200 text-gray-700"
-              }`}
+                }`}
             >
               Hot
             </button>
             <button
               onClick={() => setStatusFilter("warm")}
-              className={`px-3 py-1 rounded-full text-xs ${
-                statusFilter === "warm"
+              className={`px-3 py-1 rounded-full text-xs ${statusFilter === "warm"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-200 text-gray-700"
-              }`}
+                }`}
             >
               Warm
             </button>
             <button
               onClick={() => setStatusFilter("cold")}
-              className={`px-3 py-1 rounded-full text-xs ${
-                statusFilter === "cold"
+              className={`px-3 py-1 rounded-full text-xs ${statusFilter === "cold"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-200 text-gray-700"
-              }`}
+                }`}
             >
               Cold
             </button>
             <button
               onClick={() => setStatusFilter("converted")}
-              className={`px-3 py-1 rounded-full text-xs ${
-                statusFilter === "converted"
+              className={`px-3 py-1 rounded-full text-xs ${statusFilter === "converted"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-200 text-gray-700"
-              }`}
+                }`}
             >
               Converted
             </button>
@@ -501,7 +496,7 @@ const LeadTableMobile = ({ userRole }) => {
                   >
                     <MoreVertical size={16} />
                   </button>
-                  
+
                   {/* Actions Dropdown */}
                   {showActions === lead._id && (
                     <div className="absolute right-0 top-10 bg-white border border-gray-200 rounded-lg shadow-lg z-10 w-48">
@@ -734,7 +729,7 @@ const LeadTableMobile = ({ userRole }) => {
                   {selectedLead.status}
                 </Badge>
               </div>
-              
+
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Phone size={16} className="text-gray-400" />
@@ -839,7 +834,7 @@ const LeadTableMobile = ({ userRole }) => {
               <div>
                 <h4 className="text-sm font-semibold text-gray-900 mb-3">Quick Actions</h4>
                 <div className="space-y-3">
-                  <button 
+                  <button
                     onClick={() => {
                       if (selectedLeadForAdvanced.phone) {
                         window.location.href = `tel:${selectedLeadForAdvanced.phone}`;
@@ -854,8 +849,8 @@ const LeadTableMobile = ({ userRole }) => {
                     <PhoneCall size={18} className="text-green-600" />
                     <span className="text-sm font-medium text-green-700">Call Now</span>
                   </button>
-                  
-                  <button 
+
+                  <button
                     onClick={() => {
                       if (selectedLeadForAdvanced.email) {
                         window.location.href = `mailto:${selectedLeadForAdvanced.email}`;
@@ -877,7 +872,7 @@ const LeadTableMobile = ({ userRole }) => {
                       value={selectedLeadForAdvanced.status}
                       onChange={(e) => {
                         handleUpdateStatus(selectedLeadForAdvanced._id, e.target.value);
-                        setSelectedLeadForAdvanced({...selectedLeadForAdvanced, status: e.target.value});
+                        setSelectedLeadForAdvanced({ ...selectedLeadForAdvanced, status: e.target.value });
                       }}
                       className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
@@ -906,7 +901,7 @@ const LeadTableMobile = ({ userRole }) => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="bg-gray-50 rounded-lg p-3">
                     <div className="flex items-center gap-2">
                       <MessageSquare size={16} className="text-blue-600" />
@@ -927,7 +922,7 @@ const LeadTableMobile = ({ userRole }) => {
                       <Clock size={16} className="text-purple-600" />
                       <div>
                         <div className="text-lg font-bold text-gray-900">
-                          {callHistory[selectedLeadForAdvanced._id].reduce((acc, call) => acc + (call.duration || 0), 0) > 0 
+                          {callHistory[selectedLeadForAdvanced._id].reduce((acc, call) => acc + (call.duration || 0), 0) > 0
                             ? Math.round(callHistory[selectedLeadForAdvanced._id].reduce((acc, call) => acc + (call.duration || 0), 0) / callHistory[selectedLeadForAdvanced._id].length) + 's'
                             : '0s'
                           }
@@ -969,8 +964,8 @@ const LeadTableMobile = ({ userRole }) => {
 
               {/* Close Button */}
               <div className="pt-4 border-t border-gray-200">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={handleCloseAdvancedOptions}
                   className="w-full"
                 >

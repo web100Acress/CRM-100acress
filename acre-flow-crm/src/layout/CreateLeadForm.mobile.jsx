@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/layout/dialo
 import { Button } from '@/layout/button';
 import { Save, Loader2, User, Mail, Phone, MapPin, Building2, DollarSign, Target } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { apiUrl } from "@/config/apiConfig";
 
 const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -43,20 +44,20 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
   const fetchAssignableUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5001/api/leads/assignable-users`, {
+      const response = await fetch(`${apiUrl}/api/leads/assignable-users`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const json = await response.json();
       let users = json.data || [];
-      
+
       // Filter users based on current user role
       if (currentUserRole === 'super-admin' || currentUserRole === 'boss') {
         // Boss can ONLY assign to HOD users
@@ -75,7 +76,7 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
         users = [];
         console.log('🔍 Mobile Other roles cannot assign leads - No users available');
       }
-      
+
       setAssignableUsers(users);
     } catch (error) {
       console.error('Error fetching assignable users:', error);
@@ -101,7 +102,7 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
 
     try {
       const token = localStorage.getItem('token');
-      
+
       // Validate required fields
       if (!formData.name || !formData.phone) {
         toast({
@@ -125,7 +126,7 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
         return;
       }
 
-      const response = await fetch(`https://bcrm.100acress.com/api/leads`, {
+      const response = await fetch(`${apiUrl}/api/leads`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -140,7 +141,7 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
           title: "Success",
           description: "Lead created successfully!",
         });
-        
+
         // Reset form
         setFormData({
           name: '',
@@ -151,12 +152,12 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
           status: 'Cold',
           assignedTo: ''
         });
-        
+
         // Call onSuccess callback
         if (onSuccess) {
           onSuccess(result);
         }
-        
+
         onClose();
       } else {
         const errorData = await response.json();
@@ -224,7 +225,7 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
             <span>Create New Lead</span>
           </DialogTitle>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="p-3 space-y-3">
           {/* Name Field */}
           <div className="space-y-2">
