@@ -896,10 +896,8 @@ const LeadTable = ({ userRole }) => {
       const token = localStorage.getItem("token");
       console.log("Token found for fetch:", token ? "Yes" : "No");
 
-      // Use localhost for testing, change back to production when ready
-      const apiUrl = process.env.NODE_ENV === 'development'
-        ? `http://localhost:5001/api/leads/${leadId}/calls`
-        : `https://bcrm.100acress.com/api/leads/${leadId}/calls`;
+      // Use dynamic API URL based on environment
+      const apiUrl = `${apiUrl}/api/leads/${leadId}/calls`;
 
       console.log("Using API URL:", apiUrl);
 
@@ -937,9 +935,7 @@ const LeadTable = ({ userRole }) => {
     setLoadingLeadDetailsCallHistory(true);
     try {
       const token = localStorage.getItem("token");
-      const apiUrl = process.env.NODE_ENV === 'development'
-        ? `http://localhost:5001/api/leads/${leadId}/calls`
-        : `https://bcrm.100acress.com/api/leads/${leadId}/calls`;
+      const apiUrl = `${apiUrl}/api/leads/${leadId}/calls`;
 
       console.log('Call history API URL:', apiUrl);
 
@@ -1012,7 +1008,7 @@ const LeadTable = ({ userRole }) => {
     if (!window.confirm("Are you sure you want to delete this lead?")) return;
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`https://bcrm.100acress.com/api/leads/${leadId}`, {
+      const res = await fetch(`${apiUrl}/api/leads/${leadId}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -1039,7 +1035,7 @@ const LeadTable = ({ userRole }) => {
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
-        `https://bcrm.100acress.com/api/leads/${lead._id}/followups`,
+        `${apiUrl}/api/leads/${lead._id}/followups`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -1059,7 +1055,7 @@ const LeadTable = ({ userRole }) => {
   const handleAssignLead = async (leadId, userId) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`https://bcrm.100acress.com/api/leads/${leadId}`, {
+      const res = await fetch(`${apiUrl}/api/leads/${leadId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -1344,7 +1340,7 @@ const LeadTable = ({ userRole }) => {
                           try {
                             const token = localStorage.getItem("token");
                             await fetch(
-                              `https://bcrm.100acress.com/api/leads/${lead._id}`,
+                              `${apiUrl}/api/leads/${lead._id}`,
                               {
                                 method: "PUT",
                                 headers: {
