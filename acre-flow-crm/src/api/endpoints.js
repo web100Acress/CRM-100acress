@@ -2,8 +2,8 @@
 // All API endpoint URLs are defined here for easy maintenance
 
 // const BASE_URL = 'https://bcrm.100acress.com';
-// Use live backend without trailing slash to avoid double slashes in paths
-const BASE_URL = 'https://bcrm.100acress.com';
+// Use local backend for development
+const BASE_URL = 'http://localhost:5001';
 
 export const ENDPOINTS = {
   // Auth endpoints

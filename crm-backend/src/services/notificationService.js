@@ -1,4 +1,5 @@
 const Notification = require('../models/notificationModel');
+const User = require('../models/userModel');
 
 let io = null;
 

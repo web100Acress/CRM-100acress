@@ -13,7 +13,7 @@ const notificationSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['lead_created', 'lead_forwarded', 'system', 'task'],
+        enum: ['lead_created', 'lead_assigned', 'lead_forwarded', 'lead_reassigned', 'lead_bd_activity', 'lead_swapped', 'followup_added', 'system', 'task'],
         default: 'system'
     },
     recipientRole: {

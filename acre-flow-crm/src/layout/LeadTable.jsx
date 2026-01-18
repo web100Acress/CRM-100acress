@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import FollowUpModal from "@/features/employee/follow-up/FollowUpModal";
 import CreateLeadForm from "./CreateLeadForm";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/layout/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/layout/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/layout/button";
 // Lead Actions imports
@@ -1366,7 +1366,7 @@ const LeadTable = ({ userRole }) => {
                           }
                         }}
                         className="lead-work-progress-select"
-                        disabled={userRole === 'boss' || localStorage.getItem("userRole") === 'boss' || userRole === 'bd' || localStorage.getItem("userRole") === 'bd'}
+                        disabled={userRole === 'boss' || localStorage.getItem("userRole") === 'boss'}
                       >
                         {(!lead.workProgress ||
                           lead.workProgress === "pending") && (
@@ -2477,58 +2477,152 @@ const LeadTable = ({ userRole }) => {
         open={!!chainModalLead}
         onOpenChange={() => setChainModalLead(null)}
       >
-        <DialogContent className="lead-chain-dialog-content w-full max-w-lg sm:max-w-2xl mx-3 sm:mx-auto px-3 sm:px-6 py-4">
-          <DialogHeader>
-            <DialogTitle className="lead-chain-dialog-title">
+        <DialogContent className="lead-chain-dialog-content w-full max-w-4xl mx-3 sm:mx-auto px-3 sm:px-6 py-6">
+          <DialogHeader className="border-b pb-4">
+            <DialogTitle className="lead-chain-dialog-title text-xl font-semibold text-gray-900">
               Assignment Chain for {chainModalLead?.name}
             </DialogTitle>
+            <DialogDescription className="text-sm text-gray-600">
+              Track the complete assignment history and current status of this lead.
+            </DialogDescription>
           </DialogHeader>
 
           {chainModalLead?.assignmentChain?.length > 0 ? (
-            <div className="lead-chain-table-wrapper">
-              <table className="lead-chain-table">
-                <thead className="lead-chain-table-header">
-                  <tr>
-                    <th>Name</th>
-                    <th>Role</th>
-                    <th>Assigned To</th>
-                    <th>Assigned At</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {chainModalLead.assignmentChain.map((entry, idx, arr) => {
-                    const next = arr[idx + 1];
-                    const isLast = !next;
+            <div className="mt-6">
+              {/* Chain Timeline */}
+              <div className="space-y-4">
+                {chainModalLead.assignmentChain.map((entry, idx, arr) => {
+                  const next = arr[idx + 1];
+                  const isLast = !next;
+                  const isActive = !isLast;
 
-                    return (
-                      <tr
-                        key={idx}
-                        className={isLast ? "lead-chain-table-row-last" : (idx % 2 === 0 ? "" : "bg-gray-50")}
-                      >
-                        <td>{entry.name}</td>
-                        <td className="capitalize">{entry.role}</td>
-                        <td>
-                          {next
-                            ? next.name + ` (${next.role})`
-                            : "— Currently Assigned —"}
-                        </td>
-                        <td className="lead-chain-table-date">
-                          {next?.assignedAt || entry?.assignedAt
-                            ? new Date(
-                              next?.assignedAt || entry.assignedAt
-                            ).toLocaleString()
-                            : "—"}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                  return (
+                    <div key={idx} className="flex items-start space-x-4">
+                      {/* Timeline Line */}
+                      <div className="flex flex-col items-center">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm ${
+                          isActive ? 'bg-blue-500' : 'bg-gray-400'
+                        }`}>
+                          {idx + 1}
+                        </div>
+                        {!isLast && (
+                          <div className="w-0.5 h-16 bg-gray-300 mt-2"></div>
+                        )}
+                      </div>
+
+                      {/* Content Card */}
+                      <div className={`flex-1 p-4 rounded-lg border ${
+                        isActive 
+                          ? 'bg-blue-50 border-blue-200' 
+                          : 'bg-gray-50 border-gray-200'
+                      }`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <div>
+                            <h4 className="font-semibold text-gray-900">{entry.name}</h4>
+                            <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
+                              entry.role === 'boss' ? 'bg-purple-100 text-purple-800' :
+                              entry.role === 'hod' ? 'bg-blue-100 text-blue-800' :
+                              entry.role === 'team-leader' || entry.role === 'tl' ? 'bg-green-100 text-green-800' :
+                              entry.role === 'bd' || entry.role === 'employee' ? 'bg-orange-100 text-orange-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {entry.role?.toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="text-right">
+                            {entry.status && (
+                              <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${
+                                entry.status === 'assigned' ? 'bg-green-100 text-green-800' :
+                                entry.status === 'forwarded' ? 'bg-blue-100 text-blue-800' :
+                                entry.status === 'completed' ? 'bg-gray-100 text-gray-800' :
+                                'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {entry.status?.toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                          <div>
+                            <span className="font-medium">Assigned To:</span>
+                            <div className="text-gray-900">
+                              {next
+                                ? `${next.name} (${next.role})`
+                                : <span className="text-green-600 font-medium">Currently Assigned</span>
+                              }
+                            </div>
+                          </div>
+                          <div>
+                            <span className="font-medium">Assigned At:</span>
+                            <div className="text-gray-900">
+                              {entry.assignedAt 
+                                ? new Date(entry.assignedAt).toLocaleString('en-US', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })
+                                : '—'
+                              }
+                            </div>
+                          </div>
+                        </div>
+
+                        {entry.completedAt && (
+                          <div className="mt-2 text-sm">
+                            <span className="font-medium text-gray-600">Completed At:</span>
+                            <span className="text-gray-900 ml-2">
+                              {new Date(entry.completedAt).toLocaleString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          </div>
+                        )}
+
+                        {entry.assignedBy && (
+                          <div className="mt-2 text-sm">
+                            <span className="font-medium text-gray-600">Assigned By:</span>
+                            <span className="text-gray-900 ml-2">
+                              {entry.assignedBy.name} ({entry.assignedBy.role})
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Current Status Summary */}
+              <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
+                  <div>
+                    <h5 className="font-semibold text-green-900">Current Status</h5>
+                    <p className="text-sm text-green-700">
+                      Lead is currently assigned to <strong>{chainModalLead.assignedToName || 'Unknown'}</strong> 
+                      ({chainModalLead.assignedToRole || 'Unknown Role'})
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           ) : (
-            <p className="lead-no-chain-message">
-              No assignment chain available for this lead.
-            </p>
+            <div className="text-center py-8">
+              <div className="text-gray-400 mb-2">
+                <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-1">No Assignment Chain</h3>
+              <p className="text-gray-600">This lead doesn't have any assignment history yet.</p>
+            </div>
           )}
         </DialogContent>
       </Dialog>

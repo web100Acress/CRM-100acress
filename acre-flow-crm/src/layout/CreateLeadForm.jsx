@@ -207,12 +207,12 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
   ];
 
   const locationOptions = [
-    "Projects on Sohna Road",
-    "Projects on Golf Course",
-    "Projects on Dwarka Expressway",
-    "Projects on New Gurgaon",
-    "Projects on Southern Peripheral Road",
-    "Projects on Golf Course Extn Road",
+    "Sohna Road",
+    "Golf Course",
+    "Dwarka Expressway",
+    "New Gurgaon",
+    "Southern Peripheral Road",
+    "Golf Course Extn Road",
     "Delhi",
     "Noida",
     "Gurugram",
@@ -227,8 +227,6 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
       case "Hot": return "destructive";
       case "Warm": return "default";
       case "Cold": return "secondary";
-      case "Converted": return "default";
-      case "Lost": return "destructive";
       default: return "secondary";
     }
   };
