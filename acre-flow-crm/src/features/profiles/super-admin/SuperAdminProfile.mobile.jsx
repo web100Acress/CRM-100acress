@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '@/styles/SuperAdminProfile.css';
+import { useToast } from '@/hooks/use-toast';
 
 import {
   User, Mail, Phone, Shield, Building2, Users, Ticket, Eye, TrendingUp, Activity, PieChart, Calendar, Clock, BarChart3, Settings, Home, Briefcase, Menu
@@ -9,10 +10,12 @@ import {
 import { Badge } from '@/layout/badge';
 import { Card, CardContent } from '@/layout/card';
 import MobileLayout from '@/layout/MobileLayout';
+import MobileNotifications from '@/components/MobileNotifications';
 import io from 'socket.io-client';
 
 const SuperAdminProfileMobile = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('overview');
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
@@ -54,9 +57,67 @@ const SuperAdminProfileMobile = () => {
       setUsers(users);
     });
     
-    socket.on('leadUpdate', (leads) => {
-      console.log('Mobile received leadUpdate:', leads);
-      setLeads(leads);
+    socket.on('leadUpdate', (data) => {
+      console.log('Mobile Boss received leadUpdate:', data);
+      
+      // Handle different types of lead updates with notifications
+      switch(data.action) {
+        case 'followup_added':
+          toast({
+            title: "Follow-up Added",
+            description: `${data.data.leadName}: ${data.data.followUpData.comment}`,
+            duration: 6000,
+          });
+          break;
+          
+        case 'assigned':
+          toast({
+            title: "Lead Assigned",
+            description: `${data.data.leadName} assigned to ${data.data.assigneeName}`,
+            duration: 8000,
+          });
+          break;
+          
+        case 'forward_patch':
+          toast({
+            title: "Lead Reassigned",
+            description: `${data.data.leadName} reassigned by ${data.data.assignerName}`,
+            duration: 6000,
+          });
+          break;
+          
+        case 'swapped':
+          toast({
+            title: "Lead Swapped",
+            description: `${data.data.leadName} swapped between BDs`,
+            duration: 6000,
+          });
+          break;
+          
+        case 'bd_activity':
+          toast({
+            title: "BD Activity",
+            description: `${data.data.action}: ${data.data.leadName}`,
+            duration: 5000,
+          });
+          break;
+          
+        default:
+          // Generic lead update
+          toast({
+            title: "Lead Updated",
+            description: `${data.data.leadName} status changed`,
+            duration: 5000,
+          });
+      }
+      
+      // Update leads list
+      setLeads(prevLeads => {
+        if (Array.isArray(data.leads)) {
+          return data.leads;
+        }
+        return prevLeads;
+      });
     });
 
     return () => {
@@ -537,17 +598,12 @@ const SuperAdminProfileMobile = () => {
             onClick={() => navigate('/leads')}
             className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
           >
-            <Briefcase size={20} />
-            <span className="text-xs mt-1">Tasks</span>
+            <Activity size={20} />
+            <span className="text-xs mt-1">Leads</span>
           </button>
           
-          <button
-            onClick={() => navigate('/admin/bd-analytics')}
-            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
-          >
-            <BarChart3 size={20} />
-            <span className="text-xs mt-1">Reports</span>
-          </button>
+          {/* Notification Bell */}
+          <MobileNotifications userRole="super-admin" />
           
           <button
             onClick={() => navigate('/users')}

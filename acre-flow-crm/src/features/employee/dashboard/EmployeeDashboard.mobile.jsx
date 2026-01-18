@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/layout/dialo
 import { Button } from '@/layout/button';
 import MobileSidebar from '@/layout/MobileSidebar';
 import { useToast } from '@/hooks/use-toast';
+import MobileNotifications from '@/components/MobileNotifications';
 import io from 'socket.io-client';
 
 const BDDashboardMobile = () => {
@@ -119,7 +120,64 @@ const BDDashboardMobile = () => {
       }
     });
 
-    // Listen for lead updates
+    // Listen for lead updates (BD activity notifications)
+    socket.on('leadUpdate', (data) => {
+      console.log('Lead update received:', data);
+      
+      // Handle different types of lead updates
+      switch(data.action) {
+        case 'followup_added':
+          toast({
+            title: "Follow-up Added",
+            description: `${data.data.leadName}: ${data.data.followUpData.comment}`,
+            duration: 6000,
+          });
+          break;
+          
+        case 'assigned':
+          if (data.assignedTo === currentUserId) {
+            toast({
+              title: "Lead Assigned",
+              description: `${data.data.leadName} assigned to you`,
+              duration: 8000,
+            });
+          }
+          break;
+          
+        case 'forward_patch':
+          toast({
+            title: "Lead Reassigned",
+            description: `${data.data.leadName} reassigned`,
+            duration: 6000,
+          });
+          break;
+          
+        case 'swapped':
+          toast({
+            title: "Lead Swapped",
+            description: `${data.data.leadName} swapped`,
+            duration: 6000,
+          });
+          break;
+          
+        default:
+          // Generic lead update
+          if (data.assignedTo === currentUserId) {
+            toast({
+              title: "Lead Updated",
+              description: `${data.data.leadName} status changed`,
+              duration: 5000,
+            });
+          }
+      }
+      
+      // Refresh leads if relevant to current user
+      if (data.assignedTo === currentUserId || userRole === 'boss' || userRole === 'hod' || userRole === 'team-leader') {
+        fetchBDLeads();
+      }
+    });
+
+    // Listen for lead updates (legacy)
     socket.on('leadUpdated', (data) => {
       console.log('Lead updated:', data);
       if (data.assignedTo === currentUserId || data.previousAssignedTo === currentUserId) {
@@ -140,6 +198,7 @@ const BDDashboardMobile = () => {
     return () => {
       socket.off('dashboardUpdate');
       socket.off('leadAssigned');
+      socket.off('leadUpdate');
       socket.off('leadUpdated');
       socket.off('myLeadsData');
     };
@@ -372,6 +431,9 @@ const BDDashboardMobile = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* Notification Bell */}
+            <MobileNotifications userRole={userRole} />
+            
             <button
               onClick={() => navigate('/edit-profile')}
               className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-white/30 hover:bg-white/30 transition-all duration-200 overflow-hidden"

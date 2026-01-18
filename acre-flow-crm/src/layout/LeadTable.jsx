@@ -897,11 +897,11 @@ const LeadTable = ({ userRole }) => {
       console.log("Token found for fetch:", token ? "Yes" : "No");
 
       // Use dynamic API URL based on environment
-      const apiUrl = `${apiUrl}/api/leads/${leadId}/calls`;
+      const callHistoryUrl = `${apiUrl}/api/leads/${leadId}/calls`;
 
-      console.log("Using API URL:", apiUrl);
+      console.log("Using API URL:", callHistoryUrl);
 
-      const response = await fetch(apiUrl, {
+      const response = await fetch(callHistoryUrl, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -935,11 +935,11 @@ const LeadTable = ({ userRole }) => {
     setLoadingLeadDetailsCallHistory(true);
     try {
       const token = localStorage.getItem("token");
-      const apiUrl = `${apiUrl}/api/leads/${leadId}/calls`;
+      const callHistoryUrl = `${apiUrl}/api/leads/${leadId}/calls`;
 
-      console.log('Call history API URL:', apiUrl);
+      console.log('Call history API URL:', callHistoryUrl);
 
-      const response = await fetch(apiUrl, {
+      const response = await fetch(callHistoryUrl, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -1034,20 +1034,27 @@ const LeadTable = ({ userRole }) => {
     setFollowUpError("");
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `${apiUrl}/api/leads/${lead._id}/followups`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      console.log('🔍 Fetching follow-ups for lead:', lead._id);
+      
+      const followUpUrl = `${apiUrl}/api/leads/${lead._id}/followups`;
+      console.log('🔍 Follow-up API URL:', followUpUrl);
+      
+      const res = await fetch(followUpUrl, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      
+      console.log('🔍 Follow-up response status:', res.status);
       const data = await res.json();
+      console.log('🔍 Follow-up response data:', data);
+      
       setFollowUpList(data.data || []);
+      setFollowUpLoading(false);
     } catch (err) {
+      console.error('🔍 Follow-up error:', err);
       setFollowUpError(err.message);
-    } finally {
       setFollowUpLoading(false);
     }
   };

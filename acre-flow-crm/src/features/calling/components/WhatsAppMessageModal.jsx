@@ -213,7 +213,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(apiUrl(`chats/messages?chatId=${chatId}`), {
+      const response = await fetch(`${apiUrl}/chats/messages?chatId=${chatId}`, {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
       });
       if (response.ok) {
@@ -273,9 +273,9 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
     setIsSending(true);
     try {
       const token = localStorage.getItem('token');
-      console.log('🔍 Sending message to:', apiUrl('chats/send'));
+      console.log('🔍 Sending message to:', `${apiUrl}/chats/send`);
       
-      const response = await fetch(apiUrl('chats/send'), {
+      const response = await fetch(`${apiUrl}/chats/send`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ chatId: chatId, message: message.trim(), senderId: getCurrentUserId() })
@@ -318,7 +318,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(apiUrl(`chats/${chatId}`), {
+      const response = await fetch(`${apiUrl}/chats/${chatId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -362,7 +362,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(apiUrl(`chats/${chatId}/favorite`), {
+      const response = await fetch(`${apiUrl}/chats/${chatId}/favorite`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -487,7 +487,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
       formData.append('messageType', selectedFile.type.startsWith('image/') ? 'image' : 
                      selectedFile.type.startsWith('video/') ? 'video' : 'file');
 
-      const response = await fetch(apiUrl('chats/send-file'), {
+      const response = await fetch(`${apiUrl}/chats/send-file`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

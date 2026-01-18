@@ -29,6 +29,10 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    
+    console.log('🔍 Submitting follow-up for lead:', lead._id);
+    console.log('🔍 Follow-up data:', formData);
+    
     try {
       const timestamp = `${formData.date} ${formData.time}`;
       const followUpData = {
@@ -38,11 +42,15 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
         timestamp,
         place: formData.place,
         relatedTo: formData.relatedTo,
+        addedBy: localStorage.getItem('userId'), // Add current user ID
       };
-      const res = await fetch(ENDPOINTS.LEADS.ADD_FOLLOW_UP(lead._id), {
+      
+      const followUpUrl = ENDPOINTS.LEADS.ADD_FOLLOW_UP(lead._id);
+      console.log('🔍 Follow-up API URL:', followUpUrl);
+      console.log('🔍 Follow-up payload:', followUpData);
+      
+      const res = await fetch(followUpUrl, {
         method: "POST",
-
-
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${localStorage.getItem('token')}`
@@ -50,14 +58,23 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
         body: JSON.stringify(followUpData),
         credentials: "include"
       });
+      
+      console.log('🔍 Follow-up response status:', res.status);
+      
       let data = {};
       try {
         data = await res.json();
-      } catch (e) {}
+        console.log('🔍 Follow-up response data:', data);
+      } catch (e) {
+        console.error('🔍 Error parsing response:', e);
+      }
+      
       if (!res.ok) throw new Error(data.message || "Failed to submit follow-up");
+      console.log('✅ Follow-up submitted successfully!');
       setLoading(false);
       onClose();
     } catch (err) {
+      console.error('🔍 Follow-up submission error:', err);
       setError(err.message || "Failed to submit follow-up");
       setLoading(false);
     }
