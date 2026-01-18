@@ -91,11 +91,15 @@ const createLead = async (leadData, creator) => {
   // 📢 Send notification to assigned user
   if (leadData.assignedTo) {
     try {
+      // Get assigned user details to determine their role
+      const assignedUser = await User.findById(leadData.assignedTo);
+      
       await notificationService.createNotification({
         title: 'New Lead Assigned',
         message: `A new lead "${lead.name}" has been assigned to you by ${creator.name}.`,
         type: 'lead_assigned',
         recipientId: leadData.assignedTo,
+        recipientRole: assignedUser?.role || 'bd', // Default to 'bd' if role not found
         data: { 
           leadId: lead._id,
           assignedBy: creator._id,
