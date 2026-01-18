@@ -24,7 +24,7 @@ export default function BDStatusSummary() {
       const token = localStorage.getItem('token');
       console.log('🔑 Token exists:', !!token);
       
-      const response = await fetch('http://localhost:5001/api/leads/bd-status-summary', {
+      const response = await fetch('https://bcrm.100acress.com/api/leads/bd-status-summary', {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -45,7 +45,7 @@ export default function BDStatusSummary() {
       // Try test API as fallback
       try {
         console.log('🔄 Trying test API...');
-        const testResponse = await fetch('http://localhost:5001/test-bd-status');
+        const testResponse = await fetch('https://bcrm.100acress.com/test-bd-status');
         const testData = await testResponse.json();
         console.log('📊 Test API Response:', testData);
         if (testData.success) {
@@ -65,7 +65,7 @@ export default function BDStatusSummary() {
       console.log('🔄 Fetching BD Details from frontend...');
       const token = localStorage.getItem('token');
       
-      const response = await fetch(`http://localhost:5001/api/leads/bd-status/${bdId}`, {
+      const response = await fetch(`https://bcrm.100acress.com/api/leads/bd-status/${bdId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
