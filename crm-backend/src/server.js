@@ -33,7 +33,10 @@ const allowedOrigins = [
   'http://localhost:3500',
   'https://crm-100acress-backend-2.onrender.com', // ✅ Added Render backend for Socket.IO
   'https://bcrm.100acress.com',
-  'https://crm.100acress.com'
+  'https://crm.100acress.com',
+  'http://192.168.1.16:5173',
+  'http://192.168.1.16:5001',
+  'http://192.168.1.16:5000'
 ];
 
 // ✅ Apply CORS globally for Express

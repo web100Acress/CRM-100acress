@@ -27,21 +27,24 @@ const allowedOrigins = [
   'https://crm-100acress-backend-2.onrender.com', // ✅ Added Render backend for Socket.IO
   'https://bcrm.100acress.com',
   'https://crm.100acress.com',
-  'null' // Allow file:// protocol for local HTML files
+  'null', // Allow file:// protocol for local HTML files
+  'http://192.168.1.16:5173',
+  'http://192.168.1.16:5001',
+  'http://192.168.1.16:5000'
 ];
 
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps, curl requests, or file://)
     if (!origin || origin === 'null') return callback(null, true);
-    
+
     // Check if the origin is in the allowed list
     if (allowedOrigins.indexOf(origin) === -1) {
       const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
       console.warn('CORS denied for origin:', origin);
       return callback(new Error(msg), false);
     }
-    
+
     return callback(null, true);
   },
   credentials: true,
@@ -58,7 +61,7 @@ app.use(cors(corsOptions));
 // Custom OPTIONS preflight handler to fix CORS issues
 app.options('*', (req, res, next) => {
   const origin = req.headers.origin || req.headers.referer?.split('/')[0] || '*';
-  
+
   // Always allow the origin for development
   res.header('Access-Control-Allow-Origin', origin);
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
