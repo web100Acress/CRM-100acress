@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu, X, Home, Users, BarChart3, LogOut, Bell, Search, User, MessageCircle, Activity } from 'lucide-react';
 import { Badge } from '@/layout/badge';
+import MobileNotifications from '@/components/MobileNotifications';
 
 const MobileLayout = ({ userRole = 'employee', activeTab, setActiveTab, children }) => {
   const navigate = useNavigate();
@@ -157,6 +158,10 @@ const MobileLayout = ({ userRole = 'employee', activeTab, setActiveTab, children
             <span className="text-xs mt-1">Users</span>
           </button>
         )}
+        
+        {/* Notification Bell - Available for all roles */}
+        <MobileNotifications userRole={userRole} />
+        
         <button
           onClick={() => setActiveTab('status')}
           className={`flex flex-col items-center py-2 px-3 transition-all duration-200 ${

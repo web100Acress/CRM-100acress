@@ -93,8 +93,13 @@ const markAllAsRead = async (recipientId, recipientRole) => {
     return await Notification.updateMany({ ...query, isRead: false }, { isRead: true });
 };
 
+const getSocketIO = () => {
+    return io;
+};
+
 module.exports = {
     setSocketIO,
+    getSocketIO,
     createNotification,
     getNotifications,
     markAsRead,

@@ -44,8 +44,9 @@ export const API_ENDPOINTS = {
   WHATSAPP_SEND: `${API_BASE_URL}/api/whatsapp/send`,
 
   // Chat
-  CHAT_ROOMS: `${API_BASE_URL}/api/chat/rooms`,
-  CHAT_MESSAGES: `${API_BASE_URL}/api/chat/messages`,
+  CHAT_ROOMS: `${API_BASE_URL}/api/chats`,
+  CHAT_MESSAGES: `${API_BASE_URL}/api/chats/messages`,
+  CHAT_CREATE: `${API_BASE_URL}/api/chats/create`,
 
   // Notifications
   NOTIFICATIONS: `${API_BASE_URL}/api/notifications`,

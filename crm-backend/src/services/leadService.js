@@ -606,6 +606,7 @@ const addFollowUp = async (id, followUpData) => {
         const relevantUsers = await notificationService.getRelevantUsersForBDActivity(updatedBy);
         
         // Emit real-time update to all relevant users
+        const io = notificationService.getSocketIO();
         if (io && relevantUsers.length > 0) {
           relevantUsers.forEach(user => {
             io.to(user.userId.toString()).emit('leadUpdate', {
@@ -637,11 +638,13 @@ const addFollowUp = async (id, followUpData) => {
       
       // Send to specific assignee if different from current user
       if (followUpData.addedBy !== currentUser._id.toString()) {
+        const assigneeUser = await User.findById(lead.assignedTo);
         await notificationService.createNotification({
           title: 'Follow-up Added',
           message: `Follow-up added to lead "${lead.name}": "${followUpData.comment}" by ${currentUser.name}`,
           type: 'followup_added',
           recipientId: lead.assignedTo, // Send to lead's assigned BD
+          recipientRole: assigneeUser?.role || 'bd', // Add recipient role
           data: { 
             leadId: id,
             addedBy: currentUser._id,
@@ -659,7 +662,10 @@ const addFollowUp = async (id, followUpData) => {
         title: 'BD Activity - Follow-up Added',
         message: `BD "${currentUser.name}" added follow-up to lead "${lead.name}": "${followUpData.comment}"`,
         type: 'lead_bd_activity',
-        recipients: relevantUsers,
+        recipients: relevantUsers.map(user => ({
+          recipientId: user.userId,
+          recipientRole: user.role || 'bd' // Add recipient role for each user
+        })),
         data: { 
           leadId: id,
           addedBy: currentUser._id,

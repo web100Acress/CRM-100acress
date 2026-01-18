@@ -14,6 +14,7 @@ import CreateLeadFormMobile from '@/layout/CreateLeadForm.mobile';
 import LeadTableMobile from '@/layout/LeadTable.mobile';
 import LeadAdvancedOptionsMobile from '@/layout/LeadAdvancedOptions.mobile';
 import { apiUrl } from '@/config/apiConfig';
+import io from 'socket.io-client';
 
 const LeadsMobile = ({ userRole = 'bd' }) => {
   const navigate = useNavigate();
@@ -76,12 +77,116 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
   const [whatsAppRecipient, setWhatsAppRecipient] = useState(null);
   const [callHistory, setCallHistory] = useState([]);
   const [loadingCallHistory, setLoadingCallHistory] = useState(false);
+  const [socket, setSocket] = useState(null);
+  const currentUserId = localStorage.getItem('userId');
   const [chatList, setChatList] = useState([]);
   const [chatFilter, setChatFilter] = useState('all');
   const [chatSearchQuery, setChatSearchQuery] = useState('');
   const [showUserSearch, setShowUserSearch] = useState(false);
-  const currentUserId = localStorage.getItem('userId');
   const currentUserRole = localStorage.getItem('userRole');
+
+  // Socket.io connection for real-time notifications
+  useEffect(() => {
+    const socketUrl = window.location.hostname === 'localhost' 
+      ? 'http://localhost:5001' 
+      : 'https://bcrm.100acress.com';
+    
+    const s = io(socketUrl);
+    setSocket(s);
+    console.log('Mobile Leads Socket.IO connected:', s.id);
+
+    // Listen for real-time lead updates
+    s.on('leadUpdate', (data) => {
+      console.log('Mobile Leads - Lead update received:', data);
+      
+      // Handle different types of lead updates with notifications
+      switch(data.action) {
+        case 'followup_added':
+          toast({
+            title: "Follow-up Added",
+            description: `${data.data.leadName}: ${data.data.followUpData.comment}`,
+            duration: 6000,
+          });
+          break;
+          
+        case 'assigned':
+          if (data.assignedTo === currentUserId) {
+            toast({
+              title: "Lead Assigned",
+              description: `${data.data.leadName} assigned to you`,
+              duration: 8000,
+            });
+          }
+          break;
+          
+        case 'forward_patch':
+          toast({
+            title: "Lead Reassigned",
+            description: `${data.data.leadName} reassigned`,
+            duration: 6000,
+          });
+          break;
+          
+        case 'swapped':
+          toast({
+            title: "Lead Swapped",
+            description: `${data.data.leadName} swapped`,
+            duration: 6000,
+          });
+          break;
+      }
+      
+      // Refresh leads for all roles to see updates
+      fetchLeads();
+    });
+
+    return () => {
+      s.disconnect();
+      console.log('Mobile Leads Socket.IO disconnected');
+    };
+  }, [currentUserId]);
+
+  // Fetch assignable users function - moved outside useEffect
+  const fetchAssignableUsers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `${apiUrl}/api/leads/assignable-users`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const json = await response.json();
+      const users = json.data || [];
+      setAssignableUsers(users);
+      console.log('Assignable users fetched:', users);
+    } catch (error) {
+      console.error("Error fetching assignable users:", error);
+      // Fallback: try to fetch all users
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(
+          `${apiUrl}/api/users`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        const json = await response.json();
+        const users = json.data || [];
+        setAssignableUsers(users);
+        console.log('Fallback users fetched:', users);
+      } catch (fallbackError) {
+        console.error("Error fetching fallback users:", fallbackError);
+        setAssignableUsers([]);
+      }
+    }
+  };
 
   // Fetch real stats data
   useEffect(() => {
@@ -120,47 +225,6 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         console.error("Error fetching stats:", error);
       } finally {
         setLoading(false);
-      }
-    };
-
-    const fetchAssignableUsers = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(
-          `${apiUrl}/api/leads/assignable-users`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        const json = await response.json();
-        const users = json.data || [];
-        setAssignableUsers(users);
-        console.log('Assignable users fetched:', users);
-      } catch (error) {
-        console.error("Error fetching assignable users:", error);
-        // Fallback: try to fetch all users
-        try {
-          const token = localStorage.getItem('token');
-          const response = await fetch(
-            `${apiUrl}/api/users`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-          const json = await response.json();
-          const users = json.data || [];
-          setAssignableUsers(users);
-          console.log('Fallback users fetched:', users);
-        } catch (fallbackError) {
-          console.error("Error fetching fallback users:", fallbackError);
-          setAssignableUsers([]);
-        }
       }
     };
 
@@ -1707,10 +1771,9 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       return isVisible;
     }
 
-    // For HODs/Boss: Show WhatsApp button for leads assigned to others (not themselves)
+    // For HODs/Boss: Show WhatsApp button for all assigned leads (they can chat with anyone in the hierarchy)
     const isVisible = isAssignedLead(lead) &&
-      String(lead.assignedTo) !== String(currentUserId) &&
-      !((currentUserRole === 'hod' || currentUserRole === 'head-admin') && isBossToHodLead(lead));
+      String(lead.assignedTo) !== String(currentUserId);
 
     console.log('WhatsApp button visibility (HOD/Boss):', {
       leadId: lead._id,
@@ -1720,7 +1783,6 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       currentUserRole,
       isAssignedLead: isAssignedLead(lead),
       isNotCurrentUser: String(lead.assignedTo) !== String(currentUserId),
-      isNotBossToHodLead: !((currentUserRole === 'hod' || currentUserRole === 'head-admin') && isBossToHodLead(lead)),
       finalVisibility: isVisible
     });
 
@@ -1786,7 +1848,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       const token = localStorage.getItem('token');
 
       const res = await fetch(
-        apiUrl(`leads/${leadId}/forward-patch`),
+        `${apiUrl}/leads/${leadId}/forward-patch`,
         {
           method: 'POST',
           headers: {
@@ -1802,7 +1864,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         throw new Error(data?.message || 'Failed to reassign lead');
       }
 
-      const leadsResponse = await fetch(apiUrl('leads'), {
+      const leadsResponse = await fetch(`${apiUrl}/leads`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -1855,7 +1917,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         // Try to fetch from API as fallback
         const token = localStorage.getItem('token');
 
-        const response = await fetch(apiUrl(`leads/${leadId}/assignment-chain`), {
+        const response = await fetch(`${apiUrl}/leads/${leadId}/assignment-chain`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
