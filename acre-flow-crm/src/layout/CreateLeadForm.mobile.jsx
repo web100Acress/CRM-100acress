@@ -201,12 +201,12 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
   ];
 
   const locationOptions = [
-    "Projects on Sohna Road",
-    "Projects on Golf Course",
-    "Projects on Dwarka Expressway",
-    "Projects on New Gurgaon",
-    "Projects on Southern Peripheral Road",
-    "Projects on Golf Course Extn Road",
+    "Sohna Road",
+    "Golf Course",
+    "Dwarka Expressway",
+    "New Gurgaon",
+    "Southern Peripheral Road",
+    "Golf Course Extn Road",
     "Delhi",
     "Noida",
     "Gurugram",
