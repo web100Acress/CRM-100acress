@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ENDPOINTS } from './endpoints.js';
+import { API_ENDPOINTS as ENDPOINTS } from '@/config/apiConfig';
 
 const baseURL = ENDPOINTS.AUTH.LOGIN.split('/auth')[0];
 

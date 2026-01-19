@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { X, Send } from "lucide-react";
-import { ENDPOINTS } from "@/api/endpoints";
+import { API_ENDPOINTS } from "@/config/apiConfig";
 import { Dialog, DialogContent } from "@/layout/dialog";
 import './FollowUpModal.css';
 
@@ -29,10 +29,10 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-    
+
     console.log('🔍 Submitting follow-up for lead:', lead._id);
     console.log('🔍 Follow-up data:', formData);
-    
+
     try {
       const timestamp = `${formData.date} ${formData.time}`;
       const followUpData = {
@@ -44,11 +44,11 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
         relatedTo: formData.relatedTo,
         addedBy: localStorage.getItem('userId'), // Add current user ID
       };
-      
-      const followUpUrl = ENDPOINTS.LEADS.ADD_FOLLOW_UP(lead._id);
+
+      const followUpUrl = API_ENDPOINTS.LEADS_ADD_FOLLOW_UP(lead._id);
       console.log('🔍 Follow-up API URL:', followUpUrl);
       console.log('🔍 Follow-up payload:', followUpData);
-      
+
       const res = await fetch(followUpUrl, {
         method: "POST",
         headers: {
@@ -58,9 +58,9 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
         body: JSON.stringify(followUpData),
         credentials: "include"
       });
-      
+
       console.log('🔍 Follow-up response status:', res.status);
-      
+
       let data = {};
       try {
         data = await res.json();
@@ -68,7 +68,7 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
       } catch (e) {
         console.error('🔍 Error parsing response:', e);
       }
-      
+
       if (!res.ok) throw new Error(data.message || "Failed to submit follow-up");
       console.log('✅ Follow-up submitted successfully!');
       setLoading(false);

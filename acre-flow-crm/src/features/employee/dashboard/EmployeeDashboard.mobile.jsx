@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
+import {
   User, Mail, Phone, Shield, Building2, Users, Ticket, Eye, Target, CheckCircle, TrendingUp, Briefcase, Menu, X, Home, BarChart3, Calendar, Clock, ArrowRight, PhoneCall, MessageSquare, MapPin, Star, Award, Bell, Settings, LogOut, ChevronRight, Activity, FileText, DollarSign, TrendingDown, AlertCircle, Search
 } from 'lucide-react';
 import { Badge } from '@/layout/badge';
@@ -9,13 +9,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/layout/dialo
 import { Button } from '@/layout/button';
 import MobileSidebar from '@/layout/MobileSidebar';
 import { useToast } from '@/hooks/use-toast';
-import MobileNotifications from '@/components/MobileNotifications';
 import io from 'socket.io-client';
+import { Popover, PopoverContent, PopoverTrigger } from '@/layout/popover';
+import { API_ENDPOINTS } from '@/config/apiConfig';
 
 const BDDashboardMobile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const userRole = localStorage.getItem('userRole') || 'bd';
+  const [notifications, setNotifications] = useState([]);
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
 
   const [dashboardStats, setDashboardStats] = useState({
     myTasks: 0,
@@ -72,14 +75,14 @@ const BDDashboardMobile = () => {
   const bannerImages = [
     'https://100acress-media-bucket.s3.ap-south-1.amazonaws.com/small-banners/1766217374273-max-antara-361.webp'
   ];
-  
+
   const [currentBannerIndex] = useState(0);
 
   useEffect(() => {
     const s = io('https://bcrm.100acress.com');
     setSocket(s);
     console.log('Socket.IO client connected:', s);
-    
+
     // Request initial data
     s.emit('requestDashboardStats');
     s.emit('requestMyLeads', { userId: currentUserId });
@@ -104,14 +107,14 @@ const BDDashboardMobile = () => {
       console.log('New lead assigned:', data);
       if (data.assignedTo === currentUserId) {
         fetchBDLeads();
-        
+
         // Show notification
         toast({
           title: "New Lead Assigned",
           description: `${data.name} has been assigned to you`,
           duration: 8000,
         });
-        
+
         setDashboardStats(prev => ({
           ...prev,
           myTasks: prev.myTasks + 1,
@@ -123,9 +126,9 @@ const BDDashboardMobile = () => {
     // Listen for lead updates (BD activity notifications)
     socket.on('leadUpdate', (data) => {
       console.log('Lead update received:', data);
-      
+
       // Handle different types of lead updates
-      switch(data.action) {
+      switch (data.action) {
         case 'followup_added':
           toast({
             title: "Follow-up Added",
@@ -133,7 +136,7 @@ const BDDashboardMobile = () => {
             duration: 6000,
           });
           break;
-          
+
         case 'assigned':
           if (data.assignedTo === currentUserId) {
             toast({
@@ -143,7 +146,7 @@ const BDDashboardMobile = () => {
             });
           }
           break;
-          
+
         case 'forward_patch':
           toast({
             title: "Lead Reassigned",
@@ -151,7 +154,7 @@ const BDDashboardMobile = () => {
             duration: 6000,
           });
           break;
-          
+
         case 'swapped':
           toast({
             title: "Lead Swapped",
@@ -159,7 +162,7 @@ const BDDashboardMobile = () => {
             duration: 6000,
           });
           break;
-          
+
         default:
           // Generic lead update
           if (data.assignedTo === currentUserId) {
@@ -170,7 +173,7 @@ const BDDashboardMobile = () => {
             });
           }
       }
-      
+
       // Refresh leads if relevant to current user
       if (data.assignedTo === currentUserId || userRole === 'boss' || userRole === 'hod' || userRole === 'team-leader') {
         fetchBDLeads();
@@ -195,14 +198,44 @@ const BDDashboardMobile = () => {
       }));
     });
 
+    // 🔔 Real-time Notifications Listener
+    socket.on('newNotification', (notification) => {
+      console.log('🔔 Mobile Dashboard - New notification received:', notification);
+      setNotifications(prev => [notification, ...prev]);
+      setUnreadNotificationsCount(prev => prev + 1);
+
+      // Also show toast
+      toast({
+        title: notification.title,
+        description: notification.message,
+        duration: 6000,
+      });
+    });
+
+    // Listen for role-specific notifications
+    const roleEvent = `newNotification_${userRole}`;
+    socket.on(roleEvent, (notification) => {
+      console.log(`🔔 Mobile Dashboard - New role notification received (${userRole}):`, notification);
+      setNotifications(prev => [notification, ...prev]);
+      setUnreadNotificationsCount(prev => prev + 1);
+
+      toast({
+        title: notification.title,
+        description: notification.message,
+        duration: 6000,
+      });
+    });
+
     return () => {
       socket.off('dashboardUpdate');
       socket.off('leadAssigned');
       socket.off('leadUpdate');
       socket.off('leadUpdated');
       socket.off('myLeadsData');
+      socket.off('newNotification');
+      socket.off(roleEvent);
     };
-  }, [socket, currentUserId]);
+  }, [socket, currentUserId, userRole, toast]);
 
   // Listen for dashboard refresh events when lead status is updated
   useEffect(() => {
@@ -228,10 +261,10 @@ const BDDashboardMobile = () => {
           'Content-Type': 'application/json',
         },
       });
-      
+
       const data = await response.json();
       const myLeads = (data.data || []).filter(lead => lead.assignedTo === currentUserId);
-      
+
       setDashboardStats(prev => ({
         ...prev,
         myLeads: myLeads,
@@ -239,7 +272,7 @@ const BDDashboardMobile = () => {
         pendingTasks: myLeads.filter(lead => lead.workProgress !== 'done' && lead.workProgress !== 'inprogress').length,
         completedTasks: myLeads.filter(lead => lead.workProgress === 'done').length
       }));
-      
+
     } catch (error) {
       console.error('Error fetching BD leads:', error);
     }
@@ -248,7 +281,58 @@ const BDDashboardMobile = () => {
   // Initial data fetch
   useEffect(() => {
     fetchBDLeads();
+    fetchNotifications();
   }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(API_ENDPOINTS.NOTIFICATIONS, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const result = await response.json();
+        setNotifications(result.data || []);
+        setUnreadNotificationsCount(result.data?.filter(n => !n.isRead).length || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  const handleMarkAsRead = async (id) => {
+    const token = localStorage.getItem('token');
+    try {
+      const response = await fetch(API_ENDPOINTS.NOTIFICATIONS_READ(id), {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
+        setUnreadNotificationsCount(prev => Math.max(0, prev - 1));
+      }
+    } catch (error) {
+      console.error('Error marking as read:', error);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      const response = await fetch(API_ENDPOINTS.NOTIFICATIONS_READ_ALL, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+        setUnreadNotificationsCount(0);
+      }
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+    }
+  };
 
   const myTasks = useMemo(() => {
     // Use real-time leads data from API
@@ -287,7 +371,7 @@ const BDDashboardMobile = () => {
         };
       });
     }
-    
+
     // Return empty array if no real data - no fallback static data
     return [];
   }, [dashboardStats.myLeads]);
@@ -297,9 +381,9 @@ const BDDashboardMobile = () => {
     if (!searchQuery.trim()) {
       return myTasks;
     }
-    
+
     const query = searchQuery.toLowerCase();
-    return myTasks.filter(task => 
+    return myTasks.filter(task =>
       task.name.toLowerCase().includes(query) ||
       task.email?.toLowerCase().includes(query) ||
       task.phone?.includes(query) ||
@@ -329,7 +413,7 @@ const BDDashboardMobile = () => {
   // Calculate real-time task status from API data
   const getTaskStatusCounts = () => {
     const leads = dashboardStats.myLeads || [];
-    
+
     const pending = leads.filter(lead => {
       if (lead.workProgress === 'done') return false;
       if (lead.workProgress === 'inprogress') return false;
@@ -426,14 +510,67 @@ const BDDashboardMobile = () => {
               {showMobileMenu ? <X size={20} /> : <Menu size={20} />}
             </button>
             <div>
-              <h1 className="text-lg font-bold text-white">{getDashboardTitle()}</h1>
-              {/* <p className="text-xs text-blue-100">Mobile Dashboard</p> */}
+              <h1 className="text-lg font-bold text-white leading-tight">{getDashboardTitle()}</h1>
+              <div className="flex items-center gap-1.5 opacity-90">
+                <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                <p className="text-[10px] text-blue-50 font-medium uppercase tracking-wider">
+                  Assigned Leads: <span className="text-white font-bold">{dashboardStats.myTasks}</span>
+                </p>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {/* Notification Bell */}
-            <MobileNotifications userRole={userRole} />
-            
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="relative p-2 bg-white/20 backdrop-blur-sm rounded-lg text-white hover:bg-white/30 transition-all duration-200">
+                  <Bell size={20} />
+                  {unreadNotificationsCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-indigo-600 min-w-[18px] flex items-center justify-center">
+                      {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
+                    </span>
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0 border-slate-200 shadow-xl mt-2 overflow-hidden bg-white z-[100]">
+                <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-white">
+                  <h3 className="font-bold text-slate-800">Notifications</h3>
+                  {unreadNotificationsCount > 0 && (
+                    <button
+                      onClick={handleMarkAllAsRead}
+                      className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                    >
+                      Mark all as read
+                    </button>
+                  )}
+                </div>
+                <div className="max-h-[300px] overflow-y-auto bg-white">
+                  {notifications.length === 0 ? (
+                    <div className="p-8 text-center text-slate-400">
+                      <Bell className="mx-auto mb-2 opacity-20" size={32} />
+                      <p className="text-sm">No notifications yet</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-slate-50">
+                      {notifications.map((notification) => (
+                        <div
+                          key={notification._id}
+                          className={`p-4 hover:bg-slate-50 transition-colors cursor-pointer ${!notification.isRead ? 'bg-indigo-50/30 font-semibold' : ''}`}
+                          onClick={() => !notification.isRead && handleMarkAsRead(notification._id)}
+                        >
+                          <p className="text-sm text-slate-800">{notification.title}</p>
+                          <p className="text-xs text-slate-500 line-clamp-2 mt-1">{notification.message}</p>
+                          <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
+                            <Clock size={10} /> {new Date(notification.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+
             <button
               onClick={() => navigate('/edit-profile')}
               className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-white/30 hover:bg-white/30 transition-all duration-200 overflow-hidden"
@@ -454,13 +591,13 @@ const BDDashboardMobile = () => {
 
       {/* Banner Section */}
       <div className="relative h-32 overflow-hidden">
-        <img 
-          src={bannerImages[currentBannerIndex]} 
+        <img
+          src={bannerImages[currentBannerIndex]}
           alt="Dashboard Banner"
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-        
+
         {/* Banner Text Overlay */}
         {/* <div className="absolute bottom-4 left-4 right-4">
           <h2 className="text-white text-xl font-bold drop-shadow-lg">
@@ -477,10 +614,10 @@ const BDDashboardMobile = () => {
       {renderMobileHeader()}
 
       {/* Mobile Sidebar */}
-      <MobileSidebar 
-        userRole={userRole} 
-        isOpen={showMobileMenu} 
-        onClose={() => setShowMobileMenu(false)} 
+      <MobileSidebar
+        userRole={userRole}
+        isOpen={showMobileMenu}
+        onClose={() => setShowMobileMenu(false)}
       />
 
       {/* Main Content */}
@@ -499,7 +636,7 @@ const BDDashboardMobile = () => {
               <span>{taskStatusCounts.today} today</span>
             </div>
           </div>
-          
+
           <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 shadow-lg transform hover:scale-105 transition-all duration-200 border border-green-200">
             <div className="flex items-center justify-between mb-2">
               <CheckCircle className="text-green-100" size={20} />
@@ -512,7 +649,7 @@ const BDDashboardMobile = () => {
               <span>{taskStatusCounts.completed > 0 ? Math.round((taskStatusCounts.completed / dashboardStats.myTasks) * 100) : 0}% rate</span>
             </div>
           </div>
-          
+
           <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-4 shadow-lg transform hover:scale-105 transition-all duration-200 border border-orange-200">
             <div className="flex items-center justify-between mb-2">
               <Clock className="text-orange-100" size={20} />
@@ -525,7 +662,7 @@ const BDDashboardMobile = () => {
               <span>{taskStatusCounts.thisWeek} this week</span>
             </div>
           </div>
-          
+
           <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 shadow-lg transform hover:scale-105 transition-all duration-200 border border-purple-200">
             <div className="flex items-center justify-between mb-2">
               <TrendingUp className="text-purple-100" size={20} />
@@ -561,7 +698,7 @@ const BDDashboardMobile = () => {
                 <span className="text-xs text-blue-100 mt-1">{dashboardStats.myTasks} items</span>
               </div>
             </button>
-            
+
             <button
               onClick={() => navigate('/reports')}
               className="group relative overflow-hidden bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl p-4 hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg"
@@ -573,7 +710,7 @@ const BDDashboardMobile = () => {
                 <span className="text-xs text-green-100 mt-1">Analytics</span>
               </div>
             </button>
-            
+
             <button
               onClick={() => navigate('/calendar')}
               className="group relative overflow-hidden bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl p-4 hover:from-orange-600 hover:to-orange-700 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg"
@@ -585,7 +722,7 @@ const BDDashboardMobile = () => {
                 <span className="text-xs text-orange-100 mt-1">Schedule</span>
               </div>
             </button>
-            
+
             <button
               onClick={() => navigate('/team')}
               className="group relative overflow-hidden bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl p-4 hover:from-purple-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg"
@@ -616,7 +753,7 @@ const BDDashboardMobile = () => {
               {dashboardStats.myTasks}
             </Badge>
           </div>
-          
+
           {/* Search Bar */}
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
@@ -636,7 +773,7 @@ const BDDashboardMobile = () => {
               </button>
             )}
           </div>
-          
+
           {filteredTasks.length > 0 ? (
             <div className="space-y-3">
               {filteredTasks.slice(0, 5).map((task, index) => (
@@ -749,7 +886,7 @@ const BDDashboardMobile = () => {
                     </div>
                   </div>
                 )}
-                
+
                 {selectedTask.phone && (
                   <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                     <Phone size={18} className="text-gray-600" />
@@ -759,7 +896,7 @@ const BDDashboardMobile = () => {
                     </div>
                   </div>
                 )}
-                
+
                 {selectedTask.budget && (
                   <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                     <DollarSign size={18} className="text-gray-600" />
@@ -769,7 +906,7 @@ const BDDashboardMobile = () => {
                     </div>
                   </div>
                 )}
-                
+
                 {selectedTask.location && (
                   <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                     <MapPin size={18} className="text-gray-600" />
@@ -816,7 +953,7 @@ const BDDashboardMobile = () => {
             <Home size={20} />
             <span className="text-xs mt-1">Home</span>
           </button>
-          
+
           <button
             onClick={() => navigate('/leads')}
             className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
@@ -824,7 +961,7 @@ const BDDashboardMobile = () => {
             <Briefcase size={20} />
             <span className="text-xs mt-1">Tasks</span>
           </button>
-          
+
           <button
             onClick={() => navigate('/reports')}
             className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
@@ -832,7 +969,7 @@ const BDDashboardMobile = () => {
             <BarChart3 size={20} />
             <span className="text-xs mt-1">Reports</span>
           </button>
-          
+
           <button
             onClick={() => navigate('/calendar')}
             className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
@@ -840,7 +977,7 @@ const BDDashboardMobile = () => {
             <Calendar size={20} />
             <span className="text-xs mt-1">Calendar</span>
           </button>
-          
+
           <button
             onClick={() => navigate('/team')}
             className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
@@ -848,7 +985,7 @@ const BDDashboardMobile = () => {
             <Users size={20} />
             <span className="text-xs mt-1">Team</span>
           </button>
-          
+
           <button
             onClick={() => setShowMobileMenu(!showMobileMenu)}
             className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"

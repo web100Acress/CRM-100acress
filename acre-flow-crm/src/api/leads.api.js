@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ENDPOINTS } from './endpoints.js';
+import { API_ENDPOINTS as ENDPOINTS } from '@/config/apiConfig';
 
 // Create axios instance for leads API
 const leadsApi = axios.create({
@@ -190,9 +190,9 @@ export const fetchBDStatus = async (bdId) => {
 
 export const forwardLead = async (leadId, targetUserId, notes) => {
   try {
-    const response = await leadsApi.post(`/api/leads/${leadId}/forward`, { 
-      targetUserId, 
-      notes 
+    const response = await leadsApi.post(`/api/leads/${leadId}/forward`, {
+      targetUserId,
+      notes
     });
     return response.data;
   } catch (error) {

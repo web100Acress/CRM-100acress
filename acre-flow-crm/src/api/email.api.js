@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ENDPOINTS } from './endpoints.js';
+import { API_ENDPOINTS as ENDPOINTS } from '@/config/apiConfig';
 
 const emailAxios = axios.create({
   baseURL: ENDPOINTS.EMAIL.LIST_TEMPLATES.split('/api/email')[0],

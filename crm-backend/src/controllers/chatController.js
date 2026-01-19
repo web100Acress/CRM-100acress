@@ -1,6 +1,7 @@
 const Chat = require('../models/chatModel');
 const User = require('../models/userModel');
 const Lead = require('../models/leadModel');
+const notificationService = require('../services/notificationService');
 
 // 🎯 PERFECT CHAT CONTROLLER - Unified Implementation
 
@@ -339,6 +340,31 @@ exports.sendMessage = async (req, res, next) => {
     // Populate and return
     await chat.populate('participants', 'name role email');
     await chat.populate('messages.senderId', 'name role email');
+
+    // 📢 Send notification to recipient
+    if (otherParticipant) {
+      try {
+        const senderUser = chat.participants.find(p => p._id.toString() === senderId);
+        const recipientUser = await User.findById(otherParticipant);
+
+        await notificationService.createNotification({
+          title: 'New Message',
+          message: `${senderUser?.name || 'Someone'}: ${message.trim().substring(0, 50)}${message.length > 50 ? '...' : ''}`,
+          type: 'chat_message',
+          recipientId: otherParticipant.toString(),
+          recipientRole: recipientUser?.role || 'bd',
+          data: {
+            chatId: chat._id,
+            senderId: senderId,
+            senderName: senderUser?.name,
+            messagePreview: message.trim().substring(0, 100)
+          }
+        });
+        console.log('📢 Chat notification sent to:', otherParticipant.toString());
+      } catch (notifError) {
+        console.error('❌ Error sending chat notification:', notifError);
+      }
+    }
 
     res.status(201).json({
       success: true,

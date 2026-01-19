@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ENDPOINTS } from './endpoints.js';
+import { API_ENDPOINTS as ENDPOINTS } from '@/config/apiConfig';
 import store from '@/store';
 import { apiUrl } from '@/config/apiConfig';
 

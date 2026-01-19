@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { X, Send, Calendar, Clock, MapPin } from "lucide-react";
 import { Dialog, DialogContent } from "@/layout/dialog";
-import { ENDPOINTS } from "@/api/endpoints";
+import { API_ENDPOINTS } from "@/config/apiConfig";
 
 const FollowUpModalMobile = ({ lead, onClose, userRole }) => {
   const userName = localStorage.getItem("userName") || "";
@@ -44,7 +44,7 @@ const FollowUpModalMobile = ({ lead, onClose, userRole }) => {
       };
 
       const res = await fetch(
-        ENDPOINTS.LEADS.ADD_FOLLOW_UP(lead._id),
+        API_ENDPOINTS.LEADS_ADD_FOLLOW_UP(lead._id),
         {
           method: "POST",
           headers: {
@@ -59,7 +59,7 @@ const FollowUpModalMobile = ({ lead, onClose, userRole }) => {
       let data = {};
       try {
         data = await res.json();
-      } catch (e) {}
+      } catch (e) { }
 
       if (!res.ok) {
         throw new Error(data.message || "Failed to submit follow-up");
