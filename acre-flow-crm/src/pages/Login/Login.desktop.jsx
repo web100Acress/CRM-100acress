@@ -89,7 +89,7 @@ const LoginDesktop = () => {
         break;
       case "bd":
       case "user":
-        window.location.href = "/employee-dashboard";  // Redirect employee to employee dashboard
+        window.location.href = "/employee-dashboard";
         break;
       default:
         window.location.href = "/";
