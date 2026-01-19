@@ -453,15 +453,24 @@ const getAssignableUsers = async (currentUserRole, currentUserId) => {
     return self ? [...allUsers, self] : allUsers;
   }
 
-  // For super-admin and head-admin, return all users at lower levels
+  // For boss, hod, super-admin and head-admin, return users at lower levels AND self
   const users = [];
   const roleLevels = ['boss', 'hod', 'team-leader', 'bd'];
   const currentUserLevel = roleLevels.indexOf(currentUserRole);
   const assignableRoles = roleLevels.slice(currentUserLevel + 1); // +1 to exclude current level
+  
+  // Add users at lower levels
   for (const role of assignableRoles) {
     const roleUsers = await User.find({ role });
     users.push(...roleUsers);
   }
+  
+  // Add current user (Boss/HOD) for self-assignment
+  const self = await User.findById(currentUserId);
+  if (self) {
+    users.push(self);
+  }
+  
   return users;
 };
 
