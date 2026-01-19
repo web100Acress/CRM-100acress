@@ -9,7 +9,7 @@ const AdminOverview = () => {
           <CardTitle>Overview</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-sm text-gray-600">Admin overview placeholder.</div>
+         
         </CardContent>
       </Card>
     </div>

@@ -9,10 +9,7 @@ import {
 } from 'lucide-react';
 
 const tabs = [
-  { key: 'overview', label: 'Overview', icon: BarChart3 },
-  { key: 'users', label: 'Users', icon: Users },
-  { key: 'create-user', label: 'Create User', icon: UserPlus },
-  { key: 'bd-analytics', label: 'BD Analytics', icon: Activity },
+ 
 ];
 
 const AdminSidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
