@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ENDPOINTS } from './endpoints.js';
+import { API_ENDPOINTS as ENDPOINTS } from '@/config/apiConfig';
 
 // Create axios instance for calls API
 const callsApi = axios.create({
@@ -171,7 +171,7 @@ export const fetchCallStatistics = async (filters = {}) => {
 
 export const exportCallLogs = async (filters = {}) => {
   try {
-    const response = await callsApi.get(ENDPOINTS.CALLS.EXPORT, { 
+    const response = await callsApi.get(ENDPOINTS.CALLS.EXPORT, {
       params: filters,
       responseType: 'blob'
     });

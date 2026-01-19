@@ -13,14 +13,27 @@ const notificationSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['lead_created', 'lead_assigned', 'lead_forwarded', 'lead_reassigned', 'lead_bd_activity', 'lead_swapped', 'followup_added', 'system', 'task'],
+        enum: ['lead_created', 'lead_assigned', 'lead_forwarded', 'lead_reassigned', 'lead_bd_activity', 'lead_swapped', 'followup_added', 'chat_message', 'work_progress', 'system', 'task'],
         default: 'system'
     },
     recipientRole: {
         type: String,
         enum: ['boss', 'hod', 'team-leader', 'bd', 'all'],
-        required: true
+        required: function () {
+            // recipientRole is required only if recipients array is not provided
+            return !this.recipients || !Array.isArray(this.recipients) || this.recipients.length === 0;
+        }
     },
+    recipients: [{
+        userId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        },
+        role: {
+            type: String,
+            enum: ['boss', 'hod', 'team-leader', 'bd', 'all']
+        }
+    }],
     recipientId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'

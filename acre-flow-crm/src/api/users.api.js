@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ENDPOINTS } from './endpoints.js';
+import { API_ENDPOINTS as ENDPOINTS } from '@/config/apiConfig';
 
 // Create axios instance for users API
 const usersApi = axios.create({
@@ -162,7 +162,7 @@ export const uploadUserAvatar = async (userId, avatarFile) => {
   try {
     const formData = new FormData();
     formData.append('avatar', avatarFile);
-    
+
     const response = await usersApi.post(`/users/${userId}/avatar`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',

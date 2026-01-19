@@ -46,24 +46,24 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
   // Find or create chat between current user and recipient
   const findOrCreateChat = useCallback(async () => {
     if (!recipient?._id) return;
-    
+
     // If we already have chatId, use it directly (for user search created chats)
     if (recipient.chatId) {
       setChatId(recipient.chatId);
       return;
     }
-    
+
     // For lead-based chats, require leadId
     if (!recipient?.leadId) {
       console.warn('⚠️ No leadId provided for chat creation');
       return;
     }
-    
+
     setCreatingChat(true);
     try {
       const token = localStorage.getItem('token');
       const currentUserId = getCurrentUserId();
-      
+
       // 🔍 DEBUG: Log all recipient data
       console.log('🔍 DEBUG - Recipient Data:', {
         recipient: recipient,
@@ -76,10 +76,10 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
         currentUserId: currentUserId,
         isSelfAssignment: String(recipient._id) === String(currentUserId)
       });
-      
+
       // 🚫 CRITICAL FIX: Prevent self-chat with robust ID comparison
       let assignedToId = recipient._id;
-      
+
       // Handle different ID types (string, ObjectId, number)
       const normalizeId = (id) => {
         if (!id) return null;
@@ -88,10 +88,10 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
         if (typeof id === 'number') return id.toString();
         return String(id);
       };
-      
+
       const normalizedRecipientId = normalizeId(assignedToId);
       const normalizedCurrentUserId = normalizeId(currentUserId);
-      
+
       console.log('🔍 ID Comparison Debug:', {
         recipientId: assignedToId,
         recipientIdType: typeof assignedToId,
@@ -101,23 +101,23 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
         normalizedCurrentUserId,
         areEqual: normalizedRecipientId === normalizedCurrentUserId
       });
-      
+
       // 🔥 TEMPORARY BYPASS: Allow self-chat for testing
       if (normalizedRecipientId === normalizedCurrentUserId) {
         console.warn('⚠️ SELF-CHAT BYPASSED FOR TESTING - This should be fixed in production');
         // return; // Uncomment this in production
       }
-      
+
       console.log('✅ Creating chat with correct participants:', {
         leadId: recipient.leadId,
         createdBy: currentUserId,
         assignedTo: assignedToId,
         senderName: recipient.name
       });
-      
-      const chatUrl = API_ENDPOINTS.CHAT_CREATE;
+
+      const chatUrl = API_ENDPOINTS.CHAT_CREATE_OR_GET;
       console.log('🔍 Creating chat at URL:', chatUrl);
-      
+
       const response = await fetch(chatUrl, {
         method: 'POST',
         headers: {
@@ -130,23 +130,23 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
           assignedTo: assignedToId
         })
       });
-      
+
       console.log('🔍 Chat creation response status:', response.status);
-      
+
       if (response.ok) {
         const data = await response.json();
         console.log('🔍 Chat creation response:', data);
         if (data.success && data.data?._id) {
           setChatId(data.data._id);
           console.log('✅ Chat created/found:', data.data._id);
-          
+
           // Show success message
           toast({
             title: 'Success',
             description: 'Chat ready for messaging',
             variant: 'default'
           });
-          
+
           // Check if chat has any initial messages
           if (data.data.messages && data.data.messages.length > 0) {
             console.log('🔍 Chat has initial messages:', data.data.messages);
@@ -169,7 +169,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
           statusText: response.statusText,
           errorData
         });
-        
+
         // Show the actual error message from backend
         toast({
           title: 'Error',
@@ -193,12 +193,12 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
     if (!recipient) return null;
     const myId = getCurrentUserId();
     const recipientId = recipient._id || recipient.bdId || recipient.id;
-    
+
     // If recipient is the current user, show "You"
     if (recipientId === myId) {
       return { _id: myId, name: 'You', role: 'Self', phone: recipient.phone };
     }
-    
+
     // Otherwise, show the recipient's name
     return {
       _id: recipientId,
@@ -260,7 +260,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
       chatId,
       messageLength: message.trim().length
     });
-    
+
     if (!message.trim() || isSending || !chatId) {
       console.log('❌ Message send blocked:', {
         noMessage: !message.trim(),
@@ -269,20 +269,20 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
       });
       return;
     }
-    
+
     setIsSending(true);
     try {
       const token = localStorage.getItem('token');
       console.log('🔍 Sending message to:', `${apiUrl}/chats/send`);
-      
-      const response = await fetch(`${apiUrl}/chats/send`, {
+
+      const response = await fetch(API_ENDPOINTS.CHAT_SEND, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ chatId: chatId, message: message.trim(), senderId: getCurrentUserId() })
       });
-      
+
       console.log('🔍 Send response status:', response.status);
-      
+
       if (response.ok) {
         const data = await response.json();
         console.log('🔍 Send response data:', data);
@@ -311,14 +311,14 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
   // Step 1: Delete Chat Function
   const handleDeleteChat = useCallback(async () => {
     if (!chatId) return;
-    
+
     if (!window.confirm('Are you sure you want to delete this chat? This action cannot be undone.')) {
       return;
     }
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${apiUrl}/chats/${chatId}`, {
+      const response = await fetch(`${API_ENDPOINTS.CHAT_ROOMS}/${chatId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -359,10 +359,10 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
   // Step 2: Toggle Favorite Function
   const handleToggleFavorite = useCallback(async () => {
     if (!chatId) return;
-    
+
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${apiUrl}/chats/${chatId}/favorite`, {
+      const response = await fetch(`${API_ENDPOINTS.CHAT_ROOMS}/${chatId}/favorite`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -438,7 +438,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
     const cleanPhone = phoneNumber.replace(/[^\d+]/g, '');
     // Using tel: for now - can be enhanced with video call API
     window.location.href = `tel:${cleanPhone}`;
-    
+
     toast({
       title: 'Video Call',
       description: 'Initiating video call...',
@@ -462,7 +462,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
     }
 
     setSelectedFile(file);
-    
+
     // Create preview for images
     if (file.type.startsWith('image/')) {
       const reader = new FileReader();
@@ -484,10 +484,10 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
       const formData = new FormData();
       formData.append('file', selectedFile);
       formData.append('chatId', chatId);
-      formData.append('messageType', selectedFile.type.startsWith('image/') ? 'image' : 
-                     selectedFile.type.startsWith('video/') ? 'video' : 'file');
+      formData.append('messageType', selectedFile.type.startsWith('image/') ? 'image' :
+        selectedFile.type.startsWith('video/') ? 'video' : 'file');
 
-      const response = await fetch(`${apiUrl}/chats/send-file`, {
+      const response = await fetch(API_ENDPOINTS.CHAT_SEND_FILE, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -534,9 +534,9 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
 
   useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
   useEffect(() => { if (isOpen && inputRef.current) { inputRef.current.focus(); } }, [isOpen]);
-  
+
   // Find/create chat when modal opens
-  useEffect(() => { 
+  useEffect(() => {
     console.log('🔍 Chat Modal useEffect triggered:', {
       isOpen,
       recipientId: recipient?._id,
@@ -544,8 +544,8 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
       recipientLeadId: recipient?.leadId,
       recipientChatId: recipient?.chatId
     });
-    
-    if (isOpen && recipient?._id) { 
+
+    if (isOpen && recipient?._id) {
       // If we have chatId, set it directly (for chat list opens)
       if (recipient.chatId) {
         console.log('✅ Setting existing chatId:', recipient.chatId);
@@ -562,9 +562,9 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
           variant: 'destructive'
         });
       }
-    } 
+    }
   }, [isOpen, recipient, findOrCreateChat]);
-  
+
   // Reset when modal closes
   useEffect(() => {
     if (!isOpen) {
@@ -579,14 +579,14 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
       setIsFavorite(false);
     }
   }, [isOpen]);
-  
+
   // Fetch messages when chatId is available
-  useEffect(() => { 
-    if (chatId) { 
-      fetchMessages(); 
-    } 
+  useEffect(() => {
+    if (chatId) {
+      fetchMessages();
+    }
   }, [chatId, fetchMessages]);
-  
+
   // Note: Removed auto welcome message - user will see notification and then chat opens
 
   if (!isOpen || !recipient) return null;
@@ -616,14 +616,14 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <button 
+            <button
               onClick={handlePhoneCall}
               className="p-1 hover:bg-green-700 rounded"
               title="Call"
             >
               <Phone size={20} />
             </button>
-            <button 
+            <button
               onClick={handleVideoCall}
               className="p-1 hover:bg-green-700 rounded"
               title="Video Call"
@@ -678,30 +678,27 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
             <div className="flex flex-col space-y-3 h-full">
               {messages.map((msg) => (
                 <div key={msg.id} className={`flex ${msg.sender === 'me' ? 'justify-start' : 'justify-end'} w-full`}>
-                  <div className={`max-w-[70%] px-4 py-2 rounded-lg ${
-                    msg.sender === 'me' 
-                      ? 'bg-white text-gray-800 border border-gray-200' 
-                      : 'bg-green-600 text-white'
-                  }`}
-                  style={{
-                    borderTopLeftRadius: msg.sender === 'me' ? '4px' : '18px',
-                    borderTopRightRadius: msg.sender === 'me' ? '18px' : '4px',
-                    borderBottomLeftRadius: '18px',
-                    borderBottomRightRadius: '18px'
-                  }}>
+                  <div className={`max-w-[70%] px-4 py-2 rounded-lg ${msg.sender === 'me'
+                    ? 'bg-white text-gray-800 border border-gray-200'
+                    : 'bg-green-600 text-white'
+                    }`}
+                    style={{
+                      borderTopLeftRadius: msg.sender === 'me' ? '4px' : '18px',
+                      borderTopRightRadius: msg.sender === 'me' ? '18px' : '4px',
+                      borderBottomLeftRadius: '18px',
+                      borderBottomRightRadius: '18px'
+                    }}>
                     {/* Show sender name on both sides */}
                     <div className="flex items-center gap-1 mb-1">
-                      <p className={`text-xs font-semibold ${
-                        msg.sender === 'me' ? 'text-gray-600' : 'text-green-100'
-                      }`}>
+                      <p className={`text-xs font-semibold ${msg.sender === 'me' ? 'text-gray-600' : 'text-green-100'
+                        }`}>
                         {msg.senderName}
                       </p>
                       <Lock size={10} className={msg.sender === 'me' ? 'text-gray-400' : 'text-green-200'} />
                     </div>
                     <p className="text-sm break-words">{msg.text}</p>
-                    <p className={`text-xs mt-1 text-right ${
-                      msg.sender === 'me' ? 'text-gray-500' : 'text-green-100'
-                    }`}>
+                    <p className={`text-xs mt-1 text-right ${msg.sender === 'me' ? 'text-gray-500' : 'text-green-100'
+                      }`}>
                       {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
@@ -738,10 +735,10 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
               </div>
             </div>
           )}
-          
+
           <div className="flex items-center space-x-2">
             <div className="relative">
-              <button 
+              <button
                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                 className="p-2 text-gray-500 hover:text-gray-700"
                 title="Emoji"
@@ -771,26 +768,26 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
               accept="image/*,video/*,.pdf,.doc,.docx"
               onChange={handleFileSelect}
             />
-            <button 
+            <button
               onClick={() => fileInputRef.current?.click()}
               className="p-2 text-gray-500 hover:text-gray-700"
               title="Attach File"
             >
               <Paperclip size={20} />
             </button>
-            <input 
-              ref={inputRef} 
-              type="text" 
-              value={message} 
-              onChange={(e) => setMessage(e.target.value)} 
-              onKeyPress={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }} 
-              placeholder="Type a message..." 
-              className="flex-1 px-4 py-2 border rounded-full focus:outline-none focus:border-green-500" 
-              disabled={isSending} 
+            <input
+              ref={inputRef}
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyPress={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
+              placeholder="Type a message..."
+              className="flex-1 px-4 py-2 border rounded-full focus:outline-none focus:border-green-500"
+              disabled={isSending}
             />
-            <button 
-              onClick={selectedFile ? handleSendFile : handleSendMessage} 
-              disabled={(!message.trim() && !selectedFile) || isSending} 
+            <button
+              onClick={selectedFile ? handleSendFile : handleSendMessage}
+              disabled={(!message.trim() && !selectedFile) || isSending}
               className="p-2 bg-green-600 text-white rounded-full hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSending ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Send size={20} />}

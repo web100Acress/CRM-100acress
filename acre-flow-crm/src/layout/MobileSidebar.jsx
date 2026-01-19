@@ -27,7 +27,7 @@ import {
   Bell
 } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
-import { apiUrl } from '@/config/apiConfig';
+import { apiUrl, API_ENDPOINTS } from '@/config/apiConfig';
 
 const MobileSidebar = ({ userRole, isOpen, onClose }) => {
   const navigate = useNavigate();
@@ -83,7 +83,7 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
   const fetchChatUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${apiUrl}/api/messages/conversations`, {
+      const response = await fetch(API_ENDPOINTS.CHAT_USER_CHATS, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -94,18 +94,18 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
         const data = await response.json();
         if (data.success) {
           // Filter for super-admin, head-admin, team-leader
-          const filteredUsers = data.data.filter(user =>
-            user.recipientName && (
-              user.recipientName.toLowerCase().includes('admin') ||
-              user.recipientName.toLowerCase().includes('head') ||
-              user.recipientName.toLowerCase().includes('leader') ||
-              user.recipientName.toLowerCase().includes('boss')
+          const filteredUsers = data.data.filter(chat =>
+            chat.oppositeUser?.name && (
+              chat.oppositeUser.name.toLowerCase().includes('admin') ||
+              chat.oppositeUser.name.toLowerCase().includes('head') ||
+              chat.oppositeUser.name.toLowerCase().includes('leader') ||
+              chat.oppositeUser.name.toLowerCase().includes('boss')
             )
           );
           setChatUsers(filteredUsers);
 
           // Count unread messages
-          const unread = filteredUsers.reduce((acc, user) => acc + (user.unreadCount || 0), 0);
+          const unread = filteredUsers.reduce((acc, chat) => acc + (chat.unreadCount || 0), 0);
           setUnreadCount(unread);
         }
       }
@@ -114,10 +114,10 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
     }
   };
 
-  const fetchMessages = async (userId) => {
+  const fetchMessages = async (chatId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${apiUrl}/api/messages/conversation/${userId}`, {
+      const response = await fetch(`${API_ENDPOINTS.CHAT_MESSAGES}?chatId=${chatId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -140,16 +140,15 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${apiUrl}/api/messages/send`, {
+      const response = await fetch(API_ENDPOINTS.CHAT_SEND, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          recipientId: selectedUser._id,
-          recipientEmail: selectedUser.recipientEmail,
-          recipientName: selectedUser.recipientName,
+          chatId: selectedUser._id,
+          senderId: localStorage.getItem('userId'),
           message: newMessage.trim()
         })
       });
@@ -566,8 +565,8 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
                           >
                             <div
                               className={`max-w-[70%] p-3 rounded-2xl ${isMe
-                                  ? 'bg-green-600 text-white'
-                                  : 'bg-white text-gray-800 border border-gray-200'
+                                ? 'bg-green-600 text-white'
+                                : 'bg-white text-gray-800 border border-gray-200'
                                 }`}
                             >
                               <p className="text-sm">{msg.message}</p>

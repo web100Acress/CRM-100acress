@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, RefreshCw, Menu, X, Home, Settings, LogOut, BarChart3, Plus, Phone, Mail, MessageSquare, MessageCircle, Eye, User, Users, MapPin, UserCheck, Download, Trash2, ArrowRight, PhoneCall, PieChart, Calendar, Clock, TrendingUp, Activity, Target, Award, CheckCircle, XCircle, Building2, DollarSign, Mic, Volume2, Video, Edit, ArrowRight as ForwardIcon, Briefcase, Camera, Lock, ChevronRight } from 'lucide-react';
+import { Search, Filter, RefreshCw, Menu, X, Home, Settings, LogOut, BarChart3, Plus, Phone, Mail, MessageSquare, MessageCircle, Eye, User, Users, MapPin, UserCheck, Download, Trash2, ArrowRight, PhoneCall, PieChart, Calendar, Clock, TrendingUp, Activity, Target, Award, CheckCircle, XCircle, Building2, DollarSign, Mic, Volume2, Video, Edit, ArrowRight as ForwardIcon, Briefcase, Camera, Lock, ChevronRight, Bell } from 'lucide-react';
 import MobileSidebar from '@/layout/MobileSidebar';
 import { Badge } from '@/layout/badge';
 import { Card, CardContent } from '@/layout/card';
@@ -13,8 +13,9 @@ import UserSearchModal from '@/features/chat/components/UserSearchModal';
 import CreateLeadFormMobile from '@/layout/CreateLeadForm.mobile';
 import LeadTableMobile from '@/layout/LeadTable.mobile';
 import LeadAdvancedOptionsMobile from '@/layout/LeadAdvancedOptions.mobile';
-import { apiUrl } from '@/config/apiConfig';
+import { apiUrl, API_ENDPOINTS } from '@/config/apiConfig';
 import io from 'socket.io-client';
+import { Popover, PopoverContent, PopoverTrigger } from '@/layout/popover';
 
 const LeadsMobile = ({ userRole = 'bd' }) => {
   const navigate = useNavigate();
@@ -84,13 +85,15 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
   const [chatSearchQuery, setChatSearchQuery] = useState('');
   const [showUserSearch, setShowUserSearch] = useState(false);
   const currentUserRole = localStorage.getItem('userRole');
+  const [notifications, setNotifications] = useState([]);
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
 
   // Socket.io connection for real-time notifications
   useEffect(() => {
-    const socketUrl = window.location.hostname === 'localhost' 
-      ? 'http://localhost:5001' 
+    const socketUrl = window.location.hostname === 'localhost'
+      ? 'http://localhost:5001'
       : 'https://bcrm.100acress.com';
-    
+
     const s = io(socketUrl);
     setSocket(s);
     console.log('Mobile Leads Socket.IO connected:', s.id);
@@ -98,53 +101,98 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     // Listen for real-time lead updates
     s.on('leadUpdate', (data) => {
       console.log('Mobile Leads - Lead update received:', data);
-      
-      // Handle different types of lead updates with notifications
-      switch(data.action) {
-        case 'followup_added':
-          toast({
-            title: "Follow-up Added",
-            description: `${data.data.leadName}: ${data.data.followUpData.comment}`,
-            duration: 6000,
-          });
-          break;
-          
-        case 'assigned':
-          if (data.assignedTo === currentUserId) {
+
+      if (data && data.action) {
+        // Handle different types of lead updates with notifications
+        switch (data.action) {
+          case 'followup_added':
             toast({
-              title: "Lead Assigned",
-              description: `${data.data.leadName} assigned to you`,
-              duration: 8000,
+              title: "Follow-up Added",
+              description: `${data.data.leadName}: ${data.data.followUpData.comment}`,
+              duration: 6000,
             });
-          }
-          break;
-          
-        case 'forward_patch':
-          toast({
-            title: "Lead Reassigned",
-            description: `${data.data.leadName} reassigned`,
-            duration: 6000,
-          });
-          break;
-          
-        case 'swapped':
-          toast({
-            title: "Lead Swapped",
-            description: `${data.data.leadName} swapped`,
-            duration: 6000,
-          });
-          break;
+            break;
+
+          case 'assigned':
+            if (data.assignedTo === currentUserId) {
+              toast({
+                title: "Lead Assigned",
+                description: `${data.data.leadName} assigned to you`,
+                duration: 8000,
+              });
+            }
+            break;
+        }
       }
-      
-      // Refresh leads for all roles to see updates
-      fetchLeads();
     });
 
-    return () => {
-      s.disconnect();
-      console.log('Mobile Leads Socket.IO disconnected');
+    // Fetch initial notifications
+    const fetchNotifications = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(API_ENDPOINTS.NOTIFICATIONS, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (response.ok) {
+          const result = await response.json();
+          setNotifications(result.data || []);
+          setUnreadNotificationsCount(result.data?.filter(n => !n.isRead).length || 0);
+        }
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+      }
     };
-  }, [currentUserId]);
+
+    fetchNotifications();
+
+    // Listen for role-specific notifications
+    const roleEvent = `newNotification_${userRole}`;
+    s.on(roleEvent, (notification) => {
+      setNotifications(prev => [notification, ...prev]);
+      setUnreadNotificationsCount(prev => prev + 1);
+
+      toast({
+        title: notification.title,
+        description: notification.message,
+      });
+    });
+
+    return () => s.disconnect();
+  }, [userRole, toast, currentUserId]);
+
+  const handleMarkAsRead = async (id) => {
+    const token = localStorage.getItem('token');
+    try {
+      const response = await fetch(API_ENDPOINTS.NOTIFICATIONS_READ(id), {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
+        setUnreadNotificationsCount(prev => Math.max(0, prev - 1));
+      }
+    } catch (error) {
+      console.error('Error marking as read:', error);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      const response = await fetch(API_ENDPOINTS.NOTIFICATIONS_READ_ALL, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+        setUnreadNotificationsCount(0);
+      }
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+    }
+  };
 
   // Fetch assignable users function - moved outside useEffect
   const fetchAssignableUsers = async () => {
@@ -380,7 +428,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       const token = localStorage.getItem('token');
 
       // Create new chat using the new endpoint
-      const response = await fetch(`${apiUrl}/api/chats/create-chat`, {
+      const response = await fetch(`${apiUrl}/api/chats/create`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -890,7 +938,58 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
               {/* <p className="text-xs text-blue-100">Mobile Dashboard</p> */}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            {/* Notification Bell */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="relative p-2 bg-white/20 backdrop-blur-sm rounded-lg text-white hover:bg-white/30 transition-all duration-200">
+                  <Bell size={20} />
+                  {unreadNotificationsCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-indigo-600 min-w-[18px] flex items-center justify-center">
+                      {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
+                    </span>
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0 border-slate-200 shadow-xl mt-2 overflow-hidden bg-white z-[100]">
+                <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-white">
+                  <h3 className="font-bold text-slate-800">Notifications</h3>
+                  {unreadNotificationsCount > 0 && (
+                    <button
+                      onClick={handleMarkAllAsRead}
+                      className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                    >
+                      Mark all as read
+                    </button>
+                  )}
+                </div>
+                <div className="max-h-[300px] overflow-y-auto bg-white">
+                  {notifications.length === 0 ? (
+                    <div className="p-8 text-center text-slate-400">
+                      <Bell className="mx-auto mb-2 opacity-20" size={32} />
+                      <p className="text-sm">No notifications yet</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-slate-50">
+                      {notifications.map((notification) => (
+                        <div
+                          key={notification._id}
+                          className={`p-4 hover:bg-slate-50 transition-colors cursor-pointer ${!notification.isRead ? 'bg-indigo-50/30 font-semibold' : ''}`}
+                          onClick={() => !notification.isRead && handleMarkAsRead(notification._id)}
+                        >
+                          <p className="text-sm text-slate-800">{notification.title}</p>
+                          <p className="text-xs text-slate-500 line-clamp-2 mt-1">{notification.message}</p>
+                          <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
+                            <Clock size={10} /> {new Date(notification.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+
             <button
               onClick={() => navigate('/edit-profile')}
               className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-white/30 hover:bg-white/30 transition-all duration-200 overflow-hidden"
@@ -1487,9 +1586,77 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
               name: firstAssignment.assignedBy?.name || 'Assigner',
               role: firstAssignment.assignedBy?.role || 'hod',
               email: firstAssignment.assignedBy?.email || '',
-              leadId: lead._id // Add leadId for chat creation
             };
           }
+        }
+      }
+    }
+
+    // FALLBACK: If no recipient found, try alternative sources
+    if (!recipientUser) {
+      console.log('🔍 Primary lookup failed, trying fallbacks...');
+
+      // Fallback 1: Try lead.createdBy
+      if (lead.createdBy && String(lead.createdBy) !== currentUserIdStr) {
+        const creator = users.find(u => String(u._id) === String(lead.createdBy));
+        if (creator) {
+          recipientUser = {
+            ...creator,
+            leadId: lead._id
+          };
+          console.log('🔍 Fallback 1: Using lead creator:', creator.name);
+        }
+      }
+
+      // Fallback 2: Try last assignment chain entry's assignedBy
+      if (!recipientUser && lead.assignmentChain && lead.assignmentChain.length > 0) {
+        const lastEntry = lead.assignmentChain[lead.assignmentChain.length - 1];
+        if (lastEntry.assignedBy && String(lastEntry.assignedBy._id || lastEntry.assignedBy) !== currentUserIdStr) {
+          const fallbackAssignerId = typeof lastEntry.assignedBy === 'string' ? lastEntry.assignedBy : lastEntry.assignedBy._id;
+          const assigner = users.find(u => String(u._id) === String(fallbackAssignerId));
+          if (assigner) {
+            recipientUser = {
+              ...assigner,
+              leadId: lead._id
+            };
+            console.log('🔍 Fallback 2: Using last chain assigner:', assigner.name);
+          } else if (lastEntry.assignedBy?.name) {
+            recipientUser = {
+              _id: fallbackAssignerId,
+              name: lastEntry.assignedBy.name,
+              role: lastEntry.assignedBy.role || 'hod',
+              leadId: lead._id
+            };
+            console.log('🔍 Fallback 2: Created from chain data:', lastEntry.assignedBy.name);
+          }
+        }
+      }
+
+      // Fallback 3: Find any HOD/Boss from assignable users (for BD users)
+      if (!recipientUser && (currentUserRole === 'bd' || currentUserRole === 'employee')) {
+        const higherRoleUser = users.find(u =>
+          ['hod', 'boss', 'team-leader'].includes(u.role) && String(u._id) !== currentUserIdStr
+        );
+        if (higherRoleUser) {
+          recipientUser = {
+            ...higherRoleUser,
+            leadId: lead._id
+          };
+          console.log('🔍 Fallback 3: Using higher-role user:', higherRoleUser.name);
+        }
+      }
+
+      // Fallback 4: For HOD/Boss, find any BD user from assignable users
+      if (!recipientUser && (currentUserRole === 'hod' || currentUserRole === 'boss')) {
+        const bdUser = users.find(u =>
+          u.role === 'bd' && String(u._id) !== currentUserIdStr
+        );
+        if (bdUser) {
+          recipientUser = {
+            ...bdUser,
+            leadId: lead._id
+          };
+          console.log('🔍 Fallback 4: Using BD user:', bdUser.name);
         }
       }
     }

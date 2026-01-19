@@ -10,7 +10,6 @@ import {
 import { Badge } from '@/layout/badge';
 import { Card, CardContent } from '@/layout/card';
 import MobileLayout from '@/layout/MobileLayout';
-import MobileNotifications from '@/components/MobileNotifications';
 import io from 'socket.io-client';
 
 const SuperAdminProfileMobile = () => {
@@ -56,74 +55,10 @@ const SuperAdminProfileMobile = () => {
       console.log('Mobile received userUpdate:', users);
       setUsers(users);
     });
-    
-    socket.on('leadUpdate', (data) => {
-      console.log('Mobile Boss received leadUpdate:', data);
-      
-      // Handle different types of lead updates with notifications
-      switch(data.action) {
-        case 'followup_added':
-          toast({
-            title: "Follow-up Added",
-            description: `${data.data.leadName}: ${data.data.followUpData.comment}`,
-            duration: 6000,
-          });
-          break;
-          
-        case 'assigned':
-          toast({
-            title: "Lead Assigned",
-            description: `${data.data.leadName} assigned to ${data.data.assigneeName}`,
-            duration: 8000,
-          });
-          break;
-          
-        case 'forward_patch':
-          toast({
-            title: "Lead Reassigned",
-            description: `${data.data.leadName} reassigned by ${data.data.assignerName}`,
-            duration: 6000,
-          });
-          break;
-          
-        case 'swapped':
-          toast({
-            title: "Lead Swapped",
-            description: `${data.data.leadName} swapped between BDs`,
-            duration: 6000,
-          });
-          break;
-          
-        case 'bd_activity':
-          toast({
-            title: "BD Activity",
-            description: `${data.data.action}: ${data.data.leadName}`,
-            duration: 5000,
-          });
-          break;
-          
-        default:
-          // Generic lead update
-          toast({
-            title: "Lead Updated",
-            description: `${data.data.leadName} status changed`,
-            duration: 5000,
-          });
-      }
-      
-      // Update leads list
-      setLeads(prevLeads => {
-        if (Array.isArray(data.leads)) {
-          return data.leads;
-        }
-        return prevLeads;
-      });
-    });
 
     return () => {
       socket.off('dashboardUpdate');
       socket.off('userUpdate');
-      socket.off('leadUpdate');
     };
   }, [socket]);
 
@@ -132,7 +67,7 @@ const SuperAdminProfileMobile = () => {
     const fetchMobileDashboardData = async () => {
       try {
         const token = localStorage.getItem('token');
-        
+
         // Fetch users with mobile optimization
         const usersResponse = await fetch('https://bcrm.100acress.com/api/users?limit=20', {
           headers: {
@@ -256,7 +191,7 @@ const SuperAdminProfileMobile = () => {
             </CardContent>
           </Card>
         </button>
-        
+
         <button
           onClick={() => navigate('/leads')}
           className="bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg rounded-lg p-0 hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-105"
@@ -302,7 +237,7 @@ const SuperAdminProfileMobile = () => {
               <span className="text-xs text-blue-100 mt-1">New</span>
             </div>
           </button>
-          
+
           <button
             onClick={() => navigate('/users/manage')}
             className="group relative overflow-hidden bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl p-4 hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg"
@@ -314,7 +249,7 @@ const SuperAdminProfileMobile = () => {
               <span className="text-xs text-green-100 mt-1">Admin</span>
             </div>
           </button>
-          
+
           <button
             onClick={() => navigate('/users')}
             className="group relative overflow-hidden bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl p-4 hover:from-orange-600 hover:to-orange-700 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg"
@@ -326,7 +261,7 @@ const SuperAdminProfileMobile = () => {
               <span className="text-xs text-orange-100 mt-1">List</span>
             </div>
           </button>
-          
+
           <button
             onClick={() => navigate('/admin/bd-analytics')}
             className="group relative overflow-hidden bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl p-4 hover:from-purple-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg"
@@ -363,7 +298,7 @@ const SuperAdminProfileMobile = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <div className={`w-20 h-2 ${bgColors[index]} rounded-full overflow-hidden`}>
-                      <div 
+                      <div
                         className={`h-full ${colors[index]} rounded-full transition-all duration-500`}
                         style={{ width: `${Math.min((status.value / Math.max(...topStatuses.map(s => s.value))) * 100, 100)}%` }}
                       />
@@ -391,9 +326,8 @@ const SuperAdminProfileMobile = () => {
             {topAssignees.map((assignee, index) => (
               <div key={assignee.name} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                 <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-                    index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : 'bg-orange-400'
-                  }`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : 'bg-orange-400'
+                    }`}>
                     {getInitials(assignee.name)}
                   </div>
                   <div>
@@ -470,11 +404,10 @@ const SuperAdminProfileMobile = () => {
                     <p className="text-xs text-gray-500">{user.email}</p>
                   </div>
                 </div>
-                <Badge className={`text-xs ${
-                  user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 
-                  user.role === 'head-admin' ? 'bg-blue-100 text-blue-800' : 
-                  'bg-gray-100 text-gray-800'
-                }`}>
+                <Badge className={`text-xs ${user.role === 'admin' ? 'bg-purple-100 text-purple-800' :
+                    user.role === 'head-admin' ? 'bg-blue-100 text-blue-800' :
+                      'bg-gray-100 text-gray-800'
+                  }`}>
                   {user.role}
                 </Badge>
               </div>
@@ -484,7 +417,7 @@ const SuperAdminProfileMobile = () => {
       </Card>
     </div>
   );
-      const renderLeadsTab = () => (
+  const renderLeadsTab = () => (
     <div className="space-y-4">
       <Card className="shadow-lg border-0">
         <CardContent className="p-4">
@@ -507,12 +440,11 @@ const SuperAdminProfileMobile = () => {
                     <p className="text-xs text-gray-500">{lead.email || lead.contactEmail}</p>
                   </div>
                 </div>
-                <Badge className={`text-xs ${
-                  lead.status === 'hot' ? 'bg-red-100 text-red-800' : 
-                  lead.status === 'warm' ? 'bg-yellow-100 text-yellow-800' : 
-                  lead.status === 'cold' ? 'bg-blue-100 text-blue-800' : 
-                  'bg-gray-100 text-gray-800'
-                }`}>
+                <Badge className={`text-xs ${lead.status === 'hot' ? 'bg-red-100 text-red-800' :
+                    lead.status === 'warm' ? 'bg-yellow-100 text-yellow-800' :
+                      lead.status === 'cold' ? 'bg-blue-100 text-blue-800' :
+                        'bg-gray-100 text-gray-800'
+                  }`}>
                   {lead.status || 'new'}
                 </Badge>
               </div>
@@ -593,7 +525,7 @@ const SuperAdminProfileMobile = () => {
             <Home size={20} />
             <span className="text-xs mt-1">Home</span>
           </button>
-          
+
           <button
             onClick={() => navigate('/leads')}
             className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
@@ -601,10 +533,7 @@ const SuperAdminProfileMobile = () => {
             <Activity size={20} />
             <span className="text-xs mt-1">Leads</span>
           </button>
-          
-          {/* Notification Bell */}
-          <MobileNotifications userRole="super-admin" />
-          
+
           <button
             onClick={() => navigate('/users')}
             className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
@@ -612,7 +541,7 @@ const SuperAdminProfileMobile = () => {
             <Users size={20} />
             <span className="text-xs mt-1">Users</span>
           </button>
-          
+
           <button
             onClick={() => setActiveTab('settings')}
             className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
@@ -620,7 +549,7 @@ const SuperAdminProfileMobile = () => {
             <Settings size={20} />
             <span className="text-xs mt-1">Settings</span>
           </button>
-          
+
           <button
             onClick={() => setShowMobileMenu(!showMobileMenu)}
             className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
