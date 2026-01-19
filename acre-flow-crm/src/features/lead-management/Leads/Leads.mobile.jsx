@@ -2142,7 +2142,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                         const isAssignedToUser = String(lead.assignedTo) === String(currentUserId);
 
                         // Boss who created lead - Show Call History (not Call button)
-                        if ((currentUserRole === 'boss' || currentUserRole === 'super-admin') && isLeadCreator && !isAssignedToUser) {
+                        if ((currentUserRole === 'boss' || currentUserRole === 'super-admin') && isLeadCreator && !isAssignedToUser && lead.assignedTo) {
                           return (
                             <button
                               onClick={() => {
@@ -2165,7 +2165,30 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                         }
 
                         // HOD who created lead and forwarded to BD/TL - Show Call History (not Call button)
-                        if (currentUserRole === 'hod' && isLeadCreator && isAssignedToUser && lead.assignedTo !== currentUserId) {
+                        if (currentUserRole === 'hod' && isLeadCreator && isAssignedToUser && lead.assignedTo !== currentUserId && lead.assignedTo) {
+                          return (
+                            <button
+                              onClick={() => {
+                                setSelectedLead(lead);
+                                setShowLeadDetails(true);
+                                setTimeout(() => {
+                                  const callHistorySection = document.querySelector('.lead-details-call-history-section');
+                                  if (callHistorySection) {
+                                    callHistorySection.scrollIntoView({ behavior: 'smooth' });
+                                  }
+                                }, 300);
+                              }}
+                              className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                              title="View Call History"
+                            >
+                              <Clock size={18} />
+                              <span className="text-xs mt-1 font-medium">Call History</span>
+                            </button>
+                          );
+                        }
+
+                        // HOD or Boss viewing assigned lead (not created by them) - Show Call History
+                        if ((currentUserRole === 'hod' || currentUserRole === 'boss' || currentUserRole === 'super-admin') && !isLeadCreator && lead.assignedTo && lead.assignedTo !== currentUserId) {
                           return (
                             <button
                               onClick={() => {
@@ -2200,25 +2223,15 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                           );
                         }
 
-                        // Assigned user working on lead - Show Call History
+                        // Assigned user working on lead - Show Call button (not Call History for BD users)
                         if (isAssignedToUser && lead.workProgress && lead.workProgress !== 'pending') {
                           return (
                             <button
-                              onClick={() => {
-                                setSelectedLead(lead);
-                                setShowLeadDetails(true);
-                                setTimeout(() => {
-                                  const callHistorySection = document.querySelector('.lead-details-call-history-section');
-                                  if (callHistorySection) {
-                                    callHistorySection.scrollIntoView({ behavior: 'smooth' });
-                                  }
-                                }, 300);
-                              }}
-                              className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
-                              title="View Call History"
+                              onClick={() => handleCallLead(lead.phone, lead._id, lead.name)}
+                              className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200 shadow-md hover:shadow-lg"
                             >
-                              <Clock size={18} />
-                              <span className="text-xs mt-1 font-medium">Call History</span>
+                              <PhoneCall size={18} />
+                              <span className="text-xs mt-1 font-medium">Call</span>
                             </button>
                           );
                         }
