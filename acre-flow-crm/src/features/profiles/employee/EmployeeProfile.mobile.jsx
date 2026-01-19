@@ -10,6 +10,7 @@ import { Badge } from '@/layout/badge';
 import { Card, CardContent } from '@/layout/card';
 import MobileLayout from '@/layout/MobileLayout';
 import io from 'socket.io-client';
+import { apiUrl } from '@/config/apiConfig';
 
 const EmployeeProfileMobile = () => {
   const navigate = useNavigate();
@@ -27,7 +28,10 @@ const EmployeeProfileMobile = () => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    const s = io('https://bcrm.100acress.com');
+    const socketUrl = window.location.hostname === 'localhost'
+      ? 'http://localhost:5001'
+      : 'https://bcrm.100acress.com';
+    const s = io(socketUrl);
     setSocket(s);
     console.log('Mobile Employee Socket.IO client connected:', s);
     s.emit('requestEmployeeStats');
@@ -65,18 +69,18 @@ const EmployeeProfileMobile = () => {
     const fetchMobileEmployeeData = async () => {
       try {
         const token = localStorage.getItem('token');
-        
+
         // Fetch employee leads
-        const leadsResponse = await fetch('https://bcrm.100acress.com/api/my-leads?limit=20', {
+        const leadsResponse = await fetch(`${apiUrl}/api/my-leads?limit=20`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         });
         const leadsData = await leadsResponse.json();
-        
+
         // Fetch employee tasks
-        const tasksResponse = await fetch('https://bcrm.100acress.com/api/my-tasks?limit=15', {
+        const tasksResponse = await fetch(`${apiUrl}/api/my-tasks?limit=15`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',

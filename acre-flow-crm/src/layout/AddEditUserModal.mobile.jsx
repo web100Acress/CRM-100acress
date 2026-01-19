@@ -4,6 +4,7 @@ import { Button } from '@/layout/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/layout/card';
 import { Badge } from '@/layout/badge';
 import { useToast } from '@/hooks/use-toast';
+import { apiUrl } from '@/config/apiConfig';
 
 const AddEditUserModalMobile = ({ isOpen, onClose, onSuccess, user = null }) => {
   const { toast } = useToast();
@@ -75,7 +76,7 @@ const AddEditUserModalMobile = ({ isOpen, onClose, onSuccess, user = null }) => 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -83,27 +84,27 @@ const AddEditUserModalMobile = ({ isOpen, onClose, onSuccess, user = null }) => 
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const url = user 
-        ? `https://bcrm.100acress.com/api/users/${user._id}`
-        : 'https://bcrm.100acress.com/api/users';
-      
+      const url = user
+        ? `${apiUrl}/api/users/${user._id}`
+        : `${apiUrl}/api/users`;
+
       const method = user ? 'PUT' : 'POST';
-      const payload = user 
+      const payload = user
         ? {
-            name: formData.name,
-            phone: formData.phone,
-            role: formData.role,
-            department: formData.department,
-            isActive: formData.isActive
-          }
+          name: formData.name,
+          phone: formData.phone,
+          role: formData.role,
+          department: formData.department,
+          isActive: formData.isActive
+        }
         : {
-            name: formData.name,
-            phone: formData.phone,
-            role: formData.role,
-            department: formData.department,
-            password: formData.password,
-            isActive: formData.isActive
-          };
+          name: formData.name,
+          phone: formData.phone,
+          role: formData.role,
+          department: formData.department,
+          password: formData.password,
+          isActive: formData.isActive
+        };
 
       const response = await fetch(url, {
         method,
@@ -193,9 +194,8 @@ const AddEditUserModalMobile = ({ isOpen, onClose, onSuccess, user = null }) => 
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.name ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.name ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 placeholder="Enter full name"
               />
             </div>
@@ -215,9 +215,8 @@ const AddEditUserModalMobile = ({ isOpen, onClose, onSuccess, user = null }) => 
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.phone ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.phone ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 placeholder="Enter 10-digit phone number"
               />
             </div>
@@ -279,9 +278,8 @@ const AddEditUserModalMobile = ({ isOpen, onClose, onSuccess, user = null }) => 
                     type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className={`w-full pr-10 pl-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors.password ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    className={`w-full pr-10 pl-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.password ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     placeholder="Enter password"
                   />
                   <button
@@ -306,9 +304,8 @@ const AddEditUserModalMobile = ({ isOpen, onClose, onSuccess, user = null }) => 
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                    className={`w-full pr-10 pl-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    className={`w-full pr-10 pl-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     placeholder="Confirm password"
                   />
                   <button
@@ -337,14 +334,12 @@ const AddEditUserModalMobile = ({ isOpen, onClose, onSuccess, user = null }) => 
             <button
               type="button"
               onClick={() => setFormData({ ...formData, isActive: !formData.isActive })}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                formData.isActive ? 'bg-green-600' : 'bg-gray-300'
-              }`}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${formData.isActive ? 'bg-green-600' : 'bg-gray-300'
+                }`}
             >
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  formData.isActive ? 'translate-x-6' : 'translate-x-1'
-                }`}
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.isActive ? 'translate-x-6' : 'translate-x-1'
+                  }`}
               />
             </button>
           </div>

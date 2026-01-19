@@ -7,6 +7,7 @@ import MobileSidebar from '@/layout/MobileSidebar';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/layout/badge';
 import { Card, CardContent } from '@/layout/card';
+import { apiUrl } from '@/config/apiConfig';
 
 const USERS_PER_PAGE_CONSTANT = 20; // Reduced for mobile
 
@@ -40,26 +41,26 @@ const UserManagementMobile = ({ userRole = 'super-admin' }) => {
     const fetchUsers = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('https://bcrm.100acress.com/api/users', {
+        const response = await fetch(`${apiUrl}/api/users`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
-        
+
         if (response.ok) {
           const data = await response.json();
           const usersData = data.data || [];
           setUsers(usersData);
-          
+
           // Calculate stats
           const totalUsers = usersData.length;
           const activeUsers = usersData.filter(user => user.isActive).length;
           const inactiveUsers = usersData.filter(user => !user.isActive).length;
-          const adminUsers = usersData.filter(user => 
+          const adminUsers = usersData.filter(user =>
             user.role === 'super-admin' || user.role === 'admin' || user.role === 'head-admin'
           ).length;
-          
+
           setStats({
             totalUsers,
             activeUsers,
@@ -99,7 +100,7 @@ const UserManagementMobile = ({ userRole = 'super-admin' }) => {
   const bannerImages = [
     'https://100acress-media-bucket.s3.ap-south-1.amazonaws.com/small-banners/1766217374273-max-antara-361.webp'
   ];
-  
+
   const [currentBannerIndex] = useState(0);
 
   const renderMobileHeader = () => (
@@ -116,7 +117,7 @@ const UserManagementMobile = ({ userRole = 'super-admin' }) => {
             </button>
             <div>
               <h1 className="text-lg font-bold text-white">User Management</h1>
-           
+
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -140,13 +141,13 @@ const UserManagementMobile = ({ userRole = 'super-admin' }) => {
 
       {/* Banner Section */}
       <div className="relative h-32 overflow-hidden">
-        <img 
-          src={bannerImages[currentBannerIndex]} 
+        <img
+          src={bannerImages[currentBannerIndex]}
           alt="User Management Banner"
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-        
+
         {/* Banner Text Overlay */}
 
       </div>
@@ -246,10 +247,10 @@ const UserManagementMobile = ({ userRole = 'super-admin' }) => {
       </div>
 
       {/* Mobile Sidebar */}
-      <MobileSidebar 
-        userRole={userRole} 
-        isOpen={rightMenuOpen} 
-        onClose={() => setRightMenuOpen(false)} 
+      <MobileSidebar
+        userRole={userRole}
+        isOpen={rightMenuOpen}
+        onClose={() => setRightMenuOpen(false)}
       />
     </div>
   );
@@ -257,12 +258,12 @@ const UserManagementMobile = ({ userRole = 'super-admin' }) => {
   const filteredUsers = useMemo(() => {
     return users.filter(user => {
       const matchesSearch = user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           user.email?.toLowerCase().includes(searchTerm.toLowerCase());
+        user.email?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-      const matchesStatus = statusFilter === 'all' || 
-                           (statusFilter === 'active' && user.isActive) ||
-                           (statusFilter === 'inactive' && !user.isActive);
-      
+      const matchesStatus = statusFilter === 'all' ||
+        (statusFilter === 'active' && user.isActive) ||
+        (statusFilter === 'inactive' && !user.isActive);
+
       return matchesSearch && matchesRole && matchesStatus;
     });
   }, [users, searchTerm, roleFilter, statusFilter]);
@@ -277,13 +278,13 @@ const UserManagementMobile = ({ userRole = 'super-admin' }) => {
     setIsExporting(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://bcrm.100acress.com/api/users/export', {
+      const response = await fetch(`${apiUrl}/api/users/export`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-      
+
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -292,7 +293,7 @@ const UserManagementMobile = ({ userRole = 'super-admin' }) => {
         a.download = 'users.csv';
         a.click();
         window.URL.revokeObjectURL(url);
-        
+
         toast({
           title: "Success",
           description: "Users exported successfully"
@@ -329,7 +330,7 @@ const UserManagementMobile = ({ userRole = 'super-admin' }) => {
   return (
     <div className="min-h-screen bg-gray-50">
       {renderMobileHeader()}
-      
+
       {/* Users List */}
       <div className="p-4 space-y-3 pb-20 md:pb-4">
         {paginatedUsers.map((user) => (
@@ -344,11 +345,10 @@ const UserManagementMobile = ({ userRole = 'super-admin' }) => {
                   <div>
                     <h3 className="font-semibold text-gray-900">{user.name}</h3>
                     <p className="text-sm text-gray-500">{user.email}</p>
-                    <Badge className={`text-xs mt-1 ${
-                      user.isActive 
-                        ? 'bg-green-100 text-green-800 border-green-200' 
+                    <Badge className={`text-xs mt-1 ${user.isActive
+                        ? 'bg-green-100 text-green-800 border-green-200'
                         : 'bg-red-100 text-red-800 border-red-200'
-                    }`}>
+                      }`}>
                       {user.isActive ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>
@@ -373,13 +373,12 @@ const UserManagementMobile = ({ userRole = 'super-admin' }) => {
               <div className="space-y-2 mb-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Role:</span>
-                  <Badge className={`text-xs ${
-                    user.role === 'super-admin' ? 'bg-purple-100 text-purple-800 border-purple-200' :
-                    user.role === 'admin' ? 'bg-blue-100 text-blue-800 border-blue-200' :
-                    user.role === 'head-admin' ? 'bg-indigo-100 text-indigo-800 border-indigo-200' :
-                    user.role === 'team-leader' ? 'bg-green-100 text-green-800 border-green-200' :
-                    'bg-gray-100 text-gray-800 border-gray-200'
-                  }`}>
+                  <Badge className={`text-xs ${user.role === 'super-admin' ? 'bg-purple-100 text-purple-800 border-purple-200' :
+                      user.role === 'admin' ? 'bg-blue-100 text-blue-800 border-blue-200' :
+                        user.role === 'head-admin' ? 'bg-indigo-100 text-indigo-800 border-indigo-200' :
+                          user.role === 'team-leader' ? 'bg-green-100 text-green-800 border-green-200' :
+                            'bg-gray-100 text-gray-800 border-gray-200'
+                    }`}>
                     {user.role?.replace('-', ' ').toUpperCase() || 'USER'}
                   </Badge>
                 </div>
@@ -514,7 +513,7 @@ const UserManagementMobile = ({ userRole = 'super-admin' }) => {
             <Home size={20} />
             <span className="text-xs mt-1">Home</span>
           </button>
-          
+
           <button
             onClick={() => navigate('/leads')}
             className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
@@ -522,7 +521,7 @@ const UserManagementMobile = ({ userRole = 'super-admin' }) => {
             <Briefcase size={20} />
             <span className="text-xs mt-1">Tasks</span>
           </button>
-          
+
           <button
             onClick={() => navigate('/admin/bd-analytics')}
             className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
@@ -530,7 +529,7 @@ const UserManagementMobile = ({ userRole = 'super-admin' }) => {
             <BarChart3 size={20} />
             <span className="text-xs mt-1">Analytics</span>
           </button>
-          
+
           <button
             onClick={() => navigate('/users')}
             className="flex flex-col items-center p-2 text-blue-600 hover:text-blue-700 transition-colors"
@@ -538,7 +537,7 @@ const UserManagementMobile = ({ userRole = 'super-admin' }) => {
             <Users size={20} />
             <span className="text-xs mt-1">Users</span>
           </button>
-          
+
           <button
             onClick={() => navigate('/admin/manage-users')}
             className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
@@ -546,7 +545,7 @@ const UserManagementMobile = ({ userRole = 'super-admin' }) => {
             <Settings size={20} />
             <span className="text-xs mt-1">Manage</span>
           </button>
-          
+
           <button
             onClick={() => setRightMenuOpen(!rightMenuOpen)}
             className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"

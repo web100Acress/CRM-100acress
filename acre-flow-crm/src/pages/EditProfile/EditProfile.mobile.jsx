@@ -20,11 +20,12 @@ import {
 import MobileLayout from '@/layout/MobileLayout';
 import { Card, CardContent } from '@/layout/card';
 import { useToast } from '@/hooks/use-toast';
+import { apiUrl } from '@/config/apiConfig';
 
 const EditProfileMobile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  
+
   // Profile state
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -51,7 +52,7 @@ const EditProfileMobile = () => {
   // Load user data on mount
   useEffect(() => {
     loadUserData();
-    
+
     // Set up online/offline detection
     const handleOnline = () => {
       setIsOnline(true);
@@ -62,7 +63,7 @@ const EditProfileMobile = () => {
         variant: "success"
       });
     };
-    
+
     const handleOffline = () => {
       setIsOnline(false);
       setSyncStatus('error');
@@ -72,15 +73,15 @@ const EditProfileMobile = () => {
         variant: "warning"
       });
     };
-    
+
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
-    
+
     // Set up real-time updates listener
     const interval = setInterval(() => {
       checkForUpdates();
     }, 3000); // Check every 3 seconds for more real-time feel
-    
+
     return () => {
       clearInterval(interval);
       window.removeEventListener('online', handleOnline);
@@ -93,23 +94,21 @@ const EditProfileMobile = () => {
     try {
       // 🎯 LOAD FROM BACKEND DATABASE + S3 (not localStorage)
       const token = localStorage.getItem('token');
-      
+
       if (!token) {
         throw new Error('User not authenticated');
       }
-      
+
       // Dynamic API base URL
-      const API_BASE = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:5001' 
-        : 'https://bcrm.100acress.com';
-      
+      const API_BASE = apiUrl;
+
       // 🎯 TEMPORARY BYPASS: Skip backend test for development
       console.log('� BYPASS: Skipping backend test, assuming backend is ready...');
-      
+
       // Fetch current user data from backend (use /me endpoint for current user)
       console.log('🔍 Fetching user profile from:', `${API_BASE}/api/users/me`);
       console.log('🔍 Token available:', token ? 'Yes' : 'No');
-      
+
       // Add cache-buster to avoid cached requests
       const cacheBuster = new Date().getTime();
       const response = await fetch(`${API_BASE}/api/users/me?_cb=${cacheBuster}`, {
@@ -119,18 +118,18 @@ const EditProfileMobile = () => {
           'Cache-Control': 'no-cache'
         }
       });
-      
+
       console.log('🔍 Profile API response status:', response.status);
       console.log('🔍 Profile API response ok:', response.ok);
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('🔴 Profile API error response:', errorText);
-        
+
         // 🎯 FALLBACK: Use login data if profile endpoint doesn't exist
         if (response.status === 404) {
           console.log('🔄 Profile endpoint not found, using fallback login data...');
-          
+
           const fallbackData = {
             name: localStorage.getItem('userName') || '',
             email: localStorage.getItem('userEmail') || '',
@@ -139,31 +138,31 @@ const EditProfileMobile = () => {
             department: localStorage.getItem('userDepartment') || 'Sales',
             joinDate: localStorage.getItem('userJoinDate') || '2024-01-15'
           };
-          
+
           setFormData(prev => ({
             ...prev,
             ...fallbackData
           }));
-          
+
           // Load profile image from localStorage fallback
           const savedImage = localStorage.getItem('userProfileImage');
           if (savedImage) {
             setProfileImage(savedImage);
             console.log('✅ Profile image loaded from localStorage fallback:', savedImage.substring(0, 50) + '...');
           }
-          
+
           setLastSaved(new Date());
           setLoading(false);
           return;
         }
-        
+
         throw new Error(`Failed to fetch user data: ${response.status} ${response.statusText}`);
       }
-      
+
       const userData = await response.json();
-      
+
       console.log('🔍 User data loaded from database:', userData);
-      
+
       // Update form with backend data
       setFormData(prev => ({
         ...prev,
@@ -174,12 +173,12 @@ const EditProfileMobile = () => {
         department: userData.data.department || 'Sales',
         joinDate: userData.data.joinDate || '2024-01-15'
       }));
-      
+
       // Load profile image with Google icon priority
       const googleProfileImage = localStorage.getItem('googleProfileImage');
       const savedProfileImage = localStorage.getItem('userProfileImage');
       const loginProfileImage = localStorage.getItem('loginProfileImage');
-      
+
       // 🎯 GOOGLE PRIORITY: Use Google profile icon first
       if (googleProfileImage) {
         setProfileImage(googleProfileImage);
@@ -193,14 +192,14 @@ const EditProfileMobile = () => {
       } else {
         console.log('ℹ️ No profile image found, using default');
       }
-      
+
       setLastSaved(new Date());
     } catch (error) {
       console.error('Error loading user data from backend:', error);
-      
+
       // 🎯 ULTIMATE FALLBACK: Always use localStorage if backend fails
       console.log('🔄 Backend error, using localStorage fallback...');
-      
+
       const fallbackData = {
         name: localStorage.getItem('userName') || '',
         email: localStorage.getItem('userEmail') || '',
@@ -209,14 +208,14 @@ const EditProfileMobile = () => {
         department: localStorage.getItem('userDepartment') || 'Sales',
         joinDate: localStorage.getItem('userJoinDate') || '2024-01-15'
       };
-      
+
       setFormData(prev => ({ ...prev, ...fallbackData }));
-      
+
       // 🎯 GOOGLE PRIORITY: Check Google profile first
       const googleProfileImage = localStorage.getItem('googleProfileImage');
       const savedProfileImage = localStorage.getItem('userProfileImage');
       const loginProfileImage = localStorage.getItem('loginProfileImage');
-      
+
       if (googleProfileImage) {
         setProfileImage(googleProfileImage);
         console.log('✅ Google profile icon loaded from fallback:', googleProfileImage.substring(0, 50) + '...');
@@ -229,9 +228,9 @@ const EditProfileMobile = () => {
       } else {
         console.log('ℹ️ No profile image found, using default');
       }
-      
+
       setLastSaved(new Date());
-      
+
       // Don't show error toast for fallback - it's silent
       // toast({
       //   title: "Error",
@@ -259,29 +258,29 @@ const EditProfileMobile = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.name.trim()) {
       newErrors.name = 'Name is required';
     }
-    
+
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Email is invalid';
     }
-    
+
     if (formData.newPassword && formData.newPassword.length < 6) {
       newErrors.newPassword = 'Password must be at least 6 characters';
     }
-    
+
     if (formData.newPassword && formData.newPassword !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
-    
+
     if (formData.newPassword && !formData.currentPassword) {
       newErrors.currentPassword = 'Current password is required to change password';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -291,7 +290,7 @@ const EditProfileMobile = () => {
       ...prev,
       [field]: value
     }));
-    
+
     // Clear error for this field
     if (errors[field]) {
       setErrors(prev => ({
@@ -299,16 +298,16 @@ const EditProfileMobile = () => {
         [field]: ''
       }));
     }
-    
+
     // 🎯 NO LOCALSTORAGE for sensitive fields - Save to backend database only
     // Only save non-sensitive fields to localStorage as backup
     if (field !== 'currentPassword' && field !== 'newPassword' && field !== 'confirmPassword') {
       const keyMap = {
         name: 'userName',
-        email: 'userEmail', 
+        email: 'userEmail',
         phone: 'userPhone'
       };
-      
+
       if (keyMap[field]) {
         localStorage.setItem(keyMap[field], value);
         console.log(`📝 Updated ${field} in form state and localStorage:`, value);
@@ -350,15 +349,13 @@ const EditProfileMobile = () => {
         setSyncStatus('syncing');
 
         const token = localStorage.getItem('token');
-        
+
         // Create FormData for file upload
         const formData = new FormData();
         formData.append('profileImage', file);
 
         // 🎯 CRITICAL FIX: Use dynamic API base URL
-        const API_BASE = process.env.NODE_ENV === 'development' 
-          ? 'http://localhost:5001' 
-          : 'https://bcrm.100acress.com';
+        const API_BASE = apiUrl;
 
         // Upload to server
         const response = await fetch(`${API_BASE}/api/users/profile-image`, {
@@ -375,12 +372,12 @@ const EditProfileMobile = () => {
         }
 
         const result = await response.json();
-        
+
         console.log('🔍 Image upload response:', result);
-        
+
         // 🎯 CRITICAL FIX: Handle both base64 and S3 URLs
         let imageUrl = result.data.profileImage;
-        
+
         if (imageUrl) {
           if (imageUrl.startsWith('data:')) {
             // Backend returned base64 data - use as-is
@@ -390,20 +387,18 @@ const EditProfileMobile = () => {
             console.log('🔧 Backend returned full S3 URL:', imageUrl);
           } else {
             // Backend returned relative path - convert to full URL
-            const baseUrl = process.env.NODE_ENV === 'development' 
-              ? 'http://localhost:5001' 
-              : 'https://bcrm.100acress.com';
+            const baseUrl = apiUrl;
             imageUrl = baseUrl + imageUrl;
             console.log('🔧 Converted relative URL to full URL:', imageUrl);
           }
         }
-        
+
         // Update state with server response
         setProfileImage(imageUrl);
-        
+
         // 🎯 BACKEND DATABASE + S3 ONLY (no localStorage)
         console.log('✅ Profile image uploaded to S3, saved in database:', imageUrl);
-        
+
         toast({
           title: "Image Updated",
           description: "Profile picture uploaded successfully",
@@ -416,7 +411,7 @@ const EditProfileMobile = () => {
           description: error.message || "Failed to upload profile picture",
           variant: "destructive"
         });
-        
+
         // 🎯 NO LOCALSTORAGE FALLBACK for images - Backend only
         // Don't save base64 to localStorage as it causes issues
       } finally {
@@ -438,18 +433,16 @@ const EditProfileMobile = () => {
 
     setSaving(true);
     setSyncStatus('syncing');
-    
+
     try {
       const token = localStorage.getItem('token');
-      
+
       if (!token) {
         throw new Error('User not authenticated');
       }
-      
+
       // 🎯 CRITICAL FIX: Use dynamic API base URL and handle image URLs
-      const API_BASE = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:5001' 
-        : 'https://bcrm.100acress.com';
+      const API_BASE = apiUrl;
 
       // Prepare data for API
       const profileData = {
@@ -481,13 +474,13 @@ const EditProfileMobile = () => {
       }
 
       const result = await response.json();
-      
+
       console.log('🔍 Profile data saved to database via backend API');
-      
+
       // Handle image URL from backend response
       if (result.data.profileImage) {
         let savedImageUrl = result.data.profileImage;
-        
+
         if (savedImageUrl.startsWith('data:')) {
           // Backend returned base64 data - use as-is
           console.log('🔧 Backend returned base64 data in profile save, using directly');
@@ -496,27 +489,25 @@ const EditProfileMobile = () => {
           console.log('🔧 Backend returned full S3 URL in profile save:', savedImageUrl);
         } else {
           // Backend returned relative path - convert to full URL
-          const baseUrl = process.env.NODE_ENV === 'development' 
-            ? 'http://localhost:5001' 
-            : 'https://bcrm.100acress.com';
+          const baseUrl = apiUrl;
           savedImageUrl = baseUrl + savedImageUrl;
           console.log('🔧 Converted relative URL to full URL in profile save:', savedImageUrl);
         }
-        
+
         // Update state with processed URL
         setProfileImage(savedImageUrl);
       }
-      
+
       // Update component state only
       setLastSaved(new Date());
       setSyncStatus('synced');
-      
+
       toast({
         title: "Success",
         description: "Profile updated successfully in database",
         variant: "success"
       });
-      
+
       // Clear password fields
       setFormData(prev => ({
         ...prev,
@@ -524,11 +515,11 @@ const EditProfileMobile = () => {
         newPassword: '',
         confirmPassword: ''
       }));
-      
+
     } catch (error) {
       console.error('Profile update error:', error);
       setSyncStatus('error');
-      
+
       toast({
         title: "Error",
         description: error.message || "Failed to update profile in database",
@@ -560,8 +551,8 @@ const EditProfileMobile = () => {
   }
 
   return (
-    <MobileLayout 
-      title="Edit Profile" 
+    <MobileLayout
+      title="Edit Profile"
       showBack={true}
       rightAction={
         <div className="flex items-center gap-2">
@@ -572,21 +563,20 @@ const EditProfileMobile = () => {
           >
             <X size={18} />
           </button>
-          
+
           {/* Real-time Status Indicator */}
           <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100">
-            <div className={`w-2 h-2 rounded-full ${
-              syncStatus === 'synced' ? 'bg-green-500' : 
-              syncStatus === 'syncing' ? 'bg-yellow-500 animate-pulse' : 
-              'bg-red-500'
-            }`} />
+            <div className={`w-2 h-2 rounded-full ${syncStatus === 'synced' ? 'bg-green-500' :
+                syncStatus === 'syncing' ? 'bg-yellow-500 animate-pulse' :
+                  'bg-red-500'
+              }`} />
             <span className="text-xs text-gray-600">
-              {syncStatus === 'synced' ? 'Synced' : 
-               syncStatus === 'syncing' ? 'Syncing...' : 
-               'Offline'}
+              {syncStatus === 'synced' ? 'Synced' :
+                syncStatus === 'syncing' ? 'Syncing...' :
+                  'Offline'}
             </span>
           </div>
-          
+
           <button
             onClick={handleSave}
             disabled={saving}
@@ -663,7 +653,7 @@ const EditProfileMobile = () => {
               <User size={18} className="text-blue-600" />
               Basic Information
             </h4>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
@@ -671,9 +661,8 @@ const EditProfileMobile = () => {
                   type="text"
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                    errors.name ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${errors.name ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   placeholder="Enter your full name"
                 />
                 {errors.name && (
@@ -692,9 +681,8 @@ const EditProfileMobile = () => {
                     type="email"
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
-                    className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                      errors.email ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${errors.email ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     placeholder="your.email@example.com"
                   />
                 </div>
@@ -733,7 +721,7 @@ const EditProfileMobile = () => {
                     />
                   </div>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
                   <div className="relative">
@@ -771,7 +759,7 @@ const EditProfileMobile = () => {
               <Shield size={18} className="text-blue-600" />
               Change Password
             </h4>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
@@ -780,9 +768,8 @@ const EditProfileMobile = () => {
                     type={showCurrentPassword ? 'text' : 'password'}
                     value={formData.currentPassword}
                     onChange={(e) => handleInputChange('currentPassword', e.target.value)}
-                    className={`w-full pr-10 pl-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                      errors.currentPassword ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    className={`w-full pr-10 pl-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${errors.currentPassword ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     placeholder="Enter current password"
                   />
                   <button
@@ -808,9 +795,8 @@ const EditProfileMobile = () => {
                     type={showPassword ? 'text' : 'password'}
                     value={formData.newPassword}
                     onChange={(e) => handleInputChange('newPassword', e.target.value)}
-                    className={`w-full pr-10 pl-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                      errors.newPassword ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    className={`w-full pr-10 pl-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${errors.newPassword ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     placeholder="Enter new password"
                   />
                   <button
@@ -836,9 +822,8 @@ const EditProfileMobile = () => {
                     type={showPassword ? 'text' : 'password'}
                     value={formData.confirmPassword}
                     onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                    className={`w-full pr-10 pl-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                      errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    className={`w-full pr-10 pl-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     placeholder="Confirm new password"
                   />
                   {formData.confirmPassword && (

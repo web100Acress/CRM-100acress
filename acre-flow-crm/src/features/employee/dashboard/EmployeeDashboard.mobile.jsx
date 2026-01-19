@@ -11,7 +11,7 @@ import MobileSidebar from '@/layout/MobileSidebar';
 import { useToast } from '@/hooks/use-toast';
 import io from 'socket.io-client';
 import { Popover, PopoverContent, PopoverTrigger } from '@/layout/popover';
-import { API_ENDPOINTS } from '@/config/apiConfig';
+import { API_ENDPOINTS, apiUrl } from '@/config/apiConfig';
 
 const BDDashboardMobile = () => {
   const navigate = useNavigate();
@@ -79,7 +79,10 @@ const BDDashboardMobile = () => {
   const [currentBannerIndex] = useState(0);
 
   useEffect(() => {
-    const s = io('https://bcrm.100acress.com');
+    const socketUrl = window.location.hostname === 'localhost'
+      ? 'http://localhost:5001'
+      : 'https://bcrm.100acress.com';
+    const s = io(socketUrl);
     setSocket(s);
     console.log('Socket.IO client connected:', s);
 
@@ -255,7 +258,7 @@ const BDDashboardMobile = () => {
   const fetchBDLeads = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://bcrm.100acress.com/api/leads', {
+      const response = await fetch(`${apiUrl}/api/leads`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',

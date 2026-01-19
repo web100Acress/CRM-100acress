@@ -179,9 +179,9 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
 
       // Try different possible activity endpoints
       const activityEndpoints = [
-        `https://bcrm.100acress.com/api/leads/activity?userId=${bdId}`,
-        `https://bcrm.100acress.com/api/activities?userId=${bdId}`,
-        `https://bcrm.100acress.com/api/activity/user-activity?userId=${bdId}`
+        `${apiUrl}/api/leads/activity?userId=${bdId}`,
+        `${apiUrl}/api/activities?userId=${bdId}`,
+        `${apiUrl}/api/activity/user-activity?userId=${bdId}`
       ];
 
       let activityData = null;
@@ -251,7 +251,7 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
       // Fetch call history for this BD separately
       try {
         // Method 1: Try to get call records directly for BD
-        const callResponse = await fetch(`https://bcrm.100acress.com/api/calls/user/${bdId}`, {
+        const callResponse = await fetch(`${apiUrl}/api/calls/user/${bdId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -265,7 +265,7 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
         } else {
           // Method 2: Fallback - fetch BD's leads and their call history
           console.log('Direct call API failed, trying leads-based approach...');
-          const leadsResponse = await fetch(`https://bcrm.100acress.com/api/leads?assignedTo=${bdId}`, {
+          const leadsResponse = await fetch(`${apiUrl}/api/leads?assignedTo=${bdId}`, {
             headers: {
               Authorization: `Bearer ${token}`,
               'Content-Type': 'application/json'
@@ -304,9 +304,9 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
       try {
         // Try different possible activity endpoints
         const activityEndpoints = [
-          `https://bcrm.100acress.com/api/leads/activity?userId=${bdId}`,
-          `https://bcrm.100acress.com/api/activities?userId=${bdId}`,
-          `https://bcrm.100acress.com/api/activity/user-activity?userId=${bdId}`
+          `${apiUrl}/api/leads/activity?userId=${bdId}`,
+          `${apiUrl}/api/activities?userId=${bdId}`,
+          `${apiUrl}/api/activity/user-activity?userId=${bdId}`
         ];
 
         let activityData = null;
