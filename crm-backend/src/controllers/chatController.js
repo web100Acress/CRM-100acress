@@ -2,7 +2,9 @@ const Chat = require('../models/chatModel');
 const User = require('../models/userModel');
 const Lead = require('../models/leadModel');
 
-// 🎯 WhatsApp Style Chat System
+// 🎯 PERFECT CHAT CONTROLLER - Unified Implementation
+
+// 1. Create or Get Chat (Lead-based)
 exports.createOrGetChat = async (req, res, next) => {
   try {
     const { leadId, createdBy, assignedTo } = req.body;
