@@ -124,19 +124,7 @@ const DeveloperContent = ({ userRole }) => {
     { id: 'role-assignment', label: 'Role Assignment', icon: Users },
     { id: 'create-employee', label: 'Create Employee', icon: UserPlus },
     { id: 'activity', label: 'Activity Hub', icon: Activity },
-    { id: 'chat', label: 'Chat', icon: Info },
-    { id: 'tools', label: 'Developer Tools', icon: Wrench },
-    { id: 'monitor', label: 'System Monitor', icon: Server },
-    { id: 'database', label: 'Database Manager', icon: Database },
     { id: 'api-tester', label: 'API Tester', icon: Globe },
-    { id: 'logs', label: 'Log Viewer', icon: FileText },
-    { id: 'performance', label: 'Performance Metrics', icon: BarChart3 },
-    { id: 'deployment', label: 'Deployment Panel', icon: GitBranch },
-    { id: 'security', label: 'Security Audit', icon: Shield },
-    { id: 'backup', label: 'Backup Manager', icon: HardDrive },
-    { id: 'cache', label: 'Cache Manager', icon: Zap },
-    { id: 'queue', label: 'Queue Monitor', icon: RefreshCw },
-    { id: 'errors', label: 'Error Handler', icon: AlertTriangle },
   ];
 
       const handleAction = (action) => {
@@ -1182,14 +1170,14 @@ const DeveloperContent = ({ userRole }) => {
       />
 
       {/* Main Content Area */}
-      <div className="main-content">
+      <div className="main-content" data-tab={activeTab}>
         <DeveloperHeader 
           sidebarOpen={sidebarOpen}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           developerName={developerName}
         />
 
-        <main className="developer-main">
+        <main className="developer-main p-0">
           <Card className="content-card">
             <CardHeader>
               <CardTitle className="content-title">
