@@ -495,9 +495,9 @@ const LoginDesktop = () => {
     <div className="min-h-screen bg-gradient-to-br from-red-600 via-red-700 to-red-900 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Logo in the absolute top left corner */}
       <img
-        src="/image/100acress icon.png"
+        src="https://100acress-media-bucket.s3.ap-south-1.amazonaws.com/100acre/logo/logowhite.webp.webp  "
         alt="100acres Logo"
-        className="fixed top-0.5 left-12 w-40 h-40 object-contain z-50"
+        className="fixed top-[0] left-12 w-40 h-40 object-contain z-50"
       />
       {/* Floating Property Theme Background */}
       <div className="absolute inset-0 overflow-hidden">

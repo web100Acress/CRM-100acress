@@ -466,7 +466,7 @@ const LoginMobile = () => {
     <div className="min-h-screen bg-gradient-to-br from-red-600 via-red-700 to-red-900 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Logo in the absolute top left corner */}
       <img
-        src="/image/100acress icon.png"
+        src="https://100acress-media-bucket.s3.ap-south-1.amazonaws.com/100acre/logo/logowhite.webp.webp"
         alt="100acres Logo"
         className="fixed top-2 left-4 w-20 h-20 object-contain z-50"
       />
