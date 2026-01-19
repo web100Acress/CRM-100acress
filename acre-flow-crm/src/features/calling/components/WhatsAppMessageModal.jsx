@@ -213,7 +213,7 @@ const WhatsAppMessageModal = ({ isOpen, onClose, recipient, onMessageSent, onCha
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${apiUrl}/chats/messages?chatId=${chatId}`, {
+      const response = await fetch(`${API_ENDPOINTS.CHAT_MESSAGES}?chatId=${chatId}`, {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
       });
       if (response.ok) {

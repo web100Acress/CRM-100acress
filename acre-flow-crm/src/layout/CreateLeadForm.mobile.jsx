@@ -57,26 +57,14 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
 
       const json = await response.json();
       let users = json.data || [];
-
-      // Filter users based on current user role
-      if (currentUserRole === 'super-admin' || currentUserRole === 'boss') {
-        // Boss can ONLY assign to HOD users
-        users = users.filter((user) => user.role === 'hod');
-        console.log('🔍 Mobile Boss assigning leads - Available HODs ONLY:', users);
-      } else if (currentUserRole === 'hod') {
-        // HOD can assign to team-leader and bd users
-        users = users.filter((user) => user.role === 'team-leader' || user.role === 'bd');
-        console.log('🔍 Mobile HOD assigning leads - Available Team Leaders & BD:', users);
-      } else if (currentUserRole === 'team-leader') {
-        // Team Leader can assign to bd users
-        users = users.filter((user) => user.role === 'bd');
-        console.log('🔍 Mobile Team Leader assigning leads - Available BD:', users);
-      } else {
-        // Other roles cannot assign leads - empty list
-        users = [];
-        console.log('🔍 Mobile Other roles cannot assign leads - No users available');
-      }
-
+      
+      console.log('🔍 Backend returned users:', users);
+      console.log('🔍 Current user role:', currentUserRole);
+      
+      // The backend now includes the current user, so no need for additional filtering
+      // Just use the users as returned by backend
+      console.log('🔍 Final assignable users:', users.map(u => ({ id: u._id, name: u.name, role: u.role })));
+      
       setAssignableUsers(users);
     } catch (error) {
       console.error('Error fetching assignable users:', error);
