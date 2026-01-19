@@ -11,6 +11,7 @@ import { Badge } from '@/layout/badge';
 import { Card, CardContent } from '@/layout/card';
 import MobileLayout from '@/layout/MobileLayout';
 import io from 'socket.io-client';
+import { apiUrl } from '@/config/apiConfig';
 
 const HeadAdminProfileMobile = () => {
   const navigate = useNavigate();
@@ -35,7 +36,10 @@ const HeadAdminProfileMobile = () => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    const s = io('https://bcrm.100acress.com');
+    const socketUrl = window.location.hostname === 'localhost'
+      ? 'http://localhost:5001'
+      : 'https://bcrm.100acress.com';
+    const s = io(socketUrl);
     setSocket(s);
     console.log('Mobile Head Admin Socket.IO client connected:', s);
     s.emit('requestHeadAdminStats');
@@ -74,7 +78,7 @@ const HeadAdminProfileMobile = () => {
       try {
         const token = localStorage.getItem('token');
 
-        const usersResponse = await fetch('https://bcrm.100acress.com/api/users', {
+        const usersResponse = await fetch(`${apiUrl}/api/users`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -82,7 +86,7 @@ const HeadAdminProfileMobile = () => {
         });
         const usersData = await usersResponse.json();
 
-        const leadsResponse = await fetch('https://bcrm.100acress.com/api/leads', {
+        const leadsResponse = await fetch(`${apiUrl}/api/leads`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',

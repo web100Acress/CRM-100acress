@@ -10,6 +10,7 @@ import { Badge } from '@/layout/badge';
 import { Card, CardContent } from '@/layout/card';
 import MobileLayout from '@/layout/MobileLayout';
 import io from 'socket.io-client';
+import { apiUrl } from '@/config/apiConfig';
 
 const TeamLeaderProfileMobile = () => {
   const navigate = useNavigate();
@@ -27,7 +28,10 @@ const TeamLeaderProfileMobile = () => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    const s = io('https://bcrm.100acress.com');
+    const socketUrl = window.location.hostname === 'localhost'
+      ? 'http://localhost:5001'
+      : 'https://bcrm.100acress.com';
+    const s = io(socketUrl);
     setSocket(s);
     console.log('Mobile Team Leader Socket.IO client connected:', s);
     s.emit('requestTeamLeaderStats');
@@ -65,18 +69,18 @@ const TeamLeaderProfileMobile = () => {
     const fetchMobileTeamLeaderData = async () => {
       try {
         const token = localStorage.getItem('token');
-        
+
         // Fetch team members
-        const teamResponse = await fetch('https://bcrm.100acress.com/api/my-team?limit=10', {
+        const teamResponse = await fetch(`${apiUrl}/api/my-team?limit=10`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         });
         const teamData = await teamResponse.json();
-        
+
         // Fetch team leads
-        const leadsResponse = await fetch('https://bcrm.100acress.com/api/team-leads?limit=15', {
+        const leadsResponse = await fetch(`${apiUrl}/api/team-leads?limit=15`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -198,7 +202,7 @@ const TeamLeaderProfileMobile = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-12 bg-gray-200 rounded-full h-2">
-                    <div 
+                    <div
                       className="bg-green-600 h-2 rounded-full"
                       style={{ width: `${Math.floor(Math.random() * 40) + 60}%` }}
                     />

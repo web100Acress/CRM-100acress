@@ -11,6 +11,7 @@ import { Badge } from '@/layout/badge';
 import { Card, CardContent } from '@/layout/card';
 import MobileLayout from '@/layout/MobileLayout';
 import io from 'socket.io-client';
+import { apiUrl } from '@/config/apiConfig';
 
 const SuperAdminProfileMobile = () => {
   const navigate = useNavigate();
@@ -32,7 +33,10 @@ const SuperAdminProfileMobile = () => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    const s = io('https://bcrm.100acress.com');
+    const socketUrl = window.location.hostname === 'localhost'
+      ? 'http://localhost:5001'
+      : 'https://bcrm.100acress.com';
+    const s = io(socketUrl);
     setSocket(s);
     console.log('Mobile Socket.IO client connected:', s);
     s.emit('requestDashboardStats');
@@ -69,7 +73,7 @@ const SuperAdminProfileMobile = () => {
         const token = localStorage.getItem('token');
 
         // Fetch users with mobile optimization
-        const usersResponse = await fetch('https://bcrm.100acress.com/api/users?limit=20', {
+        const usersResponse = await fetch(`${apiUrl}/api/users?limit=20`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -79,7 +83,7 @@ const SuperAdminProfileMobile = () => {
         setUsers(usersData.data || []);
 
         // Fetch leads with mobile optimization
-        const leadsResponse = await fetch('https://bcrm.100acress.com/api/leads?limit=20', {
+        const leadsResponse = await fetch(`${apiUrl}/api/leads?limit=20`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -405,8 +409,8 @@ const SuperAdminProfileMobile = () => {
                   </div>
                 </div>
                 <Badge className={`text-xs ${user.role === 'admin' ? 'bg-purple-100 text-purple-800' :
-                    user.role === 'head-admin' ? 'bg-blue-100 text-blue-800' :
-                      'bg-gray-100 text-gray-800'
+                  user.role === 'head-admin' ? 'bg-blue-100 text-blue-800' :
+                    'bg-gray-100 text-gray-800'
                   }`}>
                   {user.role}
                 </Badge>
@@ -441,9 +445,9 @@ const SuperAdminProfileMobile = () => {
                   </div>
                 </div>
                 <Badge className={`text-xs ${lead.status === 'hot' ? 'bg-red-100 text-red-800' :
-                    lead.status === 'warm' ? 'bg-yellow-100 text-yellow-800' :
-                      lead.status === 'cold' ? 'bg-blue-100 text-blue-800' :
-                        'bg-gray-100 text-gray-800'
+                  lead.status === 'warm' ? 'bg-yellow-100 text-yellow-800' :
+                    lead.status === 'cold' ? 'bg-blue-100 text-blue-800' :
+                      'bg-gray-100 text-gray-800'
                   }`}>
                   {lead.status || 'new'}
                 </Badge>
