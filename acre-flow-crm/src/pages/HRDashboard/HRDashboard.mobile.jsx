@@ -55,7 +55,7 @@ const HRDashboardMobile = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('userId');
     localStorage.removeItem('sourceSystem');
-    
+
     window.location.href = '/login';
   };
 
@@ -130,7 +130,7 @@ const HRDashboardMobile = () => {
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden">
           <div className="w-64 bg-white h-full shadow-lg">
-            <HRSidebar 
+            <HRSidebar
               activeTab={activeTab}
               setActiveTab={setActiveTab}
               sidebarOpen={sidebarOpen}

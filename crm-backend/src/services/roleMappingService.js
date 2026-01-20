@@ -22,22 +22,28 @@ const mapAcressRoleToCRM = (acressRole) => {
     'super-admin': 'boss',     // Maps hyphenated version
     'superadmin': 'boss',      // Maps non-hyphenated version
     'boss': 'boss',            // Already boss stays boss
-    
+    'head-admin': 'hod',
+    'hod': 'hod',
+    'employee': 'bd',
+    'bd': 'bd',
+    'team-leader': 'team-leader',
+    'developer': 'developer',
+
     // Sales roles
     'saleshead': 'sales_head',
     'sales_head': 'sales_head',
-    
+
     // Blog roles
     'blog': 'blog_manager',
     'contentwriter': 'blog_manager',
-    
+
     // HR roles
     'hr': 'hr_manager',
     'hr_manager': 'hr_manager',
   };
 
   const mappedRole = roleMap[roleLower] || 'user';
-  
+
   // Debug logging for role mapping
   console.log('🔍 Role Mapping:', {
     input: acressRole,

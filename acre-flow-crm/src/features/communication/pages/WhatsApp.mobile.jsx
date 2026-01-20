@@ -35,14 +35,14 @@ const WhatsAppMobile = ({ userRole = 'employee' }) => {
   const bannerImages = [
     'https://100acress-media-bucket.s3.ap-south-1.amazonaws.com/small-banners/1766217374273-max-antara-361.webp'
   ];
-  
+
   const [currentBannerIndex] = useState(0);
 
   const fetchConversations = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      
+
       // Mock data for now - replace with actual API
       const mockData = [
         {
@@ -79,15 +79,15 @@ const WhatsAppMobile = ({ userRole = 'employee' }) => {
           isOnline: false
         }
       ];
-      
+
       setConversations(mockData);
-      
+
       // Calculate stats
       const totalConversations = mockData.length;
       const unreadMessages = mockData.reduce((sum, conv) => sum + conv.unreadCount, 0);
       const activeChats = mockData.filter(conv => conv.isOnline).length;
       const responseRate = 85; // Mock percentage
-      
+
       setStats({
         totalConversations,
         unreadMessages,
@@ -109,7 +109,7 @@ const WhatsAppMobile = ({ userRole = 'employee' }) => {
     fetchConversations();
   }, []);
 
-  const filteredConversations = conversations.filter(conv => 
+  const filteredConversations = conversations.filter(conv =>
     conv.leadName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     conv.phoneNumber?.includes(searchTerm)
   );
@@ -153,13 +153,13 @@ const WhatsAppMobile = ({ userRole = 'employee' }) => {
 
       {/* Banner Section */}
       <div className="relative h-32 overflow-hidden">
-        <img 
-          src={bannerImages[currentBannerIndex]} 
+        <img
+          src={bannerImages[currentBannerIndex]}
           alt="WhatsApp Banner"
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-        
+
         {/* Banner Text Overlay */}
         <div className="absolute bottom-4 left-4 right-4">
           <h2 className="text-white text-xl font-bold drop-shadow-lg">
@@ -259,10 +259,10 @@ const WhatsAppMobile = ({ userRole = 'employee' }) => {
       </div>
 
       {/* Mobile Sidebar */}
-      <MobileSidebar 
-        userRole={userRole} 
-        isOpen={rightMenuOpen} 
-        onClose={() => setRightMenuOpen(false)} 
+      <MobileSidebar
+        userRole={userRole}
+        isOpen={rightMenuOpen}
+        onClose={() => setRightMenuOpen(false)}
       />
     </div>
   );
@@ -281,7 +281,7 @@ const WhatsAppMobile = ({ userRole = 'employee' }) => {
   return (
     <MobileLayout userRole={userRole}>
       {renderMobileHeader()}
-      
+
       {/* Conversations List */}
       <div className="p-4 space-y-3">
         {filteredConversations.map((conversation) => (

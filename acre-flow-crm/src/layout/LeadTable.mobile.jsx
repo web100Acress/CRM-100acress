@@ -405,8 +405,8 @@ const LeadTableMobile = ({ userRole }) => {
             <button
               onClick={() => setStatusFilter("all")}
               className={`px-3 py-1 rounded-full text-xs ${statusFilter === "all"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-200 text-gray-700"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-200 text-gray-700"
                 }`}
             >
               All ({filteredLeads.length})
@@ -414,8 +414,8 @@ const LeadTableMobile = ({ userRole }) => {
             <button
               onClick={() => setStatusFilter("new")}
               className={`px-3 py-1 rounded-full text-xs ${statusFilter === "new"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-200 text-gray-700"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-200 text-gray-700"
                 }`}
             >
               New
@@ -423,8 +423,8 @@ const LeadTableMobile = ({ userRole }) => {
             <button
               onClick={() => setStatusFilter("hot")}
               className={`px-3 py-1 rounded-full text-xs ${statusFilter === "hot"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-200 text-gray-700"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-200 text-gray-700"
                 }`}
             >
               Hot
@@ -432,8 +432,8 @@ const LeadTableMobile = ({ userRole }) => {
             <button
               onClick={() => setStatusFilter("warm")}
               className={`px-3 py-1 rounded-full text-xs ${statusFilter === "warm"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-200 text-gray-700"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-200 text-gray-700"
                 }`}
             >
               Warm
@@ -441,8 +441,8 @@ const LeadTableMobile = ({ userRole }) => {
             <button
               onClick={() => setStatusFilter("cold")}
               className={`px-3 py-1 rounded-full text-xs ${statusFilter === "cold"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-200 text-gray-700"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-200 text-gray-700"
                 }`}
             >
               Cold
@@ -450,8 +450,8 @@ const LeadTableMobile = ({ userRole }) => {
             <button
               onClick={() => setStatusFilter("converted")}
               className={`px-3 py-1 rounded-full text-xs ${statusFilter === "converted"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-200 text-gray-700"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-200 text-gray-700"
                 }`}
             >
               Converted

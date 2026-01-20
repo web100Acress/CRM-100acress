@@ -44,11 +44,10 @@ const MobileLayout = ({ userRole = 'employee', activeTab, setActiveTab, children
         <nav className="space-y-2">
           <button
             onClick={() => { setActiveTab('overview'); setMobileMenuOpen(false); }}
-            className={`w-full text-left p-3 rounded-xl transition-all duration-200 flex items-center gap-3 ${
-              activeTab === 'overview' 
-                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' 
+            className={`w-full text-left p-3 rounded-xl transition-all duration-200 flex items-center gap-3 ${activeTab === 'overview'
+                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
                 : 'hover:bg-gray-50 text-gray-700'
-            }`}
+              }`}
           >
             <Home size={18} className={activeTab === 'overview' ? 'text-white' : 'text-blue-600'} />
             <span className="font-medium">Overview</span>
@@ -56,11 +55,10 @@ const MobileLayout = ({ userRole = 'employee', activeTab, setActiveTab, children
           {(userRole === 'super-admin' || userRole === 'head-admin') && (
             <button
               onClick={() => { setActiveTab('users'); setMobileMenuOpen(false); }}
-              className={`w-full text-left p-3 rounded-xl transition-all duration-200 flex items-center gap-3 ${
-                activeTab === 'users' 
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' 
+              className={`w-full text-left p-3 rounded-xl transition-all duration-200 flex items-center gap-3 ${activeTab === 'users'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
                   : 'hover:bg-gray-50 text-gray-700'
-              }`}
+                }`}
             >
               <Users size={18} className={activeTab === 'users' ? 'text-white' : 'text-green-600'} />
               <span className="font-medium">Users</span>
@@ -68,22 +66,20 @@ const MobileLayout = ({ userRole = 'employee', activeTab, setActiveTab, children
           )}
           <button
             onClick={() => { setActiveTab('leads'); setMobileMenuOpen(false); }}
-            className={`w-full text-left p-3 rounded-xl transition-all duration-200 flex items-center gap-3 ${
-              activeTab === 'leads' 
-                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' 
+            className={`w-full text-left p-3 rounded-xl transition-all duration-200 flex items-center gap-3 ${activeTab === 'leads'
+                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
                 : 'hover:bg-gray-50 text-gray-700'
-            }`}
+              }`}
           >
             <BarChart3 size={18} className={activeTab === 'leads' ? 'text-white' : 'text-orange-600'} />
             <span className="font-medium">Leads</span>
           </button>
           <button
             onClick={() => { setActiveTab('settings'); setMobileMenuOpen(false); }}
-            className={`w-full text-left p-3 rounded-xl transition-all duration-200 flex items-center gap-3 ${
-              activeTab === 'settings' 
-                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' 
+            className={`w-full text-left p-3 rounded-xl transition-all duration-200 flex items-center gap-3 ${activeTab === 'settings'
+                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
                 : 'hover:bg-gray-50 text-gray-700'
-            }`}
+              }`}
           >
             <Settings size={18} className={activeTab === 'settings' ? 'text-white' : 'text-purple-600'} />
             <span className="font-medium">Settings</span>
@@ -121,52 +117,47 @@ const MobileLayout = ({ userRole = 'employee', activeTab, setActiveTab, children
       <div className="grid grid-cols-5 py-2">
         <button
           onClick={() => navigate('/')}
-          className={`flex flex-col items-center py-2 px-3 transition-all duration-200 ${
-            window.location.pathname === '/' ? 'text-blue-600' : 'text-gray-600'
-          }`}
+          className={`flex flex-col items-center py-2 px-3 transition-all duration-200 ${window.location.pathname === '/' ? 'text-blue-600' : 'text-gray-600'
+            }`}
         >
           <Home size={20} />
           <span className="text-xs mt-1">Home</span>
         </button>
         <button
           onClick={() => setActiveTab('whatsapp')}
-          className={`flex flex-col items-center py-2 px-3 transition-all duration-200 ${
-            activeTab === 'whatsapp' ? 'text-blue-600' : 'text-gray-600'
-          }`}
+          className={`flex flex-col items-center py-2 px-3 transition-all duration-200 ${activeTab === 'whatsapp' ? 'text-blue-600' : 'text-gray-600'
+            }`}
         >
           <MessageCircle size={20} />
           <span className="text-xs mt-1">WhatsApp</span>
         </button>
         <button
           onClick={() => navigate('/leads')}
-          className={`flex flex-col items-center py-2 px-3 transition-all duration-200 ${
-            window.location.pathname === '/leads' ? 'text-blue-600' : 'text-gray-600'
-          }`}
+          className={`flex flex-col items-center py-2 px-3 transition-all duration-200 ${window.location.pathname === '/leads' ? 'text-blue-600' : 'text-gray-600'
+            }`}
         >
           <BarChart3 size={20} />
-          
+
           <span className="text-xs mt-1">Leads</span>
         </button>
         {(userRole === 'super-admin' || userRole === 'head-admin') && (
           <button
             onClick={() => setActiveTab('users')}
-            className={`flex flex-col items-center py-2 px-3 transition-all duration-200 ${
-              activeTab === 'users' ? 'text-blue-600' : 'text-gray-600'
-            }`}
+            className={`flex flex-col items-center py-2 px-3 transition-all duration-200 ${activeTab === 'users' ? 'text-blue-600' : 'text-gray-600'
+              }`}
           >
             <Users size={20} />
             <span className="text-xs mt-1">Users</span>
           </button>
         )}
-        
+
         {/* Notification Bell - Available for all roles */}
         <MobileNotifications userRole={userRole} />
-        
+
         <button
           onClick={() => setActiveTab('status')}
-          className={`flex flex-col items-center py-2 px-3 transition-all duration-200 ${
-            activeTab === 'status' ? 'text-blue-600' : 'text-gray-600'
-          }`}
+          className={`flex flex-col items-center py-2 px-3 transition-all duration-200 ${activeTab === 'status' ? 'text-blue-600' : 'text-gray-600'
+            }`}
         >
           <Activity size={20} />
           <span className="text-xs mt-1">Status</span>
@@ -186,7 +177,7 @@ const MobileLayout = ({ userRole = 'employee', activeTab, setActiveTab, children
       </button> */}
 
       {mobileMenuOpen && renderMobileSidebar()}
-      
+
       <div className="p-4 pb-20">
         {children}
       </div>

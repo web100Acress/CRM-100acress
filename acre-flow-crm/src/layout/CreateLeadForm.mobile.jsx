@@ -57,14 +57,14 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
 
       const json = await response.json();
       let users = json.data || [];
-      
+
       console.log('🔍 Backend returned users:', users);
       console.log('🔍 Current user role:', currentUserRole);
-      
+
       // The backend now includes the current user, so no need for additional filtering
       // Just use the users as returned by backend
       console.log('🔍 Final assignable users:', users.map(u => ({ id: u._id, name: u.name, role: u.role })));
-      
+
       setAssignableUsers(users);
     } catch (error) {
       console.error('Error fetching assignable users:', error);
@@ -373,7 +373,7 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
                 No BD available to assign leads to
               </p>
             )}
-            {!(currentUserRole === "super-admin" || currentUserRole === "boss" || currentUserRole === "hod" || currentUserRole === "team-leader") && (
+            {!(currentUserRole === "super-admin" || currentUserRole === "boss" || currentUserRole === "hod" || currentUserRole === "team-leader" || currentUserRole === "bd" || currentUserRole === "employee") && (
               <p className="text-xs text-red-500 mt-1">
                 You don't have permission to assign leads
               </p>

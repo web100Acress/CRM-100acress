@@ -14,25 +14,22 @@ const getRelevantUsersForBDActivity = async (currentUserId) => {
             return [];
         }
 
-        // Get all relevant users for BD activities
+        // Get all relevant managers for BD activities
         const bossUsers = await User.find({ role: 'boss' });
         const hodUsers = await User.find({ role: 'hod' });
         const teamLeaderUsers = await User.find({ role: 'team-leader' });
-        const bdUsers = await User.find({ role: 'bd', _id: { $ne: currentUserId } }); // Other BDs except self
 
         const recipients = [
             ...bossUsers.map(u => ({ userId: u._id, role: 'boss' })),
             ...hodUsers.map(u => ({ userId: u._id, role: 'hod' })),
-            ...teamLeaderUsers.map(u => ({ userId: u._id, role: 'team-leader' })),
-            ...bdUsers.map(u => ({ userId: u._id, role: 'bd' }))
+            ...teamLeaderUsers.map(u => ({ userId: u._id, role: 'team-leader' }))
         ];
 
-        console.log('🔔 BD Activity - Notifying relevant users:', {
+        console.log('🔔 BD Activity - Notifying managers:', {
             total: recipients.length,
             boss: bossUsers.length,
             hod: hodUsers.length,
-            teamLeader: teamLeaderUsers.length,
-            bd: bdUsers.length
+            teamLeader: teamLeaderUsers.length
         });
 
         return recipients;

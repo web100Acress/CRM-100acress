@@ -4,13 +4,14 @@ import '../../styles/sidebar.css'
 import './styles/DeveloperHeader.css'
 import './styles/DeveloperLayout.css'
 import DeveloperSidebar from './components/Sidebar';
-import { 
-  Code, 
-  Database, 
-  Server, 
-  Shield, 
-  Activity, 
-  Terminal, 
+import { apiUrl } from '../../config/apiConfig';
+import {
+  Code,
+  Database,
+  Server,
+  Shield,
+  Activity,
+  Terminal,
   FileText,
   Globe,
   Key,
@@ -99,27 +100,27 @@ const DeveloperContent = ({ userRole }) => {
     password: ''
   });
 
-      const { toast } = useToast();
-      const navigate = useNavigate();
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
-      const handleLogout = () => {
-        localStorage.removeItem('isDeveloperLoggedIn');
-        localStorage.removeItem('developerEmail');
-        localStorage.removeItem('developerName');
-        localStorage.removeItem('developerRole');
-        localStorage.removeItem('token');
-        localStorage.removeItem('userRole');
-        localStorage.removeItem('userEmail');
-        localStorage.removeItem('userName');
-        localStorage.removeItem('isLoggedIn');
-        localStorage.removeItem('userId');
-        navigate('/login');
-        window.location.reload();
-      };
+  const handleLogout = () => {
+    localStorage.removeItem('isDeveloperLoggedIn');
+    localStorage.removeItem('developerEmail');
+    localStorage.removeItem('developerName');
+    localStorage.removeItem('developerRole');
+    localStorage.removeItem('token');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userId');
+    navigate('/login');
+    window.location.reload();
+  };
 
-      const developerName = localStorage.getItem('developerName') || 'Developer';
+  const developerName = localStorage.getItem('developerName') || 'Developer';
 
-      const tabs = [
+  const tabs = [
     { id: 'overview', label: 'System Overview', icon: Monitor },
     { id: 'role-assignment', label: 'Role Assignment', icon: Users },
     { id: 'create-employee', label: 'Create Employee', icon: UserPlus },
@@ -127,1034 +128,1025 @@ const DeveloperContent = ({ userRole }) => {
     { id: 'api-tester', label: 'API Tester', icon: Globe },
   ];
 
-      const handleAction = (action) => {
+  const handleAction = (action) => {
+    toast({
+      title: "Developer Action",
+      description: `${action} executed successfully`,
+    });
+  };
+
+  const handleAccessSection = (section, role) => {
+    // Set temporary session for the role
+    localStorage.setItem('tempUserRole', role);
+    localStorage.setItem('tempUserEmail', 'developer@access.com');
+    localStorage.setItem('tempUserName', 'Developer Access');
+    localStorage.setItem('isLoggedIn', 'true');
+
+    navigate(section);
+    toast({
+      title: "Access Granted",
+      description: `Accessing ${section} as ${role}`,
+    });
+  };
+
+  const handleEmployeeInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewEmployee(prevState => ({
+      ...prevState,
+      [name]: value
+    }));
+  };
+
+  const handleCreateEmployee = async (e) => {
+    e.preventDefault();
+    try {
+      // Ensure all required fields are present
+      const employeeData = {
+        name: newEmployee.name,
+        email: newEmployee.email,
+        role: newEmployee.role,
+        department: newEmployee.department,
+        password: newEmployee.password
+      };
+      const token = localStorage.getItem('token');
+      console.log('Token used for create employee:', token); // Debug log
+      const response = await fetch(`${apiUrl}/api/users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(employeeData),
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
         toast({
-          title: "Developer Action",
-          description: `${action} executed successfully`,
+          title: 'Employee Created',
+          description: `Employee ${newEmployee.name} created successfully!`,
         });
-      };
-
-      const handleAccessSection = (section, role) => {
-        // Set temporary session for the role
-        localStorage.setItem('tempUserRole', role);
-        localStorage.setItem('tempUserEmail', 'developer@access.com');
-        localStorage.setItem('tempUserName', 'Developer Access');
-        localStorage.setItem('isLoggedIn', 'true');
-        
-        navigate(section);
+        setNewEmployee({ name: '', email: '', role: '', department: '', password: '' });
+      } else {
         toast({
-          title: "Access Granted",
-          description: `Accessing ${section} as ${role}`,
+          title: 'Creation Failed',
+          description: data.message || 'Failed to create employee.',
+          variant: 'destructive',
         });
-      };
+      }
+    } catch (err) {
+      toast({
+        title: 'Network Error',
+        description: 'Could not connect to the server to create employee.',
+        variant: 'destructive',
+      });
+    }
+  };
 
-      const handleEmployeeInputChange = (e) => {
-        const { name, value } = e.target;
-        setNewEmployee(prevState => ({
-          ...prevState,
-          [name]: value
-        }));
-      };
 
-      const handleCreateEmployee = async (e) => {
-        e.preventDefault();
-        try {
-          // Ensure all required fields are present
-          const employeeData = {
-            name: newEmployee.name,
-            email: newEmployee.email,
-            role: newEmployee.role,
-            department: newEmployee.department,
-            password: newEmployee.password
-          };
-          const token = localStorage.getItem('token');
-          console.log('Token used for create employee:', token); // Debug log
-          const response = await fetch('https://bcrm.100acress.com/api/users', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify(employeeData),
-          });
-          const data = await response.json();
-          if (response.ok && data.success) {
-            toast({
-              title: 'Employee Created',
-              description: `Employee ${newEmployee.name} created successfully!`,
-            });
-            setNewEmployee({ name: '', email: '', role: '', department: '', password: '' });
-          } else {
-            toast({
-              title: 'Creation Failed',
-              description: data.message || 'Failed to create employee.',
-              variant: 'destructive',
-            });
-          }
-        } catch (err) {
-          toast({
-            title: 'Network Error',
-            description: 'Could not connect to the server to create employee.',
-            variant: 'destructive',
-          });
-        }
-      };
 
-      
-
-      const renderAccessControl = () => (
-        <div className="content-section">
-          <div className="cards-grid">
-            <div className="access-card">
-              <div className="card-header">
-                <h3 className="card-title">
-                  <Crown className="card-icon purple" />
-                  Super Admin Access
-                </h3>
-              </div>
-              <div className="card-content">
-                <p className="card-description">
-                  Full system access with all administrative privileges
-                </p>
-                <div className="button-list">
-                  <button
-                    onClick={() => handleAccessSection('/', 'super-admin')}
-                    className="access-button"
-                  >
-                    Dashboard
-                  </button>
-                  <button
-                    onClick={() => handleAccessSection('/users', 'super-admin')}
-                    className="access-button"
-                  >
-                    User Management
-                  </button>
-                  <button
-                    onClick={() => handleAccessSection('/settings', 'super-admin')}
-                    className="access-button"
-                  >
-                    System Settings
-                  </button>
-                  <button
-                    onClick={() => handleAccessSection('/create-admin', 'super-admin')}
-                    className="access-button"
-                  >
-                    Create Admin
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="access-card">
-              <div className="card-header">
-                <h3 className="card-title">
-                  <UserCheck className="card-icon blue" />
-                  Head Admin Access
-                </h3>
-              </div>
-              <div className="card-content">
-                <p className="card-description">
-                  Administrative access with team management capabilities
-                </p>
-                <div className="button-list">
-                  <button
-                    onClick={() => handleAccessSection('/', 'head-admin')}
-                    className="access-button"
-                  >
-                    Dashboard
-                  </button>
-                  <button
-                    onClick={() => handleAccessSection('/create-leader', 'head-admin')}
-                    className="access-button"
-                  >
-                    Create Team Leader
-                  </button>
-                  <button
-                    onClick={() => handleAccessSection('/team', 'head-admin')}
-                    className="access-button"
-                  >
-                    Team Management
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="access-card">
-              <div className="card-header">
-                <h3 className="card-title">
-                  <Briefcase className="card-icon green" />
-                  Team Leader Access
-                </h3>
-              </div>
-              <div className="card-content">
-                <p className="card-description">
-                  Team leadership with employee management capabilities
-                </p>
-                <div className="button-list">
-                  <button
-                    onClick={() => handleAccessSection('/', 'team-leader')}
-                    className="access-button"
-                  >
-                    Dashboard
-                  </button>
-                  <button
-                    onClick={() => handleAccessSection('/create-employee', 'team-leader')}
-                    className="access-button"
-                  >
-                    Create Employee
-                  </button>
-                  <button
-                    onClick={() => handleAccessSection('/employees', 'team-leader')}
-                    className="access-button"
-                  >
-                    My Employees
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="access-card">
-              <div className="card-header">
-                <h3 className="card-title">
-                  <Users className="card-icon orange" />
-                  Employee Access
-                </h3>
-              </div>
-              <div className="card-content">
-                <p className="card-description">
-                  Standard employee access with basic functionality
-                </p>
-                <div className="button-list">
-                  <button
-                    onClick={() => handleAccessSection('/', 'employee')}
-                    className="access-button"
-                  >
-                    Dashboard
-                  </button>
-                  <button
-                    onClick={() => handleAccessSection('/leads', 'employee')}
-                    className="access-button"
-                  >
-                    Leads Management
-                  </button>
-                  <button
-                    onClick={() => handleAccessSection('/tickets', 'employee')}
-                    className="access-button"
-                  >
-                    Support Tickets
-                  </button>
-                </div>
-              </div>
-            </div>
+  const renderAccessControl = () => (
+    <div className="content-section">
+      <div className="cards-grid">
+        <div className="access-card">
+          <div className="card-header">
+            <h3 className="card-title">
+              <Crown className="card-icon purple" />
+              Super Admin Access
+            </h3>
           </div>
-
-          <div className="quick-switch-card">
-            <div className="card-header">
-              <h3 className="card-title">Quick Role Switch</h3>
-            </div>
-            <div className="card-content">
-              <div className="quick-buttons">
-                <button
-                  onClick={() => handleAccessSection('/', 'super-admin')}
-                  className="quick-button"
-                >
-                  <Crown className="quick-icon purple" />
-                  <span>Super Admin</span>
-                </button>
-                <button
-                  onClick={() => handleAccessSection('/', 'head-admin')}
-                  className="quick-button"
-                >
-                  <UserCheck className="quick-icon blue" />
-                  <span>Head Admin</span>
-                </button>
-                <button
-                  onClick={() => handleAccessSection('/', 'team-leader')}
-                  className="quick-button"
-                >
-                  <Briefcase className="quick-icon green" />
-                  <span>Team Leader</span>
-                </button>
-                <button
-                  onClick={() => handleAccessSection('/', 'employee')}
-                  className="quick-button"
-                >
-                  <Users className="quick-icon orange" />
-                  <span>Employee</span>
-                </button>
-              </div>
+          <div className="card-content">
+            <p className="card-description">
+              Full system access with all administrative privileges
+            </p>
+            <div className="button-list">
+              <button
+                onClick={() => handleAccessSection('/', 'super-admin')}
+                className="access-button"
+              >
+                Dashboard
+              </button>
+              <button
+                onClick={() => handleAccessSection('/users', 'super-admin')}
+                className="access-button"
+              >
+                User Management
+              </button>
+              <button
+                onClick={() => handleAccessSection('/settings', 'super-admin')}
+                className="access-button"
+              >
+                System Settings
+              </button>
+              <button
+                onClick={() => handleAccessSection('/create-admin', 'super-admin')}
+                className="access-button"
+              >
+                Create Admin
+              </button>
             </div>
           </div>
         </div>
-      );
 
-       
-      const renderCreateEmployee = () => (
-        <div className="create-employee-section">
-          <div className="create-employee-card">
-            <div className="card-header">
-              <h3 className="card-title">
-                <UserPlus className="card-icon" />
-                Create New BD
-              </h3>
-              <p className="card-subtitle">Fill in the details to create a new Business Development account</p>
+        <div className="access-card">
+          <div className="card-header">
+            <h3 className="card-title">
+              <UserCheck className="card-icon blue" />
+              Head Admin Access
+            </h3>
+          </div>
+          <div className="card-content">
+            <p className="card-description">
+              Administrative access with team management capabilities
+            </p>
+            <div className="button-list">
+              <button
+                onClick={() => handleAccessSection('/', 'head-admin')}
+                className="access-button"
+              >
+                Dashboard
+              </button>
+              <button
+                onClick={() => handleAccessSection('/create-leader', 'head-admin')}
+                className="access-button"
+              >
+                Create Team Leader
+              </button>
+              <button
+                onClick={() => handleAccessSection('/team', 'head-admin')}
+                className="access-button"
+              >
+                Team Management
+              </button>
             </div>
-            
-            <form onSubmit={handleCreateEmployee} className="employee-form">
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">Full Name</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={newEmployee.name}
-                    onChange={handleEmployeeInputChange}
-                    placeholder="write your name"
-                    className="form-input"
-                    required
-                  />
-                </div>
-                
-                <div className="form-group">
-                  <label className="form-label">Email Address</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={newEmployee.email}
-                    onChange={handleEmployeeInputChange}
-                    placeholder="email@gmail.com"
-                    className="form-input"
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">Role</label>
-                  <select
-                    name="role"
-                    value={newEmployee.role}
-                    onChange={handleEmployeeInputChange}
-                    className="form-select"
-                    required
-                  >
-                    <option value="">Select Role</option>
-                    <option value="employee">BD</option>
-                    <option value="team-leader">Team Leader</option>
-                    <option value="head-admin">HOD</option>
-                    <option value="super-admin">BOSS</option>
-                    <option value="developer">Developer</option>
-                  </select>
-                </div>  
+          </div>
+        </div>
 
-                  {/* Department */}
-                  <div className="form-group">
-                  <label htmlFor="employeeDepartment" className="form-label">
-                    Department
-                  </label>
-                  <select
-                    id="employeeDepartment"
-                    name="department"
-                    value={newEmployee.department}
-                    onChange={handleEmployeeInputChange}
-                    className="form-select"
-                    required
-                  >
-                    <option value="">-- Select Department --</option>
-                    {/* <option value="hr">HR</option>   */}
-                    <option value="engineering">Engineering</option>
-                    <option value="sales">Sales</option>
-                    {/* <option value="marketing">Marketing</option> */}
-                    {/* <option value="finance">Finance</option> */}
-                    <option value="it">IT</option>
-                  </select>
-                </div>
-                
-                <div className="form-group">
-                  <label className="form-label">Password</label>
-                  <input
-                    type="password"
-                    name="password"
-                    value={newEmployee.password}
-                    onChange={handleEmployeeInputChange}
-                    placeholder="Create a password"
-                    className="form-input"
-                    required
-                  />
-                </div>
-                  
-                <div className="form-actions">
-      <button type="submit" className="create-button">
-        <UserPlus className="button-icon" />
-        Create Employee
-      </button>
+        <div className="access-card">
+          <div className="card-header">
+            <h3 className="card-title">
+              <Briefcase className="card-icon green" />
+              Team Leader Access
+            </h3>
+          </div>
+          <div className="card-content">
+            <p className="card-description">
+              Team leadership with employee management capabilities
+            </p>
+            <div className="button-list">
+              <button
+                onClick={() => handleAccessSection('/', 'team-leader')}
+                className="access-button"
+              >
+                Dashboard
+              </button>
+              <button
+                onClick={() => handleAccessSection('/create-employee', 'team-leader')}
+                className="access-button"
+              >
+                Create Employee
+              </button>
+              <button
+                onClick={() => handleAccessSection('/employees', 'team-leader')}
+                className="access-button"
+              >
+                My Employees
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="access-card">
+          <div className="card-header">
+            <h3 className="card-title">
+              <Users className="card-icon orange" />
+              Employee Access
+            </h3>
+          </div>
+          <div className="card-content">
+            <p className="card-description">
+              Standard employee access with basic functionality
+            </p>
+            <div className="button-list">
+              <button
+                onClick={() => handleAccessSection('/', 'employee')}
+                className="access-button"
+              >
+                Dashboard
+              </button>
+              <button
+                onClick={() => handleAccessSection('/leads', 'employee')}
+                className="access-button"
+              >
+                Leads Management
+              </button>
+              <button
+                onClick={() => handleAccessSection('/tickets', 'employee')}
+                className="access-button"
+              >
+                Support Tickets
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="quick-switch-card">
+        <div className="card-header">
+          <h3 className="card-title">Quick Role Switch</h3>
+        </div>
+        <div className="card-content">
+          <div className="quick-buttons">
+            <button
+              onClick={() => handleAccessSection('/', 'super-admin')}
+              className="quick-button"
+            >
+              <Crown className="quick-icon purple" />
+              <span>Super Admin</span>
+            </button>
+            <button
+              onClick={() => handleAccessSection('/', 'head-admin')}
+              className="quick-button"
+            >
+              <UserCheck className="quick-icon blue" />
+              <span>Head Admin</span>
+            </button>
+            <button
+              onClick={() => handleAccessSection('/', 'team-leader')}
+              className="quick-button"
+            >
+              <Briefcase className="quick-icon green" />
+              <span>Team Leader</span>
+            </button>
+            <button
+              onClick={() => handleAccessSection('/', 'employee')}
+              className="quick-button"
+            >
+              <Users className="quick-icon orange" />
+              <span>Employee</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
+  );
 
 
-                {/* <button type="button" onClick={() => setNewEmployee({ name: '', email: '', role: '', password: '', password: '' })} className="create-button">
-                  Clear Form
-                </button> */}
-              {/* </div> */}
-              </div>
-          
+  const renderCreateEmployee = () => (
+    <div className="create-employee-section">
+      <div className="create-employee-card">
 
-            </form>
-          </div>
-          
-          <div className="employee-notes">
-            <div className="note-card">
-              <h4 className="note-title">
-                <Info className="note-icon" />
-                Employee Creation Guidelines
-              </h4>
-              <ul className="note-list">
-                <li>Ensure email is unique and valid</li>
-                <li>Passwords must be at least 8 characters</li>
-                <li>Team Leaders can manage employees</li>
-                <li>Admins have system access</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      );
-
-      const [search, setSearch] = useState("");
-      const [data, setData] = useState([]);
-      const [currentPage, setCurrentPage] = useState(1);
-      const [loading, setLoading] = useState(false);
-      const pageSize = 100;
-      const [downloadProgress, setDownloadProgress] = useState(0);
-      const token = localStorage.getItem("token");
-      console.log("[ProjectEnquiries] Token:", token);
-
-      const fetchData = async () => {
-        setLoading(true);
-        if (!token) {
-          console.log("[ProjectEnquiries] No token found");
-          return;
-        }
-        try {
-          const response = await fetch("https://api.100acress.com/userViewAll?limit=2000", {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            }
-          });
-          const json = await response.json();
-          console.log("[ProjectEnquiries] API response:", json);
-          setData(json.data || []);
-        } catch (error) {
-          console.error("Error fetching data:", error);
-        }
-        setLoading(false);
-      };
-
-      useEffect(() => {
-        fetchData();
-        // eslint-disable-next-line
-      }, []);
-
-      const downloadExelFile = async () => {
-        try {
-          const response = await fetch("https://api.100acress.com/userViewAll/dowloadData", {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          if (!response.ok) throw new Error(`Failed to download file: ${response.statusText}`);
-          const contentLength = response.headers.get('Content-Length');
-          const contentDisposition = response.headers.get('Content-Disposition');
-          if (!contentLength) {
-            console.error('Content-Length header is missing. Progress cannot be tracked.');
-            return;
-          }
-          const total = parseInt(contentLength, 10);
-          const reader = response.body.getReader();
-          const chunks = [];
-          let receivedLength = 0;
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            chunks.push(value);
-            receivedLength += value.length;
-            const progress = Math.round((receivedLength / total) * 100);
-            setDownloadProgress(progress);
-          }
-          const blob = new Blob(chunks, { type: response.headers.get('Content-Type') });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          const fileName = contentDisposition
-            ? contentDisposition.split('filename=')[1]?.replace(/"/g, '')
-            : 'download.xlsx';
-          link.download = fileName;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          window.URL.revokeObjectURL(url);
-          setDownloadProgress(0);
-        } catch (error) {
-          console.error('Error downloading the file:', error);
-          setDownloadProgress(0);
-        }
-      };
-
-      const renderProjectEnquiries = () => {
-        const filteredData = data.filter(
-          (item) =>
-            item.name?.toLowerCase().includes(search.toLowerCase()) ||
-            item.mobile?.includes(search) ||
-            item.projectName?.toLowerCase().includes(search.toLowerCase())
-        );
-        console.log("[ProjectEnquiries] Filtered data:", filteredData);
-
-        const currentData = filteredData.slice(
-          (currentPage - 1) * pageSize,
-          currentPage * pageSize
-        );
-
-        const totalPages = Math.ceil(filteredData.length / pageSize);
-
-        const loadMore = () => {
-          if (currentPage * pageSize < filteredData.length) {
-            setCurrentPage((prevPage) => prevPage + 1);
-          }
-        };
-
-        const loadBack = () => {
-          if (currentPage > 1) {
-            setCurrentPage((prevPage) => prevPage - 1);
-          }
-        };
-
-        const handleClick = (pageNumber) => {
-          setCurrentPage(pageNumber);
-        };
-
-        return (
-          <div style={{ background: "#fff", borderRadius: 8, padding: 16 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  style={{ padding: "8px 12px", borderRadius: 4, border: "1px solid #e5e7eb", outline: "none", minWidth: 180 }}
-                />
-                <button
-                  style={{ background: "#e11d48", color: "#fff", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer" }}
-                  onClick={() => {}}
-                >
-                  Search
-                </button>
-              </div>
-              {downloadProgress > 0 ? (
-                <button className="bg-red-400 p-2 rounded-lg text-white ml-4">
-                  {/* You can use a spinner here if you want */}
-                  {downloadProgress}%
-                </button>
-              ) : (
-                <button
-                  className="bg-blue-700 p-2 rounded-lg text-white ml-4"
-                  onClick={downloadExelFile}
-                >
-                  Download Data
-                </button>
-              )}
-            </div>
-            <div className="overflow-x-auto shadow-md rounded-lg">
-              <table className="min-w-full bg-white divide-y divide-gray-200">
-                <thead>
-                  <tr>
-                    {[
-                      "Sr.No",
-                      "Name",
-                      "Mobile",
-                      "Project Name",
-                      "Status",
-                      "Assign",
-                      "Date",
-                    ].map((header) => (
-                      <th
-                        key={header}
-                        className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-center"
-                      >
-                        {header}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                {currentData.length !== 0 ? (
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {currentData.map((item, index) => (
-                      <tr key={index}>
-                        <td className="px-6 py-2 text-center text-sm text-gray-800">
-                          {index + 1 + (currentPage - 1) * pageSize}
-                        </td>
-                        <td className="px-6 py-2 text-center text-sm text-gray-800">
-                          {item.name}
-                        </td>
-                        <td className="px-6 py-2 text-center text-sm text-gray-800">
-                          {item.mobile}
-                        </td>
-                        <td className="px-6 py-2 text-center text-sm text-gray-800">
-                          {item.projectName}
-                        </td>
-                        <td className="px-6 py-2 text-center text-sm text-gray-800">
-                          {item.status ? "Complete" : "Not Complete"}
-                        </td>
-                        <td className="px-6 py-2 text-center text-sm text-gray-800">
-                          {item.assign}
-                        </td>
-                        <td className="px-6 py-2 text-center text-sm text-gray-800">
-                          {new Date(item.createdAt).toLocaleDateString("en-GB", {
-                            day: "2-digit",
-                            month: "long",
-                            year: "numeric",
-                          })}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                ) : (
-                  <tbody>
-                    <tr>
-                      <td colSpan="7" className="text-center py-4">
-                        No data available.
-                      </td>
-                    </tr>
-                  </tbody>
-                )}
-              </table>
-              {loading && <p>Loading...</p>}
-              <div className="flex  my-4">
-                <button
-                  className={`px-4 py-2 mx-1 rounded ${currentPage === 1 ? "bg-gray-200 text-gray-700 cursor-not-allowed" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
-                  onClick={loadBack}
-                  disabled={currentPage === 1 || loading}
-                >
-                  Previous
-                </button>
-                {Array.from({ length: totalPages }, (_, index) => (
-                  <button
-                    key={index + 1}
-                    onClick={() => handleClick(index + 1)}
-                    disabled={currentPage === index + 1}
-                    className={`px-4 py-2 mx-1 rounded ${
-                      currentPage === index + 1
-                        ? "bg-red-600 text-white"
-                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                    }`}
-                  >
-                    {index + 1}
-                  </button>
-                ))}
-                <button
-                  className={`px-4 py-2 mx-1 rounded ${currentPage === totalPages ? "bg-gray-200 text-gray-700 cursor-not-allowed" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
-                  onClick={loadMore}
-                  disabled={currentPage === totalPages || loading}
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      };
-
-      const [usersData, setUsersData] = useState([]);
-      const [usersLoading, setUsersLoading] = useState(false);
-      const [usersSearch, setUsersSearch] = useState("");
-      const [usersCurrentPage, setUsersCurrentPage] = useState(1);
-      const usersPageSize = 10;
-
-      const fetchUsersData = async () => {
-        setUsersLoading(true);
-        try {
-          // Replace with your real API endpoint for users
-          const response = await fetch("https://100acress.com/api/users");
-          const json = await response.json();
-          setUsersData(json.data || json.users || []);
-        } catch (error) {
-          console.error("Error fetching users:", error);
-          setUsersData([]);
-        }
-        setUsersLoading(false);
-      };
-
-      // Optionally, fetch on mount or when tab is active
-      // useEffect(() => { fetchUsersData(); }, []);
-
-      const renderRegisteredUsers = () => {
-        const filteredUsers = usersData.filter(
-          (user) =>
-            user.name?.toLowerCase().includes(usersSearch.toLowerCase()) ||
-            user.email?.toLowerCase().includes(usersSearch.toLowerCase()) ||
-            user.mobile?.includes(usersSearch)
-        );
-
-        const totalUsersPages = Math.ceil(filteredUsers.length / usersPageSize);
-        const usersCurrentData = filteredUsers.slice(
-          (usersCurrentPage - 1) * usersPageSize,
-          usersCurrentPage * usersPageSize
-        );
-
-        const handleUsersPageClick = (pageNumber) => {
-          setUsersCurrentPage(pageNumber);
-        };
-
-        const handleUsersPrev = () => {
-          if (usersCurrentPage > 1) setUsersCurrentPage(usersCurrentPage - 1);
-        };
-
-        const handleUsersNext = () => {
-          if (usersCurrentPage < totalUsersPages) setUsersCurrentPage(usersCurrentPage + 1);
-        };
-
-        const downloadUsersCSV = () => {
-          const headers = ["S NO.", "NAME", "EMAIL", "MOBILE NUMBER", "DATE"];
-          const rows = usersCurrentData.map((user, idx) => [
-            idx + 1 + (usersCurrentPage - 1) * usersPageSize,
-            user.name,
-            user.email,
-            user.mobile,
-            user.date ? new Date(user.date).toLocaleDateString("en-GB") : ""
-          ]);
-          let csvContent = headers.join(",") + "\n" + rows.map(r => r.map(x => `"${x}"`).join(",")).join("\n");
-          const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = url;
-          link.download = "registered_users.csv";
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-        };
-
-        return (
-          <div style={{ background: "#fff", borderRadius: 8, padding: 16 }}>
-            <h2 style={{ textAlign: "center", color: "#e11d48", marginBottom: 16 }}>Registered User's</h2>
-            <div style={{ display: "flex", justifyContent: "center", marginBottom: 16, gap: 8 }}>
+        <form onSubmit={handleCreateEmployee} className="employee-form">
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Full Name</label>
               <input
                 type="text"
-                placeholder="Search..."
-                value={usersSearch}
-                onChange={e => setUsersSearch(e.target.value)}
-                style={{ padding: "8px 12px", borderRadius: 4, border: "1px solid #e5e7eb", outline: "none", minWidth: 180, marginRight: 8 }}
+                name="name"
+                value={newEmployee.name}
+                onChange={handleEmployeeInputChange}
+                placeholder="write your name"
+                className="form-input"
+                required
               />
-              <button
-                style={{ background: "#e11d48", color: "#fff", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer" }}
-                onClick={fetchUsersData}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Email Address</label>
+              <input
+                type="email"
+                name="email"
+                value={newEmployee.email}
+                onChange={handleEmployeeInputChange}
+                placeholder="email@gmail.com"
+                className="form-input"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Role</label>
+              <select
+                name="role"
+                value={newEmployee.role}
+                onChange={handleEmployeeInputChange}
+                className="form-select"
+                required
               >
-                Search
-              </button>
-              <button
-                style={{ background: "#2563eb", color: "#fff", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer" }}
-                onClick={downloadUsersCSV}
+                <option value="">Select Role</option>
+                <option value="employee">BD</option>
+                <option value="team-leader">Team Leader</option>
+                <option value="head-admin">HOD</option>
+                <option value="super-admin">BOSS</option>
+                <option value="developer">Developer</option>
+              </select>
+            </div>
+
+            {/* Department */}
+            <div className="form-group">
+              <label htmlFor="employeeDepartment" className="form-label">
+                Department
+              </label>
+              <select
+                id="employeeDepartment"
+                name="department"
+                value={newEmployee.department}
+                onChange={handleEmployeeInputChange}
+                className="form-select"
+                required
               >
-                Download CSV
+                <option value="">-- Select Department --</option>
+                {/* <option value="hr">HR</option>   */}
+                <option value="engineering">Engineering</option>
+                <option value="sales">Sales</option>
+                {/* <option value="marketing">Marketing</option> */}
+                {/* <option value="finance">Finance</option> */}
+                <option value="it">IT</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Password</label>
+              <input
+                type="password"
+                name="password"
+                value={newEmployee.password}
+                onChange={handleEmployeeInputChange}
+                placeholder="Create a password"
+                className="form-input"
+                required
+              />
+            </div>
+
+            <div className="form-actions">
+              <button type="submit" className="create-button">
+                <UserPlus className="button-icon" />
+                Create Employee
               </button>
             </div>
-            <div style={{ overflowX: "auto" }}>
-              <table className="min-w-full bg-white divide-y divide-gray-200">
-                <thead>
-                  <tr>
-                    <th>S NO.</th>
-                    <th>NAME</th>
-                    <th>EMAIL</th>
-                    <th>MOBILE NUMBER</th>
-                    <th>DATE</th>
-                    <th>ACTION</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {usersCurrentData.length > 0 ? (
-                    usersCurrentData.map((user, idx) => (
-                      <tr key={user.id || idx}>
-                        <td>{idx + 1 + (usersCurrentPage - 1) * usersPageSize}</td>
-                        <td>{user.name}</td>
-                        <td>{user.email}</td>
-                        <td>{user.mobile}</td>
-                        <td>{user.date ? new Date(user.date).toLocaleDateString("en-GB") : ""}</td>
-                        <td>
-                          <button
-                            style={{
-                              background: "#e11d48",
-                              color: "#fff",
-                              border: "none",
-                              borderRadius: 6,
-                              padding: "6px 16px",
-                              fontWeight: 600,
-                              cursor: "pointer"
-                            }}
-                            onClick={() => {/* handle view property */}}
-                          >
-                            View Property
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={6} style={{ textAlign: "center", padding: 16 }}>No users found.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-              {usersLoading && <p>Loading...</p>}
-              {/* Pagination Controls */}
-              <div className="flex my-4" style={{ justifyContent: "center", gap: 4 }}>
-                <button
-                  className={`px-4 py-2 mx-1 rounded ${usersCurrentPage === 1 ? "bg-gray-200 text-gray-700 cursor-not-allowed" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
-                  onClick={handleUsersPrev}
-                  disabled={usersCurrentPage === 1 || usersLoading}
-                >
-                  Previous
-                </button>
-                {Array.from({ length: totalUsersPages }, (_, index) => (
-                  <button
-                    key={index + 1}
-                    onClick={() => handleUsersPageClick(index + 1)}
-                    disabled={usersCurrentPage === index + 1}
-                    className={`px-4 py-2 mx-1 rounded ${
-                      usersCurrentPage === index + 1
-                        ? "bg-red-600 text-white"
-                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                    }`}
+
+
+            {/* <button type="button" onClick={() => setNewEmployee({ name: '', email: '', role: '', password: '', password: '' })} className="create-button">
+                  Clear Form
+                </button> */}
+            {/* </div> */}
+          </div>
+
+
+        </form>
+      </div>
+
+      <div className="employee-notes">
+        <div className="note-card">
+          <h4 className="note-title">
+            <Info className="note-icon" />
+            Employee Creation Guidelines
+          </h4>
+          <ul className="note-list">
+            <li>Ensure email is unique and valid</li>
+            <li>Passwords must be at least 8 characters</li>
+            <li>Team Leaders can manage employees</li>
+            <li>Admins have system access</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+
+  const [search, setSearch] = useState("");
+  const [data, setData] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const pageSize = 100;
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const token = localStorage.getItem("token");
+  console.log("[ProjectEnquiries] Token:", token);
+
+  const fetchData = async () => {
+    setLoading(true);
+    if (!token) {
+      console.log("[ProjectEnquiries] No token found");
+      return;
+    }
+    try {
+      const response = await fetch(`${apiUrl}/api/leads/userViewAll?limit=2000`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        }
+      });
+      const json = await response.json();
+      console.log("[ProjectEnquiries] API response:", json);
+      setData(json.data || []);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchData();
+    // eslint-disable-next-line
+  }, []);
+
+  const downloadExelFile = async () => {
+    try {
+      const response = await fetch(`${apiUrl}/api/leads/userViewAll/dowloadData`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) throw new Error(`Failed to download file: ${response.statusText}`);
+      const contentLength = response.headers.get('Content-Length');
+      const contentDisposition = response.headers.get('Content-Disposition');
+      if (!contentLength) {
+        console.error('Content-Length header is missing. Progress cannot be tracked.');
+        return;
+      }
+      const total = parseInt(contentLength, 10);
+      const reader = response.body.getReader();
+      const chunks = [];
+      let receivedLength = 0;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        receivedLength += value.length;
+        const progress = Math.round((receivedLength / total) * 100);
+        setDownloadProgress(progress);
+      }
+      const blob = new Blob(chunks, { type: response.headers.get('Content-Type') });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const fileName = contentDisposition
+        ? contentDisposition.split('filename=')[1]?.replace(/"/g, '')
+        : 'download.xlsx';
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      setDownloadProgress(0);
+    } catch (error) {
+      console.error('Error downloading the file:', error);
+      setDownloadProgress(0);
+    }
+  };
+
+  const renderProjectEnquiries = () => {
+    const filteredData = data.filter(
+      (item) =>
+        item.name?.toLowerCase().includes(search.toLowerCase()) ||
+        item.mobile?.includes(search) ||
+        item.projectName?.toLowerCase().includes(search.toLowerCase())
+    );
+    console.log("[ProjectEnquiries] Filtered data:", filteredData);
+
+    const currentData = filteredData.slice(
+      (currentPage - 1) * pageSize,
+      currentPage * pageSize
+    );
+
+    const totalPages = Math.ceil(filteredData.length / pageSize);
+
+    const loadMore = () => {
+      if (currentPage * pageSize < filteredData.length) {
+        setCurrentPage((prevPage) => prevPage + 1);
+      }
+    };
+
+    const loadBack = () => {
+      if (currentPage > 1) {
+        setCurrentPage((prevPage) => prevPage - 1);
+      }
+    };
+
+    const handleClick = (pageNumber) => {
+      setCurrentPage(pageNumber);
+    };
+
+    return (
+      <div style={{ background: "#fff", borderRadius: 8, padding: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <input
+              type="text"
+              placeholder="Search..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ padding: "8px 12px", borderRadius: 4, border: "1px solid #e5e7eb", outline: "none", minWidth: 180 }}
+            />
+            <button
+              style={{ background: "#e11d48", color: "#fff", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer" }}
+              onClick={() => { }}
+            >
+              Search
+            </button>
+          </div>
+          {downloadProgress > 0 ? (
+            <button className="bg-red-400 p-2 rounded-lg text-white ml-4">
+              {/* You can use a spinner here if you want */}
+              {downloadProgress}%
+            </button>
+          ) : (
+            <button
+              className="bg-blue-700 p-2 rounded-lg text-white ml-4"
+              onClick={downloadExelFile}
+            >
+              Download Data
+            </button>
+          )}
+        </div>
+        <div className="overflow-x-auto shadow-md rounded-lg">
+          <table className="min-w-full bg-white divide-y divide-gray-200">
+            <thead>
+              <tr>
+                {[
+                  "Sr.No",
+                  "Name",
+                  "Mobile",
+                  "Project Name",
+                  "Status",
+                  "Assign",
+                  "Date",
+                ].map((header) => (
+                  <th
+                    key={header}
+                    className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-center"
                   >
-                    {index + 1}
-                  </button>
+                    {header}
+                  </th>
                 ))}
-                <button
-                  className={`px-4 py-2 mx-1 rounded ${usersCurrentPage === totalUsersPages ? "bg-gray-200 text-gray-700 cursor-not-allowed" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
-                  onClick={handleUsersNext}
-                  disabled={usersCurrentPage === totalUsersPages || usersLoading}
-                >
-                  Next
-                </button>
-              </div>
+              </tr>
+            </thead>
+            {currentData.length !== 0 ? (
+              <tbody className="bg-white divide-y divide-gray-200">
+                {currentData.map((item, index) => (
+                  <tr key={index}>
+                    <td className="px-6 py-2 text-center text-sm text-gray-800">
+                      {index + 1 + (currentPage - 1) * pageSize}
+                    </td>
+                    <td className="px-6 py-2 text-center text-sm text-gray-800">
+                      {item.name}
+                    </td>
+                    <td className="px-6 py-2 text-center text-sm text-gray-800">
+                      {item.mobile}
+                    </td>
+                    <td className="px-6 py-2 text-center text-sm text-gray-800">
+                      {item.projectName}
+                    </td>
+                    <td className="px-6 py-2 text-center text-sm text-gray-800">
+                      {item.status ? "Complete" : "Not Complete"}
+                    </td>
+                    <td className="px-6 py-2 text-center text-sm text-gray-800">
+                      {item.assign}
+                    </td>
+                    <td className="px-6 py-2 text-center text-sm text-gray-800">
+                      {new Date(item.createdAt).toLocaleDateString("en-GB", {
+                        day: "2-digit",
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            ) : (
+              <tbody>
+                <tr>
+                  <td colSpan="7" className="text-center py-4">
+                    No data available.
+                  </td>
+                </tr>
+              </tbody>
+            )}
+          </table>
+          {loading && <p>Loading...</p>}
+          <div className="flex  my-4">
+            <button
+              className={`px-4 py-2 mx-1 rounded ${currentPage === 1 ? "bg-gray-200 text-gray-700 cursor-not-allowed" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
+              onClick={loadBack}
+              disabled={currentPage === 1 || loading}
+            >
+              Previous
+            </button>
+            {Array.from({ length: totalPages }, (_, index) => (
+              <button
+                key={index + 1}
+                onClick={() => handleClick(index + 1)}
+                disabled={currentPage === index + 1}
+                className={`px-4 py-2 mx-1 rounded ${currentPage === index + 1
+                  ? "bg-red-600 text-white"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  }`}
+              >
+                {index + 1}
+              </button>
+            ))}
+            <button
+              className={`px-4 py-2 mx-1 rounded ${currentPage === totalPages ? "bg-gray-200 text-gray-700 cursor-not-allowed" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
+              onClick={loadMore}
+              disabled={currentPage === totalPages || loading}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const [usersData, setUsersData] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersSearch, setUsersSearch] = useState("");
+  const [usersCurrentPage, setUsersCurrentPage] = useState(1);
+  const usersPageSize = 10;
+
+  const fetchUsersData = async () => {
+    setUsersLoading(true);
+    try {
+      // Replace with your real API endpoint for users
+      const response = await fetch(`${apiUrl}/api/users`);
+      const json = await response.json();
+      setUsersData(json.data || json.users || []);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      setUsersData([]);
+    }
+    setUsersLoading(false);
+  };
+
+  // Optionally, fetch on mount or when tab is active
+  // useEffect(() => { fetchUsersData(); }, []);
+
+  const renderRegisteredUsers = () => {
+    const filteredUsers = usersData.filter(
+      (user) =>
+        user.name?.toLowerCase().includes(usersSearch.toLowerCase()) ||
+        user.email?.toLowerCase().includes(usersSearch.toLowerCase()) ||
+        user.mobile?.includes(usersSearch)
+    );
+
+    const totalUsersPages = Math.ceil(filteredUsers.length / usersPageSize);
+    const usersCurrentData = filteredUsers.slice(
+      (usersCurrentPage - 1) * usersPageSize,
+      usersCurrentPage * usersPageSize
+    );
+
+    const handleUsersPageClick = (pageNumber) => {
+      setUsersCurrentPage(pageNumber);
+    };
+
+    const handleUsersPrev = () => {
+      if (usersCurrentPage > 1) setUsersCurrentPage(usersCurrentPage - 1);
+    };
+
+    const handleUsersNext = () => {
+      if (usersCurrentPage < totalUsersPages) setUsersCurrentPage(usersCurrentPage + 1);
+    };
+
+    const downloadUsersCSV = () => {
+      const headers = ["S NO.", "NAME", "EMAIL", "MOBILE NUMBER", "DATE"];
+      const rows = usersCurrentData.map((user, idx) => [
+        idx + 1 + (usersCurrentPage - 1) * usersPageSize,
+        user.name,
+        user.email,
+        user.mobile,
+        user.date ? new Date(user.date).toLocaleDateString("en-GB") : ""
+      ]);
+      let csvContent = headers.join(",") + "\n" + rows.map(r => r.map(x => `"${x}"`).join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "registered_users.csv";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    };
+
+    return (
+      <div style={{ background: "#fff", borderRadius: 8, padding: 16 }}>
+        <h2 style={{ textAlign: "center", color: "#e11d48", marginBottom: 16 }}>Registered User's</h2>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 16, gap: 8 }}>
+          <input
+            type="text"
+            placeholder="Search..."
+            value={usersSearch}
+            onChange={e => setUsersSearch(e.target.value)}
+            style={{ padding: "8px 12px", borderRadius: 4, border: "1px solid #e5e7eb", outline: "none", minWidth: 180, marginRight: 8 }}
+          />
+          <button
+            style={{ background: "#e11d48", color: "#fff", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer" }}
+            onClick={fetchUsersData}
+          >
+            Search
+          </button>
+          <button
+            style={{ background: "#2563eb", color: "#fff", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer" }}
+            onClick={downloadUsersCSV}
+          >
+            Download CSV
+          </button>
+        </div>
+        <div style={{ overflowX: "auto" }}>
+          <table className="min-w-full bg-white divide-y divide-gray-200">
+            <thead>
+              <tr>
+                <th>S NO.</th>
+                <th>NAME</th>
+                <th>EMAIL</th>
+                <th>MOBILE NUMBER</th>
+                <th>DATE</th>
+                <th>ACTION</th>
+              </tr>
+            </thead>
+            <tbody>
+              {usersCurrentData.length > 0 ? (
+                usersCurrentData.map((user, idx) => (
+                  <tr key={user.id || idx}>
+                    <td>{idx + 1 + (usersCurrentPage - 1) * usersPageSize}</td>
+                    <td>{user.name}</td>
+                    <td>{user.email}</td>
+                    <td>{user.mobile}</td>
+                    <td>{user.date ? new Date(user.date).toLocaleDateString("en-GB") : ""}</td>
+                    <td>
+                      <button
+                        style={{
+                          background: "#e11d48",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: 6,
+                          padding: "6px 16px",
+                          fontWeight: 600,
+                          cursor: "pointer"
+                        }}
+                        onClick={() => {/* handle view property */ }}
+                      >
+                        View Property
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: "center", padding: 16 }}>No users found.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+          {usersLoading && <p>Loading...</p>}
+          {/* Pagination Controls */}
+          <div className="flex my-4" style={{ justifyContent: "center", gap: 4 }}>
+            <button
+              className={`px-4 py-2 mx-1 rounded ${usersCurrentPage === 1 ? "bg-gray-200 text-gray-700 cursor-not-allowed" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
+              onClick={handleUsersPrev}
+              disabled={usersCurrentPage === 1 || usersLoading}
+            >
+              Previous
+            </button>
+            {Array.from({ length: totalUsersPages }, (_, index) => (
+              <button
+                key={index + 1}
+                onClick={() => handleUsersPageClick(index + 1)}
+                disabled={usersCurrentPage === index + 1}
+                className={`px-4 py-2 mx-1 rounded ${usersCurrentPage === index + 1
+                  ? "bg-red-600 text-white"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  }`}
+              >
+                {index + 1}
+              </button>
+            ))}
+            <button
+              className={`px-4 py-2 mx-1 rounded ${usersCurrentPage === totalUsersPages ? "bg-gray-200 text-gray-700 cursor-not-allowed" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
+              onClick={handleUsersNext}
+              disabled={usersCurrentPage === totalUsersPages || usersLoading}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderBlogManagement = () => (
+    <div className="blog-management-section">
+      <div className="section-header">
+        <h3 className="section-title">Blog Management</h3>
+        <p className="section-desc">Manage blog content, analytics, and publishing</p>
+      </div>
+
+      <div className="blog-actions-grid">
+        <Card className="action-card">
+          <CardContent>
+            <div className="action-header">
+              <BarChart3 className="action-icon" />
+              <h4>Blog Dashboard</h4>
             </div>
+            <p>View analytics, performance metrics, and blog statistics</p>
+            <Button
+              onClick={() => navigate('/blog-dashboard')}
+              className="action-btn"
+            >
+              Open Dashboard
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="action-card">
+          <CardContent>
+            <div className="action-header">
+              <FileText className="action-icon" />
+              <h4>Blog Management</h4>
+            </div>
+            <p>Create, edit, and manage all blog posts</p>
+            <Button
+              onClick={() => navigate('/blog-management')}
+              className="action-btn"
+            >
+              Manage Blogs
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="action-card">
+          <CardContent>
+            <div className="action-header">
+              <Clock className="action-icon" />
+              <h4>Draft Management</h4>
+            </div>
+            <p>Manage draft posts and unpublished content</p>
+            <Button
+              onClick={() => navigate('/draft-management')}
+              className="action-btn"
+            >
+              Manage Drafts
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="action-card">
+          <CardContent>
+            <div className="action-header">
+              <Globe className="action-icon" />
+              <h4>Blog Section</h4>
+            </div>
+            <p>View public blog section and published posts</p>
+            <Button
+              onClick={() => navigate('/blog-section')}
+              className="action-btn"
+            >
+              View Blog Section
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+
+  const renderAdminAccess = () => (
+    <div className="admin-access-section">
+      <div className="section-header">
+        <h3 className="section-title">Admin Access Control</h3>
+        <p className="section-desc">Manage administrative access and permissions</p>
+      </div>
+
+      <div className="admin-actions-grid">
+        <Card className="action-card">
+          <CardContent>
+            <div className="action-header">
+              <Crown className="action-icon" />
+              <h4>Super Admin Access</h4>
+            </div>
+            <p>Full system access with all administrative privileges</p>
+            <Button
+              onClick={() => {
+                localStorage.setItem('userRole', 'boss');
+                localStorage.setItem('isLoggedIn', 'true');
+                window.location.reload();
+              }}
+              className="action-btn admin-btn"
+            >
+              Switch to Boss
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="action-card">
+          <CardContent>
+            <div className="action-header">
+              <UserCheck className="action-icon" />
+              <h4>Head Admin Access</h4>
+            </div>
+            <p>Team management and administrative oversight</p>
+            <Button
+              onClick={() => {
+                localStorage.setItem('userRole', 'head-admin');
+                localStorage.setItem('isLoggedIn', 'true');
+                window.location.reload();
+              }}
+              className="action-btn admin-btn"
+            >
+              Switch to Head Admin
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="action-card">
+          <CardContent>
+            <div className="action-header">
+              <Users className="action-icon" />
+              <h4>Team Leader Access</h4>
+            </div>
+            <p>Employee management and team coordination</p>
+            <Button
+              onClick={() => {
+                localStorage.setItem('userRole', 'team-leader');
+                localStorage.setItem('isLoggedIn', 'true');
+                window.location.reload();
+              }}
+              className="action-btn admin-btn"
+            >
+              Switch to Team Leader
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="action-card">
+          <CardContent>
+            <div className="action-header">
+              <Briefcase className="action-icon" />
+              <h4>Employee Access</h4>
+            </div>
+            <p>Standard employee access with limited permissions</p>
+            <Button
+              onClick={() => {
+                localStorage.setItem('userRole', 'bd');
+                localStorage.setItem('isLoggedIn', 'true');
+                window.location.reload();
+              }}
+              className="action-btn admin-btn"
+            >
+              Switch to BD
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'overview':
+        return <Dashboard />;
+      case 'role-assignment':
+        return <RoleAssignment />;
+      case 'create-employee':
+        return renderCreateEmployee();
+      case 'activity':
+        return <ActivityCredentials />;
+      case 'chat':
+        return <DeveloperChat developerName={developerName} />;
+      case 'tools':
+        return <DeveloperTools />;
+      case 'monitor':
+        return <SystemMonitor />;
+      case 'database':
+        return <DatabaseManager />;
+      case 'api-tester':
+        return <ApiTester />;
+      case 'logs':
+        return <LogViewer />;
+      case 'performance':
+        return <PerformanceMetrics />;
+      case 'deployment':
+        return <DeploymentPanel />;
+      case 'security':
+        return <SecurityAudit />;
+      case 'backup':
+        return <BackupManager />;
+      case 'cache':
+        return <CacheManager />;
+      case 'queue':
+        return <QueueMonitor />;
+      case 'errors':
+        return <ErrorHandler />;
+      default:
+        return (
+          <div className="coming-soon">
+            <Code className="coming-soon-icon" />
+            <h3 className="coming-soon-title">Coming Soon</h3>
+            <p className="coming-soon-desc">This developer tool is under development</p>
           </div>
         );
-      };
-
-      const renderBlogManagement = () => (
-        <div className="blog-management-section">
-          <div className="section-header">
-            <h3 className="section-title">Blog Management</h3>
-            <p className="section-desc">Manage blog content, analytics, and publishing</p>
-          </div>
-          
-          <div className="blog-actions-grid">
-            <Card className="action-card">
-              <CardContent>
-                <div className="action-header">
-                  <BarChart3 className="action-icon" />
-                  <h4>Blog Dashboard</h4>
-                </div>
-                <p>View analytics, performance metrics, and blog statistics</p>
-                <Button 
-                  onClick={() => navigate('/blog-dashboard')}
-                  className="action-btn"
-                >
-                  Open Dashboard
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="action-card">
-              <CardContent>
-                <div className="action-header">
-                  <FileText className="action-icon" />
-                  <h4>Blog Management</h4>
-                </div>
-                <p>Create, edit, and manage all blog posts</p>
-                <Button 
-                  onClick={() => navigate('/blog-management')}
-                  className="action-btn"
-                >
-                  Manage Blogs
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="action-card">
-              <CardContent>
-                <div className="action-header">
-                  <Clock className="action-icon" />
-                  <h4>Draft Management</h4>
-                </div>
-                <p>Manage draft posts and unpublished content</p>
-                <Button 
-                  onClick={() => navigate('/draft-management')}
-                  className="action-btn"
-                >
-                  Manage Drafts
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="action-card">
-              <CardContent>
-                <div className="action-header">
-                  <Globe className="action-icon" />
-                  <h4>Blog Section</h4>
-                </div>
-                <p>View public blog section and published posts</p>
-                <Button 
-                  onClick={() => navigate('/blog-section')}
-                  className="action-btn"
-                >
-                  View Blog Section
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      );
-
-      const renderAdminAccess = () => (
-        <div className="admin-access-section">
-          <div className="section-header">
-            <h3 className="section-title">Admin Access Control</h3>
-            <p className="section-desc">Manage administrative access and permissions</p>
-          </div>
-          
-          <div className="admin-actions-grid">
-            <Card className="action-card">
-              <CardContent>
-                <div className="action-header">
-                  <Crown className="action-icon" />
-                  <h4>Super Admin Access</h4>
-                </div>
-                <p>Full system access with all administrative privileges</p>
-                <Button 
-                  onClick={() => {
-                    localStorage.setItem('userRole', 'boss');
-                    localStorage.setItem('isLoggedIn', 'true');
-                    window.location.reload();
-                  }}
-                  className="action-btn admin-btn"
-                >
-                  Switch to Boss
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="action-card">
-              <CardContent>
-                <div className="action-header">
-                  <UserCheck className="action-icon" />
-                  <h4>Head Admin Access</h4>
-                </div>
-                <p>Team management and administrative oversight</p>
-                <Button 
-                  onClick={() => {
-                    localStorage.setItem('userRole', 'head-admin');
-                    localStorage.setItem('isLoggedIn', 'true');
-                    window.location.reload();
-                  }}
-                  className="action-btn admin-btn"
-                >
-                  Switch to Head Admin
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="action-card">
-              <CardContent>
-                <div className="action-header">
-                  <Users className="action-icon" />
-                  <h4>Team Leader Access</h4>
-                </div>
-                <p>Employee management and team coordination</p>
-                <Button 
-                  onClick={() => {
-                    localStorage.setItem('userRole', 'team-leader');
-                    localStorage.setItem('isLoggedIn', 'true');
-                    window.location.reload();
-                  }}
-                  className="action-btn admin-btn"
-                >
-                  Switch to Team Leader
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="action-card">
-              <CardContent>
-                <div className="action-header">
-                  <Briefcase className="action-icon" />
-                  <h4>Employee Access</h4>
-                </div>
-                <p>Standard employee access with limited permissions</p>
-                <Button 
-                  onClick={() => {
-                    localStorage.setItem('userRole', 'bd');
-                    localStorage.setItem('isLoggedIn', 'true');
-                    window.location.reload();
-                  }}
-                  className="action-btn admin-btn"
-                >
-                  Switch to BD
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      );
-
-      const renderContent = () => {
-        switch (activeTab) {
-          case 'overview':
-            return <Dashboard />;
-          case 'role-assignment':
-            return <RoleAssignment />;
-          case 'create-employee':
-            return renderCreateEmployee();
-          case 'activity':
-            return <ActivityCredentials />;
-          case 'chat':
-            return <DeveloperChat developerName={developerName} />;
-          case 'tools':
-            return <DeveloperTools />;
-          case 'monitor':
-            return <SystemMonitor />;
-          case 'database':
-            return <DatabaseManager />;
-          case 'api-tester':
-            return <ApiTester />;
-          case 'logs':
-            return <LogViewer />;
-          case 'performance':
-            return <PerformanceMetrics />;
-          case 'deployment':
-            return <DeploymentPanel />;
-          case 'security':
-            return <SecurityAudit />;
-          case 'backup':
-            return <BackupManager />;
-          case 'cache':
-            return <CacheManager />;
-          case 'queue':
-            return <QueueMonitor />;
-          case 'errors':
-            return <ErrorHandler />;
-          default:
-            return (
-              <div className="coming-soon">
-                <Code className="coming-soon-icon" />
-                <h3 className="coming-soon-title">Coming Soon</h3>
-                <p className="coming-soon-desc">This developer tool is under development</p>
-              </div>
-            );
-        }
-      };
-      return (
+    }
+  };
+  return (
     <div className={`dashboard-container ${isDark ? 'dark-theme' : 'light-theme'}`}>
       {/* Sidebar Component */}
       <DeveloperSidebar
@@ -1171,7 +1163,7 @@ const DeveloperContent = ({ userRole }) => {
 
       {/* Main Content Area */}
       <div className="main-content" data-tab={activeTab}>
-        <DeveloperHeader 
+        <DeveloperHeader
           sidebarOpen={sidebarOpen}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           developerName={developerName}
