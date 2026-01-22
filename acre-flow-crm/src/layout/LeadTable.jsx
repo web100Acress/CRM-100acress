@@ -73,7 +73,6 @@ const LeadTable = ({ userRole }) => {
   const apiCall = async (endpoint, options = {}) => {
     const token = localStorage.getItem("token");
 
-
     const url = `${apiUrl}${endpoint}`; // endpoint should start with / usually if apiUrl doesn't end with one.
     // API_BASE_URL doesn't have trailing slash.
 
@@ -415,8 +414,9 @@ const LeadTable = ({ userRole }) => {
 
     // Visibility Logic:
     // Boss can view ALL leads
-    // Others (HOD, Employee, Team Leader) can view leads they created, are assigned to, or forwarded
-    if (role !== 'boss' && role !== 'super-admin') {
+    // HOD can view ALL leads (including BD-created leads)
+    // BD/Employee can view leads they created, are assigned to, or forwarded
+    if (role !== 'boss' && role !== 'super-admin' && role !== 'hod') {
       const isCreator = String(lead.createdBy) === String(userId);
       const isAssigned = String(lead.assignedTo) === String(userId);
 
@@ -425,6 +425,7 @@ const LeadTable = ({ userRole }) => {
         assignment.assignedBy?._id && String(assignment.assignedBy._id) === String(userId)
       );
 
+      // BD/Employee should only see leads they created, are assigned to, or forwarded
       if (!isCreator && !isAssigned && !isForwarder) return false;
     }
 
