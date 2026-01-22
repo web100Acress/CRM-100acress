@@ -2280,6 +2280,29 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
 
                     {/* Assignment and Contact Info */}
                     <div className="space-y-3 mb-4">
+                      {lead.projectName && (
+                        <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
+                          <Building2 size={16} className="text-blue-600" />
+                          <div>
+                            <p className="text-xs text-blue-600">Project</p>
+                            <p className="text-sm font-medium text-blue-900">
+                              {(() => {
+                                const cleanName = lead.projectName.replace('Name : ', '').trim();
+                                const words = cleanName.split(' ');
+                                if (words.length > 2) {
+                                  return (
+                                    <>
+                                      {words.slice(0, 2).join(' ')}<br />
+                                      {words.slice(2).join(' ')}
+                                    </>
+                                  );
+                                }
+                                return cleanName;
+                              })()}
+                            </p>
+                          </div>
+                        </div>
+                      )}
                       <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center gap-2">
                           <UserCheck size={16} className="text-gray-600" />
