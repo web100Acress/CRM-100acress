@@ -72,34 +72,7 @@ const LeadTable = ({ userRole }) => {
   // Helper function for API calls using centralized config
   const apiCall = async (endpoint, options = {}) => {
     const token = localStorage.getItem("token");
-    // endpoint should be the relative path, e.g., 'leads' (no slash at start if apiUrl expects that, or check apiUrl implementation)
-    // Looking at apiConfig, apiUrl seems to be a constant, not a function in the file user showed earlier? 
-    // Wait, let me double check apiConfig.js content again.
-    // In apiConfig.js: export const apiUrl = API_BASE_URL; (It's a string!)
-    // But in Leads.mobile.jsx usage: apiUrl("leads") -> It is being used as a function?
-    // Let me check apiConfig.js one more time.
-
-    // Actually, looking at previous steps:
-    // 10: export const apiUrl = API_BASE_URL;
-    // It is exported as a string constant. 
-    // BUT Leads.mobile.jsx imports { apiUrl } and calls it: apiUrl("leads")
-    // This implies there might be a misinterpretation or I need to check if it's a default import or named.
-    // Checking file content from Step 22:
-    // export const apiUrl = API_BASE_URL;
-    // It is definitely a string. 
-    // IF Leads.mobile.jsx is calling it as a function, that code IS BROKEN too unless I missed something.
-    // OR local Leads.mobile.jsx might be importing from somewhere else?
-    // Lines 16: import { apiUrl } from '@/config/apiConfig';
-    // Line 91: const response = await fetch(apiUrl("leads"), {
-
-    // Warning: If apiUrl is a string, apiUrl("leads") will throw "apiUrl is not a function".
-    // I must verify if apiConfig.js was changed or if I misread.
-    // Ah, wait. checking Step 46 (my edit).
-    // export const apiUrl = API_BASE_URL;
-    // It remains a string.
-
-    // I need to be careful. I will use it as a base string URL construction.
-
+  
     const url = `${apiUrl}${endpoint}`; // endpoint should start with / usually if apiUrl doesn't end with one.
     // API_BASE_URL doesn't have trailing slash.
 
@@ -441,8 +414,9 @@ const LeadTable = ({ userRole }) => {
 
     // Visibility Logic:
     // Boss can view ALL leads
-    // Others (HOD, Employee, Team Leader) can view leads they created, are assigned to, or forwarded
-    if (role !== 'boss' && role !== 'super-admin') {
+    // HOD can view ALL leads (including BD-created leads)
+    // BD/Employee can view leads they created, are assigned to, or forwarded
+    if (role !== 'boss' && role !== 'super-admin' && role !== 'hod') {
       const isCreator = String(lead.createdBy) === String(userId);
       const isAssigned = String(lead.assignedTo) === String(userId);
 
@@ -451,6 +425,7 @@ const LeadTable = ({ userRole }) => {
         assignment.assignedBy?._id && String(assignment.assignedBy._id) === String(userId)
       );
 
+      // BD/Employee should only see leads they created, are assigned to, or forwarded
       if (!isCreator && !isAssigned && !isForwarder) return false;
     }
 

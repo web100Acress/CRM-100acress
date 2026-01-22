@@ -9,7 +9,9 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
+    email: '',
     location: '',
+    projectName: '',
     budget: '',
     property: '',
     status: 'Cold',
@@ -19,6 +21,8 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const [currentUserRole, setCurrentUserRole] = useState('');
+  const [entryMode, setEntryMode] = useState('manual'); // "manual" or "paste"
+  const [pasteData, setPasteData] = useState('');
 
   useEffect(() => {
     const userRole = localStorage.getItem('userRole');
@@ -31,12 +35,16 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
       setFormData({
         name: '',
         phone: '',
+        email: '',
         location: '',
+        projectName: '',
         budget: '',
         property: '',
         status: 'Cold',
         assignedTo: ''
       });
+      setEntryMode('manual');
+      setPasteData('');
       fetchAssignableUsers();
     }
   }, [isOpen]);
@@ -82,6 +90,115 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handlePasteData = () => {
+    try {
+      // Parse pasted data - expecting tab-separated or comma-separated values
+      const lines = pasteData.trim().split('\n');
+      if (lines.length === 0) {
+        toast({
+          title: "No Data",
+          description: "Please paste some data first.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Take first line for parsing
+      const firstLine = lines[0];
+      let fields = [];
+      
+      // Try to split by tab first, then by comma
+      if (firstLine.includes('\t')) {
+        fields = firstLine.split('\t');
+      } else if (firstLine.includes(',')) {
+        fields = firstLine.split(',');
+      } else {
+        fields = [firstLine]; // Single field
+      }
+
+      // Clean up fields (remove quotes and extra spaces)
+      fields = fields.map(field => field.replace(/["']/g, '').trim());
+
+      // Check if data is in key-value format (like the user's pasted data)
+      if (firstLine.includes(':') && firstLine.includes(',')) {
+        // Parse key-value pairs format: "name: value, mobile: value, email: value"
+        const updatedFormData = { ...formData };
+        
+        fields.forEach(field => {
+          const [key, ...valueParts] = field.split(':').map(s => s.trim());
+          const value = valueParts.join(':').trim();
+          
+          switch(key.toLowerCase()) {
+            case 'name':
+              updatedFormData.name = value;
+              break;
+            case 'email':
+              updatedFormData.email = value;
+              break;
+            case 'phone':
+            case 'mobile':
+              updatedFormData.phone = value;
+              break;
+            case 'location':
+              updatedFormData.location = value;
+              break;
+            case 'project':
+            case 'project name':
+              updatedFormData.projectName = value;
+              break;
+            case 'budget':
+              updatedFormData.budget = value;
+              break;
+            case 'property':
+              updatedFormData.property = value;
+              break;
+            case 'status':
+              updatedFormData.status = value;
+              break;
+          }
+        });
+        
+        setFormData(updatedFormData);
+        setEntryMode("manual"); // Switch back to manual to show filled form
+        
+        toast({
+          title: "Data Parsed!",
+          description: "Form fields have been auto-filled from pasted data.",
+          variant: "default",
+        });
+        return;
+      }
+
+      // Auto-fill form based on field order: Name, Email, Phone, Location, Project Name, Budget, Property, Status
+      const updatedFormData = { ...formData };
+      
+      if (fields[0]) updatedFormData.name = fields[0];
+      if (fields[1]) updatedFormData.email = fields[1];
+      if (fields[2]) updatedFormData.phone = fields[2];
+      if (fields[3]) updatedFormData.location = fields[3];
+      if (fields[4]) updatedFormData.projectName = fields[4];
+      if (fields[5]) updatedFormData.budget = fields[5];
+      if (fields[6]) updatedFormData.property = fields[6];
+      if (fields[7]) updatedFormData.status = fields[7];
+
+      setFormData(updatedFormData);
+      setEntryMode("manual"); // Switch back to manual to show filled form
+      
+      toast({
+        title: "Data Parsed!",
+        description: "Form fields have been auto-filled from pasted data.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error("Error parsing paste data:", error);
+      toast({
+        title: "Parse Error",
+        description: "Could not parse pasted data. Please check format.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -134,7 +251,9 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
         setFormData({
           name: '',
           phone: '',
+          email: '',
           location: '',
+          projectName: '',
           budget: '',
           property: '',
           status: 'Cold',
@@ -215,6 +334,64 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="p-3 space-y-3">
+          {/* Entry Mode Selection */}
+          <div className="flex gap-2 mb-3 p-2 bg-gray-50 rounded-lg">
+            <button
+              type="button"
+              onClick={() => setEntryMode("manual")}
+              className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs font-medium rounded-md border transition-colors ${
+                entryMode === "manual" 
+                  ? "bg-blue-600 text-white border-blue-600" 
+                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+              }`}
+            >
+              <User size={14} />
+              Manual Entry
+            </button>
+            <button
+              type="button"
+              onClick={() => setEntryMode("paste")}
+              className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs font-medium rounded-md border transition-colors ${
+                entryMode === "paste" 
+                  ? "bg-blue-600 text-white border-blue-600" 
+                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+              }`}
+            >
+              <Save size={14} />
+              Paste Data
+            </button>
+          </div>
+
+          {/* Paste Data Mode */}
+          {entryMode === "paste" && (
+            <div className="space-y-2 p-2 bg-gray-50 rounded-lg">
+              <div className="text-xs text-gray-600 mb-2">
+                Copy data from Excel/Sheet and paste below. Formats supported:
+                <br />• Comma-separated: Name, Email, Phone, Location, Project Name, Budget, Property, Status
+                <br />• Key-value pairs: name: John, email: john@example.com, mobile: 1234567890
+              </div>
+              <textarea
+                value={pasteData}
+                onChange={(e) => setPasteData(e.target.value)}
+                placeholder="John Doe, john@example.com, 9876543210, Gurgaon, Project Name, ₹1 Cr - ₹5 Cr, Residential Projects, Cold"
+                className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
+                rows={4}
+              />
+              <button
+                type="button"
+                onClick={handlePasteData}
+                disabled={!pasteData.trim()}
+                className="w-full flex items-center justify-center gap-1 px-2 py-1.5 text-xs font-medium bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <Save size={14} />
+                Parse & Fill Form
+              </button>
+            </div>
+          )}
+
+          {/* Manual Entry Mode */}
+          {entryMode === "manual" && (
+            <>
           {/* Name Field */}
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
@@ -247,6 +424,21 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
               required
             />
           </div>
+          {/* Email Field */}
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <Mail size={16} />
+              Email
+            </label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="Enter email address"
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
           {/* Location Field */}
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
@@ -266,6 +458,22 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Project Name Field */}
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <Building2 size={16} />
+              Project Name
+            </label>
+            <input
+              type="text"
+              name="projectName"
+              value={formData.projectName}
+              onChange={handleChange}
+              placeholder="Enter project name"
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
           </div>
 
           {/* Budget Field */}
@@ -379,6 +587,8 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
               </p>
             )}
           </div>
+          </> // Added closing JSX fragment tag
+          )}
 
           {/* Action Buttons */}
           <div className="flex gap-2 pt-3 border-t">
@@ -402,15 +612,16 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
                   Creating...
                 </>
               ) : (
-                <>
+                <div>
                   <Save size={16} className="mr-2" />
                   Create Lead
-                </>
+                </div>
               )}
             </Button>
           </div>
         </form>
-      </DialogContent>
+
+        </DialogContent>
     </Dialog>
   );
 };

@@ -59,6 +59,7 @@ const leadSchema = new mongoose.Schema({
     default: 'Cold'
   },
   location: String,
+  projectName: String, // <-- Added Project Name field
   property: String,
   budget: String,
   assignedTo: String,

@@ -7,7 +7,7 @@ import {
   DialogFooter,
 } from "@/layout/dialog";
 import { Button } from "@/layout/button";
-import { X, Save, Loader2, User, Phone, MapPin, DollarSign, Building, Target, AlertCircle } from "lucide-react";
+import { X, Save, Loader2, User, Mail, Phone, MapPin, DollarSign, Building, Target, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import "@/styles/CreateLeadForm.css";
 import { Badge } from "@/layout/badge";
@@ -18,6 +18,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
     email: "",
     phone: "",
     location: "",
+    projectName: "",
     budget: "",
     property: "",
     status: "Cold",
@@ -27,6 +28,9 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast(); // Initialize useToast
   const [currentUserRole, setCurrentUserRole] = useState("");
+  const [entryMode, setEntryMode] = useState("manual"); // "manual" or "paste"
+  const [pasteData, setPasteData] = useState("");
+  const [showParseButton, setShowParseButton] = useState(false);
 
   useEffect(() => {
     const userRole = localStorage.getItem("userRole");
@@ -41,11 +45,14 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
         email: "",
         phone: "",
         location: "",
+        projectName: "",
         budget: "",
         property: "",
         status: "Cold",
         assignedTo: "",
       });
+      setEntryMode("manual");
+      setPasteData("");
       fetchAssignableUsers();
     }
   }, [isOpen]); // Depend on isOpen to refetch/reset when opened
@@ -113,14 +120,185 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
     }));
   };
 
+  const handlePasteDataChange = (e) => {
+    const value = e.target.value;
+    setPasteData(value);
+    
+    // Auto-detect if pasted data looks like structured data
+    const hasStructure = value.includes(':') || value.includes(',') || value.includes('\t') || 
+                        value.match(/[\w._%+-]+@[\w.-]+\.[A-Za-z]{2,}/) || // Email
+                        value.match(/(?:\+91[-\s]?|0)?[6-9]\d{9}/); // Phone
+    
+    setShowParseButton(hasStructure && value.trim().length > 5);
+  };
+
+  const handlePasteData = () => {
+    try {
+      const data = pasteData.trim();
+      if (!data) {
+        toast({
+          title: "No Data",
+          description: "Please paste some data first.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Start with fresh form data to ensure clean state
+      const updatedFormData = {
+        name: "",
+        email: "",
+        phone: "",
+        location: "",
+        projectName: "",
+        budget: "",
+        property: "",
+        status: "Cold",
+        assignedTo: formData.assignedTo // Keep assigned user if already selected
+      };
+      
+      // Enhanced parsing for different formats
+      
+      // 1. Key-value pairs format: "name: John, email: john@example.com, mobile: 1234567890"
+      if (data.includes(':')) {
+        // Split by comma or new line, then process each key-value pair
+        const pairs = data.split(/[,\n]/).map(pair => pair.trim()).filter(pair => pair);
+        
+        pairs.forEach(pair => {
+          const colonIndex = pair.indexOf(':');
+          if (colonIndex > -1) {
+            const key = pair.substring(0, colonIndex).trim().toLowerCase();
+            const value = pair.substring(colonIndex + 1).trim().replace(/["']/g, '');
+            
+            switch(key) {
+              case 'name':
+              case 'full name':
+              case 'customer name':
+                updatedFormData.name = value;
+                break;
+              case 'email':
+              case 'email address':
+                updatedFormData.email = value;
+                break;
+              case 'phone':
+              case 'mobile':
+              case 'phone number':
+              case 'contact':
+                updatedFormData.phone = value;
+                break;
+              case 'location':
+              case 'address':
+              case 'city':
+                updatedFormData.location = value;
+                break;
+              case 'project':
+              case 'project name':
+              case 'property name':
+                updatedFormData.projectName = value;
+                break;
+              case 'budget':
+              case 'price':
+              case 'amount':
+                updatedFormData.budget = value;
+                break;
+              case 'property':
+              case 'property type':
+              case 'property category':
+                updatedFormData.property = value;
+                break;
+              case 'status':
+              case 'lead status':
+                updatedFormData.status = value;
+                break;
+            }
+          }
+        });
+      } 
+      // 2. Comma-separated values: "John, john@example.com, 1234567890, Delhi, Project A, 50L, 2BHK, Hot"
+      else if (data.includes(',')) {
+        const fields = data.split(',').map(field => field.trim().replace(/["']/g, ''));
+        
+        if (fields[0]) updatedFormData.name = fields[0];
+        if (fields[1]) updatedFormData.email = fields[1];
+        if (fields[2]) updatedFormData.phone = fields[2];
+        if (fields[3]) updatedFormData.location = fields[3];
+        if (fields[4]) updatedFormData.projectName = fields[4];
+        if (fields[5]) updatedFormData.budget = fields[5];
+        if (fields[6]) updatedFormData.property = fields[6];
+        if (fields[7]) updatedFormData.status = fields[7];
+      }
+      // 3. Tab-separated values
+      else if (data.includes('\t')) {
+        const fields = data.split('\t').map(field => field.trim().replace(/["']/g, ''));
+        
+        if (fields[0]) updatedFormData.name = fields[0];
+        if (fields[1]) updatedFormData.email = fields[1];
+        if (fields[2]) updatedFormData.phone = fields[2];
+        if (fields[3]) updatedFormData.location = fields[3];
+        if (fields[4]) updatedFormData.projectName = fields[4];
+        if (fields[5]) updatedFormData.budget = fields[5];
+        if (fields[6]) updatedFormData.property = fields[6];
+        if (fields[7]) updatedFormData.status = fields[7];
+      }
+      // 4. Single line - try to extract phone number and email
+      else {
+        // Extract email
+        const emailMatch = data.match(/[\w._%+-]+@[\w.-]+\.[A-Za-z]{2,}/);
+        if (emailMatch) {
+          updatedFormData.email = emailMatch[0];
+        }
+        
+        // Extract phone number (10-digit or with country code)
+        const phoneMatch = data.match(/(?:\+91[-\s]?|0)?[6-9]\d{9}/);
+        if (phoneMatch) {
+          updatedFormData.phone = phoneMatch[0];
+        }
+        
+        // If no email/phone found, treat as name
+        if (!emailMatch && !phoneMatch) {
+          updatedFormData.name = data;
+        }
+      }
+
+      setFormData(updatedFormData);
+      
+      // Debug: Log the updated form data
+      console.log("🔍 Updated Form Data After Parse:", updatedFormData);
+      console.log("🔍 Name:", updatedFormData.name, "Phone:", updatedFormData.phone);
+      
+      // Use setTimeout to ensure state is updated before switching modes
+      setTimeout(() => {
+        setEntryMode("manual"); // Switch back to manual to show filled form
+        setPasteData(""); // Clear paste data after successful parsing
+      }, 100);
+      
+      toast({
+        title: "✅ Data Parsed Successfully!",
+        description: `Form fields have been auto-filled. Found: ${updatedFormData.name ? 'Name' : ''}${updatedFormData.email ? ', Email' : ''}${updatedFormData.phone ? ', Phone' : ''}`,
+        variant: "default",
+      });
+    } catch (error) {
+      console.error("Error parsing paste data:", error);
+      toast({
+        title: "❌ Parse Error",
+        description: "Could not parse pasted data. Please check the format and try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Debug: Log current form data
+    console.log("🔍 Form Data on Submit:", formData);
+    console.log("🔍 Name:", formData.name, "Phone:", formData.phone);
 
     // Updated validation - only name and phone required
     if (!formData.name || !formData.phone) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields (Name, Phone).",
+        description: `Please fill in all required fields (Name, Phone). Current: Name=${formData.name ? '✅' : '❌'}, Phone=${formData.phone ? '✅' : '❌'}`,
         variant: "destructive",
       });
       return;
@@ -165,6 +343,20 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
           variant: "default",
         });
         onSave && onSave(formData); // Call onSave callback if provided
+        
+        // Reset form after successful creation
+        setFormData({
+          name: "",
+          email: "",
+          phone: "",
+          location: "",
+          projectName: "",
+          budget: "",
+          property: "",
+          status: "Cold",
+          assignedTo: "",
+        });
+        
         onClose(); // Close the modal
       } else {
         toast({
@@ -306,6 +498,66 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="lead-form-grid">
+          {/* Entry Mode Selection */}
+          <div className="form-section">
+            <div className="entry-mode-buttons">
+              <button
+                type="button"
+                onClick={() => setEntryMode("manual")}
+                className={`entry-mode-btn ${entryMode === "manual" ? "active" : ""}`}
+              >
+                <User size={16} />
+                Manual Entry
+              </button>
+              <button
+                type="button"
+                onClick={() => setEntryMode("paste")}
+                className={`entry-mode-btn ${entryMode === "paste" ? "active" : ""}`}
+              >
+                <Save size={16} />
+                Paste Data
+              </button>
+            </div>
+          </div>
+
+          {/* Paste Data Mode */}
+          {entryMode === "paste" && (
+            <div className="form-section">
+              <div className="section-header">
+                Copy data from Excel/Sheet and paste below. Formats supported:
+                  <br />• Comma-separated: Name, Email, Phone, Location, Project Name, Budget, Property, Status
+                  <br />• Key-value pairs: name: John, email: john@example.com, mobile: 1234567890
+                </div>
+              <div className="form-group full-width">
+                <label htmlFor="pasteData" className="form-label">
+                  Paste Data
+                </label>
+                <textarea
+                  id="pasteData"
+                  value={pasteData}
+                  onChange={handlePasteDataChange}
+                  placeholder="Paste your data here... Example formats:&#10;• John, john@example.com, 9876543210, Delhi, Project A, 50L, 2BHK, Hot&#10;• name: John, email: john@example.com, mobile: 9876543210"
+                  className="form-input enhanced"
+                  rows={4}
+                />
+                {showParseButton && (
+                  <button
+                    type="button"
+                    onClick={handlePasteData}
+                    disabled={!pasteData.trim()}
+                    className="parse-data-btn"
+                  >
+                    <Save size={16} />
+                    Parse & Fill Form
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Manual Entry Mode */}
+          {entryMode === "manual" && (
+            <>
           {/* Personal Information Section */}
           <div className="form-section">
            
@@ -351,6 +603,27 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
                 </div>
               </div>
             </div>
+
+            <div className="form-row">
+              <div className="form-group full-width">
+                <label htmlFor="email" className="form-label">
+                  <Mail className="input-icon" />
+                  Email Address
+                </label>
+                <div className="input-wrapper">
+                  <Mail className="input-icon" />
+                  <input
+                    id="email"
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    placeholder="Enter email address"
+                    className="form-input enhanced"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Property Details Section */}
@@ -379,6 +652,22 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="projectName" className="form-label">
+                  <Building className="label-icon" />
+                  Project Name
+                </label>
+                <input
+                  id="projectName"
+                  type="text"
+                  name="projectName"
+                  value={formData.projectName}
+                  onChange={handleInputChange}
+                  placeholder="Enter project name"
+                  className="form-input enhanced"
+                />
               </div>
 
               <div className="form-group">
@@ -479,6 +768,8 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
               </div>
             </div>
           </div>
+            </>
+          )}
 
           <DialogFooter className="form-actions enhanced">
             <Button
