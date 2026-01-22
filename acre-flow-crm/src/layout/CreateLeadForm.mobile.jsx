@@ -94,9 +94,8 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
 
   const handlePasteData = () => {
     try {
-      // Parse pasted data - expecting tab-separated or comma-separated values
-      const lines = pasteData.trim().split('\n');
-      if (lines.length === 0) {
+      const data = pasteData.trim();
+      if (!data) {
         toast({
           title: "No Data",
           description: "Please paste some data first.",
@@ -105,87 +104,191 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
         return;
       }
 
-      // Take first line for parsing
-      const firstLine = lines[0];
-      let fields = [];
-      
-      // Try to split by tab first, then by comma
-      if (firstLine.includes('\t')) {
-        fields = firstLine.split('\t');
-      } else if (firstLine.includes(',')) {
-        fields = firstLine.split(',');
-      } else {
-        fields = [firstLine]; // Single field
-      }
+      // Start with fresh form data
+      const updatedFormData = {
+        name: "",
+        email: "",
+        phone: "",
+        location: "",
+        projectName: "",
+        budget: "",
+        property: "",
+        status: "Cold",
+        assignedTo: formData.assignedTo
+      };
 
-      // Clean up fields (remove quotes and extra spaces)
-      fields = fields.map(field => field.replace(/["']/g, '').trim());
+      // Enhanced parsing for different formats
 
-      // Check if data is in key-value format (like the user's pasted data)
-      if (firstLine.includes(':') && firstLine.includes(',')) {
-        // Parse key-value pairs format: "name: value, mobile: value, email: value"
-        const updatedFormData = { ...formData };
-        
-        fields.forEach(field => {
-          const [key, ...valueParts] = field.split(':').map(s => s.trim());
-          const value = valueParts.join(':').trim();
-          
-          switch(key.toLowerCase()) {
-            case 'name':
-              updatedFormData.name = value;
-              break;
-            case 'email':
-              updatedFormData.email = value;
-              break;
-            case 'phone':
-            case 'mobile':
-              updatedFormData.phone = value;
-              break;
-            case 'location':
-              updatedFormData.location = value;
-              break;
-            case 'project':
-            case 'project name':
-              updatedFormData.projectName = value;
-              break;
-            case 'budget':
-              updatedFormData.budget = value;
-              break;
-            case 'property':
-              updatedFormData.property = value;
-              break;
-            case 'status':
-              updatedFormData.status = value;
-              break;
+      // 1. Multi-line structured data (like from your screenshot)
+      if (data.includes('\n')) {
+        const lines = data.split('\n').map(line => line.trim()).filter(line => line);
+
+        console.log('🔍 Processing lines:', lines);
+
+        // Process each line to extract labeled data
+        lines.forEach((line, index) => {
+          console.log(`🔍 Processing line ${index + 1}: "${line}"`);
+
+          // Check for labeled format: "Customer Name: Anand Pal"
+          if (line.toLowerCase().includes('customer name') || line.toLowerCase().includes('full name')) {
+            const nameMatch = line.match(/(?:customer name|full name)\s*[:\-]?\s*(.+)/i);
+            if (nameMatch) {
+              updatedFormData.name = nameMatch[1].trim();
+              console.log(`✅ Name found (labeled): ${nameMatch[1]}`);
+            }
+          }
+          // Check for email labels
+          else if (line.toLowerCase().includes('customer email') || line.toLowerCase().includes('email') || line.toLowerCase().includes('email id')) {
+            const emailMatch = line.match(/(?:customer email|customer email id|email|email id)\s*[:\-]?\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
+            if (emailMatch) {
+              updatedFormData.email = emailMatch[1].trim();
+              console.log(`✅ Email found (labeled): ${emailMatch[1]}`);
+            }
+          }
+          // Check for phone labels
+          else if (line.toLowerCase().includes('customer mobile') || line.toLowerCase().includes('mobile') || line.toLowerCase().includes('phone') || line.toLowerCase().includes('phon')) {
+            const phoneMatch = line.match(/(?:customer mobile|customer mobile number|mobile|phone|phon)\s*[:\-]?\s*(\+91\s?)?(\d{10})/i);
+            if (phoneMatch) {
+              const cleanPhone = phoneMatch[2]; // Get the 10-digit number
+              updatedFormData.phone = cleanPhone;
+              console.log(`✅ Phone found (labeled): ${cleanPhone}`);
+            }
+          }
+          // Check for project labels
+          else if (line.toLowerCase().includes('project name') || line.toLowerCase().includes('project')) {
+            const projectMatch = line.match(/(?:project name|project)\s*[:\-]?\s*(.+)/i);
+            if (projectMatch) {
+              updatedFormData.projectName = projectMatch[1].trim();
+              console.log(`✅ Project found (labeled): ${projectMatch[1]}`);
+            }
+          }
+          // Fallback: Simple extraction for unlabeled data
+          else {
+            // Simple email detection
+            const emailMatch = line.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+            if (emailMatch && !updatedFormData.email) {
+              updatedFormData.email = emailMatch[1].trim();
+              console.log(`✅ Email found (simple): ${emailMatch[1]}`);
+              return;
+            }
+
+            // Simple phone detection
+            const phoneMatch = line.match(/(\+91\s?)?\d{10}/);
+            if (phoneMatch && !updatedFormData.phone) {
+              const cleanPhone = phoneMatch[0].replace(/[^\d]/g, '');
+              if (cleanPhone.length === 10) {
+                updatedFormData.phone = cleanPhone;
+                console.log(`✅ Phone found (simple): ${cleanPhone}`);
+                return;
+              }
+            }
+
+            // Name/Project extraction (text only)
+            const cleanLine = line.replace(/[^\w\s]/g, '').trim();
+            if (cleanLine && /^[A-Za-z\s]+$/.test(cleanLine) && cleanLine.length > 1) {
+              if (!updatedFormData.name) {
+                updatedFormData.name = cleanLine;
+                console.log(`✅ Name found (simple): ${cleanLine}`);
+              } else if (!updatedFormData.projectName) {
+                updatedFormData.projectName = cleanLine;
+                console.log(`✅ Project found (simple): ${cleanLine}`);
+              }
+            }
           }
         });
-        
-        setFormData(updatedFormData);
-        setEntryMode("manual"); // Switch back to manual to show filled form
-        
-        toast({
-          title: "Data Parsed!",
-          description: "Form fields have been auto-filled from pasted data.",
-          variant: "default",
-        });
-        return;
-      }
 
-      // Auto-fill form based on field order: Name, Email, Phone, Location, Project Name, Budget, Property, Status
-      const updatedFormData = { ...formData };
-      
-      if (fields[0]) updatedFormData.name = fields[0];
-      if (fields[1]) updatedFormData.email = fields[1];
-      if (fields[2]) updatedFormData.phone = fields[2];
-      if (fields[3]) updatedFormData.location = fields[3];
-      if (fields[4]) updatedFormData.projectName = fields[4];
-      if (fields[5]) updatedFormData.budget = fields[5];
-      if (fields[6]) updatedFormData.property = fields[6];
-      if (fields[7]) updatedFormData.status = fields[7];
+        console.log('🔍 Final parsed data:', updatedFormData);
+      }
+      // 2. Key-value pairs format: "name: John, email: john@example.com, mobile: 1234567890"
+      else if (data.includes(':')) {
+        // Split by comma or new line, then process each key-value pair
+        const pairs = data.split(/[,\n]/).map(pair => pair.trim()).filter(pair => pair);
+
+        pairs.forEach(pair => {
+          const colonIndex = pair.indexOf(':');
+          if (colonIndex > -1) {
+            const key = pair.substring(0, colonIndex).trim().toLowerCase();
+            const value = pair.substring(colonIndex + 1).trim().replace(/["']/g, '');
+
+            switch (key) {
+              case 'name':
+              case 'full name':
+              case 'customer name':
+                updatedFormData.name = value;
+                break;
+              case 'email':
+              case 'email address':
+              case 'customer email':
+                updatedFormData.email = value;
+                break;
+              case 'phone':
+              case 'mobile':
+              case 'phone number':
+              case 'customer mobile':
+                updatedFormData.phone = value;
+                break;
+              case 'location':
+              case 'address':
+              case 'city':
+                updatedFormData.location = value;
+                break;
+              case 'project':
+              case 'project name':
+              case 'property name':
+                updatedFormData.projectName = value;
+                break;
+              case 'budget':
+              case 'price':
+              case 'amount':
+                updatedFormData.budget = value;
+                break;
+              case 'property':
+              case 'property type':
+              case 'property category':
+                updatedFormData.property = value;
+                break;
+              case 'status':
+              case 'lead status':
+                updatedFormData.status = value;
+                break;
+            }
+          }
+        });
+      }
+      // 3. Comma-separated values: "John, john@example.com, 1234567890, Delhi, Project A, 50L, 2BHK, Hot"
+      else if (data.includes(',')) {
+        const fields = data.split(',').map(field => field.trim().replace(/["']/g, ''));
+
+        if (fields[0]) updatedFormData.name = fields[0];
+        if (fields[1]) updatedFormData.email = fields[1];
+        if (fields[2]) updatedFormData.phone = fields[2];
+        if (fields[3]) updatedFormData.location = fields[3];
+        if (fields[4]) updatedFormData.projectName = fields[4];
+        if (fields[5]) updatedFormData.budget = fields[5];
+        if (fields[6]) updatedFormData.property = fields[6];
+        if (fields[7]) updatedFormData.status = fields[7];
+      }
+      // 4. Tab-separated values
+      else if (data.includes('\t')) {
+        const fields = data.split('\t').map(field => field.trim().replace(/["']/g, ''));
+
+        if (fields[0]) updatedFormData.name = fields[0];
+        if (fields[1]) updatedFormData.email = fields[1];
+        if (fields[2]) updatedFormData.phone = fields[2];
+        if (fields[3]) updatedFormData.location = fields[3];
+        if (fields[4]) updatedFormData.projectName = fields[4];
+        if (fields[5]) updatedFormData.budget = fields[5];
+        if (fields[6]) updatedFormData.property = fields[6];
+        if (fields[7]) updatedFormData.status = fields[7];
+      }
+      // 5. Single field - treat as name
+      else {
+        updatedFormData.name = data.replace(/["']/g, '').trim();
+      }
 
       setFormData(updatedFormData);
       setEntryMode("manual"); // Switch back to manual to show filled form
-      
+
       toast({
         title: "Data Parsed!",
         description: "Form fields have been auto-filled from pasted data.",
@@ -326,65 +429,67 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[83%] max-w-[280px] max-h-[60vh] overflow-y-auto p-0">
-        <DialogHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-3">
-          <DialogTitle className="text-base font-semibold flex items-center justify-between">
+      <DialogContent className="w-[95%] sm:w-[90%] md:w-[85%] lg:w-[80%] max-w-[320px] sm:max-w-[380px] md:max-w-[450px] max-h-[85vh] sm:max-h-[80vh] overflow-y-auto p-0">
+        <DialogHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-3 sm:p-4">
+          <DialogTitle className="text-sm sm:text-base font-semibold flex items-center justify-between">
             <span>Create New Lead</span>
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="p-3 space-y-3">
+        <form onSubmit={handleSubmit} className="p-3 sm:p-4 space-y-3 sm:space-y-4">
           {/* Entry Mode Selection */}
-          <div className="flex gap-2 mb-3 p-2 bg-gray-50 rounded-lg">
+          <div className="flex flex-col sm:flex-row gap-2 mb-3 sm:mb-4 p-2 sm:p-3 bg-gray-50 rounded-lg">
             <button
               type="button"
               onClick={() => setEntryMode("manual")}
-              className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs font-medium rounded-md border transition-colors ${
+              className={`flex-1 flex items-center justify-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md border transition-colors ${
                 entryMode === "manual" 
                   ? "bg-blue-600 text-white border-blue-600" 
                   : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
               }`}
             >
-              <User size={14} />
-              Manual Entry
+              <User size={14} className="sm:hidden" />
+              <User size={16} className="hidden sm:block" />
+              <span className="hidden sm:inline">Manual Entry</span>
+              <span className="sm:hidden">Manual</span>
             </button>
             <button
               type="button"
               onClick={() => setEntryMode("paste")}
-              className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs font-medium rounded-md border transition-colors ${
+              className={`flex-1 flex items-center justify-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md border transition-colors ${
                 entryMode === "paste" 
                   ? "bg-blue-600 text-white border-blue-600" 
                   : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
               }`}
             >
-              <Save size={14} />
-              Paste Data
+              <Save size={14} className="sm:hidden" />
+              <Save size={16} className="hidden sm:block" />
+              <span className="hidden sm:inline">Paste Data</span>
+              <span className="sm:hidden">Paste</span>
             </button>
           </div>
 
           {/* Paste Data Mode */}
           {entryMode === "paste" && (
-            <div className="space-y-2 p-2 bg-gray-50 rounded-lg">
-              <div className="text-xs text-gray-600 mb-2">
-                Copy data from Excel/Sheet and paste below. Formats supported:
-                <br />• Comma-separated: Name, Email, Phone, Location, Project Name, Budget, Property, Status
-                <br />• Key-value pairs: name: John, email: john@example.com, mobile: 1234567890
-              </div>
+            <div className="space-y-2 sm:space-y-3 p-2 sm:p-3 bg-gray-50 rounded-lg">
+             
               <textarea
                 value={pasteData}
                 onChange={(e) => setPasteData(e.target.value)}
                 placeholder="John Doe, john@example.com, 9876543210, Gurgaon, Project Name, ₹1 Cr - ₹5 Cr, Residential Projects, Cold"
-                className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
-                rows={4}
+                className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
+                rows={3}
               />
               <button
                 type="button"
                 onClick={handlePasteData}
                 disabled={!pasteData.trim()}
-                className="w-full flex items-center justify-center gap-1 px-2 py-1.5 text-xs font-medium bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full flex items-center justify-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                <Save size={14} />
-                Parse & Fill Form
+                <Save size={14} className="sm:hidden" />
+                <Save size={16} className="hidden sm:block" />
+                <span className="hidden sm:inline">Parse & Fill Form</span>
+                <span className="sm:hidden">Parse</span>
               </button>
             </div>
           )}
