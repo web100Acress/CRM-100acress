@@ -103,7 +103,8 @@ const createLead = async (leadData, creator) => {
         data: {
           leadId: lead._id,
           assignedBy: creator._id,
-          action: 'assigned'
+          action: 'assigned',
+          path: '/leads'
         }
       });
       console.log('📢 Notification sent to assigned user:', leadData.assignedTo);
@@ -242,7 +243,8 @@ const updateLead = async (id, updateData, req = null) => {
             leadName: lead.name,
             updatedBy: req?.user?._id,
             previousProgress: previousWorkProgress,
-            newProgress: updateData.workProgress
+            newProgress: updateData.workProgress,
+            path: '/leads'
           }
         });
         console.log('📢 Work progress notification sent to assigned user:', lead.assignedTo);
@@ -260,7 +262,8 @@ const updateLead = async (id, updateData, req = null) => {
             leadName: lead.name,
             updatedBy: req?.user?._id,
             previousProgress: previousWorkProgress,
-            newProgress: updateData.workProgress
+            newProgress: updateData.workProgress,
+            path: '/leads'
           }
         });
         console.log('📢 Work progress notification sent to relevant users:', relevantUsers.length);
@@ -284,7 +287,8 @@ const updateLead = async (id, updateData, req = null) => {
           leadId: id,
           assignedBy: req.user._id,
           action: 'bd_reassign',
-          originalAssignee: updateData.assignedTo
+          originalAssignee: updateData.assignedTo,
+          path: '/leads'
         }
       });
       console.log('BD Activity notification sent to relevant users:', relevantUsers.length);
@@ -402,7 +406,8 @@ const forwardLead = async (leadId, currentUserId, action = 'forward', selectedEm
       data: {
         leadId: leadId,
         assignedBy: currentUserId,
-        action: action
+        action: action,
+        path: '/leads'
       }
     });
 
@@ -417,7 +422,8 @@ const forwardLead = async (leadId, currentUserId, action = 'forward', selectedEm
         assignedBy: currentUserId,
         action: action,
         targetAssignee: nextAssignee._id,
-        activityType: 'forward'
+        activityType: 'forward',
+        path: '/leads'
       }
     });
     console.log('📢 BD Forward Activity notification sent to relevant users:', relevantUsers.length);
@@ -628,7 +634,8 @@ const forwardPatchLead = async (leadId, requesterId, newAssigneeId, reason = '')
         leadId: leadId,
         assignedBy: requesterId,
         action: 'forward_patch',
-        reason: reason
+        reason: reason,
+        path: '/leads'
       }
     });
 
@@ -643,7 +650,8 @@ const forwardPatchLead = async (leadId, requesterId, newAssigneeId, reason = '')
         assignedBy: requesterId,
         action: 'forward_patch',
         targetAssignee: newAssignee._id,
-        reason: reason
+        reason: reason,
+        path: '/leads'
       }
     });
     console.log('📢 BD Forward Patch Activity notification sent to relevant users:', relevantUsers.length);
@@ -723,7 +731,8 @@ const addFollowUp = async (id, followUpData) => {
             leadId: id,
             addedBy: currentUser._id,
             action: 'followup_added',
-            followUpData: followUpData
+            followUpData: followUpData,
+            path: '/leads'
           }
         });
         console.log('📢 Follow-up notification sent to assigned BD:', lead.assignedTo);
@@ -744,7 +753,8 @@ const addFollowUp = async (id, followUpData) => {
           leadId: id,
           addedBy: currentUser._id,
           action: 'followup_added',
-          followUpData: followUpData
+          followUpData: followUpData,
+          path: '/leads'
         }
       });
       console.log('📢 BD Follow-up Activity notification sent to relevant users:', relevantUsers.length);

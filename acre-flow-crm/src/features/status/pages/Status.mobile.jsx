@@ -35,14 +35,14 @@ const StatusMobile = ({ userRole = 'employee' }) => {
   const bannerImages = [
     'https://100acress-media-bucket.s3.ap-south-1.amazonaws.com/small-banners/1766217374273-max-antara-361.webp'
   ];
-  
+
   const [currentBannerIndex] = useState(0);
 
   const fetchStatusData = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      
+
       // Mock data for now - replace with actual API
       const mockData = [
         {
@@ -91,15 +91,15 @@ const StatusMobile = ({ userRole = 'employee' }) => {
           category: 'Communication'
         }
       ];
-      
+
       setStatusData(mockData);
-      
+
       // Calculate stats
       const totalActivities = mockData.length;
       const completedTasks = mockData.filter(item => item.status === 'completed').length;
       const pendingTasks = mockData.filter(item => item.status === 'pending').length;
       const overdueTasks = mockData.filter(item => item.status === 'overdue').length;
-      
+
       setStats({
         totalActivities,
         completedTasks,
@@ -121,7 +121,7 @@ const StatusMobile = ({ userRole = 'employee' }) => {
     fetchStatusData();
   }, []);
 
-  const filteredStatusData = statusData.filter(item => 
+  const filteredStatusData = statusData.filter(item =>
     item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.assignee?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.category?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -186,13 +186,13 @@ const StatusMobile = ({ userRole = 'employee' }) => {
 
       {/* Banner Section */}
       <div className="relative h-32 overflow-hidden">
-        <img 
-          src={bannerImages[currentBannerIndex]} 
+        <img
+          src={bannerImages[currentBannerIndex]}
           alt="Status Banner"
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-        
+
         {/* Banner Text Overlay */}
         <div className="absolute bottom-4 left-4 right-4">
           <h2 className="text-white text-xl font-bold drop-shadow-lg">
@@ -292,10 +292,10 @@ const StatusMobile = ({ userRole = 'employee' }) => {
       </div>
 
       {/* Mobile Sidebar */}
-      <MobileSidebar 
-        userRole={userRole} 
-        isOpen={rightMenuOpen} 
-        onClose={() => setRightMenuOpen(false)} 
+      <MobileSidebar
+        userRole={userRole}
+        isOpen={rightMenuOpen}
+        onClose={() => setRightMenuOpen(false)}
       />
     </div>
   );
@@ -314,7 +314,7 @@ const StatusMobile = ({ userRole = 'employee' }) => {
   return (
     <MobileLayout userRole={userRole}>
       {renderMobileHeader()}
-      
+
       {/* Status List */}
       <div className="p-4 space-y-3">
         {filteredStatusData.map((item) => (
@@ -375,8 +375,8 @@ const StatusMobile = ({ userRole = 'employee' }) => {
                       <Clock size={16} className="text-yellow-600" />
                     )}
                     <span className="text-sm text-gray-600">
-                      {item.status === 'completed' ? 'Done' : 
-                       item.status === 'overdue' ? 'Overdue' : 'In Progress'}
+                      {item.status === 'completed' ? 'Done' :
+                        item.status === 'overdue' ? 'Overdue' : 'In Progress'}
                     </span>
                   </div>
                 </div>
@@ -388,21 +388,20 @@ const StatusMobile = ({ userRole = 'employee' }) => {
                   <span className="text-xs text-gray-600">Progress</span>
                   <span className="text-xs font-medium text-gray-900">
                     {item.status === 'completed' ? '100%' :
-                     item.status === 'in_progress' ? '50%' :
-                     item.status === 'overdue' ? '0%' : '25%'}
+                      item.status === 'in_progress' ? '50%' :
+                        item.status === 'overdue' ? '0%' : '25%'}
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className={`h-2 rounded-full ${
-                      item.status === 'completed' ? 'bg-green-500' :
-                      item.status === 'in_progress' ? 'bg-blue-500' :
-                      item.status === 'overdue' ? 'bg-red-500' : 'bg-yellow-500'
-                    }`}
-                    style={{ 
+                  <div
+                    className={`h-2 rounded-full ${item.status === 'completed' ? 'bg-green-500' :
+                        item.status === 'in_progress' ? 'bg-blue-500' :
+                          item.status === 'overdue' ? 'bg-red-500' : 'bg-yellow-500'
+                      }`}
+                    style={{
                       width: item.status === 'completed' ? '100%' :
-                              item.status === 'in_progress' ? '50%' :
-                              item.status === 'overdue' ? '0%' : '25%'
+                        item.status === 'in_progress' ? '50%' :
+                          item.status === 'overdue' ? '0%' : '25%'
                     }}
                   />
                 </div>

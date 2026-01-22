@@ -35,14 +35,14 @@ const CallLogsMobile = ({ userRole = 'employee' }) => {
   const bannerImages = [
     'https://100acress-media-bucket.s3.ap-south-1.amazonaws.com/small-banners/1766217374273-max-antara-361.webp'
   ];
-  
+
   const [currentBannerIndex] = useState(0);
 
   const fetchCallLogs = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      
+
       // Mock data for now - replace with actual API
       const mockData = [
         {
@@ -76,15 +76,15 @@ const CallLogsMobile = ({ userRole = 'employee' }) => {
           time: '08:45 AM'
         }
       ];
-      
+
       setCallLogs(mockData);
-      
+
       // Calculate stats
       const totalCalls = mockData.length;
       const answeredCalls = mockData.filter(call => call.status === 'answered').length;
       const missedCalls = mockData.filter(call => call.status === 'missed').length;
       const outgoingCalls = mockData.filter(call => call.type === 'outgoing').length;
-      
+
       setStats({
         totalCalls,
         answeredCalls,
@@ -106,7 +106,7 @@ const CallLogsMobile = ({ userRole = 'employee' }) => {
     fetchCallLogs();
   }, []);
 
-  const filteredCallLogs = callLogs.filter(call => 
+  const filteredCallLogs = callLogs.filter(call =>
     call.phoneNumber?.includes(searchTerm) ||
     call.callerName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -155,13 +155,13 @@ const CallLogsMobile = ({ userRole = 'employee' }) => {
 
       {/* Banner Section */}
       <div className="relative h-32 overflow-hidden">
-        <img 
-          src={bannerImages[currentBannerIndex]} 
+        <img
+          src={bannerImages[currentBannerIndex]}
           alt="Call Logs Banner"
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-        
+
         {/* Banner Text Overlay */}
         <div className="absolute bottom-4 left-4 right-4">
           <h2 className="text-white text-xl font-bold drop-shadow-lg">
@@ -261,10 +261,10 @@ const CallLogsMobile = ({ userRole = 'employee' }) => {
       </div>
 
       {/* Mobile Sidebar */}
-      <MobileSidebar 
-        userRole={userRole} 
-        isOpen={rightMenuOpen} 
-        onClose={() => setRightMenuOpen(false)} 
+      <MobileSidebar
+        userRole={userRole}
+        isOpen={rightMenuOpen}
+        onClose={() => setRightMenuOpen(false)}
       />
     </div>
   );
@@ -283,7 +283,7 @@ const CallLogsMobile = ({ userRole = 'employee' }) => {
   return (
     <MobileLayout userRole={userRole}>
       {renderMobileHeader()}
-      
+
       {/* Call Logs List */}
       <div className="p-4 space-y-3">
         {filteredCallLogs.map((call) => (
@@ -292,9 +292,8 @@ const CallLogsMobile = ({ userRole = 'employee' }) => {
               {/* Call Header */}
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                    call.type === 'incoming' ? 'bg-blue-100' : 'bg-purple-100'
-                  }`}>
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${call.type === 'incoming' ? 'bg-blue-100' : 'bg-purple-100'
+                    }`}>
                     {call.type === 'incoming' ? (
                       <Phone size={20} className="text-blue-600" />
                     ) : (

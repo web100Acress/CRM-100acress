@@ -7,7 +7,10 @@ import { useToast } from '@/hooks/use-toast';
 import { apiUrl } from '@/config/apiConfig';
 import io from 'socket.io-client';
 
+import { useNavigate } from 'react-router-dom';
+
 const MobileNotifications = ({ userRole }) => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -25,17 +28,17 @@ const MobileNotifications = ({ userRole }) => {
 
   // Socket.io connection for real-time notifications
   useEffect(() => {
-    const socketUrl = window.location.hostname === 'localhost' 
-      ? 'http://localhost:5001' 
+    const socketUrl = window.location.hostname === 'localhost'
+      ? 'http://localhost:5001'
       : 'https://bcrm.100acress.com';
-    
+
     const socket = io(socketUrl);
-    
+
     socket.on('newNotification', (notification) => {
       console.log('Mobile - New notification received:', notification);
       setNotifications(prev => [notification, ...prev]);
       setUnreadCount(prev => prev + 1);
-      
+
       // Show toast notification
       toast({
         title: notification.title,
@@ -82,7 +85,7 @@ const MobileNotifications = ({ userRole }) => {
       });
 
       if (response.ok) {
-        setNotifications(prev => 
+        setNotifications(prev =>
           prev.map(n => n._id === notificationId ? { ...n, isRead: true } : n)
         );
         setUnreadCount(prev => Math.max(0, prev - 1));
@@ -183,17 +186,17 @@ const MobileNotifications = ({ userRole }) => {
         className={`relative w-10 h-10 rounded-lg transition-all duration-200 flex items-center justify-center ${
           // Header styling (white background)
           'bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 border-2 border-white/30'
-        }`}
-        style={{ 
-          minHeight: '40px', 
+          }`}
+        style={{
+          minHeight: '40px',
           minWidth: '40px',
           backgroundColor: 'rgba(255, 255, 255, 0.3)' // Temporary: Make more visible
         }}
       >
         <Bell size={20} className="flex-shrink-0" />
         {unreadCount > 0 && (
-          <Badge 
-            variant="destructive" 
+          <Badge
+            variant="destructive"
             className="absolute -top-1 -right-1 min-w-[20px] h-5 flex items-center justify-center text-xs"
           >
             {unreadCount > 9 ? '9+' : unreadCount}
@@ -242,22 +245,27 @@ const MobileNotifications = ({ userRole }) => {
                 {notifications.map((notification) => (
                   <div
                     key={notification._id}
-                    className={`p-3 rounded-lg border transition-colors ${
-                      notification.isRead 
-                        ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700' 
-                        : 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800'
-                    }`}
+                    className={`p-3 rounded-lg border transition-colors cursor-pointer ${notification.isRead
+                      ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                      : 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800'
+                      }`}
+                    onClick={() => {
+                      if (!notification.isRead) markAsRead(notification._id);
+                      if (notification.data?.path) {
+                        navigate(notification.data.path, { state: { highlightLeadId: notification.data.leadId } });
+                        setShowNotifications(false);
+                      }
+                    }}
                   >
                     <div className="flex items-start gap-3">
                       <div className="text-2xl">
                         {getNotificationIcon(notification.type)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-medium ${
-                          notification.isRead 
-                            ? 'text-slate-700 dark:text-slate-300' 
-                            : 'text-slate-900 dark:text-white'
-                        }`}>
+                        <p className={`text-sm font-medium ${notification.isRead
+                          ? 'text-slate-700 dark:text-slate-300'
+                          : 'text-slate-900 dark:text-white'
+                          }`}>
                           {notification.title}
                         </p>
                         <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">

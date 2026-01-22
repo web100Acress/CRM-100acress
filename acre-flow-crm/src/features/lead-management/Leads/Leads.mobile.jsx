@@ -1130,7 +1130,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
 
         {/* Action Buttons */}
         <div className="flex gap-2 mt-3">
-          {(userRole === "boss" || userRole === "super-admin" || userRole === "hod" || userRole === "head-admin" || userRole === "admin" || userRole === "crm_admin") && (
+          {(userRole === "boss" || userRole === "super-admin" || userRole === "hod" || userRole === "head-admin" || userRole === "admin" || userRole === "crm_admin" || userRole === "bd" || userRole === "employee") && (
             <button
               onClick={() => setShowCreateLead(true)}
               className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"

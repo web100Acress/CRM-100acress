@@ -567,8 +567,8 @@ const EditProfileMobile = () => {
           {/* Real-time Status Indicator */}
           <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100">
             <div className={`w-2 h-2 rounded-full ${syncStatus === 'synced' ? 'bg-green-500' :
-                syncStatus === 'syncing' ? 'bg-yellow-500 animate-pulse' :
-                  'bg-red-500'
+              syncStatus === 'syncing' ? 'bg-yellow-500 animate-pulse' :
+                'bg-red-500'
               }`} />
             <span className="text-xs text-gray-600">
               {syncStatus === 'synced' ? 'Synced' :

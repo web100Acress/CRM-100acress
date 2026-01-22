@@ -54,12 +54,12 @@ const EmployeeDashboard = () => {
     // 🔄 REAL-TIME LEAD UPDATES LISTENERS
     s.on('leadUpdate', (data) => {
       console.log('📡 Real-time lead update received:', data);
-      
+
       // Refresh dashboard data when lead is updated
       if (data.action === 'forwarded' || data.action === 'reassigned' || data.action === 'swapped') {
         fetchDashboardData();
       }
-      
+
       // Show toast notification for lead updates
       if (data.updatedBy !== currentUserId) {
         toast({
@@ -73,12 +73,12 @@ const EmployeeDashboard = () => {
     // Listen for specific BD activities
     s.on('bd_activity', (data) => {
       console.log('📡 BD Activity notification received:', data);
-      
+
       // Refresh dashboard when BD performs activities
       if (data.action === 'followup_added' || data.action === 'bd_reassign' || data.action === 'forward_patch') {
         fetchDashboardData();
       }
-      
+
       // Show toast for BD activities
       if (data.addedBy !== currentUserId) {
         toast({
