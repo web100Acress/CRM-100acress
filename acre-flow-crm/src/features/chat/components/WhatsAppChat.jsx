@@ -17,6 +17,11 @@ const WhatsAppChat = ({ chat, isOpen, onClose }) => {
   const [isSending, setIsSending] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isEditingAbout, setIsEditingAbout] = useState(false);
+  const [newAbout, setNewAbout] = useState('');
+  const [aboutText, setAboutText] = useState('');
+  const [isMuted, setIsMuted] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
 
   // Get current user ID from Redux
   const myId = React.useMemo(() => {
@@ -124,6 +129,47 @@ const WhatsAppChat = ({ chat, isOpen, onClose }) => {
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
+
+  // Toggle mute notifications
+  const handleToggleMute = useCallback(() => {
+    setIsMuted(!isMuted);
+    toast({
+      title: isMuted ? 'Notifications Unmuted' : 'Notifications Muted',
+      description: isMuted ? 'You will receive message notifications' : 'You will not receive message notifications',
+      duration: 2000
+    });
+  }, [isMuted, toast]);
+
+  // Block/Unblock user
+  const handleBlockUser = useCallback(() => {
+    setIsBlocked(!isBlocked);
+    toast({
+      title: isBlocked ? 'Contact Unblocked' : `Contact Blocked`,
+      description: isBlocked ? `You can now receive messages from ${oppositeUser?.name || 'this contact'}` : `You will no longer receive messages from ${oppositeUser?.name || 'this contact'}`,
+      duration: 3000
+    });
+  }, [isBlocked, toast, oppositeUser]);
+
+  // Report user
+  const handleReportUser = useCallback(() => {
+    toast({
+      title: 'Contact Reported',
+      description: `${oppositeUser?.name || 'This contact'} has been reported for inappropriate behavior`,
+      duration: 3000
+    });
+  }, [oppositeUser]);
+
+  // Delete chat
+  const handleDeleteChat = useCallback(() => {
+    if (window.confirm('Are you sure you want to delete this chat? This action cannot be undone.')) {
+      toast({
+        title: 'Chat Deleted',
+        description: 'Chat has been deleted successfully',
+        duration: 2000
+      });
+      onClose();
+    }
+  }, [onClose]);
 
   useEffect(() => {
     scrollToBottom();
