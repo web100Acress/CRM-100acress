@@ -30,8 +30,8 @@ const assignmentChainSchema = new mongoose.Schema({
   role: { type: String, required: true },
   name: { type: String, required: true },
   assignedAt: { type: Date, default: Date.now },
-  status: { 
-    type: String, 
+  status: {
+    type: String,
     enum: ['assigned', 'forwarded', 'completed', 'rejected'],
     default: 'assigned'
   },
@@ -55,7 +55,7 @@ const leadSchema = new mongoose.Schema({
   phone: { type: String },
   status: {
     type: String,
-    enum: ['Cold', 'Warm', 'Hot'], // <-- match your frontend exactly
+    enum: ['Cold', 'Warm', 'Hot', 'Not Interested', 'Closed'], // <-- match your frontend exactly
     default: 'Cold'
   },
   location: String,
