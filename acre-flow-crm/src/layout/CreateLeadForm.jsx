@@ -11,6 +11,7 @@ import { X, Save, Loader2, User, Mail, Phone, MapPin, DollarSign, Building, Targ
 import { useToast } from "@/hooks/use-toast";
 import "@/styles/CreateLeadForm.css";
 import { Badge } from "@/layout/badge";
+import { apiUrl } from "@/config/apiConfig";
 
 const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
   const [formData, setFormData] = useState({
@@ -61,7 +62,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `https://bcrm.100acress.com/api/leads/assignable-users`,
+        `${apiUrl}/api/leads/assignable-users`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -88,6 +89,11 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
         // Team Leader can assign to bd users
         users = users.filter((user) => user.role === "bd");
         console.log('🔍 Team Leader assigning leads - Available BD:', users);
+      } else if (currentUserRole === "bd" || currentUserRole === "employee") {
+        // BD can assign to themselves and potentially other BDs if backend allows
+        // For now, let's allow them to see themselves in the list
+        users = users.filter((user) => user.role === "bd" || user._id === localStorage.getItem("userId"));
+        console.log('🔍 BD assigning leads - Available Users:', users);
       } else {
         // Other roles cannot assign leads - empty list
         users = [];
@@ -307,10 +313,9 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      
-      // Try local API first, then fallback to production
-      let apiUrl = 'https://bcrm.100acress.com/api/leads';
-      let response = await fetch(apiUrl, {
+
+      // Use dynamic apiUrl
+      let response = await fetch(`${apiUrl}/api/leads`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -318,20 +323,6 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
         },
         body: JSON.stringify(formData),
       });
-      
-      // If local fails, try production
-      if (!response.ok) {
-        console.log('Local API failed, trying production...');
-        apiUrl = 'https://bcrm.100acress.com/api/leads';
-        response = await fetch(apiUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(formData),
-        });
-      }
 
       const data = await response.json();
       console.log('Lead creation response:', data);
@@ -434,7 +425,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
   };
 
   const hasAssignmentPermission = () => {
-    return ["super-admin", "boss", "hod", "team-leader"].includes(currentUserRole);
+    return ["super-admin", "boss", "hod", "team-leader", "bd", "employee"].includes(currentUserRole);
   };
 
   const getAssignmentHint = () => {
@@ -459,7 +450,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
         </div>
       );
     }
-    
+
     if (assignableUsers.length === 0) {
       const message = {
         "super-admin": "No HODs available to assign leads to",
@@ -467,7 +458,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
         "hod": "No Team Leaders or BD available to assign leads to",
         "team-leader": "No BD available to assign leads to"
       }[currentUserRole] || "No users available";
-      
+
       return (
         <div className="assignment-message warning">
           <AlertCircle size={14} />
@@ -475,7 +466,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
         </div>
       );
     }
-    
+
     return null;
   };
 
@@ -496,7 +487,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
             </div>
           </div>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="lead-form-grid">
           {/* Entry Mode Selection */}
           <div className="form-section">
@@ -560,8 +551,8 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
             <>
           {/* Personal Information Section */}
           <div className="form-section">
-           
-            
+
+
             <div className="form-row">
               <div className="form-group full-width">
                 <label htmlFor="name" className="form-label">
@@ -629,9 +620,9 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
           {/* Property Details Section */}
           <div className="form-section">
             <div className="section-header">
-            
+
             </div>
-            
+
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="location" className="form-label">
@@ -741,7 +732,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
           {/* Assignment Section */}
           <div className="form-section">
             <div className="section-header">
-            </div> 
+            </div>
             <div className="form-row">
               <div className="form-group full-width">
                 <label htmlFor="assignedTo" className="form-label">

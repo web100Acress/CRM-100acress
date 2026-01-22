@@ -17,9 +17,9 @@ const AdminDashboardMobile = () => {
     const userName = localStorage.getItem('userName') || localStorage.getItem('adminName') || 'Admin';
     const userEmail = localStorage.getItem('userEmail') || localStorage.getItem('adminEmail') || 'admin@example.com';
     const userRole = localStorage.getItem('userRole') || localStorage.getItem('adminRole') || 'admin';
-    
-    setUserInfo({ 
-      name: userName, 
+
+    setUserInfo({
+      name: userName,
       email: userEmail,
       role: userRole
     });
@@ -44,7 +44,7 @@ const AdminDashboardMobile = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('userId');
     localStorage.removeItem('sourceSystem');
-    
+
     window.location.href = '/login';
   };
 
@@ -113,7 +113,7 @@ const AdminDashboardMobile = () => {
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden">
           <div className="w-64 bg-white h-full shadow-lg">
-            <AdminSidebar 
+            <AdminSidebar
               activeTab={activeTab}
               setActiveTab={setActiveTab}
               sidebarOpen={sidebarOpen}

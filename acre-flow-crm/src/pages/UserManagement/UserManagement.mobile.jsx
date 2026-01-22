@@ -346,8 +346,8 @@ const UserManagementMobile = ({ userRole = 'super-admin' }) => {
                     <h3 className="font-semibold text-gray-900">{user.name}</h3>
                     <p className="text-sm text-gray-500">{user.email}</p>
                     <Badge className={`text-xs mt-1 ${user.isActive
-                        ? 'bg-green-100 text-green-800 border-green-200'
-                        : 'bg-red-100 text-red-800 border-red-200'
+                      ? 'bg-green-100 text-green-800 border-green-200'
+                      : 'bg-red-100 text-red-800 border-red-200'
                       }`}>
                       {user.isActive ? 'Active' : 'Inactive'}
                     </Badge>
@@ -374,10 +374,10 @@ const UserManagementMobile = ({ userRole = 'super-admin' }) => {
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Role:</span>
                   <Badge className={`text-xs ${user.role === 'super-admin' ? 'bg-purple-100 text-purple-800 border-purple-200' :
-                      user.role === 'admin' ? 'bg-blue-100 text-blue-800 border-blue-200' :
-                        user.role === 'head-admin' ? 'bg-indigo-100 text-indigo-800 border-indigo-200' :
-                          user.role === 'team-leader' ? 'bg-green-100 text-green-800 border-green-200' :
-                            'bg-gray-100 text-gray-800 border-gray-200'
+                    user.role === 'admin' ? 'bg-blue-100 text-blue-800 border-blue-200' :
+                      user.role === 'head-admin' ? 'bg-indigo-100 text-indigo-800 border-indigo-200' :
+                        user.role === 'team-leader' ? 'bg-green-100 text-green-800 border-green-200' :
+                          'bg-gray-100 text-gray-800 border-gray-200'
                     }`}>
                     {user.role?.replace('-', ' ').toUpperCase() || 'USER'}
                   </Badge>

@@ -6,7 +6,7 @@ const { uploadProfileImage } = require('../middlewares/upload.middleware');
 async function sendWelcomeEmail({ email, password, name, role }) {
   const roleDisplayMap = {
     'bd': 'Business Development (BD)',
-    'head-admin': 'HOD',
+    'hod': 'HOD',
     'boss': 'BOSS',
     'team-leader': 'Team Leader',
     'developer': 'Developer'

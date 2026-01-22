@@ -72,10 +72,7 @@ const LeadTable = ({ userRole }) => {
   // Helper function for API calls using centralized config
   const apiCall = async (endpoint, options = {}) => {
     const token = localStorage.getItem("token");
-  
-    const url = `${apiUrl}${endpoint}`; // endpoint should start with / usually if apiUrl doesn't end with one.
-    // API_BASE_URL doesn't have trailing slash.
-
+    const url = `${apiUrl}${endpoint}`;
     console.log(`🔍 API Call: ${url}`);
 
     const response = await fetch(url, {
@@ -1010,21 +1007,21 @@ const LeadTable = ({ userRole }) => {
     try {
       const token = localStorage.getItem("token");
       console.log('🔍 Fetching follow-ups for lead:', lead._id);
-      
+
       const followUpUrl = `${apiUrl}/api/leads/${lead._id}/followups`;
       console.log('🔍 Follow-up API URL:', followUpUrl);
-      
+
       const res = await fetch(followUpUrl, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
-      
+
       console.log('🔍 Follow-up response status:', res.status);
       const data = await res.json();
       console.log('🔍 Follow-up response data:', data);
-      
+
       setFollowUpList(data.data || []);
       setFollowUpLoading(false);
     } catch (err) {
@@ -1209,7 +1206,7 @@ const LeadTable = ({ userRole }) => {
 
 
 
-        {(userRole === "boss" || userRole === "hod") && (
+        {(userRole === "boss" || userRole === "hod" || userRole === "bd") && (
           <button className="lead-create-button" onClick={handleCreateLead}>
             <Plus
               size={18}
@@ -1242,30 +1239,9 @@ const LeadTable = ({ userRole }) => {
                     <div className="lead-info-display text-xs text-slate-500">ID: #{generateShortId(lead._id)}</div>
                     <div className="flex flex-col gap-0.5 text-[10px] text-slate-400 mt-1">
                       <div>by: {(() => {
-                        // Debug: Log assignment chain data
-                        if (lead._id === 'test-lead-id' || lead.name?.includes('test')) {
-                          console.log('🔍 Debug - Assignment Chain for lead:', lead.name, {
-                            assignmentChain: lead.assignmentChain,
-                            createdBy: lead.createdBy,
-                            assignedTo: lead.assignedTo,
-                            userMapKeys: Object.keys(userMap)
-                          });
-                        }
-
                         // Try to get assigner from assignment chain first
                         if (lead.assignmentChain && lead.assignmentChain.length > 0) {
                           const lastAssignment = lead.assignmentChain[lead.assignmentChain.length - 1];
-
-                          // Debug: Check assignment structure
-                          if (lead.name?.includes('aman') || lead.name?.includes('tiwari')) {
-                            console.log('🔍 Debug - Aman Tiwari Lead:', {
-                              leadName: lead.name,
-                              assignmentChain: lead.assignmentChain,
-                              lastAssignment: lastAssignment,
-                              assignedByData: lastAssignment.assignedBy,
-                              assignedByType: typeof lastAssignment.assignedBy
-                            });
-                          }
 
                           if (lastAssignment.assignedBy && lastAssignment.assignedBy.name) {
                             return `${lastAssignment.assignedBy.name} (${lastAssignment.assignedBy.role})`;
@@ -2478,9 +2454,8 @@ const LeadTable = ({ userRole }) => {
                     <div key={idx} className="flex items-start space-x-4">
                       {/* Timeline Line */}
                       <div className="flex flex-col items-center">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm ${
-                          isActive ? 'bg-blue-500' : 'bg-gray-400'
-                        }`}>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm ${isActive ? 'bg-blue-500' : 'bg-gray-400'
+                          }`}>
                           {idx + 1}
                         </div>
                         {!isLast && (
@@ -2489,32 +2464,29 @@ const LeadTable = ({ userRole }) => {
                       </div>
 
                       {/* Content Card */}
-                      <div className={`flex-1 p-4 rounded-lg border ${
-                        isActive 
-                          ? 'bg-blue-50 border-blue-200' 
-                          : 'bg-gray-50 border-gray-200'
-                      }`}>
+                      <div className={`flex-1 p-4 rounded-lg border ${isActive
+                        ? 'bg-blue-50 border-blue-200'
+                        : 'bg-gray-50 border-gray-200'
+                        }`}>
                         <div className="flex items-center justify-between mb-2">
                           <div>
                             <h4 className="font-semibold text-gray-900">{entry.name}</h4>
-                            <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
-                              entry.role === 'boss' ? 'bg-purple-100 text-purple-800' :
+                            <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${entry.role === 'boss' ? 'bg-purple-100 text-purple-800' :
                               entry.role === 'hod' ? 'bg-blue-100 text-blue-800' :
-                              entry.role === 'team-leader' || entry.role === 'tl' ? 'bg-green-100 text-green-800' :
-                              entry.role === 'bd' || entry.role === 'employee' ? 'bg-orange-100 text-orange-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
+                                entry.role === 'team-leader' || entry.role === 'tl' ? 'bg-green-100 text-green-800' :
+                                  entry.role === 'bd' || entry.role === 'employee' ? 'bg-orange-100 text-orange-800' :
+                                    'bg-gray-100 text-gray-800'
+                              }`}>
                               {entry.role?.toUpperCase()}
                             </span>
                           </div>
                           <div className="text-right">
                             {entry.status && (
-                              <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${
-                                entry.status === 'assigned' ? 'bg-green-100 text-green-800' :
+                              <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${entry.status === 'assigned' ? 'bg-green-100 text-green-800' :
                                 entry.status === 'forwarded' ? 'bg-blue-100 text-blue-800' :
-                                entry.status === 'completed' ? 'bg-gray-100 text-gray-800' :
-                                'bg-yellow-100 text-yellow-800'
-                              }`}>
+                                  entry.status === 'completed' ? 'bg-gray-100 text-gray-800' :
+                                    'bg-yellow-100 text-yellow-800'
+                                }`}>
                                 {entry.status?.toUpperCase()}
                               </span>
                             )}
@@ -2534,14 +2506,14 @@ const LeadTable = ({ userRole }) => {
                           <div>
                             <span className="font-medium">Assigned At:</span>
                             <div className="text-gray-900">
-                              {entry.assignedAt 
+                              {entry.assignedAt
                                 ? new Date(entry.assignedAt).toLocaleString('en-US', {
-                                    year: 'numeric',
-                                    month: 'short',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  })
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })
                                 : '—'
                               }
                             </div>
@@ -2584,7 +2556,7 @@ const LeadTable = ({ userRole }) => {
                   <div>
                     <h5 className="font-semibold text-green-900">Current Status</h5>
                     <p className="text-sm text-green-700">
-                      Lead is currently assigned to <strong>{chainModalLead.assignedToName || 'Unknown'}</strong> 
+                      Lead is currently assigned to <strong>{chainModalLead.assignedToName || 'Unknown'}</strong>
                       ({chainModalLead.assignedToRole || 'Unknown Role'})
                     </p>
                   </div>

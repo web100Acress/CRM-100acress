@@ -9,7 +9,10 @@ import { Badge } from '@/layout/badge';
 import { Check, Trash2, Clock, User as UserIcon } from 'lucide-react';
 // import RightProfileSidebar from "./RightProfileSidebar.jsx";
 
+import { useNavigate } from "react-router-dom";
+
 const DashboardLayout = ({ children, userRole = "employee" }) => {
+  const navigate = useNavigate();
   const { isDark } = useTheme();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -307,7 +310,12 @@ const DashboardLayout = ({ children, userRole = "employee" }) => {
                         <div
                           key={notification._id}
                           className={`p-4 hover:bg-slate-50 transition-colors cursor-pointer group ${!notification.isRead ? 'bg-indigo-50/30' : ''}`}
-                          onClick={() => !notification.isRead && handleMarkAsRead(notification._id)}
+                          onClick={() => {
+                            if (!notification.isRead) handleMarkAsRead(notification._id);
+                            if (notification.data?.path) {
+                              navigate(notification.data.path, { state: { highlightLeadId: notification.data.leadId } });
+                            }
+                          }}
                         >
                           <div className="flex gap-3">
                             <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${!notification.isRead ? 'bg-indigo-500' : 'bg-transparent'}`} />
