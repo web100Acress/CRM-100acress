@@ -478,6 +478,12 @@ const LeadTableMobile = ({ userRole }) => {
                     <Phone size={14} />
                     <span>{lead.phone}</span>
                   </div>
+                  {lead.projectName && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                      <PieChart size={14} />
+                      <span className="truncate">{lead.projectName}</span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
                     <Mail size={14} />
                     <span className="truncate">{lead.email}</span>

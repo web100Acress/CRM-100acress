@@ -1261,6 +1261,11 @@ const LeadTable = ({ userRole }) => {
                     <div className="lead-info-display">
                       <MapPin size={14} /> {lead.location?.split(' ')[0]}{lead.location?.split(' ').length > 1 ? '...' : ''}
                     </div>
+                    {lead.projectName && (
+                      <div className="lead-info-display">
+                        <PieChart size={14} /> {lead.projectName}
+                      </div>
+                    )}
                   </td>
                   <td data-label="Property">
                     <div className="lead-info-display">{lead.property}</div>
@@ -1667,6 +1672,16 @@ const LeadTable = ({ userRole }) => {
               <div className="mobile-lead-info">
                 <p className="mobile-lead-name">{lead.name}</p>
                 <p className="mobile-lead-contact">{lead.phone}</p>
+                {lead.location && (
+                  <p className="mobile-lead-location">
+                    <MapPin size={12} /> {lead.location?.split(' ')[0]}{lead.location?.split(' ').length > 1 ? '...' : ''}
+                  </p>
+                )}
+                {lead.projectName && (
+                  <p className="mobile-lead-project">
+                    <PieChart size={12} /> {lead.projectName}
+                  </p>
+                )}
                 {lead.lastContact && (
                   <p className="mobile-lead-last-contact">Last: {new Date(lead.lastContact).toLocaleDateString()}</p>
                 )}

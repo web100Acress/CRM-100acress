@@ -620,7 +620,7 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
                     className="parse-data-btn"
                   >
                     <Save size={16} />
-                    Parse & Fill Form
+                    Paste & Fill Form
                   </button>
                 )}
               </div>
