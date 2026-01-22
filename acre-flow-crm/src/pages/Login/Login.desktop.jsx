@@ -497,7 +497,7 @@ const LoginDesktop = () => {
       <img
         src="https://100acress-media-bucket.s3.ap-south-1.amazonaws.com/100acre/logo/logowhite.webp.webp  "
         alt="100acres Logo"
-        className="fixed top-[0] left-12 w-40 h-40 object-contain z-50"
+        className="fixed top-[0] left-12 w-48 h-21 object-contain z-50"
       />
       {/* Floating Property Theme Background */}
       <div className="absolute inset-0 overflow-hidden">
