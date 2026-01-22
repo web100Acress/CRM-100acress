@@ -10,8 +10,8 @@ import {
 import { Badge } from '@/layout/badge';
 import { Card, CardContent } from '@/layout/card';
 import MobileLayout from '@/layout/MobileLayout';
-import MobileNotifications from '@/components/MobileNotifications';
 import io from 'socket.io-client';
+import { apiUrl } from '@/config/apiConfig';
 
 const HeadAdminProfileMobile = () => {
   const navigate = useNavigate();
@@ -36,7 +36,10 @@ const HeadAdminProfileMobile = () => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    const s = io('https://bcrm.100acress.com');
+    const socketUrl = window.location.hostname === 'localhost'
+      ? 'http://localhost:5001'
+      : 'https://bcrm.100acress.com';
+    const s = io(socketUrl);
     setSocket(s);
     console.log('Mobile Head Admin Socket.IO client connected:', s);
     s.emit('requestHeadAdminStats');
@@ -63,72 +66,9 @@ const HeadAdminProfileMobile = () => {
       }));
     });
 
-    // Listen for lead updates with comprehensive notifications
-    socket.on('leadUpdate', (data) => {
-      console.log('Mobile HOD received leadUpdate:', data);
-      
-      // Handle different types of lead updates with notifications
-      switch(data.action) {
-        case 'followup_added':
-          toast({
-            title: "Follow-up Added",
-            description: `${data.data.leadName}: ${data.data.followUpData.comment}`,
-            duration: 6000,
-          });
-          break;
-          
-        case 'assigned':
-          toast({
-            title: "Lead Assigned",
-            description: `${data.data.leadName} assigned to ${data.data.assigneeName}`,
-            duration: 8000,
-          });
-          break;
-          
-        case 'forward_patch':
-          toast({
-            title: "Lead Reassigned",
-            description: `${data.data.leadName} reassigned by ${data.data.assignerName}`,
-            duration: 6000,
-          });
-          break;
-          
-        case 'swapped':
-          toast({
-            title: "Lead Swapped",
-            description: `${data.data.leadName} swapped between BDs`,
-            duration: 6000,
-          });
-          break;
-          
-        case 'bd_activity':
-          toast({
-            title: "BD Activity",
-            description: `${data.data.action}: ${data.data.leadName}`,
-            duration: 5000,
-          });
-          break;
-          
-        default:
-          // Generic lead update
-          toast({
-            title: "Lead Updated",
-            description: `${data.data.leadName} status changed`,
-            duration: 5000,
-          });
-      }
-      
-      // Update recent leads in dashboard stats
-      setDashboardStats(prev => ({
-        ...prev,
-        recentLeads: data.leads || prev.recentLeads
-      }));
-    });
-
     return () => {
       socket.off('headAdminUpdate');
       socket.off('teamMemberUpdate');
-      socket.off('leadUpdate');
     };
   }, [socket]);
 
@@ -137,8 +77,8 @@ const HeadAdminProfileMobile = () => {
     const fetchMobileHeadAdminData = async () => {
       try {
         const token = localStorage.getItem('token');
- 
-        const usersResponse = await fetch('https://bcrm.100acress.com/api/users', {
+
+        const usersResponse = await fetch(`${apiUrl}/api/users`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -146,7 +86,7 @@ const HeadAdminProfileMobile = () => {
         });
         const usersData = await usersResponse.json();
 
-        const leadsResponse = await fetch('https://bcrm.100acress.com/api/leads', {
+        const leadsResponse = await fetch(`${apiUrl}/api/leads`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -214,7 +154,7 @@ const HeadAdminProfileMobile = () => {
     navigate('/login');
   };
 
-    const renderOverviewTab = () => (
+  const renderOverviewTab = () => (
     <div className="space-y-4">
       {/* Mobile Stats Cards */}
       <div className="grid grid-cols-2 gap-3">

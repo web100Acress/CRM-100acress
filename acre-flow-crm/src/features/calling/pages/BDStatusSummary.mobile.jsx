@@ -1,20 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  User, 
-  Phone, 
-  Mail, 
-  MapPin, 
-  Calendar, 
-  RefreshCw, 
-  Search, 
-  Filter, 
-  X, 
-  Menu, 
-  Home, 
-  Users, 
-  Settings, 
-  LogOut, 
+import {
+  User,
+  Phone,
+  Mail,
+  MapPin,
+  Calendar,
+  RefreshCw,
+  Search,
+  Filter,
+  X,
+  Menu,
+  Home,
+  Users,
+  Settings,
+  LogOut,
   BarChart3,
   TrendingUp,
   Building2,
@@ -84,6 +84,7 @@ const formatDuration = (seconds) => {
   return `${minutes}m ${remainingSeconds}s`;
 };
 
+import { apiUrl, API_ENDPOINTS } from '@/config/apiConfig';
 import MobileSidebar from '@/layout/MobileSidebar';
 import { Badge } from '@/layout/badge';
 import { Card, CardContent } from '@/layout/card';
@@ -125,35 +126,35 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
   const bannerImages = [
     'https://100acress-media-bucket.s3.ap-south-1.amazonaws.com/small-banners/1766217374273-max-antara-361.webp'
   ];
-  
+
   const [currentBannerIndex] = useState(0);
 
   const fetchBDSummary = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      
-      const response = await fetch('https://bcrm.100acress.com/api/leads/bd-status-summary', {
+
+      const response = await fetch(API_ENDPOINTS.LEADS.BD_STATUS_SUMMARY, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
       const summaryData = data.data || [];
       setBdSummary(summaryData);
-      
+
       // Calculate stats
       const totalBDs = summaryData.length;
       const activeBDs = summaryData.filter(bd => bd.totalLeads > 0).length;
       const totalLeads = summaryData.reduce((sum, bd) => sum + (bd.totalLeads || 0), 0);
       const convertedLeads = summaryData.reduce((sum, bd) => sum + (bd.convertedLeads || 0), 0);
-      
+
       setStats({
         totalBDs,
         activeBDs,
@@ -175,14 +176,14 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
   const fetchActivityOnly = async (bdId) => {
     try {
       const token = localStorage.getItem('token');
-      
+
       // Try different possible activity endpoints
       const activityEndpoints = [
-        `https://bcrm.100acress.com/api/leads/activity?userId=${bdId}`,
-        `https://bcrm.100acress.com/api/activities?userId=${bdId}`,
-        `https://bcrm.100acress.com/api/activity/user-activity?userId=${bdId}`
+        `${apiUrl}/api/leads/activity?userId=${bdId}`,
+        `${apiUrl}/api/activities?userId=${bdId}`,
+        `${apiUrl}/api/activity/user-activity?userId=${bdId}`
       ];
-      
+
       let activityData = null;
       for (const endpoint of activityEndpoints) {
         try {
@@ -192,7 +193,7 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
               'Content-Type': 'application/json'
             },
           });
-          
+
           if (activityResponse.ok) {
             activityData = await activityResponse.json();
             console.log(`Activity update found using endpoint: ${endpoint}`);
@@ -203,15 +204,15 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
           continue;
         }
       }
-      
+
       if (activityData && activityData.data) {
         const newActivities = activityData.data || [];
-        
+
         setBdDetails(prev => ({
           ...prev,
           recentActivity: newActivities
         }));
-        
+
         console.log(`Updated activity: Found ${newActivities.length} activities for BD ${bdId}`);
       }
     } catch (error) {
@@ -223,40 +224,40 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
     setDetailsLoading(true);
     try {
       const token = localStorage.getItem('token');
-      
+
       // Fetch BD details
-      const response = await fetch(`https://bcrm.100acress.com/api/leads/bd-status/${bdId}`, {
+      const response = await fetch(API_ENDPOINTS.LEADS.BD_STATUS(bdId), {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
       const bdData = data.data || null;
-      
+
       console.log("BD Details API Response:", data);
       console.log("BD Data:", bdData);
-      
+
       // Initialize with empty arrays if not present
       bdData.callHistory = bdData.callHistory || [];
       bdData.followUps = bdData.followUps || [];
       bdData.recentActivity = bdData.recentActivity || [];
-      
+
       // Fetch call history for this BD separately
       try {
         // Method 1: Try to get call records directly for BD
-        const callResponse = await fetch(`https://bcrm.100acress.com/api/calls/user/${bdId}`, {
+        const callResponse = await fetch(`${apiUrl}/api/calls/user/${bdId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
         });
-        
+
         if (callResponse.ok) {
           const callData = await callResponse.json();
           bdData.callHistory = callData.data || callData || [];
@@ -264,29 +265,29 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
         } else {
           // Method 2: Fallback - fetch BD's leads and their call history
           console.log('Direct call API failed, trying leads-based approach...');
-          const leadsResponse = await fetch(`https://bcrm.100acress.com/api/leads?assignedTo=${bdId}`, {
+          const leadsResponse = await fetch(`${apiUrl}/api/leads?assignedTo=${bdId}`, {
             headers: {
               Authorization: `Bearer ${token}`,
               'Content-Type': 'application/json'
             },
           });
-          
+
           if (leadsResponse.ok) {
             const leadsData = await leadsResponse.json();
             const leads = leadsData.data || [];
-            
+
             // Collect all call history from BD's leads
             let allCallHistory = [];
-            
+
             for (const lead of leads) {
               if (lead.callHistory && lead.callHistory.length > 0) {
                 allCallHistory.push(...lead.callHistory);
               }
             }
-            
+
             // Sort by call date (newest first)
             allCallHistory.sort((a, b) => new Date(b.callDate || b.createdAt) - new Date(a.callDate || a.createdAt));
-            
+
             bdData.callHistory = allCallHistory;
             console.log(`Found ${allCallHistory.length} calls for BD ${bdId} from ${leads.length} leads`);
           } else {
@@ -298,16 +299,16 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
         console.log('Error fetching BD call history:', callError);
         bdData.callHistory = [];
       }
-      
+
       // Fetch real-time activity data
       try {
         // Try different possible activity endpoints
         const activityEndpoints = [
-          `https://bcrm.100acress.com/api/leads/activity?userId=${bdId}`,
-          `https://bcrm.100acress.com/api/activities?userId=${bdId}`,
-          `https://bcrm.100acress.com/api/activity/user-activity?userId=${bdId}`
+          `${apiUrl}/api/leads/activity?userId=${bdId}`,
+          `${apiUrl}/api/activities?userId=${bdId}`,
+          `${apiUrl}/api/activity/user-activity?userId=${bdId}`
         ];
-        
+
         let activityData = null;
         for (const endpoint of activityEndpoints) {
           try {
@@ -317,7 +318,7 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
                 'Content-Type': 'application/json'
               },
             });
-            
+
             if (activityResponse.ok) {
               activityData = await activityResponse.json();
               console.log(`Activity found using endpoint: ${endpoint}`);
@@ -328,7 +329,7 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
             continue;
           }
         }
-        
+
         if (activityData && activityData.data) {
           bdData.recentActivity = activityData.data;
           console.log(`Found ${bdData.recentActivity.length} activities for BD ${bdId}`);
@@ -341,7 +342,7 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
         // Generate fallback recent activity with null checks
         const totalLeads = bdData?.totalLeads || selectedBD?.totalLeads || 0;
         const convertedLeads = bdData?.convertedLeads || selectedBD?.convertedLeads || 0;
-        
+
         bdData.recentActivity = [
           {
             type: 'assigned',
@@ -360,7 +361,7 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
           }
         ];
       }
-      
+
       setBdDetails(bdData);
     } catch (error) {
       console.error('Error fetching BD details:', error);
@@ -377,12 +378,12 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
 
   useEffect(() => {
     fetchBDSummary();
-    
+
     // Set up polling for real-time updates every 10 seconds
     const interval = setInterval(() => {
       fetchBDSummary();
     }, 10000);
-    
+
     return () => {
       clearInterval(interval);
       // Also clear activity interval if it exists
@@ -396,17 +397,17 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
     setSelectedBD(record);
     setModalVisible(true);
     setDetailsLoading(true);
-    
+
     console.log("Selected BD Record:", record);
-    
+
     await fetchBDDetails(record.bdId || record._id);
-    
+
     // Set up real-time activity polling every 30 seconds
     const bdId = record.bdId || record._id;
     const interval = setInterval(() => {
       fetchActivityOnly(bdId);
     }, 30000); // 30 seconds
-    
+
     setActivityInterval(interval);
   };
 
@@ -414,7 +415,7 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
     setModalVisible(false);
     setSelectedBD(null);
     setBdDetails(null);
-    
+
     // Clear activity polling interval
     if (activityInterval) {
       clearInterval(activityInterval);
@@ -424,7 +425,7 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
 
   const handleMessageOpen = (bd) => {
     const currentUserId = localStorage.getItem('userId');
-    
+
     // 🔍 DEBUG: Log BD data before setting recipient
     console.log('🔍 DEBUG - BD Status Summary Chat Attempt:', {
       bd: bd,
@@ -435,7 +436,7 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
       currentUserId: currentUserId,
       isSelfAttempt: String(bd._id) === String(currentUserId)
     });
-    
+
     // 🚫 Prevent self-messaging with robust ID comparison
     // Handle different ID types (string, ObjectId, number)
     const normalizeId = (id) => {
@@ -445,10 +446,10 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
       if (typeof id === 'number') return id.toString();
       return String(id);
     };
-    
+
     const normalizedBdId = normalizeId(bd._id);
     const normalizedCurrentUserId = normalizeId(currentUserId);
-    
+
     console.log('🔍 BD Status ID Comparison:', {
       bdId: bd._id,
       bdIdType: typeof bd._id,
@@ -458,7 +459,7 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
       normalizedCurrentUserId,
       areEqual: normalizedBdId === normalizedCurrentUserId
     });
-    
+
     if (normalizedBdId === normalizedCurrentUserId) {
       console.error('❌ SELF-MESSAGING ATTEMPTED IN BD STATUS SUMMARY - IDs match after normalization');
       console.error('Original BD ID:', bd._id, `(${typeof bd._id})`);
@@ -468,13 +469,13 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
       alert('You cannot message yourself. Please select another user.');
       return;
     }
-    
-    console.log('✅ Opening chat with valid recipient:', { 
-      recipientId: bd._id, 
+
+    console.log('✅ Opening chat with valid recipient:', {
+      recipientId: bd._id,
       recipientName: bd.name,
-      currentUserId 
+      currentUserId
     });
-    
+
     setMessageRecipient(bd);
     setMessageModalVisible(true);
   };
@@ -484,7 +485,7 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
     setMessageRecipient(null);
   };
 
-  const filteredBDs = bdSummary.filter(bd => 
+  const filteredBDs = bdSummary.filter(bd =>
     bd.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     bd.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -543,12 +544,12 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
 
       {/* Banner Section */}
       <div className="relative h-32 overflow-hidden">
-        <img 
-          src={bannerImages[currentBannerIndex]} 
+        <img
+          src={bannerImages[currentBannerIndex]}
           alt="BD Status Banner"
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />  
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
       </div>
 
       {/* Stats Cards */}
@@ -639,10 +640,10 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
       </div>
 
       {/* Mobile Sidebar */}
-      <MobileSidebar 
-        userRole={userRole} 
-        isOpen={rightMenuOpen} 
-        onClose={() => setRightMenuOpen(false)} 
+      <MobileSidebar
+        userRole={userRole}
+        isOpen={rightMenuOpen}
+        onClose={() => setRightMenuOpen(false)}
       />
     </div>
   );
@@ -661,7 +662,7 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
   return (
     <div className="min-h-screen bg-gray-50">
       {renderMobileHeader()}
-      
+
       {/* BD List */}
       <div className="p-4 space-y-3 pb-20 md:pb-4">
         {filteredBDs.map((bd) => (
@@ -672,8 +673,8 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center overflow-hidden">
                     {localStorage.getItem('userProfileImage') ? (
-                      <img 
-                        src={localStorage.getItem('userProfileImage')} 
+                      <img
+                        src={localStorage.getItem('userProfileImage')}
                         alt={bd.name}
                         className="w-full h-full object-cover"
                       />
@@ -750,11 +751,10 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
                     <button
                       onClick={() => handleMessageOpen(bd)}
                       disabled={String(bd._id) === String(currentUserId)}
-                      className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors text-sm ${
-                        String(bd._id) === String(currentUserId)
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : 'bg-green-600 text-white hover:bg-green-700'
-                      }`}
+                      className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors text-sm ${String(bd._id) === String(currentUserId)
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-green-600 text-white hover:bg-green-700'
+                        }`}
                     >
                       <MessageSquare size={14} />
                       <span>{String(bd._id) === String(currentUserId) ? 'Yourself' : 'Message'}</span>
@@ -788,8 +788,8 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center overflow-hidden">
                     {localStorage.getItem('userProfileImage') ? (
-                      <img 
-                        src={localStorage.getItem('userProfileImage')} 
+                      <img
+                        src={localStorage.getItem('userProfileImage')}
                         alt={selectedBD.name}
                         className="w-full h-full object-cover"
                       />
@@ -872,8 +872,8 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
                       </div>
                       <div className="bg-purple-50 rounded-lg p-3 text-center">
                         <p className="text-2xl font-bold text-purple-600">
-                          {selectedBD.conversionRate || bdDetails.conversionRate 
-                            ? Math.round(selectedBD.conversionRate || bdDetails.conversionRate) 
+                          {selectedBD.conversionRate || bdDetails.conversionRate
+                            ? Math.round(selectedBD.conversionRate || bdDetails.conversionRate)
                             : 0}%
                         </p>
                         <p className="text-xs text-gray-600">Conversion Rate</p>
@@ -884,7 +884,7 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
                   {/* Call History & Follow-up Analytics */}
                   <div className="lead-advanced-call-history">
                     <h4>Call History & Follow-up Analytics</h4>
-                    
+
                     {/* Statistics Cards */}
                     <div className="call-history-stats">
                       <div className="stat-card">
@@ -897,14 +897,14 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
                           </div>
                           <div className="stat-label">Total Calls</div>
                         </div>
-                        <CircularChart 
-                          percentage={Math.min((bdDetails.callHistory?.length || 0) * 20, 100)} 
-                          size={50} 
-                          strokeWidth={4} 
-                          color="#10b981" 
+                        <CircularChart
+                          percentage={Math.min((bdDetails.callHistory?.length || 0) * 20, 100)}
+                          size={50}
+                          strokeWidth={4}
+                          color="#10b981"
                         />
                       </div>
-                      
+
                       <div className="stat-card">
                         <div className="stat-icon">
                           <MessageSquare size={20} color="#3b82f6" />
@@ -915,35 +915,35 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
                           </div>
                           <div className="stat-label">Follow-ups</div>
                         </div>
-                        <CircularChart 
-                          percentage={Math.min((bdDetails.followUps?.length || 0) * 25, 100)} 
-                          size={50} 
-                          strokeWidth={4} 
-                          color="#3b82f6" 
+                        <CircularChart
+                          percentage={Math.min((bdDetails.followUps?.length || 0) * 25, 100)}
+                          size={50}
+                          strokeWidth={4}
+                          color="#3b82f6"
                         />
                       </div>
-                      
+
                       <div className="stat-card">
                         <div className="stat-icon">
                           <PieChart size={20} color="#8b5cf6" />
                         </div>
                         <div className="stat-info">
                           <div className="stat-number">
-                            {bdDetails.callHistory?.length > 0 
+                            {bdDetails.callHistory?.length > 0
                               ? Math.round(bdDetails.callHistory.reduce((acc, call) => acc + (call.duration || 0), 0) / bdDetails.callHistory.length)
                               : 0
                             }s
                           </div>
                           <div className="stat-label">Avg Duration</div>
                         </div>
-                        <CircularChart 
-                          percentage={bdDetails.callHistory?.length > 0 
+                        <CircularChart
+                          percentage={bdDetails.callHistory?.length > 0
                             ? Math.min((bdDetails.callHistory.reduce((acc, call) => acc + (call.duration || 0), 0) / bdDetails.callHistory.length) * 2, 100)
                             : 0
-                          } 
-                          size={50} 
-                          strokeWidth={4} 
-                          color="#8b5cf6" 
+                          }
+                          size={50}
+                          strokeWidth={4}
+                          color="#8b5cf6"
                         />
                       </div>
                     </div>
@@ -965,14 +965,14 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
                               <p><strong>Called by:</strong> {call.userId?.name || call.calledBy || 'Unknown'}</p>
                               <p><strong>Phone:</strong> {
                                 (call.leadPhone && call.leadPhone !== '0' && call.leadPhone !== 0) ? call.leadPhone :
-                                (call.phone && call.phone !== '0' && call.phone !== 0) ? call.phone :
-                                (selectedBD.phone && selectedBD.phone !== '0' && selectedBD.phone !== 0) ? selectedBD.phone :
-                                'Not Available'
+                                  (call.phone && call.phone !== '0' && call.phone !== 0) ? call.phone :
+                                    (selectedBD.phone && selectedBD.phone !== '0' && selectedBD.phone !== 0) ? selectedBD.phone :
+                                      'Not Available'
                               }</p>
                               <p><strong>Time:</strong> {
-                                call.startTime && call.endTime 
-                                  ? `${new Date(call.startTime).toLocaleTimeString()} - ${new Date(call.endTime).toLocaleTimeString()}` 
-                                  : call.startTime 
+                                call.startTime && call.endTime
+                                  ? `${new Date(call.startTime).toLocaleTimeString()} - ${new Date(call.endTime).toLocaleTimeString()}`
+                                  : call.startTime
                                     ? new Date(call.startTime).toLocaleTimeString()
                                     : 'Unknown time'
                               }</p>
@@ -998,11 +998,10 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
                       <div className="space-y-2">
                         {bdDetails.recentActivity.slice(0, 5).map((activity, index) => (
                           <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                            <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
-                              activity.type === 'converted' ? 'bg-green-500' :
+                            <div className={`w-3 h-3 rounded-full flex-shrink-0 ${activity.type === 'converted' ? 'bg-green-500' :
                               activity.type === 'assigned' ? 'bg-blue-500' :
-                              activity.type === 'contacted' ? 'bg-yellow-500' : 'bg-gray-500'
-                            }`} />
+                                activity.type === 'contacted' ? 'bg-yellow-500' : 'bg-gray-500'
+                              }`} />
                             <div className="flex-1">
                               <p className="text-sm text-gray-900 font-medium">{activity.description}</p>
                               <p className="text-xs text-gray-500">{new Date(activity.date).toLocaleDateString()}</p>
@@ -1035,7 +1034,7 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
             <Home size={20} />
             <span className="text-xs mt-1">Home</span>
           </button>
-          
+
           <button
             onClick={() => navigate('/leads')}
             className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
@@ -1043,7 +1042,7 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
             <Briefcase size={20} />
             <span className="text-xs mt-1">Tasks</span>
           </button>
-          
+
           <button
             onClick={() => navigate('/admin/bd-analytics')}
             className="flex flex-col items-center p-2 text-blue-600 hover:text-blue-700 transition-colors"
@@ -1051,7 +1050,7 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
             <BarChart3 size={20} />
             <span className="text-xs mt-1">Analytics</span>
           </button>
-          
+
           <button
             onClick={() => navigate('/users')}
             className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
@@ -1059,7 +1058,7 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
             <Users size={20} />
             <span className="text-xs mt-1">Users</span>
           </button>
-          
+
           <button
             onClick={() => navigate('/admin/manage-users')}
             className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
@@ -1067,7 +1066,7 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
             <Settings size={20} />
             <span className="text-xs mt-1">Manage</span>
           </button>
-          
+
           <button
             onClick={() => setRightMenuOpen(!rightMenuOpen)}
             className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
