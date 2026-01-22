@@ -6,6 +6,8 @@ import { Button } from '@/layout/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/layout/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { apiUrl } from "@/config/apiConfig";
+import PostCallModal from "@/features/calling/PostCallModal";
+import FollowUpModal from "@/features/employee/follow-up/FollowUpModal";
 
 const LeadTableMobile = ({ userRole }) => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -23,6 +25,10 @@ const LeadTableMobile = ({ userRole }) => {
   const [callHistory, setCallHistory] = useState({});
   const [forwardingLead, setForwardingLead] = useState(null);
   const [assignableUsers, setAssignableUsers] = useState([]);
+  const [showPostCallModal, setShowPostCallModal] = useState(false);
+  const [activeCallLead, setActiveCallLead] = useState(null);
+  const [showFollowUpModal, setShowFollowUpModal] = useState(false);
+  const [selectedFollowUpLead, setSelectedFollowUpLead] = useState(null);
   const { toast } = useToast();
   const leadsPerPage = 10;
   const currentUserId = localStorage.getItem("userId");
@@ -126,13 +132,25 @@ const LeadTableMobile = ({ userRole }) => {
 
   const handleCall = (lead) => {
     if (lead.phone) {
+      setActiveCallLead(lead);
       window.location.href = `tel:${lead.phone}`;
+      setShowPostCallModal(true);
       toast({
         title: "Calling",
         description: `Calling ${lead.name}...`,
         status: "info",
       });
     }
+  };
+
+  const handlePostCallInterested = (lead) => {
+    setSelectedFollowUpLead(lead);
+    setShowFollowUpModal(true);
+  };
+
+  const handlePostCallNotInterested = (leadId) => {
+    // Remove from list immediately
+    setLeadsList(prev => prev.filter(l => l._id !== leadId));
   };
 
   const handleEmail = (lead) => {
@@ -772,6 +790,27 @@ const LeadTableMobile = ({ userRole }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Post Call Modal */}
+      <PostCallModal
+        isOpen={showPostCallModal}
+        onClose={() => setShowPostCallModal(false)}
+        lead={activeCallLead}
+        onInterested={handlePostCallInterested}
+        onNotInterested={handlePostCallNotInterested}
+      />
+
+      {/* Follow Up Modal for Post Call */}
+      {showFollowUpModal && selectedFollowUpLead && (
+        <FollowUpModal
+          lead={selectedFollowUpLead}
+          onClose={() => {
+            setShowFollowUpModal(false);
+            setSelectedFollowUpLead(null);
+          }}
+          userRole={currentUserRole}
+        />
       )}
 
       {/* Advanced Options Modal */}
