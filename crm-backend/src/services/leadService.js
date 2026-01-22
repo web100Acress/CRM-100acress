@@ -138,14 +138,8 @@ const getLeadsForUser = async (user) => {
       // Boss sees everything
       query = {};
     } else if (userRole === 'hod' || userRole === 'head-admin' || userRole === 'head') {
-      // HOD sees leads they created OR leads where they are in the assignment chain
-      query = {
-        $or: [
-          { createdBy: user._id },
-          { 'assignmentChain.userId': userId },
-          { assignedTo: userId }
-        ]
-      };
+      // HOD sees ALL leads (including BD-created leads) - they have full visibility
+      query = {};
     } else if (userRole === 'team-leader') {
       // Team Leader sees leads assigned to them OR leads where they are in the assignment chain
       query = {

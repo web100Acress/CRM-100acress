@@ -387,14 +387,6 @@ const LeadTable = ({ userRole }) => {
     const currentUserId = localStorage.getItem("userId");
     const currentUserName = localStorage.getItem("userName") || localStorage.getItem("name") || 'Boss';
 
-    // Debug: Check localStorage values
-    console.log('🔍 Debug - UserMap Creation:', {
-      currentUserRole,
-      currentUserId,
-      currentUserName,
-      localStorageKeys: Object.keys(localStorage).filter(key => key.includes('user') || key.includes('name') || key.includes('role'))
-    });
-
     if (currentUserId && !map[currentUserId]) {
       map[currentUserId] = {
         name: currentUserName,
