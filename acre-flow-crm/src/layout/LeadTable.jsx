@@ -72,10 +72,7 @@ const LeadTable = ({ userRole }) => {
   // Helper function for API calls using centralized config
   const apiCall = async (endpoint, options = {}) => {
     const token = localStorage.getItem("token");
-
-    const url = `${apiUrl}${endpoint}`; // endpoint should start with / usually if apiUrl doesn't end with one.
-    // API_BASE_URL doesn't have trailing slash.
-
+    const url = `${apiUrl}${endpoint}`;
     console.log(`🔍 API Call: ${url}`);
 
     const response = await fetch(url, {
@@ -389,14 +386,6 @@ const LeadTable = ({ userRole }) => {
     const currentUserRole = localStorage.getItem("userRole");
     const currentUserId = localStorage.getItem("userId");
     const currentUserName = localStorage.getItem("userName") || localStorage.getItem("name") || 'Boss';
-
-    // Debug: Check localStorage values
-    console.log('🔍 Debug - UserMap Creation:', {
-      currentUserRole,
-      currentUserId,
-      currentUserName,
-      localStorageKeys: Object.keys(localStorage).filter(key => key.includes('user') || key.includes('name') || key.includes('role'))
-    });
 
     if (currentUserId && !map[currentUserId]) {
       map[currentUserId] = {
@@ -1242,30 +1231,9 @@ const LeadTable = ({ userRole }) => {
                     <div className="lead-info-display text-xs text-slate-500">ID: #{generateShortId(lead._id)}</div>
                     <div className="flex flex-col gap-0.5 text-[10px] text-slate-400 mt-1">
                       <div>by: {(() => {
-                        // Debug: Log assignment chain data
-                        if (lead._id === 'test-lead-id' || lead.name?.includes('test')) {
-                          console.log('🔍 Debug - Assignment Chain for lead:', lead.name, {
-                            assignmentChain: lead.assignmentChain,
-                            createdBy: lead.createdBy,
-                            assignedTo: lead.assignedTo,
-                            userMapKeys: Object.keys(userMap)
-                          });
-                        }
-
                         // Try to get assigner from assignment chain first
                         if (lead.assignmentChain && lead.assignmentChain.length > 0) {
                           const lastAssignment = lead.assignmentChain[lead.assignmentChain.length - 1];
-
-                          // Debug: Check assignment structure
-                          if (lead.name?.includes('aman') || lead.name?.includes('tiwari')) {
-                            console.log('🔍 Debug - Aman Tiwari Lead:', {
-                              leadName: lead.name,
-                              assignmentChain: lead.assignmentChain,
-                              lastAssignment: lastAssignment,
-                              assignedByData: lastAssignment.assignedBy,
-                              assignedByType: typeof lastAssignment.assignedBy
-                            });
-                          }
 
                           if (lastAssignment.assignedBy && lastAssignment.assignedBy.name) {
                             return `${lastAssignment.assignedBy.name} (${lastAssignment.assignedBy.role})`;
