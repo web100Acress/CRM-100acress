@@ -1213,7 +1213,7 @@ const LeadTable = ({ userRole }) => {
         <table className="lead-data-table">
           <thead>
             <tr>
-              <th>Lead Info</th>
+              <th>Client Name</th>
               <th>Contact</th>
               <th>Property</th>
               <th>Status</th>
@@ -1261,15 +1261,16 @@ const LeadTable = ({ userRole }) => {
                     <div className="lead-info-display">
                       <MapPin size={14} /> {lead.location?.split(' ')[0]}{lead.location?.split(' ').length > 1 ? '...' : ''}
                     </div>
-                    {lead.projectName && (
-                      <div className="lead-info-display">
-                        <PieChart size={14} /> {lead.projectName}
-                      </div>
-                    )}
+                    
                   </td>
                   <td data-label="Property">
                     <div className="lead-info-display">{lead.property}</div>
                     <div className="lead-info-display">{lead.budget}</div>
+                    {lead.projectName && (
+                      <div className="lead-info-display">
+                        {lead.projectName}
+                      </div>
+                    )}
                   </td>
                   <td data-label="Status">
                     <select
@@ -1671,15 +1672,27 @@ const LeadTable = ({ userRole }) => {
               </div>
               <div className="mobile-lead-info">
                 <p className="mobile-lead-name">{lead.name}</p>
+                {lead.projectName && (
+                  <p className="mobile-lead-project">
+                    {(() => {
+                      const cleanName = lead.projectName.replace('Name : ', '').trim();
+                      const words = cleanName.split(' ');
+                      if (words.length > 2) {
+                        return (
+                          <>
+                            {words.slice(0, 2).join(' ')}<br />
+                            {words.slice(2).join(' ')}
+                          </>
+                        );
+                      }
+                      return cleanName;
+                    })()}
+                  </p>
+                )}
                 <p className="mobile-lead-contact">{lead.phone}</p>
                 {lead.location && (
                   <p className="mobile-lead-location">
                     <MapPin size={12} /> {lead.location?.split(' ')[0]}{lead.location?.split(' ').length > 1 ? '...' : ''}
-                  </p>
-                )}
-                {lead.projectName && (
-                  <p className="mobile-lead-project">
-                    <PieChart size={12} /> {lead.projectName}
                   </p>
                 )}
                 {lead.lastContact && (
