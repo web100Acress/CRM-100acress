@@ -46,6 +46,7 @@
     "@reduxjs/toolkit": "^2.8.2",
     "@tanstack/react-query": "^5.56.2",
     "@tippyjs/react": "^4.2.6",
+    "@twilio/voice-sdk": "^2.18.0",
     "antd": "^6.0.1",
     "axios": "^1.13.2",
     "caniuse-lite": "^1.0.30001727",
