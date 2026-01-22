@@ -14,9 +14,6 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
     time: "",
     place: "",
     relatedTo: lead?.name || "",
-    meetingMode: "online",
-    onlinePlatform: "",
-    workProgress: lead?.workProgress || "pending",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -52,7 +49,6 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
       console.log('🔍 Follow-up API URL:', followUpUrl);
       console.log('🔍 Follow-up payload:', followUpData);
 
-      // 1. Submit Follow-up
       const res = await fetch(followUpUrl, {
         method: "POST",
         headers: {
@@ -74,20 +70,6 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
       }
 
       if (!res.ok) throw new Error(data.message || "Failed to submit follow-up");
-
-      // 2. Update Lead Status (Work Progress)
-      if (formData.workProgress) {
-        const updateUrl = API_ENDPOINTS.LEADS_UPDATE(lead._id);
-        await fetch(updateUrl, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${localStorage.getItem('token')}`
-          },
-          body: JSON.stringify({ workProgress: formData.workProgress })
-        });
-      }
-
       console.log('✅ Follow-up submitted successfully!');
       setLoading(false);
       onClose();
@@ -168,57 +150,8 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-gray-700">Meeting Mode</label>
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="meetingMode"
-                    value="online"
-                    checked={formData.meetingMode === 'online'}
-                    onChange={handleChange}
-                    className="text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700">Online</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="meetingMode"
-                    value="offline"
-                    checked={formData.meetingMode === 'offline'}
-                    onChange={handleChange}
-                    className="text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700">Offline</span>
-                </label>
-              </div>
-            </div>
-
-            {formData.meetingMode === 'online' && (
-              <div className="flex flex-col gap-2">
-                <label htmlFor="onlinePlatform" className="text-sm font-medium text-gray-700">
-                  Platform
-                </label>
-                <select
-                  id="onlinePlatform"
-                  name="onlinePlatform"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                  value={formData.onlinePlatform}
-                  onChange={handleChange}
-                >
-                  <option value="">Select Platform</option>
-                  <option value="call">Via Call</option>
-                  <option value="whatsapp">Via WhatsApp</option>
-                  <option value="zoom">Zoom</option>
-                  <option value="gmeet">Google Meet</option>
-                </select>
-              </div>
-            )}
-
-            <div className="flex flex-col gap-2">
               <label htmlFor="place" className="text-sm font-medium text-gray-700">
-                {formData.meetingMode === 'offline' ? 'Location / Address' : 'Meeting Details'}
+                Meeting Place
               </label>
               <input
                 type="text"
@@ -227,26 +160,8 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
                 value={formData.place}
                 onChange={handleChange}
-                placeholder={formData.meetingMode === 'offline' ? "Enter meeting location" : "e.g., Online Meeting Link or details"}
+                placeholder="e.g., Online Meeting, Client Office"
               />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label htmlFor="workProgress" className="text-sm font-medium text-gray-700">
-                Lead Status Update
-              </label>
-              <select
-                id="workProgress"
-                name="workProgress"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                value={formData.workProgress}
-                onChange={handleChange}
-                required
-              >
-                <option value="pending">Pending</option>
-                <option value="inprogress">In Progress</option>
-                <option value="done">Done</option>
-              </select>
             </div>
 
             <button

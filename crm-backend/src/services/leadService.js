@@ -146,16 +146,11 @@ const getLeadsForUser = async (user) => {
         $or: [
           { assignedTo: userId },
           { 'assignmentChain.userId': userId }
-        ],
-        status: { $nin: ['Not Interested', 'Closed'] }
+        ]
       };
     } else {
       // BD/Employee sees only leads assigned to them
-      // BD/Employee sees only leads assigned to them AND not closed/not interested
-      query = {
-        assignedTo: userId,
-        status: { $nin: ['Not Interested', 'Closed'] }
-      };
+      query = { assignedTo: userId };
     }
 
     const leads = await Lead.find(query).sort({ createdAt: -1 });

@@ -63,14 +63,14 @@ async function ensureMissedCallLead({ phone }) {
     createdBy: assignee ? assignee._id : undefined,
     assignmentChain: assignee
       ? [
-          {
-            userId: assignee._id.toString(),
-            role: assignee.role,
-            name: assignee.name,
-            assignedAt: new Date(),
-            status: 'assigned',
-          },
-        ]
+        {
+          userId: assignee._id.toString(),
+          role: assignee.role,
+          name: assignee.name,
+          assignedAt: new Date(),
+          status: 'assigned',
+        },
+      ]
       : [],
   });
 
