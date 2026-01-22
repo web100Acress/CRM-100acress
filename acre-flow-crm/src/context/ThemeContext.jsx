@@ -12,13 +12,13 @@ export const useTheme = () => {
 
 export const ThemeProvider = ({ children }) => {
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    // Check localStorage or system preference
+    // Check localStorage first (user preference)
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme) {
       return savedTheme === 'dark';
     }
-    // Check system preference
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    // Default to light mode, not system preference
+    return false;
   });
 
   useEffect(() => {
