@@ -18,6 +18,25 @@ textarea::placeholder {
   opacity: 1;
 }
 
+/* Dark mode inputs */
+.dark input,
+.dark select,
+.dark textarea,
+.dark-mode input,
+.dark-mode select,
+.dark-mode textarea {
+  background-color: #1f2937 !important;
+  color: #ffffff !important;
+  border: 1px solid #374151;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder,
+.dark-mode input::placeholder,
+.dark-mode textarea::placeholder {
+  color: #9ca3af !important;
+}
+
 /* Search bar specific fix */
 .search-input,
 input[type="search"],
