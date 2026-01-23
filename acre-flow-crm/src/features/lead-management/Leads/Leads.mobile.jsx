@@ -87,6 +87,8 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
   const currentUserRole = localStorage.getItem('userRole');
   const [notifications, setNotifications] = useState([]);
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+  const [showPostCallActions, setShowPostCallActions] = useState(false);
+  const [postCallLead, setPostCallLead] = useState(null);
 
   // Socket.io connection for real-time notifications
   useEffect(() => {
@@ -1187,6 +1189,48 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         </div>
       </div>
 
+
+      {/* Post Call Actions Modal */}
+      {showPostCallActions && postCallLead && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 pointer-events-auto">
+          <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl scale-100 transition-all">
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Phone className="w-8 h-8 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">How was the call?</h3>
+              <p className="text-gray-500 mb-6">
+                Did the lead show interest in accurate properties?
+              </p>
+
+              <div className="space-y-3">
+                <button
+                  onClick={() => {
+                    setShowPostCallActions(false);
+                    handleFollowUp(postCallLead);
+                  }}
+                  className="w-full py-3 px-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-xl hover:from-green-600 hover:to-emerald-700 shadow-lg hover:shadow-green-500/25 transition-all duration-200 flex items-center justify-center gap-2"
+                >
+                  <CheckCircle size={20} />
+                  Interested
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowPostCallActions(false);
+                    setPostCallLead(null);
+                  }}
+                  className="w-full py-3 px-4 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all duration-200 flex items-center justify-center gap-2"
+                >
+                  <XCircle size={20} />
+                  Not Interested
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mobile Sidebar */}
       <MobileSidebar
         userRole={userRole}
@@ -1383,14 +1427,25 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     }
 
     // Close popup after a delay
+    // Close popup after a delay, but check for post-call actions first
     setTimeout(() => {
       const savedLeadId = callData?.leadId;
       setShowCallPopup(false);
+
+      // Find the lead to show post-call actions for
+      if (savedLeadId) {
+        const lead = leads.find(l => String(l._id) === String(savedLeadId));
+        if (lead) {
+          setPostCallLead(lead);
+          setShowPostCallActions(true);
+        }
+      }
+
       setCallData(null);
       setCallDuration(0);
       setCallStatus('connecting');
 
-      // Scroll to the lead that was called
+      // Scroll to the lead that was called (will happen behind the modal)
       if (savedLeadId) {
         setTimeout(() => {
           const leadElement = document.getElementById(`lead-${savedLeadId}`);
@@ -1440,7 +1495,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
 
           // Fetch call history for this lead after a short delay
           setTimeout(() => {
-            fetchLeadDetailsCallHistory(callRecord.leadId);
+            fetchLeadCallHistory(callRecord.leadId);
           }, 500);
         }
       }
@@ -3380,127 +3435,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                 )}
 
                 {/* Actions */}
-                <div className="pt-4 border-t flex gap-3">
 
-                  <button
-                    onClick={() => {
-                      setShowAssignmentChain(false);
-                      handleFollowUp(selectedLeadForChain);
-                    }}
-                    className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-2.5 text-white font-medium hover:bg-blue-700 transition"
-                  >
-                    <MessageSquare size={16} />
-                    Follow Up
-                  </button>
-                  {(() => {
-                    const isLeadCreator = selectedLeadForChain.createdBy === currentUserId;
-                    const isAssignedToUser = String(selectedLeadForChain.assignedTo) === String(currentUserId);
-
-                    // Boss who created lead - Show Call History (not Call button)
-                    if ((currentUserRole === 'boss' || currentUserRole === 'super-admin') && isLeadCreator && !isAssignedToUser) {
-                      return (
-                        <button
-                          onClick={() => {
-                            setShowAssignmentChain(false);
-                            setTimeout(() => {
-                              const callHistorySection = document.querySelector('.lead-details-call-history-section');
-                              if (callHistorySection) {
-                                callHistorySection.scrollIntoView({ behavior: 'smooth' });
-                              }
-                            }, 100);
-                          }}
-                          className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 py-2.5 text-white font-medium hover:from-purple-600 hover:to-purple-700 transition"
-                          title="View Call History"
-                        >
-                          <Clock size={16} />
-                          Call History
-                        </button>
-                      );
-                    }
-
-                    // HOD who created lead and forwarded to BD/TL - Show Call History (not Call button)
-                    if (currentUserRole === 'hod' && isLeadCreator && isAssignedToUser && selectedLeadForChain.assignedTo !== currentUserId) {
-                      return (
-                        <button
-                          onClick={() => {
-                            setShowAssignmentChain(false);
-                            setTimeout(() => {
-                              const callHistorySection = document.querySelector('.lead-details-call-history-section');
-                              if (callHistorySection) {
-                                callHistorySection.scrollIntoView({ behavior: 'smooth' });
-                              }
-                            }, 100);
-                          }}
-                          className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 py-2.5 text-white font-medium hover:from-purple-600 hover:to-purple-700 transition"
-                          title="View Call History"
-                        >
-                          <Clock size={16} />
-                          Call History
-                        </button>
-                      );
-                    }
-
-                    // Assigned user with pending work - Show Call button
-                    if (isAssignedToUser && (!selectedLeadForChain.workProgress || selectedLeadForChain.workProgress === 'pending')) {
-                      return (
-                        <button
-                          onClick={() => {
-                            setShowAssignmentChain(false);
-                            handleCallLead(
-                              selectedLeadForChain.phone,
-                              selectedLeadForChain._id,
-                              selectedLeadForChain.name
-                            );
-                          }}
-                          className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-green-600 py-2.5 text-white font-medium hover:bg-green-700 transition"
-                        >
-                          <PhoneCall size={16} />
-                          Call Now
-                        </button>
-                      );
-                    }
-
-                    // Assigned user working on lead - Show Call History
-                    if (isAssignedToUser && selectedLeadForChain.workProgress && selectedLeadForChain.workProgress !== 'pending') {
-                      return (
-                        <button
-                          onClick={() => {
-                            setShowAssignmentChain(false);
-                            setTimeout(() => {
-                              const callHistorySection = document.querySelector('.lead-details-call-history-section');
-                              if (callHistorySection) {
-                                callHistorySection.scrollIntoView({ behavior: 'smooth' });
-                              }
-                            }, 100);
-                          }}
-                          className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 py-2.5 text-white font-medium hover:from-purple-600 hover:to-purple-700 transition"
-                          title="View Call History"
-                        >
-                          <Clock size={16} />
-                          Call History
-                        </button>
-                      );
-                    }
-
-                    // Default Call button for other cases
-                    return (
-                      <button
-                        onClick={() => {
-                          setShowAssignmentChain(false);
-                          handleCallLead(
-                            selectedLeadForChain.phone,
-                            selectedLeadForChain._id,
-                            selectedLeadForChain.name
-                          );
-                        }}
-                        className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-purple-600 py-2.5 text-white font-medium hover:bg-purple-700 transition"
-                      >
-                        <PhoneCall size={16} />
-                        Call Now
-                      </button>
-                    );
-                  })()}
-                </div>
               </div>
             </DialogContent>
           </Dialog>
@@ -3919,8 +3854,8 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg md:hidden">
         <div className="flex justify-around items-center py-2">
           <button
-            onClick={() => navigate('/dashboard')}
-            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
+            onClick={() => navigate('/employee-dashboard')}
+            className="flex flex-col items-center p-2 text-blue-600 hover:text-blue-700 transition-colors"
           >
             <Home size={20} />
             <span className="text-xs mt-1">Home</span>
@@ -3932,22 +3867,6 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
           >
             <Briefcase size={20} />
             <span className="text-xs mt-1">Tasks</span>
-          </button>
-
-          <button
-            onClick={() => navigate('/reports')}
-            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
-          >
-            <BarChart3 size={20} />
-            <span className="text-xs mt-1">Reports</span>
-          </button>
-
-          <button
-            onClick={() => navigate('/calendar')}
-            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
-          >
-            <Calendar size={20} />
-            <span className="text-xs mt-1">Calendar</span>
           </button>
 
           <button

@@ -601,12 +601,7 @@ const BDDashboardMobile = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
 
-        {/* Banner Text Overlay */}
-        {/* <div className="absolute bottom-4 left-4 right-4">
-          <h2 className="text-white text-xl font-bold drop-shadow-lg">
-            {getDashboardDescription()}
-          </h2>
-        </div> */}
+
       </div>
     </div>
   );
@@ -627,7 +622,10 @@ const BDDashboardMobile = () => {
       <div className="p-4 space-y-4 pb-20 md:pb-4">
         {/* Enhanced Stats Cards */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 shadow-lg transform hover:scale-105 transition-all duration-200 border border-blue-200">
+          <div
+            onClick={() => navigate('/leads')}
+            className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 shadow-lg transform hover:scale-105 transition-all duration-200 border border-blue-200 cursor-pointer"
+          >
             <div className="flex items-center justify-between mb-2">
               <Briefcase className="text-blue-100" size={20} />
               <span className="text-blue-100 text-xs font-medium bg-blue-700/50 px-2 py-1 rounded-full">Active</span>
@@ -640,7 +638,10 @@ const BDDashboardMobile = () => {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 shadow-lg transform hover:scale-105 transition-all duration-200 border border-green-200">
+          <div
+            onClick={() => navigate('/leads')}
+            className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 shadow-lg transform hover:scale-105 transition-all duration-200 border border-green-200 cursor-pointer"
+          >
             <div className="flex items-center justify-between mb-2">
               <CheckCircle className="text-green-100" size={20} />
               <span className="text-green-100 text-xs font-medium bg-green-700/50 px-2 py-1 rounded-full">Done</span>
@@ -653,7 +654,10 @@ const BDDashboardMobile = () => {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-4 shadow-lg transform hover:scale-105 transition-all duration-200 border border-orange-200">
+          <div
+            onClick={() => navigate('/leads')}
+            className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-4 shadow-lg transform hover:scale-105 transition-all duration-200 border border-orange-200 cursor-pointer"
+          >
             <div className="flex items-center justify-between mb-2">
               <Clock className="text-orange-100" size={20} />
               <span className="text-orange-100 text-xs font-medium bg-orange-700/50 px-2 py-1 rounded-full">Pending</span>
@@ -666,7 +670,10 @@ const BDDashboardMobile = () => {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 shadow-lg transform hover:scale-105 transition-all duration-200 border border-purple-200">
+          <div
+            onClick={() => navigate('/reports')}
+            className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 shadow-lg transform hover:scale-105 transition-all duration-200 border border-purple-200 cursor-pointer"
+          >
             <div className="flex items-center justify-between mb-2">
               <TrendingUp className="text-purple-100" size={20} />
               <span className="text-purple-100 text-xs font-medium bg-purple-700/50 px-2 py-1 rounded-full">Score</span>
@@ -963,22 +970,6 @@ const BDDashboardMobile = () => {
           >
             <Briefcase size={20} />
             <span className="text-xs mt-1">Tasks</span>
-          </button>
-
-          <button
-            onClick={() => navigate('/reports')}
-            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
-          >
-            <BarChart3 size={20} />
-            <span className="text-xs mt-1">Reports</span>
-          </button>
-
-          <button
-            onClick={() => navigate('/calendar')}
-            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
-          >
-            <Calendar size={20} />
-            <span className="text-xs mt-1">Calendar</span>
           </button>
 
           <button

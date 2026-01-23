@@ -14,7 +14,9 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
     time: "",
     place: "",
     relatedTo: lead?.name || "",
+    status: lead?.workProgress || 'pending',
   });
+  const [meetingMode, setMeetingMode] = useState('Online');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -59,6 +61,23 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
         credentials: "include"
       });
 
+      // Update Lead Status
+      if (formData.status && formData.status !== lead.workProgress) {
+        try {
+          await fetch(`${API_ENDPOINTS.LEADS}/${lead._id}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ workProgress: formData.status })
+          });
+          console.log('✅ Lead status updated to:', formData.status);
+        } catch (statusErr) {
+          console.error('❌ Failed to update lead status:', statusErr);
+        }
+      }
+
       console.log('🔍 Follow-up response status:', res.status);
 
       let data = {};
@@ -82,7 +101,7 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl shadow-2xl border border-gray-200 p-0">
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl shadow-2xl border border-gray-200 p-0 animate-in fade-in zoom-in-95 slide-in-from-bottom-4 duration-300 ease-out">
         <button
           type="button"
           onClick={onClose}
@@ -118,7 +137,7 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
               />
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <label htmlFor="date" className="text-sm font-medium text-gray-700">
                   Date
@@ -150,18 +169,89 @@ const FollowUpModal = ({ lead, onClose, userRole }) => {
             </div>
 
             <div className="flex flex-col gap-2">
-              <label htmlFor="place" className="text-sm font-medium text-gray-700">
-                Meeting Place
+              <label className="text-sm font-medium text-gray-700">
+                Meeting Mode
               </label>
-              <input
-                type="text"
-                id="place"
-                name="place"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                value={formData.place}
+              <div className="flex gap-4 p-1 bg-gray-100 rounded-lg w-fit mb-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMeetingMode('Online');
+                    setFormData(prev => ({ ...prev, place: 'Call' })); // Default to Call
+                  }}
+                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${meetingMode === 'Online'
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                >
+                  Online
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMeetingMode('Offline');
+                    setFormData(prev => ({ ...prev, place: '' })); // Clear for manual input
+                  }}
+                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${meetingMode === 'Offline'
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                >
+                  Offline
+                </button>
+              </div>
+
+              {meetingMode === 'Online' ? (
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="place" className="text-xs text-gray-500">
+                    Platform
+                  </label>
+                  <select
+                    id="place"
+                    name="place"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 bg-white"
+                    value={formData.place}
+                    onChange={handleChange}
+                  >
+                    <option value="Call">Call</option>
+                    <option value="WhatsApp">WhatsApp</option>
+                    <option value="Zoom">Zoom</option>
+                    <option value="Google Meet">Google Meet</option>
+                  </select>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="place" className="text-xs text-gray-500">
+                    Location Address
+                  </label>
+                  <input
+                    type="text"
+                    id="place"
+                    name="place"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                    value={formData.place}
+                    onChange={handleChange}
+                    placeholder="e.g., Client Office, Site Visit"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label htmlFor="status" className="text-sm font-medium text-gray-700">
+                Update Status
+              </label>
+              <select
+                id="status"
+                name="status"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 bg-white"
+                value={formData.status}
                 onChange={handleChange}
-                placeholder="e.g., Online Meeting, Client Office"
-              />
+              >
+                <option value="pending">Pending</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Done">Done</option>
+              </select>
             </div>
 
             <button
