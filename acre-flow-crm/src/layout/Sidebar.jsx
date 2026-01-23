@@ -97,12 +97,14 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
       { path: '/', icon: Home, label: 'Dashboard' },
       { path: '/leads', icon: Building2, label: 'Assigned Leads' },
       { path: '/calls', icon: PhoneCall, label: 'Call Logs' },
+      { path: '/leads?status=not-interested', icon: X, label: 'Not Interested' },
       { path: '/whatsapp-chat', icon: MessageCircle, label: 'Management Chat' },
       { path: '/admin/bd-analytics', icon: BarChart3, label: 'BD Analytics' },
     ],
     bd: [
       { path: '/employee-dashboard', icon: Home, label: 'Dashboard' },
       { path: '/leads', icon: Building2, label: 'My Leads' },
+      { path: '/leads?status=not-interested', icon: X, label: 'Not Interested' },
       { path: '/whatsapp-chat', icon: MessageCircle, label: 'Management Chat' },
     ]
   };
@@ -143,6 +145,7 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
     if (path?.includes('/whatsapp')) return 'whatsapp';
     if (path?.includes('/calling-settings')) return 'calling_settings';
     if (path?.includes('/users')) return 'users';
+    if (path?.includes('not-interested')) return 'not_interested';
     return null;
   };
 

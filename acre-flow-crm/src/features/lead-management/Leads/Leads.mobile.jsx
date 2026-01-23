@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, Filter, RefreshCw, Menu, X, Home, Settings, LogOut, BarChart3, Plus, Phone, Mail, MessageSquare, MessageCircle, Eye, User, Users, MapPin, UserCheck, Download, Trash2, ArrowRight, PhoneCall, PieChart, Calendar, Clock, TrendingUp, Activity, Target, Award, CheckCircle, XCircle, Building2, DollarSign, Mic, Volume2, Video, Edit, ArrowRight as ForwardIcon, Briefcase, Camera, Lock, ChevronRight, Bell } from 'lucide-react';
 import MobileSidebar from '@/layout/MobileSidebar';
 import { Badge } from '@/layout/badge';
@@ -19,6 +19,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/layout/popover';
 
 const LeadsMobile = ({ userRole = 'bd' }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('all-leads');
   const [searchQuery, setSearchQuery] = useState('');
@@ -259,11 +260,12 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         const leads = json.data || json.payload || json || [];
         console.log('Leads extracted:', leads);
 
-        // Calculate real stats
-        const totalLeads = leads.length;
-        const coldLeads = leads.filter(lead => lead.status === 'Cold').length;
-        const warmLeads = leads.filter(lead => lead.status === 'Warm').length;
-        const hotLeads = leads.filter(lead => lead.status === 'Hot').length;
+        // Calculate real stats (exclude not-interested leads from main counts)
+        const activeLeads = leads.filter(lead => lead.status !== 'not-interested');
+        const totalLeads = activeLeads.length;
+        const coldLeads = activeLeads.filter(lead => lead.status === 'Cold').length;
+        const warmLeads = activeLeads.filter(lead => lead.status === 'Warm').length;
+        const hotLeads = activeLeads.filter(lead => lead.status === 'Hot').length;
 
         setStats({
           totalLeads,
@@ -279,8 +281,85 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     };
 
     fetchStats();
+    fetchStats();
     fetchAssignableUsers();
   }, []);
+
+  // Check URL params for status filter
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const statusParam = params.get('status');
+    if (statusParam === 'not-interested') {
+      setActiveTab('not-interested');
+      setStatusFilter('not-interested');
+    }
+  }, [location.search]);
+
+  // Handle status update
+  const handleUpdateStatus = async (leadId, newStatus) => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      console.log('🔄 Updating lead status:', {
+        leadId,
+        newStatus,
+        token: token ? 'Present' : 'Missing',
+        apiUrl: `${apiUrl}/api/leads/${leadId}`
+      });
+
+      const response = await fetch(`${apiUrl}/api/leads/${leadId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      console.log('📡 Status update response:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Status Updated",
+          description: "Lead marked as Not Interested",
+        });
+
+        // Remove from current list if looking at active leads
+        setLeads(prev => prev.map(l => l._id === leadId ? { ...l, status: newStatus } : l));
+
+        // If in post call actions, close it
+        setShowPostCallActions(false);
+        setPostCallLead(null);
+      } else {
+        const errorText = await response.text();
+        console.error('❌ API Error Response:', errorText);
+        throw new Error(`Failed to update status: ${response.status} ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+      
+      let errorMessage = "Failed to update lead status";
+      if (error.message.includes('401')) {
+        errorMessage = "Authentication failed. Please login again.";
+      } else if (error.message.includes('403')) {
+        errorMessage = "Access denied. You don't have permission to update this lead.";
+      } else if (error.message.includes('404')) {
+        errorMessage = "Lead not found.";
+      } else if (error.message.includes('500')) {
+        errorMessage = "Server error. Please try again later.";
+      }
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    }
+  };
 
   // Handle visibility change to detect when user returns from phone call
   useEffect(() => {
@@ -809,19 +888,38 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
             name: lead.name,
             phone: lead.phone,
             status: lead.status,
-            location: lead.location
+            location: lead.location,
+            createdBy: lead.createdBy,
+            assignedTo: lead.assignedTo,
+            assignmentChain: lead.assignmentChain
           })));
         }
 
+        // Log current user info for debugging
+        console.log('👤 Current user info:', {
+          userId: localStorage.getItem('userId'),
+          userRole: localStorage.getItem('userRole'),
+          userName: localStorage.getItem('userName')
+        });
+
         setLeads(sortedLeads);
 
-        // Calculate stats
-        const totalLeads = sortedLeads?.length || 0;
-        const coldLeads = sortedLeads?.filter(lead => lead.status === 'Cold').length || 0;
-        const warmLeads = sortedLeads?.filter(lead => lead.status === 'Warm').length || 0;
-        const hotLeads = sortedLeads?.filter(lead => lead.status === 'Hot').length || 0;
+        // Calculate stats (exclude not-interested leads from main counts)
+        const activeLeads = sortedLeads?.filter(lead => lead.status !== 'not-interested') || [];
+        const totalLeads = activeLeads.length;
+        const coldLeads = activeLeads.filter(lead => lead.status === 'Cold').length;
+        const warmLeads = activeLeads.filter(lead => lead.status === 'Warm').length;
+        const hotLeads = activeLeads.filter(lead => lead.status === 'Hot').length;
+        const notInterestedLeads = sortedLeads?.filter(lead => lead.status === 'not-interested').length || 0;
 
-        console.log('📈 Stats calculated:', { totalLeads, coldLeads, warmLeads, hotLeads });
+        console.log('📈 Stats calculated:', { 
+          totalLeads, 
+          coldLeads, 
+          warmLeads, 
+          hotLeads, 
+          notInterestedLeads,
+          allLeads: sortedLeads?.length 
+        });
 
         setStats({
           totalLeads,
@@ -1217,12 +1315,16 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
 
                 <button
                   onClick={() => {
-                    setShowPostCallActions(false);
-                    setPostCallLead(null);
+                    if (postCallLead) {
+                      handleUpdateStatus(postCallLead._id, 'not-interested');
+                    } else {
+                      setShowPostCallActions(false);
+                      setPostCallLead(null);
+                    }
                   }}
-                  className="w-full py-3 px-4 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all duration-200 flex items-center justify-center gap-2"
+                  className="w-full py-3 px-4 bg-white text-gray-700 font-semibold rounded-xl hover:bg-gray-50 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center gap-2"
                 >
-                  <XCircle size={20} />
+                  <XCircle size={20} className="text-gray-500" />
                   Not Interested
                 </button>
               </div>
@@ -1389,9 +1491,6 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
 
     // Set selected lead for analytics
     setSelectedLead(lead);
-
-    // Show analytics modal or navigate to analytics view
-    // For now, let's show a comprehensive analytics modal
     setShowLeadAnalytics(true);
   };
 
@@ -1483,8 +1582,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
           description: `Call duration: ${formatDuration(callRecord.duration)}`,
         });
 
-        // 🎯 AUTOMATICALLY SHOW CALL HISTORY AFTER CALL IS COMPLETED
-        // Find the lead that was called and show its details with call history
+
         const calledLead = leads.find(lead => String(lead._id) === String(callRecord.leadId));
         if (calledLead) {
           console.log('📞 Opening call history for called lead:', calledLead.name);
@@ -2178,6 +2276,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       case 'Hot': return 'bg-red-100 text-red-800 border-red-200';
       case 'Warm': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'Cold': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'not-interested': return 'bg-gray-100 text-gray-800 border-gray-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
@@ -2200,13 +2299,31 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       );
 
       // BD/Employee should only see leads they created, are assigned to, or forwarded
-      if (!isCreator && !isAssigned && !isForwarder) return false;
+      if (!isCreator && !isAssigned && !isForwarder) {
+        return false;
+      }
     }
 
     const matchesSearch = lead.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       lead.phone?.includes(searchTerm);
-    const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
+    
+    // Status filtering logic:
+    // - If statusFilter is 'all', show only active leads (exclude not-interested)
+    // - If statusFilter is 'not-interested', show only not-interested leads
+    // - Otherwise, match the specific status
+    let matchesStatus = false;
+    if (statusFilter === 'all') {
+      // Show all leads EXCEPT not-interested
+      matchesStatus = lead.status !== 'not-interested';
+    } else if (statusFilter === 'not-interested') {
+      // Show ONLY not-interested leads
+      matchesStatus = lead.status === 'not-interested';
+    } else {
+      // Show leads matching the specific status filter
+      matchesStatus = lead.status === statusFilter;
+    }
+    
     return matchesSearch && matchesStatus;
   }).sort((a, b) => {
     const getTime = (l) => {
@@ -2282,7 +2399,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                           <p className="text-blue-100 text-sm">{lead.phone}</p>
                           <div className="flex gap-2 mt-2">
                             <Badge className={`text-xs px-2 py-1 rounded-full ${getStatusColor(lead.status)}`}>
-                              {lead.status || 'New'}
+                              {lead.status === 'not-interested' ? 'Not Interested' : (lead.status || 'New')}
                             </Badge>
                           </div>
                         </div>
@@ -2942,7 +3059,9 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
                       <span className="text-gray-600">Status:</span>
-                      <span className="ml-2 font-medium">{selectedLead.status || 'N/A'}</span>
+                      <span className="ml-2 font-medium">
+                        {selectedLead.status === 'not-interested' ? 'Not Interested' : (selectedLead.status || 'N/A')}
+                      </span>
                     </div>
                     <div>
                       <span className="text-gray-600">Budget:</span>

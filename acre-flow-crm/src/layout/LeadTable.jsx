@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { apiUrl } from "@/config/apiConfig";
 import '@/styles/LeadTable.css'; // Correct path to your CSS file
 import { User } from "lucide-react";
@@ -68,6 +69,17 @@ const LeadTable = ({ userRole }) => {
   const { toast } = useToast();
   const prevAssignedLeadIds = useRef(new Set());
   const currentUserId = localStorage.getItem("userId");
+  const location = useLocation();
+
+  // Update status filter from URL
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const statusParam = params.get('status');
+    if (statusParam) {
+      console.log('Using status from URL:', statusParam);
+      setStatusFilter(statusParam);
+    }
+  }, [location.search]);
 
   // Helper function for API calls using centralized config
   const apiCall = async (endpoint, options = {}) => {
@@ -422,8 +434,23 @@ const LeadTable = ({ userRole }) => {
       lead.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       lead.phone?.includes(searchTerm);
-    const matchesStatus =
-      statusFilter === "all" || lead.status?.toLowerCase() === statusFilter;
+    
+    // Status filtering logic:
+    // - If statusFilter is 'all', show only active leads (exclude not-interested)
+    // - If statusFilter is 'not-interested', show only not-interested leads
+    // - Otherwise, match the specific status
+    let matchesStatus = false;
+    if (statusFilter === 'all') {
+      // Show all leads EXCEPT not-interested
+      matchesStatus = lead.status !== 'not-interested';
+    } else if (statusFilter === 'not-interested') {
+      // Show ONLY not-interested leads
+      matchesStatus = lead.status === 'not-interested';
+    } else {
+      // Show leads matching the specific status filter
+      matchesStatus = lead.status?.toLowerCase() === statusFilter;
+    }
+    
     return matchesSearch && matchesStatus;
   });
 
@@ -435,6 +462,8 @@ const LeadTable = ({ userRole }) => {
         return "status-warm";
       case "cold":
         return "status-cold";
+      case "not-interested":
+        return "status-not-interested";
       default:
         return "status-default";
     }
@@ -1261,7 +1290,7 @@ const LeadTable = ({ userRole }) => {
                     <div className="lead-info-display">
                       <MapPin size={14} /> {lead.location?.split(' ')[0]}{lead.location?.split(' ').length > 1 ? '...' : ''}
                     </div>
-                    
+
                   </td>
                   <td data-label="Property">
                     <div className="lead-info-display">{lead.property}</div>
@@ -1283,6 +1312,7 @@ const LeadTable = ({ userRole }) => {
                       <option value="Hot">🔥 Hot</option>
                       <option value="Warm">🌡️ Warm</option>
                       <option value="Cold">❄️ Cold</option>
+                      <option value="not-interested">🚫 Not Interested</option>
                       <option value="Patch">🔧 Patch</option>
                     </select>
                   </td>
@@ -1667,7 +1697,7 @@ const LeadTable = ({ userRole }) => {
             <div key={lead._id} className="mobile-lead-card">
               <div className="mobile-lead-header">
                 <span className={`lead-status-badge ${getStatusClass(lead.status)}`}>
-                  {lead.status}
+                  {lead.status === 'not-interested' ? 'Not Interested' : (lead.status || 'New')}
                 </span>
               </div>
               <div className="mobile-lead-info">

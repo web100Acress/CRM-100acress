@@ -293,6 +293,12 @@
     color: #0284c7;
   }
 
+  .status-not-interested {
+    background: #f3f4f6;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+  }
+
   .status-default {
     background: #e5e7eb;
     color: #6b7280;

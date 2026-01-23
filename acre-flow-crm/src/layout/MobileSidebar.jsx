@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import '@/styles/sidebar.css'
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   User,
   Users,
@@ -31,6 +31,7 @@ import { apiUrl, API_ENDPOINTS } from '@/config/apiConfig';
 
 const MobileSidebar = ({ userRole, isOpen, onClose }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isDark, toggleTheme } = useTheme();
 
   // WhatsApp Chat State
@@ -233,10 +234,12 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
       { path: '/', icon: Home, label: 'Dashboard' },
       { path: '/leads', icon: Building2, label: 'Assigned Leads' },
       { path: '/calls', icon: PhoneCall, label: 'Call Logs' },
+      { path: '/leads?status=not-interested', icon: X, label: 'Not Interested' },
     ],
     bd: [
       { path: '/employee-dashboard', icon: Home, label: 'Dashboard' },
       { path: '/leads', icon: Building2, label: 'My Leads' },
+      { path: '/leads?status=not-interested', icon: X, label: 'Not Interested' },
     ]
   };
 
@@ -291,6 +294,34 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
     onClose();
   };
 
+  // Function to check if a navigation item is active
+  const isActive = (itemPath) => {
+    const currentPath = location.pathname;
+    const currentSearch = location.search;
+    
+    // Handle exact path matches
+    if (itemPath === currentPath + currentSearch) {
+      return true;
+    }
+    
+    // Handle base path matches (for items without query params)
+    if (!itemPath.includes('?') && currentPath === itemPath && !currentSearch) {
+      return true;
+    }
+    
+    // Handle specific query parameter matches
+    if (itemPath.includes('status=not-interested') && currentSearch.includes('status=not-interested')) {
+      return true;
+    }
+    
+    // Handle base leads page (when no query params)
+    if (itemPath === '/leads' && currentPath === '/leads' && !currentSearch.includes('status=')) {
+      return true;
+    }
+    
+    return false;
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -334,14 +365,21 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
               {navItems.map((item, index) => {
                 const Icon = item.icon;
                 const badgeCount = getBadgeCount(item.path);
+                const active = isActive(item.path);
                 return (
                   <button
                     key={index}
                     onClick={() => handleNavigation(item.path)}
-                    className="w-full text-left p-3 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-3"
+                    className={`w-full text-left p-3 rounded-lg transition-colors flex items-center gap-3 ${
+                      active 
+                        ? 'bg-blue-50 border border-blue-200 shadow-sm' 
+                        : 'hover:bg-gray-50'
+                    }`}
                   >
-                    <Icon size={18} className="text-blue-600" />
-                    <span className="text-gray-700 flex-1">{item.label}</span>
+                    <Icon size={18} className={active ? 'text-blue-600' : 'text-blue-600'} />
+                    <span className={`flex-1 ${active ? 'text-blue-700 font-medium' : 'text-gray-700'}`}>
+                      {item.label}
+                    </span>
                     {badgeCount > 0 && (
                       <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1">
                         {badgeCount > 99 ? '99+' : badgeCount}
