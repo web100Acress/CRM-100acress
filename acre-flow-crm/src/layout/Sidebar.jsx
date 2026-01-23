@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import '@/styles/sidebar.css'
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   User,
   Users,
@@ -20,6 +20,7 @@ import { useTheme } from '@/context/ThemeContext';
 
 const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isDark, toggleTheme } = useTheme();
 
   const userName = localStorage.getItem('userName') || 'User';
@@ -206,6 +207,34 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
     }
   };
 
+  // Function to check if a navigation item is active
+  const isActive = (itemPath) => {
+    const currentPath = location.pathname;
+    const currentSearch = location.search;
+    
+    // Handle exact path matches
+    if (itemPath === currentPath + currentSearch) {
+      return true;
+    }
+    
+    // Handle base path matches (for items without query params)
+    if (!itemPath.includes('?') && currentPath === itemPath && !currentSearch) {
+      return true;
+    }
+    
+    // Handle specific query parameter matches
+    if (itemPath.includes('status=not-interested') && currentSearch.includes('status=not-interested')) {
+      return true;
+    }
+    
+    // Handle base leads page (when no query params)
+    if (itemPath === '/leads' && currentPath === '/leads' && !currentSearch.includes('status=')) {
+      return true;
+    }
+    
+    return false;
+  };
+
   return (
     <>
       {/* Desktop Sidebar */}
@@ -283,7 +312,7 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
                         key={path}
                         to={path}
                         end={path === '/'}
-                        className={({ isActive }) => `crm-panel-link ${isActive ? 'active' : ''}`}
+                        className={() => `crm-panel-link ${isActive(path) ? 'active' : ''}`}
                       >
                         <span className="crm-panel-link-icon"><Icon className="crm-panel-icon" /></span>
                         <span className="crm-panel-link-label">{label}</span>
@@ -350,7 +379,7 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
                         key={path}
                         to={path}
                         end={path === '/'}
-                        className={({ isActive }) => `crm-panel-link ${isActive ? 'active' : ''}`}
+                        className={() => `crm-panel-link ${isActive(path) ? 'active' : ''}`}
                         onClick={handleClose}
                       >
                         <span className="crm-panel-link-icon"><Icon className="crm-panel-icon" /></span>
