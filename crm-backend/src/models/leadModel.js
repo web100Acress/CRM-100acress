@@ -30,8 +30,8 @@ const assignmentChainSchema = new mongoose.Schema({
   role: { type: String, required: true },
   name: { type: String, required: true },
   assignedAt: { type: Date, default: Date.now },
-  status: { 
-    type: String, 
+  status: {
+    type: String,
     enum: ['assigned', 'forwarded', 'completed', 'rejected'],
     default: 'assigned'
   },
