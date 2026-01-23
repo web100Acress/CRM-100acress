@@ -3,6 +3,8 @@ import { useLocation } from "react-router-dom";
 import { apiUrl } from "@/config/apiConfig";
 import '@/styles/LeadTable.css'; // Correct path to your CSS file
 import { User } from "lucide-react";
+import io from 'socket.io-client';
+import { useToast } from '@/hooks/use-toast';
 import {
   Search,
   Eye,
@@ -24,7 +26,6 @@ import {
 import FollowUpModal from "@/features/employee/follow-up/FollowUpModal";
 import CreateLeadForm from "./CreateLeadForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/layout/dialog";
-import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/layout/button";
 // Lead Actions imports
 import SwapLeadModal from '@/components/lead-actions/SwapLeadModal';
@@ -33,6 +34,7 @@ import ForwardLeadModal from '@/components/lead-actions/ForwardLeadModal';
 import { canForwardLead, canSwapLead, canSwitchLead } from '@/utils/leadActionPermissions';
 
 const LeadTable = ({ userRole }) => {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedLead, setSelectedLead] = useState(null);
@@ -40,6 +42,7 @@ const LeadTable = ({ userRole }) => {
   const [showCreateLead, setShowCreateLead] = useState(false);
   const [loading, setLoading] = useState(true);
   const [leadsList, setLeadsList] = useState([]);
+  const [socket, setSocket] = useState(null);
   const [showFollowUpList, setShowFollowUpList] = useState(false);
   const [followUpList, setFollowUpList] = useState([]);
   const [followUpLoading, setFollowUpLoading] = useState(false);
@@ -66,7 +69,6 @@ const LeadTable = ({ userRole }) => {
   const [showForwardModal, setShowForwardModal] = useState(false);
   const [selectedLeadForActions, setSelectedLeadForActions] = useState(null);
 
-  const { toast } = useToast();
   const prevAssignedLeadIds = useRef(new Set());
   const currentUserId = localStorage.getItem("userId");
   const location = useLocation();
@@ -80,6 +82,115 @@ const LeadTable = ({ userRole }) => {
       setStatusFilter(statusParam);
     }
   }, [location.search]);
+
+  // Socket.io connection for real-time auto-refresh
+  useEffect(() => {
+    const socketUrl = window.location.hostname === 'localhost'
+      ? 'http://localhost:5001'
+      : 'https://bcrm.100acress.com';
+
+    const s = io(socketUrl);
+    setSocket(s);
+    console.log('Desktop LeadTable Socket.IO connected:', s.id);
+
+    // Listen for real-time lead updates
+    s.on('leadUpdate', (data) => {
+      console.log('Desktop LeadTable - Lead update received:', data);
+
+      if (data && data.action) {
+        // Auto-refresh leads on any lead activity
+        console.log('Auto-refreshing desktop leads due to activity:', data.action);
+        
+        // Show toast notification for the activity
+        switch (data.action) {
+          case 'followup_added':
+            toast({
+              title: "Follow-up Added",
+              description: `${data.data.leadName}: ${data.data.followUpData.comment}`,
+              duration: 6000,
+            });
+            break;
+
+          case 'assigned':
+            if (data.assignedTo === currentUserId) {
+              toast({
+                title: "Lead Assigned",
+                description: `${data.data.leadName} assigned to you`,
+                duration: 8000,
+              });
+            }
+            break;
+
+          case 'status_updated':
+            toast({
+              title: "Lead Status Updated",
+              description: `${data.data.leadName} status changed to ${data.data.status}`,
+              duration: 5000,
+            });
+            break;
+
+          case 'lead_created':
+            toast({
+              title: "New Lead Created",
+              description: `${data.data.leadName} added to the system`,
+              duration: 5000,
+            });
+            break;
+
+          case 'lead_deleted':
+            toast({
+              title: "Lead Deleted",
+              description: `${data.data.leadName} removed from the system`,
+              duration: 5000,
+            });
+            break;
+
+          case 'forwarded':
+            toast({
+              title: "Lead Forwarded",
+              description: `${data.data.leadName} forwarded to ${data.data.forwardedTo}`,
+              duration: 6000,
+            });
+            break;
+        }
+        
+        // Re-fetch leads to get latest data
+        const fetchLeads = async () => {
+          try {
+            setLoading(true);
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${apiUrl}/api/leads`, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              const sortedLeads = (data.data || data.payload || data || []).sort((a, b) => {
+                const dateA = new Date(a.createdAt || 0);
+                const dateB = new Date(b.createdAt || 0);
+                return dateB - dateA;
+              });
+              setLeadsList(sortedLeads);
+            }
+          } catch (error) {
+            console.error('Error fetching leads after update:', error);
+          } finally {
+            setLoading(false);
+          }
+        };
+
+        fetchLeads();
+      }
+    });
+
+    return () => {
+      s.disconnect();
+      console.log('Desktop LeadTable Socket.IO disconnected');
+    };
+  }, []);
 
   // Helper function for API calls using centralized config
   const apiCall = async (endpoint, options = {}) => {

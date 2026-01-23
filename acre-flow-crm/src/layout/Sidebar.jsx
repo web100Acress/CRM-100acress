@@ -56,6 +56,7 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
     boss: [
       { path: '/', icon: Home, label: 'Dashboard' },
       { path: '/leads', icon: Building2, label: 'All Leads' },
+      { path: '/leads?status=not-interested', icon: X, label: 'Not Interested' },
       { path: '/users', icon: Users, label: 'Manage Users' },
       { path: '/admin/bd-analytics', icon: BarChart3, label: 'BD Analytics' },
       { path: '/whatsapp-chat', icon: MessageCircle, label: 'Team Chat' },
@@ -90,6 +91,7 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
     hod: [
       { path: '/', icon: Home, label: 'Dashboard' },
       { path: '/leads', icon: Building2, label: 'Leads Management' },
+      { path: '/leads?status=not-interested', icon: X, label: 'Not Interested' },
       { path: '/users', icon: Users, label: 'Manage Users' },
       { path: '/whatsapp-chat', icon: MessageCircle, label: 'Team Chat' },
       { path: '/admin/bd-analytics', icon: BarChart3, label: 'BD Analytics' },

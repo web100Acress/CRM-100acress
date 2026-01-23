@@ -185,6 +185,7 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
     boss: [
       { path: '/', icon: Home, label: 'Dashboard' },
       { path: '/leads', icon: Building2, label: 'All Leads' },
+      { path: '/leads?status=not-interested', icon: X, label: 'Not Interested' },
       // { path: '/calls', icon: PhoneCall, label: 'Call Logs' },
       // { path: '/calling-settings', icon: Settings, label: 'Calling Settings' },
       // { path: '/email', icon: Mail, label: 'Email Center' },
@@ -221,12 +222,16 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
     hod: [
       { path: '/', icon: Home, label: 'Dashboard' },
       { path: '/leads', icon: Building2, label: 'My Leads' },
+      { path: '/leads?status=not-interested', icon: X, label: 'Not Interested' },
+      
       // { path: '/calls', icon: PhoneCall, label: 'Call Logs' },
       // { path: '/admin/bd-analytics', icon: BarChart3, label: 'BD Analytics' },
     ],
     'head-admin': [
       { path: '/', icon: Home, label: 'Dashboard' },
       { path: '/leads', icon: Building2, label: 'My Leads' },
+      { path: '/leads?status=not-interested', icon: X, label: 'Not Interested' },
+      
       // { path: '/calls', icon: PhoneCall, label: 'Call Logs' },
       // { path: '/admin/bd-analytics', icon: BarChart3, label: 'BD Analytics' },
     ],

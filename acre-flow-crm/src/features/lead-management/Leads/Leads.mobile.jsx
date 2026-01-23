@@ -106,6 +106,11 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       console.log('Mobile Leads - Lead update received:', data);
 
       if (data && data.action) {
+        // Auto-refresh leads on any lead activity
+        console.log('Auto-refreshing leads due to activity:', data.action);
+        fetchLeads();
+        fetchStats();
+
         // Handle different types of lead updates with notifications
         switch (data.action) {
           case 'followup_added':
@@ -124,6 +129,38 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                 duration: 8000,
               });
             }
+            break;
+
+          case 'status_updated':
+            toast({
+              title: "Lead Status Updated",
+              description: `${data.data.leadName} status changed to ${data.data.status}`,
+              duration: 5000,
+            });
+            break;
+
+          case 'lead_created':
+            toast({
+              title: "New Lead Created",
+              description: `${data.data.leadName} added to the system`,
+              duration: 5000,
+            });
+            break;
+
+          case 'lead_deleted':
+            toast({
+              title: "Lead Deleted",
+              description: `${data.data.leadName} removed from the system`,
+              duration: 5000,
+            });
+            break;
+
+          case 'forwarded':
+            toast({
+              title: "Lead Forwarded",
+              description: `${data.data.leadName} forwarded to ${data.data.forwardedTo}`,
+              duration: 6000,
+            });
             break;
         }
       }
