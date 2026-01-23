@@ -250,6 +250,7 @@ const updateLead = async (id, updateData, req = null) => {
           title: 'Work Progress Update',
           message: `${updaterName} updated "${lead.name}" progress to "${updateData.workProgress}"`,
           type: 'work_progress',
+          recipientRole: 'all', // Required when using recipients array
           recipients: relevantUsers,
           data: {
             leadId: id,
@@ -276,6 +277,7 @@ const updateLead = async (id, updateData, req = null) => {
         title: 'Lead Activity by BD',
         message: `Lead "${lead.name}" has been reassigned by ${req.user.name} (BD).`,
         type: 'lead_bd_activity',
+        recipientRole: 'all', // Required when using recipients array
         recipients: relevantUsers, // Send to Boss, HOD, TL, and other BDs
         data: {
           leadId: id,
@@ -385,6 +387,16 @@ const forwardLead = async (leadId, currentUserId, action = 'forward', selectedEm
   lead.assignedTo = nextAssignee._id.toString();
   lead.assignedBy = currentUserId;
 
+  // If lead was not-interested, change it to Cold when reassigned
+  if (lead.status === 'not-interested') {
+    const oldStatus = lead.status;
+    lead.status = 'Cold';
+    console.log(`🔄 Lead "${lead.name}" status changed from ${oldStatus} to ${lead.status}`);
+    console.log(`🔍 Lead ID: ${leadId}, New Status: ${lead.status}, Assigned To: ${nextAssignee.name}`);
+  } else {
+    console.log(`🔍 Lead "${lead.name}" status is ${lead.status} (no change needed)`);
+  }
+
   await lead.save();
 
   // Send notification to next assignee and all relevant users for BD activity
@@ -410,6 +422,7 @@ const forwardLead = async (leadId, currentUserId, action = 'forward', selectedEm
       title: 'BD Activity - Lead Forwarded',
       message: `BD "${currentUser.name}" ${action === 'forward' ? 'forwarded' : 'reassigned'} lead "${lead.name}" to ${nextAssignee.name}`,
       type: 'lead_bd_activity',
+      recipientRole: 'all', // Required when using recipients array
       recipients: relevantUsers,
       data: {
         leadId: leadId,
@@ -427,13 +440,6 @@ const forwardLead = async (leadId, currentUserId, action = 'forward', selectedEm
 
   // Auto-create chat between assigner and assignee
   await createChatForAssignment(leadId, currentUserId, nextAssignee._id.toString());
-
-  // Emit real-time update to all relevant users
-  await emitLeadUpdateToRelevantUsers(leadId, 'forwarded', currentUserId, {
-    nextAssignee: nextAssignee._id,
-    nextAssigneeName: nextAssignee.name,
-    nextAssigneeRole: nextAssignee.role
-  });
 
   return lead;
 };
@@ -638,6 +644,7 @@ const forwardPatchLead = async (leadId, requesterId, newAssigneeId, reason = '')
       title: 'BD Activity - Forward Patch',
       message: `BD "${requester.name}" forward patched lead "${lead.name}" to ${newAssignee.name}. Reason: ${reason || 'Forward patch'}`,
       type: 'lead_bd_activity',
+      recipientRole: 'all', // Required when using recipients array
       recipients: relevantUsers,
       data: {
         leadId: leadId,

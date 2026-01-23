@@ -2139,10 +2139,40 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     if (!lead?.assignedTo || String(lead.assignedTo) !== String(currentUserId)) return false;
 
     const chain = Array.isArray(lead?.assignmentChain) ? lead.assignmentChain : [];
-    const wasForwarded = chain.some((e) => String(e?.status) === 'forwarded');
-    if (wasForwarded) return false;
-
+    
+    // Check if this lead was forwarded to current user by someone higher up
+    const wasForwardedToCurrentUser = chain.some((entry) => 
+      String(entry?.userId) === String(currentUserId) && 
+      String(entry?.status) === 'assigned' &&
+      entry?.assignedBy?._id && String(entry.assignedBy._id) !== String(currentUserId)
+    );
+    
+    // If lead was forwarded to current user and they are HOD or higher, they can forward it
     const role = (currentUserRole || userRole || '').toString();
+    const canForwardAssignedLeads = ['boss', 'hod', 'super-admin', 'head-admin', 'admin', 'crm_admin'].includes(role);
+    
+    console.log(`🔍 canForwardLead Debug for lead "${lead.name}":`, {
+      currentUserId,
+      role,
+      wasForwardedToCurrentUser,
+      canForwardAssignedLeads,
+      chainLength: chain.length,
+      assignedTo: lead.assignedTo
+    });
+    
+    if (wasForwardedToCurrentUser && canForwardAssignedLeads) {
+      // Allow forwarding - this was assigned to them by someone higher
+      console.log(`✅ ${role} can forward lead "${lead.name}" - was assigned by higher authority`);
+    } else {
+      // Original logic: Check if lead was already forwarded by current user
+      const wasForwardedByCurrentUser = chain.some((e) => 
+        String(e?.userId) === String(currentUserId) && String(e?.status) === 'forwarded'
+      );
+      if (wasForwardedByCurrentUser) {
+        console.log(`❌ ${role} cannot forward lead "${lead.name}" - already forwarded by them`);
+        return false;
+      }
+    }
 
     // Define forwarding hierarchy
     // New roles: boss -> hod -> sales_head -> bd
@@ -2160,10 +2190,21 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     };
 
     const possibleRoles = forwardHierarchy[role];
-    if (!possibleRoles || possibleRoles.length === 0) return false;
+    if (!possibleRoles || possibleRoles.length === 0) {
+      console.log(`❌ ${role} cannot forward - no forward hierarchy defined`);
+      return false;
+    }
 
     const users = Array.isArray(assignableUsers) ? assignableUsers : [];
-    return users.some((u) => possibleRoles.includes(u?.role || u?.userRole));
+    const hasAssignableUsers = users.some((u) => possibleRoles.includes(u?.role || u?.userRole));
+    
+    console.log(`🔍 Forward check result:`, {
+      possibleRoles,
+      assignableUsersCount: users.length,
+      hasAssignableUsers
+    });
+    
+    return hasAssignableUsers;
   };
 
   const isAssignedLead = (lead) => {
@@ -2601,6 +2642,11 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                     {/* Enhanced Action Buttons */}
                     <div className={`grid ${currentUserRole === 'bd' || currentUserRole === 'employee' ? 'grid-cols-4' : 'grid-cols-4'} gap-2`}>
                       {(() => {
+                        // Hide all action buttons except Reassign for not-interested leads
+                        if (lead.status === 'not-interested') {
+                          return null;
+                        }
+
                         const isLeadCreator = lead.createdBy === currentUserId;
                         const isAssignedToUser = String(lead.assignedTo) === String(currentUserId);
 
@@ -2710,16 +2756,10 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                           </button>
                         );
                       })()}
-                      {/* WhatsApp button for assigned leads */}
-                      {isWhatsAppButtonVisible(lead) && canUserAccessLead(lead) && (
+                      {/* WhatsApp button for assigned leads - Hide for not-interested leads */}
+                      {lead.status !== 'not-interested' && isWhatsAppButtonVisible(lead) && canUserAccessLead(lead) && (
                         <button
-                          onClick={() => {
-                            if (lead.status === 'not-interested') {
-                              alert('Wait for reassignment');
-                              return;
-                            }
-                            handleWhatsAppChat(lead);
-                          }}
+                          onClick={() => handleWhatsAppChat(lead)}
                           className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-lg hover:from-green-600 hover:to-teal-600 transition-all duration-200 shadow-md hover:shadow-lg"
                           title={currentUserRole === 'bd' || currentUserRole === 'employee' ? "WhatsApp (Your Lead)" : "WhatsApp (Forwarded Lead)"}
                         >
@@ -2727,15 +2767,9 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                           <span className="text-xs mt-1 font-medium">WhatsApp</span>
                         </button>
                       )}
-                      {canUserAccessLead(lead) && (
+                      {lead.status !== 'not-interested' && canUserAccessLead(lead) && (
                         <button
-                          onClick={() => {
-                            if (lead.status === 'not-interested') {
-                              alert('Wait for reassignment');
-                              return;
-                            }
-                            handleFollowUp(lead);
-                          }}
+                          onClick={() => handleFollowUp(lead)}
                           className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-all duration-200 shadow-md hover:shadow-lg"
                         >
                           <MessageSquare size={18} />
@@ -2755,17 +2789,8 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                         </button>
                       )}
 
-                      {/* Analytics or Close Button */}
-                      {lead.status === 'not-interested' && (currentUserRole === 'bd' || currentUserRole === 'employee') ? (
-                        <button
-                          onClick={() => handleCloseLead(lead._id)}
-                          className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg"
-                          title="Close Lead"
-                        >
-                          <CheckCircle size={18} />
-                          <span className="text-xs mt-1 font-medium">Close</span>
-                        </button>
-                      ) : (
+                      {/* Analytics or Close Button - Hide for not-interested leads */}
+                      {lead.status !== 'not-interested' && (currentUserRole === 'bd' || currentUserRole === 'employee') ? (
                         <button
                           onClick={() => handleLeadAnalytics(lead)}
                           className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
@@ -2774,8 +2799,17 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                           <TrendingUp size={18} />
                           <span className="text-xs mt-1 font-medium">Analytics</span>
                         </button>
-                      )}
-                      {canForwardLead(lead) && (
+                      ) : lead.status !== 'not-interested' ? (
+                        <button
+                          onClick={() => handleLeadAnalytics(lead)}
+                          className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                          title="Lead Performance & Analytics"
+                        >
+                          <TrendingUp size={18} />
+                          <span className="text-xs mt-1 font-medium">Analytics</span>
+                        </button>
+                      ) : null}
+                      {lead.status !== 'not-interested' && canForwardLead(lead) && (
                         <button
                           onClick={() => handleForwardClick(lead)}
                           disabled={forwardingLead === lead._id}

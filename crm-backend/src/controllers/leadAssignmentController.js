@@ -86,6 +86,14 @@ exports.assignLead = async (req, res, next) => {
     lead.assignedTo = assigneeId;
     lead.assignedBy = assignerId;
 
+    // If lead was not-interested, change it to Cold when reassigned
+    if (lead.status === 'not-interested') {
+      const oldStatus = lead.status;
+      lead.status = 'Cold';
+      console.log(`🔄 Lead "${lead.name}" status changed from ${oldStatus} to ${lead.status} in leadAssignmentController`);
+      console.log(`🔍 Lead ID: ${leadId}, New Status: ${lead.status}, Assigned To: ${assignee.name}`);
+    }
+
     // Add to assignment chain
     lead.assignmentChain.push({
       userId: assigneeId,

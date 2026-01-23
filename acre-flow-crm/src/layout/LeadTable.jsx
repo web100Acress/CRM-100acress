@@ -22,6 +22,7 @@ import {
   PhoneCall,
   PieChart,
   Clock,
+  CheckCircle,
 } from "lucide-react";
 import FollowUpModal from "@/features/employee/follow-up/FollowUpModal";
 import CreateLeadForm from "./CreateLeadForm";
@@ -943,6 +944,63 @@ const LeadTable = ({ userRole }) => {
     return `${minutes}m ${remainingSeconds}s`;
   };
 
+  const canUserAccessLead = (lead) => {
+    // If lead is not-interested, check if current user is the one who marked it
+    if (lead.status === 'not-interested' && lead.notInterestedBy) {
+      const notInterestedBy = typeof lead.notInterestedBy === 'string' 
+        ? lead.notInterestedBy 
+        : lead.notInterestedBy?._id;
+      
+      // If current user is the one who marked it as not-interested, they cannot access it
+      if (String(notInterestedBy) === String(currentUserId)) {
+        return false;
+      }
+    }
+    
+    // For all other cases, user can access the lead
+    return true;
+  };
+
+  const handleCloseLead = async (leadId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const currentUserId = localStorage.getItem('userId');
+
+      const response = await fetch(`${apiUrl}/api/leads/${leadId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          status: 'closed',
+          closedBy: currentUserId,
+          closedAt: new Date().toISOString()
+        })
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Lead Closed",
+          description: "Lead has been marked as closed and is no longer available.",
+          duration: 5000,
+        });
+        
+        // Refresh leads
+        fetchLeads();
+      } else {
+        throw new Error('Failed to close lead');
+      }
+    } catch (error) {
+      console.error('Error closing lead:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to close lead",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Simple circular chart component
   const CircularChart = ({ percentage, size = 60, strokeWidth = 6, color = '#10b981' }) => {
     const radius = (size - strokeWidth) / 2;
@@ -1699,12 +1757,42 @@ const LeadTable = ({ userRole }) => {
                         <Eye size={16} />
                       </button>
                       <button
-                        onClick={() => handleFollowUp(lead)}
+                        onClick={() => {
+                          if (lead.status === 'not-interested') {
+                            alert('Wait for reassignment');
+                            return;
+                          }
+                          handleFollowUp(lead);
+                        }}
                         title="Add Follow-up"
                         className="lead-action-button add-followup-btn"
                       >
                         <MessageSquare size={16} />
                       </button>
+
+                      {/* Reassign Button for Not-Interested Leads - Only for Boss/HOD */}
+                      {lead.status === 'not-interested' && (userRole === 'boss' || userRole === 'hod' || userRole === 'super-admin' || userRole === 'head-admin') && (
+                        <button
+                          onClick={() => handleForwardLead(lead)}
+                          title="Reassign Lead"
+                          className="lead-action-button reassign-btn"
+                          style={{ backgroundColor: '#F59E0B', color: 'white' }}
+                        >
+                          <UserCheck size={16} />
+                        </button>
+                      )}
+
+                      {/* Close Button for Not-Interested Leads - Only for BD/Employee */}
+                      {lead.status === 'not-interested' && (userRole === 'bd' || userRole === 'employee') && (
+                        <button
+                          onClick={() => handleCloseLead(lead._id)}
+                          title="Close Lead"
+                          className="lead-action-button close-lead-btn"
+                          style={{ backgroundColor: '#EF4444', color: 'white' }}
+                        >
+                          <CheckCircle size={16} />
+                        </button>
+                      )}
 
                       {/* Lead Actions - Forward, Swap, Switch */}
                       {canForwardLead(lead).canForward && (
@@ -2005,6 +2093,10 @@ const LeadTable = ({ userRole }) => {
                   <button
                     className="lead-details-action-btn primary"
                     onClick={() => {
+                      if (selectedLeadForDetails.status === 'not-interested') {
+                        alert('Wait for reassignment');
+                        return;
+                      }
                       handleFollowUp(selectedLeadForDetails);
                       setShowLeadDetails(false);
                     }}
@@ -2597,13 +2689,10 @@ const LeadTable = ({ userRole }) => {
             <DialogTitle className="lead-chain-dialog-title text-xl font-semibold text-gray-900">
               Assignment Chain for {chainModalLead?.name}
             </DialogTitle>
-            <DialogDescription className="text-sm text-gray-600">
-              Track the complete assignment history and current status of this lead.
-            </DialogDescription>
           </DialogHeader>
 
           {chainModalLead?.assignmentChain?.length > 0 ? (
-            <div className="mt-6">
+            <div className="mt-6 max-h-[70vh] overflow-y-auto pr-2">
               {/* Chain Timeline */}
               <div className="space-y-4">
                 {chainModalLead.assignmentChain.map((entry, idx, arr) => {
@@ -2711,7 +2800,7 @@ const LeadTable = ({ userRole }) => {
               </div>
 
               {/* Current Status Summary */}
-              <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+              {/* <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
                 <div className="flex items-center">
                   <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
                   <div>
@@ -2722,7 +2811,7 @@ const LeadTable = ({ userRole }) => {
                     </p>
                   </div>
                 </div>
-              </div>
+              </div> */}
             </div>
           ) : (
             <div className="text-center py-8">
@@ -2929,7 +3018,7 @@ const LeadTable = ({ userRole }) => {
       <ForwardLeadModal
         open={showForwardModal}
         onOpenChange={setShowForwardModal}
-        selectedLead={selectedLeadForActions}
+        lead={selectedLeadForActions}
         assignableUsers={assignableUsers}
         currentUser={{
           userId: currentUserId,

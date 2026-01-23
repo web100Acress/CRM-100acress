@@ -225,8 +225,20 @@ exports.getFollowUps = async (req, res, next) => {
 // New controller method for forwarding leads
 exports.forwardLead = async (req, res, next) => {
   try {
+    console.log('🔍 Forward Lead Debug:', {
+      params: req.params,
+      body: req.body,
+      user: req.user,
+      userId: req.user?._id,
+      userRole: req.user?.role
+    });
+
     const { id } = req.params;
     const { action = 'forward', selectedEmployee } = req.body;
+
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ success: false, message: 'User not authenticated' });
+    }
 
     const lead = await leadService.forwardLead(id, req.user._id.toString(), action, selectedEmployee);
     if (!lead) {
