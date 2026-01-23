@@ -23,6 +23,7 @@ import {
   PieChart,
   Clock,
   CheckCircle,
+  TrendingUp,
 } from "lucide-react";
 import FollowUpModal from "@/features/employee/follow-up/FollowUpModal";
 import CreateLeadForm from "./CreateLeadForm";
@@ -1732,43 +1733,45 @@ const LeadTable = ({ userRole }) => {
                         <Mail size={16} />
                       </button> */}
 
-                      {/* Advanced Options */}
-                      <button
-                        onClick={() => handleAdvancedOptions(lead)}
-                        title="Advanced Options"
-                        className="lead-action-button advanced-btn"
-                      >
-                        <Settings size={16} />
-                      </button>
+                      {/* Advanced Options - Hide for not-interested leads */}
+                      {lead.status !== 'not-interested' && (
+                        <button
+                          onClick={() => handleAdvancedOptions(lead)}
+                          title="Advanced Options"
+                          className="lead-action-button advanced-btn"
+                        >
+                          <Settings size={16} />
+                        </button>
+                      )}
 
-                      {/* Existing Actions */}
-                      <button
-                        className="lead-action-button chain-view-btn"
-                        title="View Assignment Chain"
-                        onClick={() => setChainModalLead(lead)}
-                      >
-                        <LinkIcon size={18} />
-                      </button>
-                      <button
-                        onClick={() => handleViewFollowUps(lead)}
-                        title="View Follow-ups"
-                        className="lead-action-button view-followups-btn"
-                      >
-                        <Eye size={16} />
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (lead.status === 'not-interested') {
-                            alert('Wait for reassignment');
-                            return;
-                          }
-                          handleFollowUp(lead);
-                        }}
-                        title="Add Follow-up"
-                        className="lead-action-button add-followup-btn"
-                      >
-                        <MessageSquare size={16} />
-                      </button>
+                      {/* Existing Actions - Hide for not-interested leads */}
+                      {lead.status !== 'not-interested' && (
+                        <button
+                          className="lead-action-button chain-view-btn"
+                          title="View Assignment Chain"
+                          onClick={() => setChainModalLead(lead)}
+                        >
+                          <LinkIcon size={18} />
+                        </button>
+                      )}
+                      {lead.status !== 'not-interested' && (
+                        <button
+                          onClick={() => handleViewFollowUps(lead)}
+                          title="View Follow-ups"
+                          className="lead-action-button view-followups-btn"
+                        >
+                          <Eye size={16} />
+                        </button>
+                      )}
+                      {lead.status !== 'not-interested' && (
+                        <button
+                          onClick={() => handleFollowUp(lead)}
+                          title="Add Follow-up"
+                          className="lead-action-button add-followup-btn"
+                        >
+                          <MessageSquare size={16} />
+                        </button>
+                      )}
 
                       {/* Reassign Button for Not-Interested Leads - Only for Boss/HOD */}
                       {lead.status === 'not-interested' && (userRole === 'boss' || userRole === 'hod' || userRole === 'super-admin' || userRole === 'head-admin') && (
@@ -1782,20 +1785,21 @@ const LeadTable = ({ userRole }) => {
                         </button>
                       )}
 
-                      {/* Close Button for Not-Interested Leads - Only for BD/Employee */}
-                      {lead.status === 'not-interested' && (userRole === 'bd' || userRole === 'employee') && (
+                      {/* Close Button for Not-Interested Leads - Only for BD/Employee - HIDDEN */}
+                      {/* Analytics Button - Show for all active leads */}
+                      {lead.status !== 'not-interested' && (
                         <button
-                          onClick={() => handleCloseLead(lead._id)}
-                          title="Close Lead"
-                          className="lead-action-button close-lead-btn"
-                          style={{ backgroundColor: '#EF4444', color: 'white' }}
+                          onClick={() => handleLeadAnalytics(lead)}
+                          title="Lead Performance & Analytics"
+                          className="lead-action-button analytics-btn"
+                          style={{ backgroundColor: '#8B5CF6', color: 'white' }}
                         >
-                          <CheckCircle size={16} />
+                          <TrendingUp size={16} />
                         </button>
                       )}
 
-                      {/* Lead Actions - Forward, Swap, Switch */}
-                      {canForwardLead(lead).canForward && (
+                      {/* Lead Actions - Forward, Swap, Switch - Hide for not-interested leads */}
+                      {lead.status !== 'not-interested' && canForwardLead(lead).canForward && (
                         <button
                           onClick={() => handleForwardLead(lead)}
                           title="Forward Lead"
@@ -1806,7 +1810,7 @@ const LeadTable = ({ userRole }) => {
                         </button>
                       )}
 
-                      {canSwapLead(lead).canSwap && (
+                      {lead.status !== 'not-interested' && canSwapLead(lead).canSwap && (
                         <button
                           onClick={() => handleSwapLead(lead)}
                           title="Swap Lead"
@@ -1817,14 +1821,14 @@ const LeadTable = ({ userRole }) => {
                         </button>
                       )}
 
-                      {canSwitchLead(lead).canSwitch && (
+                      {lead.status !== 'not-interested' && canSwitchLead(lead).canSwitch && (
                         <button
                           onClick={() => handleSwitchLead(lead)}
                           title="Switch Lead"
                           className="lead-action-button switch-lead-btn"
                           style={{ backgroundColor: '#8B5CF6', color: 'white' }}
                         >
-                          <UserCheck size={16} />
+                          <ArrowUpDown size={16} />
                         </button>
                       )}
 
@@ -1997,25 +2001,29 @@ const LeadTable = ({ userRole }) => {
                   return null;
                 })()}
 
-                <button
-                  className="mobile-followup-btn"
-                  onClick={() => {
-                    handleFollowUp(lead);
-                  }}
-                >
-                  <MessageSquare size={14} />
-                  Follow-up
-                </button>
-                <button
-                  className="mobile-view-details-btn"
-                  onClick={() => {
-                    setSelectedLeadForDetails(lead);
-                    setShowLeadDetails(true);
-                  }}
-                >
-                  <Eye size={14} />
-                  Details
-                </button>
+                {lead.status !== 'not-interested' && (
+                  <button
+                    className="mobile-followup-btn"
+                    onClick={() => {
+                      handleFollowUp(lead);
+                    }}
+                  >
+                    <MessageSquare size={14} />
+                    Follow-up
+                  </button>
+                )}
+                {lead.status !== 'not-interested' && (
+                  <button
+                    className="mobile-view-details-btn"
+                    onClick={() => {
+                      setSelectedLeadForDetails(lead);
+                      setShowLeadDetails(true);
+                    }}
+                  >
+                    <Eye size={14} />
+                    Details
+                  </button>
+                )}
               </div>
             </div>
           ))
