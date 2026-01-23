@@ -55,11 +55,11 @@ const leadSchema = new mongoose.Schema({
   phone: { type: String },
   status: {
     type: String,
-    enum: ['Cold', 'Warm', 'Hot', 'not-interested'], // <-- Changed to match frontend
+    enum: ['Cold', 'Warm', 'Hot', 'not-interested', 'closed'], 
     default: 'Cold'
   },
   location: String,
-  projectName: String, // <-- Added Project Name field
+  projectName: String, 
   property: String,
   budget: String,
   assignedTo: String,
@@ -69,6 +69,8 @@ const leadSchema = new mongoose.Schema({
     enum: ['pending', 'inprogress', 'done'],
     default: 'pending'
   },
+  closedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  closedAt: { type: Date },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   createdAt: { type: Date, default: Date.now },
   assignmentChain: [assignmentChainSchema],

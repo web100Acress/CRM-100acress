@@ -1531,6 +1531,46 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     setShowLeadAnalytics(true);
   };
 
+  const handleCloseLead = async (leadId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const currentUserId = localStorage.getItem('userId');
+
+      const response = await fetch(`${apiUrl}/api/leads/${leadId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          status: 'closed',
+          closedBy: currentUserId,
+          closedAt: new Date().toISOString()
+        })
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Lead Closed",
+          description: "Lead has been marked as closed and is no longer available.",
+          duration: 5000,
+        });
+        
+        // Refresh leads
+        fetchLeads();
+      } else {
+        throw new Error('Failed to close lead');
+      }
+    } catch (error) {
+      console.error('Error closing lead:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to close lead",
+        variant: "destructive",
+      });
+    }
+  };
+
   const endCall = () => {
     // Clear interval
     if (callData?.interval) {
@@ -2070,6 +2110,28 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
 
   const handleEmployeeSelect = (employee) => {
     setSelectedEmployee(employee);
+  };
+
+  const canUserAccessLead = (lead) => {
+    // If lead is not-interested, check if current user is the one who marked it
+    if (lead.status === 'not-interested' && lead.notInterestedBy) {
+      const notInterestedBy = typeof lead.notInterestedBy === 'string' 
+        ? lead.notInterestedBy 
+        : lead.notInterestedBy?._id;
+      
+      // If current user is the one who marked it as not-interested, they cannot access it
+      if (String(notInterestedBy) === String(currentUserId)) {
+        return false;
+      }
+    }
+    
+    // For all other cases, user can access the lead
+    return true;
+  };
+
+  const canReassignClosedLead = (lead) => {
+    // This function is no longer needed since we're reopening to interested instead of closing
+    return false;
   };
 
   const canForwardLead = (lead) => {
@@ -2649,9 +2711,15 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                         );
                       })()}
                       {/* WhatsApp button for assigned leads */}
-                      {isWhatsAppButtonVisible(lead) && (
+                      {isWhatsAppButtonVisible(lead) && canUserAccessLead(lead) && (
                         <button
-                          onClick={() => handleWhatsAppChat(lead)}
+                          onClick={() => {
+                            if (lead.status === 'not-interested') {
+                              alert('Wait for reassignment');
+                              return;
+                            }
+                            handleWhatsAppChat(lead);
+                          }}
                           className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-lg hover:from-green-600 hover:to-teal-600 transition-all duration-200 shadow-md hover:shadow-lg"
                           title={currentUserRole === 'bd' || currentUserRole === 'employee' ? "WhatsApp (Your Lead)" : "WhatsApp (Forwarded Lead)"}
                         >
@@ -2659,21 +2727,54 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                           <span className="text-xs mt-1 font-medium">WhatsApp</span>
                         </button>
                       )}
-                      <button
-                        onClick={() => handleFollowUp(lead)}
-                        className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-all duration-200 shadow-md hover:shadow-lg"
-                      >
-                        <MessageSquare size={18} />
-                        <span className="text-xs mt-1 font-medium">Follow-up</span>
-                      </button>
-                      <button
-                        onClick={() => handleLeadAnalytics(lead)}
-                        className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
-                        title="Lead Performance & Analytics"
-                      >
-                        <TrendingUp size={18} />
-                        <span className="text-xs mt-1 font-medium">Analytics</span>
-                      </button>
+                      {canUserAccessLead(lead) && (
+                        <button
+                          onClick={() => {
+                            if (lead.status === 'not-interested') {
+                              alert('Wait for reassignment');
+                              return;
+                            }
+                            handleFollowUp(lead);
+                          }}
+                          className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-all duration-200 shadow-md hover:shadow-lg"
+                        >
+                          <MessageSquare size={18} />
+                          <span className="text-xs mt-1 font-medium">Follow-up</span>
+                        </button>
+                      )}
+                      {/* Reassign Button for Not-Interested Leads - Only for Boss/HOD */}
+                      {lead.status === 'not-interested' && (currentUserRole === 'boss' || currentUserRole === 'hod' || currentUserRole === 'super-admin' || currentUserRole === 'head-admin') && (
+                        <button
+                          onClick={() => handleForwardClick(lead)}
+                          disabled={forwardingLead === lead._id}
+                          className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg hover:from-amber-600 hover:to-orange-600 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Reassign Lead"
+                        >
+                          <UserCheck size={18} />
+                          <span className="text-xs mt-1 font-medium">Reassign</span>
+                        </button>
+                      )}
+
+                      {/* Analytics or Close Button */}
+                      {lead.status === 'not-interested' && (currentUserRole === 'bd' || currentUserRole === 'employee') ? (
+                        <button
+                          onClick={() => handleCloseLead(lead._id)}
+                          className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                          title="Close Lead"
+                        >
+                          <CheckCircle size={18} />
+                          <span className="text-xs mt-1 font-medium">Close</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleLeadAnalytics(lead)}
+                          className="flex flex-col items-center justify-center p-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                          title="Lead Performance & Analytics"
+                        >
+                          <TrendingUp size={18} />
+                          <span className="text-xs mt-1 font-medium">Analytics</span>
+                        </button>
+                      )}
                       {canForwardLead(lead) && (
                         <button
                           onClick={() => handleForwardClick(lead)}
