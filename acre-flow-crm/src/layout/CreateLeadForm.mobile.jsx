@@ -350,6 +350,79 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
           description: "Lead created successfully!",
         });
 
+        // Check if WhatsApp should be opened after lead creation
+        if (window.openWhatsAppAfterCreate) {
+          // Clear the flag
+          window.openWhatsAppAfterCreate = false;
+          
+          // Open WhatsApp with the new lead details
+          setTimeout(() => {
+            // Create WhatsApp notification function
+            const sendWhatsAppNotification = (lead) => {
+              const phoneNumber = "919031359720"; // Hardcoded number
+              
+              // Get assignment information
+              let assignedToInfo = 'Unassigned';
+              if (lead.assignedTo) {
+                // Try to get user name from various sources
+                if (lead.assignedToName) {
+                  assignedToInfo = lead.assignedToName;
+                } else if (lead.assignedUserName) {
+                  assignedToInfo = lead.assignedUserName;
+                } else if (lead.assignedUser?.name) {
+                  assignedToInfo = lead.assignedUser.name;
+                } else if (lead.assignmentChain && lead.assignmentChain.length > 0) {
+                  // Get the latest assignment from chain
+                  const latestAssignment = lead.assignmentChain[lead.assignmentChain.length - 1];
+                  assignedToInfo = latestAssignment.name || latestAssignment.userName || latestAssignment.assignedBy?.name || `User ID: ${lead.assignedTo}`;
+                } else {
+                  // Try to find user in assignableUsers (use actual state)
+                  const user = assignableUsers.find(u => String(u._id) === String(lead.assignedTo));
+                  if (user) {
+                    assignedToInfo = user.name;
+                  } else {
+                    assignedToInfo = `User ID: ${lead.assignedTo}`;
+                  }
+                }
+              }
+              
+              // Create CRM link
+              const productionUrl = "https://crm.100acress.com";
+              const crmUrl = `${productionUrl}/leads/${lead._id}`;
+              
+              const message = `
+Lead Notification
+
+Name: ${lead.name}
+Phone: ${lead.phone}
+Location: ${lead.location || 'N/A'}
+Budget: ${lead.budget || 'N/A'}
+Project: ${lead.projectName || 'N/A'}
+Property: ${lead.property || 'N/A'}
+Status: ${lead.status || 'N/A'}
+
+Assigned To: ${assignedToInfo}
+
+ *CRM Login*
+https://crm.100acress.com/login
+
+Notes: New lead assigned for follow-up
+              `.trim();
+
+              const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+              window.open(whatsappUrl, '_blank');
+              
+              toast({
+                title: "WhatsApp Opened",
+                description: "WhatsApp opened with lead details and CRM link. Click send to notify.",
+                duration: 3000,
+              });
+            };
+            
+            sendWhatsAppNotification(result.data || result);
+          }, 1000);
+        }
+
         // Reset form
         setFormData({
           name: '',
