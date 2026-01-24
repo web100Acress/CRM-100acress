@@ -351,153 +351,110 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
         });
 
         // Check if WhatsApp should be opened after lead creation
-        if (window.openWhatsAppAfterCreate) {
-          // Clear the flag
+        const shouldOpenWhatsAppAfterCreate = !!window.openWhatsAppAfterCreate;
+        
+        if (shouldOpenWhatsAppAfterCreate) {
           window.openWhatsAppAfterCreate = false;
-          
-          // Open WhatsApp with the new lead details
-          setTimeout(() => {
-            // Create WhatsApp notification function
-            const sendWhatsAppNotification = async (lead) => {
-              try {
-                // Fetch phone numbers from database dynamically
-                const token = localStorage.getItem("token");
-                const response = await fetch(`${apiUrl}/api/users`, {
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                  },
-                });
-                
-                let phoneNumber = null;
-                let assignedUserInfo = null;
-                
-                if (response.ok) {
-                  const data = await response.json();
-                  const users = data.data || [];
-                  
-                  // Get assignment information
-                  let assignedToInfo = 'Unassigned';
-                  if (lead.assignedTo) {
-                    // Try to get user name from various sources
-                    if (lead.assignedToName) {
-                      assignedToInfo = lead.assignedToName;
-                    } else if (lead.assignedUserName) {
-                      assignedToInfo = lead.assignedUserName;
-                    } else if (lead.assignedUser?.name) {
-                      assignedToInfo = lead.assignedUser.name;
-                    } else if (lead.assignmentChain && lead.assignmentChain.length > 0) {
-                      // Get the latest assignment from chain
-                      const latestAssignment = lead.assignmentChain[lead.assignmentChain.length - 1];
-                      assignedToInfo = latestAssignment.name || latestAssignment.userName || latestAssignment.assignedBy?.name || `User ID: ${lead.assignedTo}`;
-                    } else {
-                      // Try to find user in assignableUsers (use actual state)
-                      const user = assignableUsers.find(u => String(u._id) === String(lead.assignedTo));
-                      if (user) {
-                        assignedToInfo = user.name;
-                        assignedUserInfo = user; // Store user info for phone number
-                      } else {
-                        assignedToInfo = `User ID: ${lead.assignedTo}`;
-                      }
-                    }
-                    
-                    // Try to find assigned user in database for phone number
-                    if (!assignedUserInfo || !assignedUserInfo.phone) {
-                      assignedUserInfo = users.find(u => String(u._id) === String(lead.assignedTo));
-                    }
-                    
-                    // Use assigned user's phone number if available
-                    if (assignedUserInfo && assignedUserInfo.phone) {
-                      const digits = String(assignedUserInfo.phone).replace(/[^\d]/g, '');
-                      phoneNumber = digits.startsWith('91') ? digits : `91${digits}`;
-                      console.log('🔍 Mobile: Using assigned user phone from database:', assignedUserInfo.name, phoneNumber);
-                    }
-                  }
-                  
-                  // If no assigned user phone found, try to find current user's phone
-                  if (!phoneNumber) {
-                    const currentUserId = localStorage.getItem("userId");
-                    const currentUser = users.find(u => String(u._id) === String(currentUserId));
-                    
-                    if (currentUser && currentUser.phone) {
-                      const digits = String(currentUser.phone).replace(/[^\d]/g, '');
-                      phoneNumber = digits.startsWith('91') ? digits : `91${digits}`;
-                      console.log('🔍 Mobile: Using current user phone from database:', currentUser.name, phoneNumber);
-                    }
-                  }
-                  
-                  // If still no phone number found, show error
-                  if (!phoneNumber) {
-                    toast({
-                      title: "⚠️ Phone Number Missing",
-                      description: "No phone number found in database for current user or assigned user. Please update user profiles with phone numbers.",
-                      variant: "destructive",
-                      duration: 5000,
-                    });
-                    return;
-                  }
-                  
-                } else {
-                  toast({
-                    title: "❌ Database Error",
-                    description: "Could not fetch user phone numbers from database.",
-                    variant: "destructive",
-                    duration: 5000,
-                  });
-                  return;
+
+          const createdLead = result.data || result.payload || result;
+          const leadId = createdLead._id || createdLead.id;
+
+          const assignedUserId = createdLead.assignedTo || formData.assignedTo;
+          if (!assignedUserId) {
+            toast({
+              title: "⚠️ Lead Not Assigned",
+              description:
+                "Please assign the lead to a user to send WhatsApp notification.",
+              variant: "destructive",
+              duration: 5000,
+            });
+          } else {
+            let assignedToInfo = "Unassigned";
+            const userFromList = assignableUsers.find(
+              (u) => String(u._id) === String(assignedUserId),
+            );
+            if (createdLead.assignedToName) {
+              assignedToInfo = createdLead.assignedToName;
+            } else if (createdLead.assignedUserName) {
+              assignedToInfo = createdLead.assignedUserName;
+            } else if (createdLead.assignedUser?.name) {
+              assignedToInfo = createdLead.assignedUser.name;
+            } else if (userFromList?.name) {
+              assignedToInfo = userFromList.name;
+            }
+
+            const productionUrl = "https://crm.100acress.com";
+            const crmUrl = `${productionUrl}/leads/${leadId}`;
+
+            let phoneNumber = null;
+            try {
+              const usersResponse = await fetch(`${apiUrl}/api/users`, {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                },
+              });
+              if (usersResponse.ok) {
+                const usersJson = await usersResponse.json();
+                const users = usersJson.data || [];
+                const assignedUser = users.find(
+                  (u) => String(u?._id) === String(assignedUserId),
+                );
+                const digits = String(assignedUser?.phone || "").replace(
+                  /[^\d]/g,
+                  "",
+                );
+                if (digits) {
+                  phoneNumber = digits.startsWith("91") ? digits : `91${digits}`;
                 }
-                
-                // Create CRM link
-                const productionUrl = "https://crm.100acress.com";
-                const crmUrl = `${productionUrl}/leads/${lead._id}`;
-                
-                const message = `
-🔔 Lead Notification
-
-👤 *Lead Details:*
-• Name: ${lead.name}
-• Phone: ${lead.phone}
-• Location: ${lead.location || 'N/A'}
-• Budget: ${lead.budget || 'N/A'}
-• Project: ${lead.projectName || 'N/A'}
-• Property: ${lead.property || 'N/A'}
-• Status: ${lead.status || 'N/A'}
-
-👥 *Assignment:*
-• Assigned To: ${assignedToInfo}
-
-🔗 *CRM Login*
-https://crm.100acress.com/login
-
-📝 *Notes:* New lead assigned for follow-up
-                `.trim();
-
-                const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-                window.open(whatsappUrl, '_blank');
-                
-                console.log(`Mobile WhatsApp notification sent for lead: ${lead.name} (${lead._id})`);
-                console.log(`Assigned to: ${assignedToInfo}`);
-                console.log(`Phone used: ${phoneNumber}`);
-                
-                toast({
-                  title: "📱 WhatsApp Opened",
-                  description: `WhatsApp opened with lead details. Phone: ${phoneNumber}`,
-                  duration: 3000,
-                });
-                
-              } catch (error) {
-                console.error('Error in mobile sendWhatsAppNotification:', error);
-                toast({
-                  title: "❌ WhatsApp Error",
-                  description: "Failed to send WhatsApp notification. Please try again.",
-                  variant: "destructive",
-                  duration: 5000,
-                });
               }
-            };
-            
-            sendWhatsAppNotification(result.data || result);
-          }, 1000);
+            } catch (e) {
+              phoneNumber = null;
+            }
+
+            if (!phoneNumber) {
+              toast({
+                title: "⚠️ Phone Number Missing",
+                description:
+                  "Assigned user's phone number is missing in the database. Please update the assigned user's profile phone.",
+                variant: "destructive",
+                duration: 5000,
+              });
+            } else {
+              const message = `
+New Lead Created!
+
+Name: ${formData.name}
+Phone: ${formData.phone}
+Email: ${formData.email || "N/A"}
+Location: ${formData.location || "N/A"}
+Budget: ${formData.budget || "N/A"}
+Project: ${formData.projectName || "N/A"}
+Property: ${formData.property || "N/A"}
+Status: ${formData.status || "N/A"}
+
+👥 Assigned To: ${assignedToInfo}
+
+🔗 *View Lead in CRM*
+${crmUrl}
+
+*CRM Login*
+https://crm.100acress.com/login
+ Notes: New lead successfully created in CRM system
+              `.trim();
+
+              const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+              setTimeout(() => {
+                window.open(whatsappUrl, "_blank");
+                toast({
+                  title: "WhatsApp Opened",
+                  description:
+                    "Lead created and WhatsApp opened with details and CRM link. Click send to notify.",
+                  duration: 4000,
+                });
+              }, 1000);
+            }
+          }
         }
 
         // Reset form
