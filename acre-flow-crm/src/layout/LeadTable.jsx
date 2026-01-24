@@ -24,7 +24,22 @@ import {
   Clock,
   CheckCircle,
   TrendingUp,
+  Info,
 } from "lucide-react";
+
+// WhatsApp Icon Component
+const WhatsAppIcon = ({ size = 20, className = "" }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="currentColor" 
+    className={className}
+    style={{ color: "#25D366" }}
+  >
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.149-.67.149-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414-.074-.123-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+  </svg>
+);
 import FollowUpModal from "@/features/employee/follow-up/FollowUpModal";
 import CreateLeadForm from "./CreateLeadForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/layout/dialog";
@@ -284,6 +299,94 @@ const LeadTable = ({ userRole }) => {
     } finally {
       setSwapBdLeadsLoading(false);
     }
+  };
+
+  // WhatsApp notification function
+  const sendWhatsAppNotification = (lead) => {
+    // You can hardcode the number or use assigned user's phone
+    const phoneNumber = "919031359720"; // Hardcoded number OR lead.assignedUser?.phone
+    
+    // Get assignment information with proper user name
+    let assignedToInfo = 'Unassigned';
+    
+    if (lead.assignedTo) {
+      // Try to get user name from various sources
+      if (lead.assignedToName) {
+        assignedToInfo = lead.assignedToName;
+      } else if (lead.assignedUserName) {
+        assignedToInfo = lead.assignedUserName;
+      } else if (lead.assignedUser?.name) {
+        assignedToInfo = lead.assignedUser.name;
+      } else if (lead.assignmentChain && lead.assignmentChain.length > 0) {
+        // Get the latest assignment from chain
+        const latestAssignment = lead.assignmentChain[lead.assignmentChain.length - 1];
+        assignedToInfo = latestAssignment.name || latestAssignment.userName || `User ID: ${lead.assignedTo}`;
+      } else {
+        // Try to find user in assignableUsers (if available)
+        const assignableUsers = []; // This would need to be passed as prop or fetched
+        const user = assignableUsers.find(u => String(u._id) === String(lead.assignedTo));
+        if (user) {
+          assignedToInfo = user.name;
+        } else {
+          assignedToInfo = `User ID: ${lead.assignedTo}`;
+        }
+      }
+    }
+    
+    // Create CRM link - Use production URL with authentication flow
+    const productionUrl = "https://crm.100acress.com";
+    const crmUrl = `${productionUrl}/leads/${lead._id}`;
+    const loginUrl = `${productionUrl}/login`;
+    
+    const message = `
+🔔 Lead Notification
+
+👤 Name: ${lead.name}
+📞 Phone: ${lead.phone}
+📍 Location: ${lead.location || 'N/A'}
+💰 Budget: ${lead.budget || 'N/A'}
+🏗️ Project: ${lead.projectName || 'N/A'}
+🏠 Property: ${lead.property || 'N/A'}
+📊 Status: ${lead.status || 'N/A'}
+
+👥 Assigned To: ${assignedToInfo}
+
+🔗 *View Lead in CRM*
+${crmUrl}
+
+🔐 *CRM Login*
+https://crm.100acress.com/login
+
+📝 Notes: New lead assigned for follow-up
+    `.trim();
+
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+    
+    // Optional: Log the WhatsApp click
+    console.log(`WhatsApp notification sent for lead: ${lead.name} (${lead._id})`);
+    console.log(`Assigned to: ${assignedToInfo}`);
+    
+    toast({
+      title: "WhatsApp Opened",
+      description: "WhatsApp opened with lead details and CRM link. Click send to notify.",
+      duration: 3000,
+    });
+  };
+
+  // Create Lead + WhatsApp function
+  const handleCreateLeadAndWhatsApp = () => {
+    // Open create lead modal
+    setShowCreateLead(true);
+    
+    // Store a flag to indicate WhatsApp should be opened after lead creation
+    window.openWhatsAppAfterCreate = true;
+    
+    toast({
+      title: "Create & WhatsApp Mode",
+      description: "Fill lead details and submit. WhatsApp will open automatically.",
+      duration: 4000,
+    });
   };
 
   const handleForwardSwapLead = async (leadId, swapLeadId, reason) => {
@@ -1398,12 +1501,17 @@ const LeadTable = ({ userRole }) => {
 
 
         {(userRole === "boss" || userRole === "hod" || userRole === "bd") && (
-          <button className="lead-create-button" onClick={handleCreateLead}>
-            <Plus
-              size={18}
-              className="lead-create-icon"
-            />{" "}
-            Create Lead
+          <button 
+            className="lead-create-button lead-create-whatsapp-button" 
+            onClick={handleCreateLeadAndWhatsApp}
+            style={{
+              background: 'linear-gradient(135deg, #25D366, #128C7E)',
+              border: 'none'
+            }}
+          >
+            <WhatsAppIcon size={18} className="lead-create-icon" />
+            {" "}
+            Create & WhatsApp
           </button>
         )}
       </div>
@@ -1644,6 +1752,64 @@ const LeadTable = ({ userRole }) => {
                         </button>
                       )}
 
+                      {/* Forward and Analytics Buttons - Same Row */}
+                      {lead.status !== 'not-interested' && (
+                        <div style={{ 
+                          display: 'flex', 
+                          gap: '8px', 
+                          marginTop: '8px',
+                          alignItems: 'center'
+                        }}>
+                          {/* Forward Lead Button */}
+                          {canForwardLead(lead).canForward && (
+                            <button
+                              onClick={() => handleForwardLead(lead)}
+                              title={lead.assignmentChain?.length > 0 ? "Already Forwarded" : "Forward Lead"}
+                              className="lead-action-button forward-lead-btn"
+                              disabled={lead.assignmentChain?.length > 0}
+                              style={{ 
+                                backgroundColor: lead.assignmentChain?.length > 0 ? '#10B981' : '#3B82F6', 
+                                color: 'white',
+                                fontSize: '12px',
+                                padding: '4px 8px',
+                                borderRadius: '4px',
+                                border: 'none',
+                                cursor: lead.assignmentChain?.length > 0 ? 'default' : 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                opacity: lead.assignmentChain?.length > 0 ? 0.8 : 1
+                              }}
+                            >
+                              <ArrowRight size={12} />
+                              {lead.assignmentChain?.length > 0 ? 'Forwarded' : 'Forward'}
+                            </button>
+                          )}
+
+                          {/* Analytics Button */}
+                          <button
+                            onClick={() => handleLeadAnalytics(lead)}
+                            title="Lead Performance & Analytics"
+                            className="lead-action-button analytics-btn"
+                            style={{ 
+                              backgroundColor: '#8B5CF6', 
+                              color: 'white',
+                              fontSize: '12px',
+                              padding: '4px 8px',
+                              borderRadius: '4px',
+                              border: 'none',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            <TrendingUp size={12} />
+                            Analytics
+                          </button>
+                        </div>
+                      )}
+
                       {!lead.assignmentChain?.length &&
                         !(
                           (!lead.assignedTo && canReassignLead(lead)) ||
@@ -1656,91 +1822,23 @@ const LeadTable = ({ userRole }) => {
                   <td data-label="Actions">
                     <div className="lead-action-buttons-group">
 
-                      {/* Call/Call History Button - Based on user role and assignment */}
-                      {(() => {
-                        const currentUserRole = localStorage.getItem("userRole");
-                        const isLeadCreator = lead.createdBy === currentUserId;
-                        const isAssignedToUser = String(lead.assignedTo) === String(currentUserId);
-
-                        // Boss who created lead - Show Call History (not Call button)
-                        if ((currentUserRole === 'boss' || currentUserRole === 'super-admin') && isLeadCreator && !isAssignedToUser) {
-                          return (
-                            <button
-                              onClick={() => {
-                                setSelectedLeadForDetails(lead);
-                                setShowLeadDetails(true);
-                                // Focus on call history section
-                                setTimeout(() => {
-                                  const callHistorySection = document.querySelector('.lead-details-call-history-section');
-                                  if (callHistorySection) {
-                                    callHistorySection.scrollIntoView({ behavior: 'smooth' });
-                                  }
-                                }, 300);
-                              }}
-                              title="View Call History"
-                              className="lead-action-button call-history-btn"
-                            >
-                              <Clock size={16} />
-                            </button>
-                          );
-                        }
-
-                        // Assigned user working on lead - Show Call History
-                        if (isAssignedToUser && lead.workProgress && lead.workProgress !== 'pending') {
-                          return (
-                            <button
-                              onClick={() => {
-                                setSelectedLeadForDetails(lead);
-                                setShowLeadDetails(true);
-                                // Focus on call history section
-                                setTimeout(() => {
-                                  const callHistorySection = document.querySelector('.lead-details-call-history-section');
-                                  if (callHistorySection) {
-                                    callHistorySection.scrollIntoView({ behavior: 'smooth' });
-                                  }
-                                }, 300);
-                              }}
-                              title="View Call History"
-                              className="lead-action-button call-history-btn"
-                            >
-                              <Clock size={16} />
-                            </button>
-                          );
-                        }
-
-                        // Assigned user with pending work - Show Call button
-                        if (isAssignedToUser) {
-                          return (
-                            <button
-                              onClick={() => handleCallLead(lead.phone, lead._id, lead.name)}
-                              title="Call Lead"
-                              className="lead-action-button call-btn"
-                            >
-                              <PhoneCall size={16} />
-                            </button>
-                          );
-                        }
-
-                        // Other users - No Call button
-                        return null;
-                      })()}
-
-                      {/* <button
-                        onClick={() => handleEmailLead(lead.email)}
-                        title="Email Lead"
-                        className="lead-action-button email-btn"
-                      >
-                        <Mail size={16} />
-                      </button> */}
-
-                      {/* Advanced Options - Hide for not-interested leads */}
+                      {/* Lead Details Button - Shows all information in one modal */}
                       {lead.status !== 'not-interested' && (
                         <button
-                          onClick={() => handleAdvancedOptions(lead)}
-                          title="Advanced Options"
-                          className="lead-action-button advanced-btn"
+                          onClick={() => {
+                            setSelectedLeadForDetails(lead);
+                            setShowLeadDetails(true);
+                          }}
+                          title="Lead Details & Actions"
+                          className="lead-action-button details-btn"
+                          style={{ 
+                            backgroundColor: '#6366F1', 
+                            color: 'white',
+                            border: 'none',
+                            cursor: 'pointer'
+                          }}
                         >
-                          <Settings size={16} />
+                          <Info size={16} />
                         </button>
                       )}
 
@@ -1785,30 +1883,7 @@ const LeadTable = ({ userRole }) => {
                         </button>
                       )}
 
-                      {/* Close Button for Not-Interested Leads - Only for BD/Employee - HIDDEN */}
-                      {/* Analytics Button - Show for all active leads */}
-                      {lead.status !== 'not-interested' && (
-                        <button
-                          onClick={() => handleLeadAnalytics(lead)}
-                          title="Lead Performance & Analytics"
-                          className="lead-action-button analytics-btn"
-                          style={{ backgroundColor: '#8B5CF6', color: 'white' }}
-                        >
-                          <TrendingUp size={16} />
-                        </button>
-                      )}
-
-                      {/* Lead Actions - Forward, Swap, Switch - Hide for not-interested leads */}
-                      {lead.status !== 'not-interested' && canForwardLead(lead).canForward && (
-                        <button
-                          onClick={() => handleForwardLead(lead)}
-                          title="Forward Lead"
-                          className="lead-action-button forward-lead-btn"
-                          style={{ backgroundColor: '#3B82F6', color: 'white' }}
-                        >
-                          <ArrowRight size={16} />
-                        </button>
-                      )}
+                      {/* Lead Actions - Swap, Switch - Hide for not-interested leads */}
 
                       {lead.status !== 'not-interested' && canSwapLead(lead).canSwap && (
                         <button
@@ -2012,6 +2087,7 @@ const LeadTable = ({ userRole }) => {
                     Follow-up
                   </button>
                 )}
+                
                 {lead.status !== 'not-interested' && (
                   <button
                     className="mobile-view-details-btn"
@@ -2049,7 +2125,7 @@ const LeadTable = ({ userRole }) => {
           }
         }}
       >
-        <DialogContent className="lead-details-dialog">
+        <DialogContent className="lead-details-dialog" style={{ maxWidth: '600px' }}>
           <DialogHeader>
             <DialogTitle className="lead-details-title">Lead Details</DialogTitle>
           </DialogHeader>
@@ -2067,7 +2143,7 @@ const LeadTable = ({ userRole }) => {
                 <div className="lead-details-section">
                   <h4><User size={16} /> Lead Information</h4>
                   <p><strong>Name:</strong> {selectedLeadForDetails.name}</p>
-                  <p><strong>Status:</strong> {selectedLeadForDetails.status}</p>
+                  <p><strong>Status:</strong> <span className={`lead-status-badge ${getStatusClass(selectedLeadForDetails.status)}`}>{selectedLeadForDetails.status}</span></p>
                   <p><strong>Work Progress:</strong> {selectedLeadForDetails.workProgress || 'Pending'}</p>
                 </div>
 
@@ -2224,21 +2300,6 @@ const LeadTable = ({ userRole }) => {
                     <LinkIcon size={16} />
                     Assignment Chain
                   </button>
-
-                  {((userRole === "boss") || (userRole === "super-admin") || (String(selectedLeadForDetails.createdBy) === currentUserId)) && (
-                    <button
-                      className="lead-details-action-btn danger"
-                      onClick={() => {
-                        if (window.confirm('Are you sure you want to delete this lead?')) {
-                          handleDeleteLead(selectedLeadForDetails._id);
-                          setShowLeadDetails(false);
-                        }
-                      }}
-                    >
-                      <Trash2 size={16} />
-                      Delete Lead
-                    </button>
-                  )}
                 </div>
               </div>
 
