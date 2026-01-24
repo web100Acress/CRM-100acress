@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, Filter, RefreshCw, Menu, X, Home, Settings, LogOut, BarChart3, Plus, Phone, Mail, MessageSquare, MessageCircle, Eye, User, Users, MapPin, UserCheck, Download, Trash2, ArrowRight, PhoneCall, PieChart, Calendar, Clock, TrendingUp, Activity, Target, Award, CheckCircle, XCircle, Building2, DollarSign, Mic, Volume2, Video, Edit, ArrowRight as ForwardIcon, Briefcase, Camera, Lock, ChevronRight, Bell } from 'lucide-react';
+import { Search, Filter, RefreshCw, Menu, X, Home, Settings, LogOut, BarChart3, Plus, Phone, Mail, MessageSquare, MessageCircle, Eye, User, Users, MapPin, UserCheck, Download, Trash2, ArrowRight, PhoneCall, PieChart, Calendar, Clock, TrendingUp, Activity, Target, Award, CheckCircle, XCircle, Building2, DollarSign, Mic, Volume2, Video, Edit, ArrowRight as ForwardIcon, Briefcase, Camera, Lock, ChevronRight, Bell, LinkIcon } from 'lucide-react';
 import MobileSidebar from '@/layout/MobileSidebar';
 import { Badge } from '@/layout/badge';
 import { Card, CardContent } from '@/layout/card';
@@ -40,6 +40,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
   const [showCreateLead, setShowCreateLead] = useState(false);
   const [showLeadDetails, setShowLeadDetails] = useState(false);
   const [showLeadAnalytics, setShowLeadAnalytics] = useState(false);
+  const [selectedLeadForAnalytics, setSelectedLeadForAnalytics] = useState(null);
   const [showStatusUpdate, setShowStatusUpdate] = useState(false);
   const [selectedLeadForStatus, setSelectedLeadForStatus] = useState(null);
   const [showAssignmentChain, setShowAssignmentChain] = useState(false);
@@ -803,6 +804,90 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
     }
   };
 
+  // WhatsApp notification function
+  const sendWhatsAppNotification = (lead) => {
+    // You can hardcode the number or use assigned user's phone
+    const phoneNumber = "919031359720"; // Hardcoded number OR lead.assignedUser?.phone
+    
+    // Get assignment information with proper user name
+    let assignedToInfo = 'Unassigned';
+    
+    if (lead.assignedTo) {
+      // Try to get user name from various sources
+      if (lead.assignedToName) {
+        assignedToInfo = lead.assignedToName;
+      } else if (lead.assignedUserName) {
+        assignedToInfo = lead.assignedUserName;
+      } else if (lead.assignedUser?.name) {
+        assignedToInfo = lead.assignedUser.name;
+      } else if (lead.assignmentChain && lead.assignmentChain.length > 0) {
+        // Get the latest assignment from chain
+        const latestAssignment = lead.assignmentChain[lead.assignmentChain.length - 1];
+        assignedToInfo = latestAssignment.name || latestAssignment.userName || latestAssignment.assignedBy?.name || `User ID: ${lead.assignedTo}`;
+      } else {
+        // Try to find user in assignableUsers (use actual state)
+        const user = assignableUsers.find(u => String(u._id) === String(lead.assignedTo));
+        if (user) {
+          assignedToInfo = user.name;
+        } else {
+          assignedToInfo = `User ID: ${lead.assignedTo}`;
+        }
+      }
+    }
+    
+    // Create CRM link - Use production URL with authentication flow
+    const productionUrl = "https://crm.100acress.com";
+    const crmUrl = `${productionUrl}/leads/${lead._id}`;
+    const loginUrl = `${productionUrl}/login`;
+    
+    const message = `
+Lead Notification
+
+Name: ${lead.name}
+Phone: ${lead.phone}
+Location: ${lead.location || 'N/A'}
+Budget: ${lead.budget || 'N/A'}
+Project: ${lead.projectName || 'N/A'}
+Property: ${lead.property || 'N/A'}
+Status: ${lead.status || 'N/A'}
+
+Assigned To: ${assignedToInfo}
+
+ *CRM Login*
+https://crm.100acress.com/login
+
+Notes: New lead assigned for follow-up
+    `.trim();
+
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+    
+    // Optional: Log the WhatsApp click
+    console.log(`WhatsApp notification sent for lead: ${lead.name} (${lead._id})`);
+    console.log(`Assigned to: ${assignedToInfo}`);
+    
+    toast({
+      title: "WhatsApp Opened",
+      description: "WhatsApp opened with lead details and CRM link. Click send to notify.",
+      duration: 3000,
+    });
+  };
+
+  // Create Lead + WhatsApp function
+  const handleCreateLeadAndWhatsApp = () => {
+    // Open create lead modal
+    setShowCreateLead(true);
+    
+    // Store a flag to indicate WhatsApp should be opened after lead creation
+    window.openWhatsAppAfterCreate = true;
+    
+    toast({
+      title: "Create & WhatsApp Mode",
+      description: "Fill lead details and submit. WhatsApp will open automatically.",
+      duration: 4000,
+    });
+  };
+
   // Get role-specific dashboard description
   const getDashboardDescription = () => {
     switch (userRole) {
@@ -1269,10 +1354,15 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         <div className="flex gap-2 mt-3">
           {(userRole === "boss" || userRole === "super-admin" || userRole === "hod" || userRole === "head-admin" || userRole === "admin" || userRole === "crm_admin" || userRole === "bd" || userRole === "employee") && (
             <button
-              onClick={() => setShowCreateLead(true)}
+              onClick={handleCreateLeadAndWhatsApp}
               className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              style={{
+                background: 'linear-gradient(135deg, #25D366, #128C7E)',
+                border: 'none'
+              }}
             >
               <Plus size={16} />
+              <MessageCircle size={16} />
               <span className="text-sm">Create Lead</span>
             </button>
           )}
@@ -1521,14 +1611,6 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         variant: "destructive",
       });
     }
-  };
-
-  const handleLeadAnalytics = (lead) => {
-    console.log('📊 Opening lead analytics for:', lead.name);
-
-    // Set selected lead for analytics
-    setSelectedLead(lead);
-    setShowLeadAnalytics(true);
   };
 
   const handleCloseLead = async (leadId) => {
@@ -1923,6 +2005,11 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
   const handleStatusUpdate = (lead) => {
     setSelectedLeadForStatus(lead);
     setShowStatusUpdate(true);
+  };
+
+  const handleLeadAnalytics = (lead) => {
+    setSelectedLeadForAnalytics(lead);
+    setShowLeadAnalytics(true);
   };
 
   const updateLeadStatus = async (newStatus) => {
@@ -2507,25 +2594,52 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                       const wasForwarded = chain.some((e) => String(e?.status) === 'forwarded');
                       if (!wasForwarded) return null;
 
-                      const lastAssignedEntry = [...chain]
+                      const lastForwardedEntry = [...chain]
                         .reverse()
-                        .find((e) => String(e?.status) === 'assigned');
+                        .find((e) => String(e?.status) === 'forwarded');
 
-                      const assignedByName =
-                        lastAssignedEntry?.assignedBy?.name ||
-                        lastAssignedEntry?.assignedByUser?.name ||
-                        lastAssignedEntry?.forwardedBy?.name ||
-                        lastAssignedEntry?.fromUser?.name ||
-                        lastAssignedEntry?.sender?.name ||
-                        lastAssignedEntry?.assignedByName ||
-                        lastAssignedEntry?.forwarderName ||
-                        lastAssignedEntry?.name ||
+                      const forwarderName =
+                        lastForwardedEntry?.assignedBy?.name ||
+                        lastForwardedEntry?.assignedByUser?.name ||
+                        lastForwardedEntry?.forwardedBy?.name ||
+                        lastForwardedEntry?.fromUser?.name ||
+                        lastForwardedEntry?.sender?.name ||
+                        lastForwardedEntry?.assignedByName ||
+                        lastForwardedEntry?.forwarderName ||
+                        lastForwardedEntry?.name ||
                         'Admin';
 
+                      const forwarderRole = lastForwardedEntry?.assignedBy?.role || 
+                                          lastForwardedEntry?.assignedByUser?.role || 
+                                          lastForwardedEntry?.forwardedBy?.role || 
+                                          'User';
+
+                      const forwardDate = lastForwardedEntry?.timestamp || 
+                                       lastForwardedEntry?.createdAt || 
+                                       lastForwardedEntry?.date;
+
+                      const formatDate = (date) => {
+                        if (!date) return '';
+                        const d = new Date(date);
+                        return d.toLocaleDateString('en-IN', { 
+                          day: 'numeric', 
+                          month: 'short' 
+                        });
+                      };
+
                       return (
-                        <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
-                          <ForwardIcon size={12} />
-                          Forwarded by {assignedByName}
+                        <div className="absolute top-2 right-2 bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-2 rounded-full text-xs font-medium flex flex-col items-center gap-1 shadow-lg">
+                          <div className="flex items-center gap-1">
+                            <ForwardIcon size={12} />
+                            <span>Forwarded</span>
+                          </div>
+                          <div className="text-center">
+                            <div className="font-semibold">{forwarderName}</div>
+                            <div className="text-xs opacity-90">{forwarderRole}</div>
+                            {forwardDate && (
+                              <div className="text-xs opacity-75">{formatDate(forwardDate)}</div>
+                            )}
+                          </div>
                         </div>
                       );
                     })()}
@@ -2541,6 +2655,12 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
                             <Badge className={`text-xs px-2 py-1 rounded-full ${getStatusColor(lead.status)}`}>
                               {lead.status === 'not-interested' ? 'Not Interested' : (lead.status || 'New')}
                             </Badge>
+                            {lead.assignmentChain && lead.assignmentChain.length > 0 && (
+                              <Badge className="text-xs px-2 py-1 rounded-full bg-gradient-to-r from-orange-500 to-red-500 text-white border-0">
+                                <ForwardIcon size={10} className="inline mr-1" />
+                                Forwarded
+                              </Badge>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -4177,6 +4297,161 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
           </button>
         </div>
       </div>
+
+      {/* Lead Analytics Modal */}
+      <Dialog open={showLeadAnalytics} onOpenChange={setShowLeadAnalytics}>
+        <DialogContent className="w-[95%] sm:w-[90%] md:w-[85%] lg:w-[80%] max-w-[400px] sm:max-w-[450px] md:max-w-[500px] max-h-[85vh] sm:max-h-[80vh] overflow-y-auto p-0">
+          <DialogHeader className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4">
+            <DialogTitle className="text-lg font-semibold flex items-center gap-2">
+              <TrendingUp size={20} />
+              Lead Analytics & Performance
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedLeadForAnalytics && (
+            <div className="p-4 space-y-4">
+              {/* Lead Overview */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <User size={16} className="text-indigo-600" />
+                  Lead Overview
+                </h3>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-gray-600">Name:</span>
+                    <p className="font-medium text-gray-900">{selectedLeadForAnalytics.name}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Phone:</span>
+                    <p className="font-medium text-gray-900">{selectedLeadForAnalytics.phone}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Status:</span>
+                    <Badge className={`text-xs ${getStatusColor(selectedLeadForAnalytics.status)}`}>
+                      {selectedLeadForAnalytics.status}
+                    </Badge>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Work Progress:</span>
+                    <p className="font-medium text-gray-900">{selectedLeadForAnalytics.workProgress || 'Pending'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Assignment Chain */}
+              {selectedLeadForAnalytics.assignmentChain && selectedLeadForAnalytics.assignmentChain.length > 0 && (
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <LinkIcon size={16} className="text-blue-600" />
+                    Assignment Chain
+                  </h3>
+                  <div className="space-y-2">
+                    {selectedLeadForAnalytics.assignmentChain.map((assignment, index) => (
+                      <div key={index} className="flex items-center justify-between p-2 bg-white rounded border border-blue-200">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs">
+                            {index + 1}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">
+                              {assignment.assignedBy?.name || assignment.name || 'Unknown'}
+                            </p>
+                            <p className="text-xs text-gray-600">
+                              {assignment.assignedBy?.role || assignment.role || 'User'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-gray-600">
+                            {assignment.timestamp ? new Date(assignment.timestamp).toLocaleDateString() : 'No date'}
+                          </p>
+                          <p className="text-xs font-medium text-blue-600">
+                            {assignment.status || 'Assigned'}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Performance Metrics */}
+              <div className="bg-green-50 rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <BarChart3 size={16} className="text-green-600" />
+                  Performance Metrics
+                </h3>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="bg-white p-3 rounded border border-green-200">
+                    <p className="text-gray-600 text-xs">Days Active</p>
+                    <p className="text-lg font-bold text-green-600">
+                      {selectedLeadForAnalytics.createdAt ? 
+                        Math.ceil((new Date() - new Date(selectedLeadForAnalytics.createdAt)) / (1000 * 60 * 60 * 24)) : 
+                        'N/A'
+                      }
+                    </p>
+                  </div>
+                  <div className="bg-white p-3 rounded border border-green-200">
+                    <p className="text-gray-600 text-xs">Priority Level</p>
+                    <p className="text-lg font-bold text-green-600">
+                      {selectedLeadForAnalytics.status === 'Hot' ? '🔥 High' : 
+                       selectedLeadForAnalytics.status === 'Warm' ? '🌡️ Medium' : 
+                       selectedLeadForAnalytics.status === 'Cold' ? '❄️ Low' : 'Normal'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Property Details */}
+              <div className="bg-purple-50 rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <Building2 size={16} className="text-purple-600" />
+                  Property Details
+                </h3>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  {selectedLeadForAnalytics.property && (
+                    <div>
+                      <span className="text-gray-600">Property Type:</span>
+                      <p className="font-medium text-gray-900">{selectedLeadForAnalytics.property}</p>
+                    </div>
+                  )}
+                  {selectedLeadForAnalytics.budget && (
+                    <div>
+                      <span className="text-gray-600">Budget:</span>
+                      <p className="font-medium text-gray-900">{selectedLeadForAnalytics.budget}</p>
+                    </div>
+                  )}
+                  {selectedLeadForAnalytics.location && (
+                    <div className="col-span-2">
+                      <span className="text-gray-600">Location:</span>
+                      <p className="font-medium text-gray-900">{selectedLeadForAnalytics.location}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 pt-3 border-t">
+                <Button
+                  onClick={() => setShowLeadAnalytics(false)}
+                  className="flex-1 bg-gray-600 hover:bg-gray-700"
+                >
+                  Close
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowLeadAnalytics(false);
+                    handleViewDetails(selectedLeadForAnalytics);
+                  }}
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-700"
+                >
+                  View Full Details
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

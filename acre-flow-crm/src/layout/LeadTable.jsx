@@ -320,10 +320,9 @@ const LeadTable = ({ userRole }) => {
       } else if (lead.assignmentChain && lead.assignmentChain.length > 0) {
         // Get the latest assignment from chain
         const latestAssignment = lead.assignmentChain[lead.assignmentChain.length - 1];
-        assignedToInfo = latestAssignment.name || latestAssignment.userName || `User ID: ${lead.assignedTo}`;
+        assignedToInfo = latestAssignment.name || latestAssignment.userName || latestAssignment.assignedBy?.name || `User ID: ${lead.assignedTo}`;
       } else {
-        // Try to find user in assignableUsers (if available)
-        const assignableUsers = []; // This would need to be passed as prop or fetched
+        // Try to find user in assignableUsers (use actual state)
         const user = assignableUsers.find(u => String(u._id) === String(lead.assignedTo));
         if (user) {
           assignedToInfo = user.name;
@@ -350,9 +349,6 @@ Property: ${lead.property || 'N/A'}
 Status: ${lead.status || 'N/A'}
 
 Assigned To: ${assignedToInfo}
-
- *View Lead in CRM*
-${crmUrl}
 
  *CRM Login*
 https://crm.100acress.com/login
@@ -1511,7 +1507,7 @@ Notes: New lead assigned for follow-up
           >
             <WhatsAppIcon size={18} className="lead-create-icon" />
             {" "}
-            Create & WhatsApp
+            Create Lead
           </button>
         )}
       </div>
