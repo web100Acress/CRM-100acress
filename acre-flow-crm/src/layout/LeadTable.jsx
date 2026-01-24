@@ -339,25 +339,25 @@ const LeadTable = ({ userRole }) => {
     const loginUrl = `${productionUrl}/login`;
     
     const message = `
-🔔 Lead Notification
+Lead Notification
 
-👤 Name: ${lead.name}
-📞 Phone: ${lead.phone}
-📍 Location: ${lead.location || 'N/A'}
-💰 Budget: ${lead.budget || 'N/A'}
-🏗️ Project: ${lead.projectName || 'N/A'}
-🏠 Property: ${lead.property || 'N/A'}
-📊 Status: ${lead.status || 'N/A'}
+Name: ${lead.name}
+Phone: ${lead.phone}
+Location: ${lead.location || 'N/A'}
+Budget: ${lead.budget || 'N/A'}
+Project: ${lead.projectName || 'N/A'}
+Property: ${lead.property || 'N/A'}
+Status: ${lead.status || 'N/A'}
 
-👥 Assigned To: ${assignedToInfo}
+Assigned To: ${assignedToInfo}
 
-🔗 *View Lead in CRM*
+ *View Lead in CRM*
 ${crmUrl}
 
-🔐 *CRM Login*
+ *CRM Login*
 https://crm.100acress.com/login
 
-📝 Notes: New lead assigned for follow-up
+Notes: New lead assigned for follow-up
     `.trim();
 
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
