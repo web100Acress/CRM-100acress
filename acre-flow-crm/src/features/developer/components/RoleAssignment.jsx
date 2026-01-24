@@ -20,6 +20,7 @@ const RoleAssignment = () => {
     role: '',
     allowedModules: [],
     permissions: [],
+    phone: '',
   });
   const [accessPreset, setAccessPreset] = useState('custom');
   const [editAccessPreset, setEditAccessPreset] = useState('custom');
@@ -219,6 +220,7 @@ const RoleAssignment = () => {
       role: assignment.role,
       allowedModules: normalizeModules(assignment.allowedModules),
       permissions: normalizePermissions(assignment.permissions),
+      phone: assignment.phone || '',
     });
   };
 
@@ -238,6 +240,7 @@ const RoleAssignment = () => {
           department: editFormData.department,
           role: editFormData.role,
           permissions: normalizePermissions(editFormData.permissions),
+          phone: editFormData.phone,
         }),
       });
 
@@ -271,6 +274,23 @@ const RoleAssignment = () => {
     } finally {
       setEditLoading(false);
     }
+  };
+
+  const handleEditSave = (assignmentId) => {
+    handleEditSubmit(assignmentId);
+  };
+
+  const handleEditCancel = () => {
+    setEditingAssignment(null);
+    setEditFormData({
+      department: '',
+      role: '',
+      allowedModules: [],
+      permissions: [],
+      phone: '',
+    });
+    setEditAccessPreset('custom');
+    setMessage('');
   };
 
   const getDepartmentLabel = (deptId) => {
@@ -348,6 +368,7 @@ const RoleAssignment = () => {
             role: user.role,
             allowedModules: normalizeModules(user.allowedModules),
             permissions: normalizeModules(user.permissions),
+            phone: user.phone || '',
             assignedDate: user.createdAt ? new Date(user.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
           }));
         setAssignments(mappedAssignments);
@@ -771,6 +792,16 @@ const RoleAssignment = () => {
                                 </select>
                               </div>
                               <div className="sm:col-span-2">
+                                <label className="block text-xs font-semibold text-gray-700 mb-1">Phone Number</label>
+                                <input
+                                  type="tel"
+                                  placeholder="Enter phone number"
+                                  value={editFormData.phone}
+                                  onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                              </div>
+                              <div className="sm:col-span-2">
                                 <label className="block text-xs font-semibold text-gray-700 mb-1">Access Preset</label>
                                 <select
                                   value={editAccessPreset}
@@ -1035,6 +1066,12 @@ const RoleAssignment = () => {
                 <p className="text-sm font-semibold text-gray-600">Email</p>
                 <p className="text-gray-900">{viewingAssignment.email}</p>
               </div>
+              {viewingAssignment.phone && (
+                <div>
+                  <p className="text-sm font-semibold text-gray-600">Phone</p>
+                  <p className="text-gray-900">{viewingAssignment.phone}</p>
+                </div>
+              )}
               <div>
                 <p className="text-sm font-semibold text-gray-600">Department</p>
                 <span className={`inline-block px-3 py-1 ${getDepartmentDisplayColor(viewingAssignment.department, viewingAssignment.allowedModules)} text-white rounded-full text-sm font-medium mt-1`}>
