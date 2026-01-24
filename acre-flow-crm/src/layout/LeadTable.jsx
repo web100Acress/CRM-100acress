@@ -1413,11 +1413,41 @@ https://crm.100acress.com/login
         } catch { }
         throw new Error(errMsg);
       }
+      
+      // Get the updated lead data
+      const updatedLeadData = await res.json();
+      const updatedLead = updatedLeadData.data || updatedLeadData;
+      
       setLeadsList((prev) =>
         prev.map((lead) =>
           lead._id === leadId ? { ...lead, assignedTo: userId } : lead
         )
       );
+
+      // 🚀 Send WhatsApp notification when HOD assigns lead to BD
+      const currentUserRole = localStorage.getItem("userRole");
+      if (currentUserRole === 'hod' && userId) {
+        // Find the assigned user (BD) details
+        const assignedUser = assignableUsers.find(u => String(u._id) === String(userId));
+        
+        if (assignedUser) {
+          // Send WhatsApp notification to BD
+          setTimeout(() => {
+            sendWhatsAppNotification({
+              ...updatedLead,
+              assignedTo: userId,
+              assignedToName: assignedUser.name,
+              assignedUserName: assignedUser.name
+            });
+          }, 1000);
+          
+          toast({
+            title: "✅ Lead Assigned & WhatsApp Sent",
+            description: `Lead assigned to ${assignedUser.name} and WhatsApp notification sent.`,
+            duration: 4000,
+          });
+        }
+      }
     } catch (err) {
       alert("Error: " + err.message);
     }
