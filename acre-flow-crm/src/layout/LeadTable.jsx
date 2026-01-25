@@ -335,6 +335,8 @@ const LeadTable = ({ userRole }) => {
         let assignedToInfo = 'Unassigned';
         
         if (lead.assignedTo) {
+          console.log('🔍 HOD → BD assignment detected, finding BD user phone...');
+          
           // Try to get user name from various sources
           if (lead.assignedToName) {
             assignedToInfo = lead.assignedToName;
@@ -352,6 +354,7 @@ const LeadTable = ({ userRole }) => {
             if (user) {
               assignedToInfo = user.name;
               assignedUserInfo = user; // Store user info for phone number
+              console.log('✅ Found assigned user in assignableUsers:', assignedUserInfo.name);
             } else {
               assignedToInfo = `User ID: ${lead.assignedTo}`;
             }
@@ -360,6 +363,9 @@ const LeadTable = ({ userRole }) => {
           // Try to find assigned user in database for phone number
           if (!assignedUserInfo || !assignedUserInfo.phone) {
             assignedUserInfo = users.find(u => String(u._id) === String(lead.assignedTo));
+            if (assignedUserInfo) {
+              console.log('✅ Found assigned user in users database:', assignedUserInfo.name);
+            }
           }
           
           // Use assigned user's phone number if available
@@ -367,6 +373,9 @@ const LeadTable = ({ userRole }) => {
             const digits = String(assignedUserInfo.phone).replace(/[^\d]/g, '');
             phoneNumber = digits.startsWith('91') ? digits : `91${digits}`;
             console.log('🔍 Using assigned user phone from database:', assignedUserInfo.name, phoneNumber);
+          } else {
+            console.log('❌ No phone number found for assigned user:', assignedToInfo);
+            console.log('🔍 Available users with phones:', users.filter(u => u.phone).map(u => ({ name: u.name, role: u.role, phone: u.phone })));
           }
         }
         
@@ -382,16 +391,68 @@ const LeadTable = ({ userRole }) => {
           }
         }
         
-        // If still no phone number found, show error
+        // If still no phone number found, show detailed error
         if (!phoneNumber) {
+          console.error('❌ WhatsApp Failed - No phone number found');
+          console.error('📊 Debug Info:', {
+            leadId: lead._id,
+            leadName: lead.name,
+            assignedTo: lead.assignedTo,
+            assignedToInfo,
+            assignedUserInfo: assignedUserInfo ? { name: assignedUserInfo.name, phone: assignedUserInfo.phone } : null,
+            currentUserId: localStorage.getItem("userId"),
+            totalUsers: users.length,
+            usersWithPhones: users.filter(u => u.phone).length
+          });
+          
           toast({
             title: "⚠️ Phone Number Missing",
-            description: "No phone number found in database for current user or assigned user. Please update user profiles with phone numbers.",
+            description: `No phone number found for ${assignedToInfo}. Please update user profile with phone number.`,
             variant: "destructive",
             duration: 5000,
           });
           return;
         }
+        
+        // Create CRM link - Use production URL with authentication flow
+        const productionUrl = "https://crm.100acress.com";
+        const crmUrl = `${productionUrl}/leads/${lead._id}`;
+        const loginUrl = `${productionUrl}/login`;
+        
+        const message = `
+Lead Notification
+
+*Lead Details:*
+• Name: ${lead.name}
+• Phone: ${lead.phone}
+• Location: ${lead.location || 'N/A'}
+• Budget: ${lead.budget || 'N/A'}
+• Project: ${lead.projectName || 'N/A'}
+• Property: ${lead.property || 'N/A'}
+• Status: ${lead.status || 'N/A'}
+
+*Assignment:*
+• Assigned To: ${assignedToInfo}
+
+*CRM Login*
+https://crm.100acress.com/login
+
+*Notes:* Lead forwarded and assigned for follow-up
+        `.trim();
+
+        const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+        
+        // Optional: Log the WhatsApp click
+        console.log(`WhatsApp notification sent for lead: ${lead.name} (${lead._id})`);
+        console.log(`Assigned to: ${assignedToInfo}`);
+        console.log(`Phone used: ${phoneNumber}`);
+        
+        toast({
+          title: " WhatsApp Opened",
+          description: `WhatsApp opened with lead details. Phone: ${phoneNumber}`,
+          duration: 3000,
+        });
         
       } else {
         toast({
@@ -402,47 +463,7 @@ const LeadTable = ({ userRole }) => {
         });
         return;
       }
-      
-      // Create CRM link - Use production URL with authentication flow
-      const productionUrl = "https://crm.100acress.com";
-      const crmUrl = `${productionUrl}/leads/${lead._id}`;
-      const loginUrl = `${productionUrl}/login`;
-      
-      const message = `
-🔔 Lead Notification
-
-👤 *Lead Details:*
-• Name: ${lead.name}
-• Phone: ${lead.phone}
-• Location: ${lead.location || 'N/A'}
-• Budget: ${lead.budget || 'N/A'}
-• Project: ${lead.projectName || 'N/A'}
-• Property: ${lead.property || 'N/A'}
-• Status: ${lead.status || 'N/A'}
-
-👥 *Assignment:*
-• Assigned To: ${assignedToInfo}
-
-🔗 *CRM Login*
-https://crm.100acress.com/login
-
-📝 *Notes:* New lead assigned for follow-up
-      `.trim();
-
-      const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-      window.open(whatsappUrl, '_blank');
-      
-      // Optional: Log the WhatsApp click
-      console.log(`WhatsApp notification sent for lead: ${lead.name} (${lead._id})`);
-      console.log(`Assigned to: ${assignedToInfo}`);
-      console.log(`Phone used: ${phoneNumber}`);
-      
-      toast({
-        title: "📱 WhatsApp Opened",
-        description: `WhatsApp opened with lead details. Phone: ${phoneNumber}`,
-        duration: 3000,
-      });
-      
+        
     } catch (error) {
       console.error('Error in sendWhatsAppNotification:', error);
       toast({
@@ -1508,11 +1529,41 @@ https://crm.100acress.com/login
         } catch { }
         throw new Error(errMsg);
       }
+      
+      // Get the updated lead data
+      const updatedLeadData = await res.json();
+      const updatedLead = updatedLeadData.data || updatedLeadData;
+      
       setLeadsList((prev) =>
         prev.map((lead) =>
           lead._id === leadId ? { ...lead, assignedTo: userId } : lead
         )
       );
+
+      // 🚀 Send WhatsApp notification when HOD assigns lead to BD
+      const currentUserRole = localStorage.getItem("userRole");
+      if (currentUserRole === 'hod' && userId) {
+        // Find the assigned user (BD) details
+        const assignedUser = assignableUsers.find(u => String(u._id) === String(userId));
+        
+        if (assignedUser) {
+          // Send WhatsApp notification to BD
+          setTimeout(() => {
+            sendWhatsAppNotification({
+              ...updatedLead,
+              assignedTo: userId,
+              assignedToName: assignedUser.name,
+              assignedUserName: assignedUser.name
+            });
+          }, 1000);
+          
+          toast({
+            title: "✅ Lead Assigned & WhatsApp Sent",
+            description: `Lead assigned to ${assignedUser.name} and WhatsApp notification sent.`,
+            duration: 4000,
+          });
+        }
+      }
     } catch (err) {
       alert("Error: " + err.message);
     }
@@ -1854,7 +1905,7 @@ https://crm.100acress.com/login
                             {canForwardLead(lead).canForward && (
                               <button
                                 className="lead-forward-button"
-                                onClick={() => handleForwardLead(lead)}
+                                
                                 disabled={forwardingLead === lead._id}
                                 title="Forward to next level"
                               >
@@ -2063,16 +2114,16 @@ https://crm.100acress.com/login
 
                       {/* Lead Actions - Swap, Switch - Hide for not-interested leads */}
 
-                      {lead.status !== 'not-interested' && canSwapLead(lead).canSwap && (
+                      {/* {lead.status !== 'not-interested' && canSwapLead(lead).canSwap && (
                         <button
                           onClick={() => handleSwapLead(lead)}
                           title="Swap Lead"
                           className="lead-action-button swap-lead-btn"
                           style={{ backgroundColor: '#10B981', color: 'white' }}
                         >
-                          <Settings size={16} />
+                          <ArrowRight size={16} />
                         </button>
-                      )}
+                      )} */}
 
                       {lead.status !== 'not-interested' && canSwitchLead(lead).canSwitch && (
                         <button
@@ -2288,7 +2339,7 @@ https://crm.100acress.com/login
           setShowLeadDetails(open);
           if (open && selectedLeadForDetails?._id) {
             // Fetch call history when modal opens
-            console.log('📞 Opening lead details modal, fetching call history for leadId:', selectedLeadForDetails._id);
+            console.log('Opening lead details modal, fetching call history for leadId:', selectedLeadForDetails._id);
             setTimeout(() => {
               fetchLeadDetailsCallHistory(selectedLeadForDetails._id);
             }, 200);
@@ -2459,7 +2510,7 @@ https://crm.100acress.com/login
                       setShowLeadDetails(false);
                     }}
                   >
-                    <Settings size={16} />
+                    <MoreHorizontal size={16} />
                     Advanced Options
                   </button>
 

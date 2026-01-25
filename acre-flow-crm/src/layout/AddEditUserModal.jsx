@@ -74,19 +74,16 @@ const AddEditUserModal = ({ isOpen, onClose, user = null, onSave }) => {
   };
 
   const departments = [
-    'Sales', 'Marketing', 'Operations', 'Customer Support',
+    'BD', 'Marketing', 'Operations', 'Customer Support',
     'HR', 'Finance', 'IT', 'Management'
   ];
 
   const roles = [
-    { value: 'super-admin', label: 'Super Admin' },
-    { value: 'head-admin', label: 'Head Admin' },
+    { value: 'super-admin', label: 'BOSS' },
+    { value: 'head-admin', label: 'HOD' },
     { value: 'team-leader', label: 'Team Leader' },
-    { value: 'employee', label: 'Employee' }
+    { value: 'employee', label: 'BD' }
   ];
-
-  // The AlertDialog component itself will handle rendering based on `isOpen`
-  // so we don't need `if (!isOpen) return null;` here.
 
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
