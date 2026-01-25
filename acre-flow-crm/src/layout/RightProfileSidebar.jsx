@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MoreVertical, Bell, Mail, MessageSquare, Plus, Clock, Settings, Camera, Save, X as CloseIcon } from 'lucide-react';
+import { MoreVertical, User, Mail, MessageSquare, Plus, Clock, Edit, Camera, Save, X as CloseIcon, BarChart } from 'lucide-react';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
-import { BarChart, Bar, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart as RechartsBarChart, Bar, ResponsiveContainer, Cell } from 'recharts';
 import { Avatar, AvatarFallback, AvatarImage } from '@/layout/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/layout/dialog';
 import { Input } from '@/layout/input';
@@ -243,17 +243,26 @@ const RightProfileSidebar = ({ isOpen, user = {}, isInline = false }) => {
             </div>
 
             <div className="action-icons flex justify-center gap-4 mb-10">
-                <button className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-indigo-600 transition-all shadow-sm border border-slate-100 group">
-                    <Bell size={20} className="group-hover:animate-bounce" />
+                <button 
+                    onClick={() => navigate('/admin/bd-analytics')}
+                    className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-indigo-600 transition-all shadow-sm border border-slate-100 group"
+                >
+                    <BarChart size={20} className="group-hover:scale-110" />
                 </button>
-                <button className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-indigo-600 transition-all shadow-sm border border-slate-100 group">
-                    <Mail size={20} className="group-hover:scale-110" />
+                <button 
+                    onClick={() => navigate('/whatsapp-chat')}
+                    className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-indigo-600 transition-all shadow-sm border border-slate-100 group relative"
+                >
+                    <MessageSquare size={20} className="group-hover:scale-110" />
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white">
+                        3
+                    </span>
                 </button>
                 <button
                     onClick={() => setIsEditModalOpen(true)}
                     className="p-2 rounded-xl bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-indigo-600 transition-all border border-slate-100"
                 >
-                    <Settings size={20} />
+                    <Edit size={20} />
                 </button>
             </div>
 
@@ -344,7 +353,7 @@ const RightProfileSidebar = ({ isOpen, user = {}, isInline = false }) => {
                     <span className="text-xs font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">Realtime</span>
                 </div>
                 <ResponsiveContainer width="100%" height="80%">
-                    <BarChart data={activityData.length > 0 ? activityData : [
+                    <RechartsBarChart data={activityData.length > 0 ? activityData : [
                         { name: 'Mon', value: 30 }, { name: 'Tue', value: 45 }, { name: 'Wed', value: 65 }, { name: 'Thu', value: 45 }, { name: 'Fri', value: 85 }
                     ]}>
                         <Bar dataKey="value" radius={[6, 6, 6, 6]}>
@@ -357,7 +366,7 @@ const RightProfileSidebar = ({ isOpen, user = {}, isInline = false }) => {
                                 />
                             ))}
                         </Bar>
-                    </BarChart>
+                    </RechartsBarChart>
                 </ResponsiveContainer>
             </div>
 
@@ -383,14 +392,15 @@ const RightProfileSidebar = ({ isOpen, user = {}, isInline = false }) => {
                                     <p className="text-[11px] font-semibold text-slate-400 capitalize">
                                         {member.role === 'hod' ? 'HOD' :
                                             member.role === 'team-leader' ? 'Team Leader' :
-                                                member.role === 'bd' ? 'Business Development' : member.role}
+                                                member.role === 'bd' ? 'BD' : member.role}
                                     </p>
                                 </div>
                                 <button
                                     onClick={() => navigate('/whatsapp-chat', { state: { contact: member } })}
-                                    className="px-4 py-1.5 rounded-xl bg-emerald-50 text-emerald-600 text-[11px] font-black hover:bg-emerald-600 hover:text-white transition-all transform hover:scale-105 active:scale-95 flex items-center gap-1"
+                                    className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 text-[11px] font-black hover:bg-emerald-600 hover:text-white transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center"
+                                    title="WhatsApp"
                                 >
-                                    <MessageSquare size={12} /> WhatsApp
+                                    <MessageSquare size={14} />
                                 </button>
                             </div>
                         ))
