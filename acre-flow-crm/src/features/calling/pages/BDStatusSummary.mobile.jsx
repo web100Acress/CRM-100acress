@@ -28,7 +28,8 @@ import {
   PhoneCall,
   PieChart,
   Briefcase,
-  Activity
+  Activity,
+  Bell
 } from 'lucide-react';
 import MobileBottomNav from '@/layout/MobileBottomNav';
 
@@ -90,6 +91,7 @@ import MobileSidebar from '@/layout/MobileSidebar';
 import { Badge } from '@/layout/badge';
 import { Card, CardContent } from '@/layout/card';
 import { useToast } from '@/hooks/use-toast';
+import { Popover, PopoverContent, PopoverTrigger } from '@/layout/popover';
 import WhatsAppMessageModal from "../components/WhatsAppMessageModal";
 
 const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
@@ -106,6 +108,8 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
   const [activityInterval, setActivityInterval] = useState(null);
   const [messageModalVisible, setMessageModalVisible] = useState(false);
   const [messageRecipient, setMessageRecipient] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
   const [stats, setStats] = useState({
     totalBDs: 0,
     activeBDs: 0,
@@ -114,6 +118,61 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
   });
 
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(API_ENDPOINTS.NOTIFICATIONS, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        const result = await response.json();
+        setNotifications(result.data || []);
+        setUnreadNotificationsCount(result.data?.filter((n) => !n.isRead).length || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  const handleMarkAsRead = async (id) => {
+    const token = localStorage.getItem('token');
+    try {
+      const response = await fetch(API_ENDPOINTS.NOTIFICATIONS_READ(id), {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.ok) {
+        setNotifications((prev) => prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)));
+        setUnreadNotificationsCount((prev) => Math.max(0, prev - 1));
+      }
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      const response = await fetch(API_ENDPOINTS.NOTIFICATIONS_READ_ALL, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.ok) {
+        setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+        setUnreadNotificationsCount(0);
+      }
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
+  };
 
   // Helper function to get initials
   const getInitials = (name) => {
@@ -539,6 +598,55 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
                 <User size={18} className="text-white" />
               )}
             </button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="relative p-2 bg-white/20 backdrop-blur-sm rounded-lg text-white hover:bg-white/30 transition-all duration-200">
+                  <Bell size={20} />
+                  {unreadNotificationsCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-indigo-600 min-w-[18px] flex items-center justify-center">
+                      {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
+                    </span>
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0 border-slate-200 shadow-xl mt-2 overflow-hidden bg-white z-[100]">
+                <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-white">
+                  <h3 className="font-bold text-slate-800">Notifications</h3>
+                  {unreadNotificationsCount > 0 && (
+                    <button
+                      onClick={handleMarkAllAsRead}
+                      className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                    >
+                      Mark all as read
+                    </button>
+                  )}
+                </div>
+                <div className="max-h-[300px] overflow-y-auto bg-white">
+                  {notifications.length === 0 ? (
+                    <div className="p-8 text-center text-slate-400">
+                      <Bell className="mx-auto mb-2 opacity-20" size={32} />
+                      <p className="text-sm">No notifications yet</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-slate-50">
+                      {notifications.map((notification) => (
+                        <div
+                          key={notification._id}
+                          className={`p-4 hover:bg-slate-50 transition-colors cursor-pointer ${!notification.isRead ? 'bg-indigo-50/30 font-semibold' : ''}`}
+                          onClick={() => !notification.isRead && handleMarkAsRead(notification._id)}
+                        >
+                          <p className="text-sm text-slate-800">{notification.title}</p>
+                          <p className="text-xs text-slate-500 line-clamp-2 mt-1">{notification.message}</p>
+                          <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
+                            <Clock size={10} /> {new Date(notification.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </div>
