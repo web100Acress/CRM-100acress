@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/layout/dialog';
 import { Button } from '@/layout/button';
-import { Save, Loader2, User, Mail, Phone, MapPin, Building2, DollarSign, Target } from 'lucide-react';
+import { Save, Loader2, User, Mail, Phone, MapPin, Building2, DollarSign, Target, AlertTriangle, Eye, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { apiUrl } from "@/config/apiConfig";
+import { apiUrl, API_ENDPOINTS } from "@/config/apiConfig";
+import { Badge } from '@/layout/badge';
 
 const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -23,6 +24,9 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
   const [currentUserRole, setCurrentUserRole] = useState('');
   const [entryMode, setEntryMode] = useState('manual'); // "manual" or "paste"
   const [pasteData, setPasteData] = useState('');
+  const [duplicateLeads, setDuplicateLeads] = useState([]);
+  const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
+  const [checkingDuplicates, setCheckingDuplicates] = useState(false);
 
   useEffect(() => {
     const userRole = localStorage.getItem('userRole');
@@ -45,6 +49,8 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
       });
       setEntryMode('manual');
       setPasteData('');
+      setDuplicateLeads([]);
+      setShowDuplicateWarning(false);
       fetchAssignableUsers();
     }
   }, [isOpen]);
