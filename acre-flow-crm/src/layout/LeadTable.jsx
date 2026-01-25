@@ -896,6 +896,7 @@ https://crm.100acress.com/login
     // Status filtering logic:
     // - If statusFilter is 'all', show only active leads (exclude not-interested)
     // - If statusFilter is 'not-interested', show only not-interested leads
+    // - If statusFilter is 'reassigned', show only reassigned leads
     // - Otherwise, match the specific status
     let matchesStatus = false;
     if (statusFilter === 'all') {
@@ -904,6 +905,15 @@ https://crm.100acress.com/login
     } else if (statusFilter === 'not-interested') {
       // Show ONLY not-interested leads
       matchesStatus = lead.status === 'not-interested';
+    } else if (statusFilter === 'reassigned') {
+      // Show ONLY reassigned leads
+      const chain = Array.isArray(lead.assignmentChain) ? lead.assignmentChain : [];
+      const hasReassignNote = chain.some((entry) =>
+        String(entry?.status).toLowerCase() === 'rejected' ||
+        String(entry?.notes || '').toLowerCase().includes('reassign')
+      );
+      const isColdAfterReassign = String(lead.status || '').toLowerCase() === 'cold';
+      matchesStatus = hasReassignNote && isColdAfterReassign;
     } else {
       // Show leads matching the specific status filter
       matchesStatus = lead.status?.toLowerCase() === statusFilter;
@@ -1710,6 +1720,7 @@ https://crm.100acress.com/login
           <option value="hot">Hot</option>
           <option value="warm">Warm</option>
           <option value="cold">Cold</option>
+          <option value="reassigned">Reassigned</option>
           <option value="not-interested">Not Interested</option>
         </select>
 

@@ -16,6 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/layout/popover';
 import { API_ENDPOINTS, apiUrl } from '@/config/apiConfig';
 import io from 'socket.io-client';
 import { useToast } from '@/hooks/use-toast';
+import useProfileImage from '@/hooks/useProfileImage';
 
 const DashboardMobile = ({ userRole = 'employee' }) => {
   const navigate = useNavigate();
@@ -26,6 +27,7 @@ const DashboardMobile = ({ userRole = 'employee' }) => {
   const [assignedLeadsCount, setAssignedLeadsCount] = useState(0);
   const [socket, setSocket] = useState(null);
   const currentUserId = localStorage.getItem('userId');
+  const profileImage = useProfileImage();
 
   const handleCreateAdmin = () => {
     navigate('/create-admin');
@@ -242,9 +244,9 @@ const DashboardMobile = ({ userRole = 'employee' }) => {
               onClick={() => navigate('/edit-profile')}
               className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-white/30 hover:bg-white/30 transition-all duration-200 overflow-hidden"
             >
-              {localStorage.getItem('userProfileImage') ? (
+              {profileImage ? (
                 <img
-                  src={localStorage.getItem('userProfileImage')}
+                  src={profileImage}
                   alt="Profile"
                   className="w-full h-full object-cover"
                 />

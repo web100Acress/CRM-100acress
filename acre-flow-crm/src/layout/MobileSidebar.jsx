@@ -28,11 +28,13 @@ import {
 } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { apiUrl, API_ENDPOINTS } from '@/config/apiConfig';
+import useProfileImage from '@/hooks/useProfileImage';
 
 const MobileSidebar = ({ userRole, isOpen, onClose }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isDark, toggleTheme } = useTheme();
+  const profileImage = useProfileImage();
 
   // WhatsApp Chat State
   const [chatOpen, setChatOpen] = useState(false);
@@ -351,8 +353,16 @@ const MobileSidebar = ({ userRole, isOpen, onClose }) => {
             </button>
           </div>
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-lg">
-              <User size={24} className="text-white" />
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-lg overflow-hidden">
+              {profileImage ? (
+                <img
+                  src={profileImage}
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User size={24} className="text-white" />
+              )}
             </div>
             <div>
               <h4 className="font-semibold text-gray-900">{userName}</h4>

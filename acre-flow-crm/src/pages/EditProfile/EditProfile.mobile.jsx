@@ -144,11 +144,8 @@ const EditProfileMobile = () => {
             ...fallbackData
           }));
 
-          // Load profile image from localStorage fallback
-          const savedImage = localStorage.getItem('userProfileImage');
-          if (savedImage) {
-            setProfileImage(savedImage);
-            console.log('✅ Profile image loaded from localStorage fallback:', savedImage.substring(0, 50) + '...');
+          if (userData?.data?.profileImage) {
+            setProfileImage(userData.data.profileImage);
           }
 
           setLastSaved(new Date());
@@ -174,21 +171,8 @@ const EditProfileMobile = () => {
         joinDate: userData.data.joinDate || '2024-01-15'
       }));
 
-      // Load profile image with Google icon priority
-      const googleProfileImage = localStorage.getItem('googleProfileImage');
-      const savedProfileImage = localStorage.getItem('userProfileImage');
-      const loginProfileImage = localStorage.getItem('loginProfileImage');
-
-      // 🎯 GOOGLE PRIORITY: Use Google profile icon first
-      if (googleProfileImage) {
-        setProfileImage(googleProfileImage);
-        console.log('✅ Google profile icon loaded:', googleProfileImage.substring(0, 50) + '...');
-      } else if (savedProfileImage) {
-        setProfileImage(savedProfileImage);
-        console.log('✅ Profile image loaded from localStorage:', savedImage.substring(0, 50) + '...');
-      } else if (loginProfileImage) {
-        setProfileImage(loginProfileImage);
-        console.log('✅ Login profile image loaded:', loginProfileImage.substring(0, 50) + '...');
+      if (userData?.data?.profileImage) {
+        setProfileImage(userData.data.profileImage);
       } else {
         console.log('ℹ️ No profile image found, using default');
       }
@@ -211,20 +195,8 @@ const EditProfileMobile = () => {
 
       setFormData(prev => ({ ...prev, ...fallbackData }));
 
-      // 🎯 GOOGLE PRIORITY: Check Google profile first
-      const googleProfileImage = localStorage.getItem('googleProfileImage');
-      const savedProfileImage = localStorage.getItem('userProfileImage');
-      const loginProfileImage = localStorage.getItem('loginProfileImage');
-
-      if (googleProfileImage) {
-        setProfileImage(googleProfileImage);
-        console.log('✅ Google profile icon loaded from fallback:', googleProfileImage.substring(0, 50) + '...');
-      } else if (savedProfileImage) {
-        setProfileImage(savedProfileImage);
-        console.log('✅ Profile image loaded from localStorage fallback:', savedProfileImage.substring(0, 50) + '...');
-      } else if (loginProfileImage) {
-        setProfileImage(loginProfileImage);
-        console.log('✅ Login profile image loaded from fallback:', loginProfileImage.substring(0, 50) + '...');
+      if (userData?.data?.profileImage) {
+        setProfileImage(userData.data.profileImage);
       } else {
         console.log('ℹ️ No profile image found, using default');
       }
@@ -496,6 +468,7 @@ const EditProfileMobile = () => {
 
         // Update state with processed URL
         setProfileImage(savedImageUrl);
+        window.dispatchEvent(new Event('profile-image-updated'));
       }
 
       // Update component state only
