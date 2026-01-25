@@ -8,8 +8,8 @@ import { API_ENDPOINTS } from '@/config/apiConfig';
 import { SITE_VISIT_STATUS, VISIT_TYPE } from '@/models/siteVisitModel';
 import MobileBottomNav from '@/layout/MobileBottomNav';
 import MobileSidebar from '@/layout/MobileSidebar';
-import SiteVisitFeedbackModal from '../components/SiteVisitFeedbackModal';
-import { ScheduleSiteVisitModal } from '../components/ScheduleSiteVisit';
+import SiteVisitFeedbackModal from '../../components/SiteVisitFeedbackModal';
+import { ScheduleSiteVisitModal } from '../../components/ScheduleSiteVisit';
 
 const AgentSiteVisitMobile = ({ userId, userName, userRole }) => {
   const { toast } = useToast();
