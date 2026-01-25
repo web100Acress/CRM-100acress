@@ -14,8 +14,29 @@ import {
   AlertDialogTrigger,
 } from '@/layout/alert-dialog';
 
-const DeleteUserModal = ({ isOpen, onClose, user, onConfirm }) => {
+const DeleteUserModal = ({ isOpen, onClose, user, onSuccess }) => {
   if (!isOpen || !user) return null;
+
+  const handleDelete = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`https://bcrm.100acress.com/api/users/${user._id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        onSuccess();
+      } else {
+        console.error('Failed to delete user');
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+    }
+  };
 
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
@@ -44,10 +65,7 @@ const DeleteUserModal = ({ isOpen, onClose, user, onConfirm }) => {
           </Button>
           <Button
             variant="destructive"
-            onClick={() => {
-              onConfirm(user.id);
-              onClose();
-            }}
+            onClick={handleDelete}
             className="flex items-center gap-2"
           >
             <Trash2 className="h-4 w-4" />

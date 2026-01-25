@@ -1791,7 +1791,7 @@ https://crm.100acress.com/login
                             {canForwardLead(lead).canForward && (
                               <button
                                 className="lead-forward-button"
-                                onClick={() => handleForwardLead(lead)}
+                                
                                 disabled={forwardingLead === lead._id}
                                 title="Forward to next level"
                               >

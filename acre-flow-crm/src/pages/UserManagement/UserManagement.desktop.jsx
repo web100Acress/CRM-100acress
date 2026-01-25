@@ -144,13 +144,6 @@ const UserManagementDesktop = ({ userRole = 'super-admin' }) => {
               <Download className="w-4 h-4 mr-2" />
               {isExporting ? 'Exporting...' : 'Export'}
             </button>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add User
-            </button>
           </div>
         </div>
 
@@ -175,9 +168,13 @@ const UserManagementDesktop = ({ userRole = 'super-admin' }) => {
             >
               <option value="all">All Roles</option>
               <option value="super-admin">BOSS</option>
+              <option value="boss">BOSS</option>
               <option value="admin">Admin</option>
               <option value="head-admin">HOD</option>
+              <option value="hod">HOD</option>
               <option value="team-leader">Team Leader</option>
+              <option value="tl">Team Leader</option>
+              <option value="developer">Developer</option>
               <option value="employee">BD</option>
             </select>
             <select
@@ -201,7 +198,6 @@ const UserManagementDesktop = ({ userRole = 'super-admin' }) => {
                   <th className="text-left py-3 px-4">USER</th>
                   <th className="text-left py-3 px-4">LOGIN</th>
                   <th className="text-left py-3 px-4">ROLE</th>
-                  <th className="text-left py-3 px-4">PROJECTS</th>
                   <th className="text-left py-3 px-4">TIME</th>
                   <th className="text-left py-3 px-4">STATUS</th>
                   <th className="text-left py-3 px-4">ACTION</th>
@@ -229,20 +225,23 @@ const UserManagementDesktop = ({ userRole = 'super-admin' }) => {
                     </td>
                     <td className="py-3 px-4 text-gray-600">{user.email}</td>
                     <td className="py-3 px-4">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        user.role === 'super-admin' ? 'bg-purple-100 text-purple-800' :
-                        user.role === 'admin' ? 'bg-blue-100 text-blue-800' :
-                        user.role === 'head-admin' ? 'bg-green-100 text-green-800' :
-                        user.role === 'team-leader' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-gray-100 text-gray-800'
+                      {/* Debug: Log actual role value */}
+                      {console.log(`User: ${user.name}, Actual Role: "${user.role}"`)}
+                      <span className={`px-3 py-1 text-sm font-semibold rounded-full capitalize ${
+                        user.role === 'super-admin' || user.role === 'boss' ? 'bg-purple-100 text-purple-800 border border-purple-200' :
+                        user.role === 'admin' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                        user.role === 'head-admin' || user.role === 'hod' ? 'bg-green-100 text-green-800 border border-green-200' :
+                        user.role === 'team-leader' || user.role === 'tl' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
+                        user.role === 'developer' ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' :
+                        'bg-gray-100 text-gray-800 border border-gray-200'
                       }`}>
-                        {user.role === 'super-admin' ? 'Boss' :
+                        {user.role === 'super-admin' || user.role === 'boss' ? 'BOSS' :
                          user.role === 'admin' ? 'Admin' :
-                         user.role === 'head-admin' ? 'Hod' :
-                         user.role === 'team-leader' ? 'Team Leader' : 'Bd'}
+                         user.role === 'head-admin' || user.role === 'hod' ? 'HOD' :
+                         user.role === 'team-leader' || user.role === 'tl' ? 'Team Leader' :
+                         user.role === 'developer' ? 'Developer' : 'BD'}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-gray-600">--</td>
                     <td className="py-3 px-4 text-gray-600">
                       {new Date(user.createdAt).toLocaleDateString()}
                     </td>
@@ -345,17 +344,19 @@ const UserManagementDesktop = ({ userRole = 'super-admin' }) => {
                   <div>
                     <h4 className="text-xl font-bold text-gray-900">{selectedUser?.name}</h4>
                     <p className="text-gray-600">{selectedUser?.email}</p>
-                    <span className={`inline-block px-3 py-1 text-xs font-medium rounded-full ${
-                      selectedUser?.role === 'super-admin' ? 'bg-purple-100 text-purple-800' :
-                      selectedUser?.role === 'admin' ? 'bg-blue-100 text-blue-800' :
-                      selectedUser?.role === 'head-admin' ? 'bg-green-100 text-green-800' :
-                      selectedUser?.role === 'team-leader' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-gray-100 text-gray-800'
+                    <span className={`inline-block px-3 py-1 text-sm font-semibold rounded-full capitalize ${
+                      selectedUser?.role === 'super-admin' || selectedUser?.role === 'boss' ? 'bg-purple-100 text-purple-800 border border-purple-200' :
+                      selectedUser?.role === 'admin' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                      selectedUser?.role === 'head-admin' || selectedUser?.role === 'hod' ? 'bg-green-100 text-green-800 border border-green-200' :
+                      selectedUser?.role === 'team-leader' || selectedUser?.role === 'tl' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
+                      selectedUser?.role === 'developer' ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' :
+                      'bg-gray-100 text-gray-800 border border-gray-200'
                     }`}>
-                      {selectedUser?.role === 'super-admin' ? 'Boss' :
+                      {selectedUser?.role === 'super-admin' || selectedUser?.role === 'boss' ? 'BOSS' :
                        selectedUser?.role === 'admin' ? 'Admin' :
-                       selectedUser?.role === 'head-admin' ? 'Hod' :
-                       selectedUser?.role === 'team-leader' ? 'Team Leader' : 'Bd'}
+                       selectedUser?.role === 'head-admin' || selectedUser?.role === 'hod' ? 'HOD' :
+                       selectedUser?.role === 'team-leader' || selectedUser?.role === 'tl' ? 'Team Leader' :
+                       selectedUser?.role === 'developer' ? 'Developer' : 'BD'}
                     </span>
                   </div>
                 </div>

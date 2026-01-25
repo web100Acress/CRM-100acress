@@ -58,7 +58,7 @@ const UserManagementMobile = ({ userRole = 'super-admin' }) => {
           const activeUsers = usersData.filter(user => user.isActive).length;
           const inactiveUsers = usersData.filter(user => !user.isActive).length;
           const adminUsers = usersData.filter(user =>
-            user.role === 'super-admin' || user.role === 'admin' || user.role === 'head-admin'
+            user.role === 'super-admin' || user.role === 'boss' || user.role === 'admin' || user.role === 'head-admin' || user.role === 'hod'
           ).length;
 
           setStats({
@@ -238,10 +238,12 @@ const UserManagementMobile = ({ userRole = 'super-admin' }) => {
         {showFilters && (
           <div className="flex flex-wrap gap-2 mt-3">
             <Badge className="bg-white/20 text-white border border-white/30">All Roles</Badge>
-            <Badge className="bg-white/20 text-white border border-white/30">Super Admin</Badge>
+            <Badge className="bg-white/20 text-white border border-white/30">BOSS</Badge>
             <Badge className="bg-white/20 text-white border border-white/30">Admin</Badge>
+            <Badge className="bg-white/20 text-white border border-white/30">HOD</Badge>
             <Badge className="bg-white/20 text-white border border-white/30">Team Leader</Badge>
-            <Badge className="bg-white/20 text-white border border-white/30">Employee</Badge>
+            <Badge className="bg-white/20 text-white border border-white/30">Developer</Badge>
+            <Badge className="bg-white/20 text-white border border-white/30">BD</Badge>
           </div>
         )}
       </div>
@@ -373,13 +375,18 @@ const UserManagementMobile = ({ userRole = 'super-admin' }) => {
               <div className="space-y-2 mb-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Role:</span>
-                  <Badge className={`text-xs ${user.role === 'super-admin' ? 'bg-purple-100 text-purple-800 border-purple-200' :
+                  <Badge className={`text-xs ${user.role === 'super-admin' || user.role === 'boss' ? 'bg-purple-100 text-purple-800 border-purple-200' :
                     user.role === 'admin' ? 'bg-blue-100 text-blue-800 border-blue-200' :
-                      user.role === 'head-admin' ? 'bg-indigo-100 text-indigo-800 border-indigo-200' :
-                        user.role === 'team-leader' ? 'bg-green-100 text-green-800 border-green-200' :
-                          'bg-gray-100 text-gray-800 border-gray-200'
+                      user.role === 'head-admin' || user.role === 'hod' ? 'bg-green-100 text-green-800 border-green-200' :
+                        user.role === 'team-leader' || user.role === 'tl' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
+                          user.role === 'developer' ? 'bg-indigo-100 text-indigo-800 border-indigo-200' :
+                            'bg-gray-100 text-gray-800 border-gray-200'
                     }`}>
-                    {user.role?.replace('-', ' ').toUpperCase() || 'USER'}
+                    {user.role === 'super-admin' || user.role === 'boss' ? 'BOSS' :
+                     user.role === 'admin' ? 'Admin' :
+                      user.role === 'head-admin' || user.role === 'hod' ? 'HOD' :
+                        user.role === 'team-leader' || user.role === 'tl' ? 'Team Leader' :
+                          user.role === 'developer' ? 'Developer' : 'BD'}
                   </Badge>
                 </div>
                 {user.phone && (

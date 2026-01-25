@@ -142,12 +142,31 @@ const AddEditUserModalMobile = ({ isOpen, onClose, onSuccess, user = null }) => 
 
   const getRoleColor = (role) => {
     switch (role) {
-      case 'super-admin': return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'super-admin':
+      case 'boss': return 'bg-purple-100 text-purple-800 border-purple-200';
       case 'admin': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'head-admin': return 'bg-indigo-100 text-indigo-800 border-indigo-200';
-      case 'team-leader': return 'bg-green-100 text-green-800 border-green-200';
+      case 'head-admin':
+      case 'hod': return 'bg-green-100 text-green-800 border-green-200';
+      case 'team-leader':
+      case 'tl': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'developer': return 'bg-indigo-100 text-indigo-800 border-indigo-200';
       case 'employee': return 'bg-gray-100 text-gray-800 border-gray-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getRoleDisplayName = (role) => {
+    switch (role) {
+      case 'super-admin':
+      case 'boss': return 'BOSS';
+      case 'admin': return 'Admin';
+      case 'head-admin':
+      case 'hod': return 'HOD';
+      case 'team-leader':
+      case 'tl': return 'Team Leader';
+      case 'developer': return 'Developer';
+      case 'employee': return 'BD';
+      default: return role?.replace('-', ' ').toUpperCase();
     }
   };
 
@@ -237,15 +256,16 @@ const AddEditUserModalMobile = ({ isOpen, onClose, onSuccess, user = null }) => 
                 onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
               >
-                <option value="employee">Employee</option>
+                <option value="employee">BD</option>
                 <option value="team-leader">Team Leader</option>
-                <option value="head-admin">Head Admin</option>
+                <option value="head-admin">HOD</option>
                 <option value="admin">Admin</option>
-                <option value="super-admin">Super Admin</option>
+                <option value="super-admin">BOSS</option>
+                <option value="developer">Developer</option>
               </select>
             </div>
             <Badge className={`text-xs mt-2 ${getRoleColor(formData.role)}`}>
-              {formData.role?.replace('-', ' ').toUpperCase()}
+              {getRoleDisplayName(formData.role)}
             </Badge>
           </div>
 
