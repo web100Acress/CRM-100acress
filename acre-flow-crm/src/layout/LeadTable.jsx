@@ -85,6 +85,17 @@ const LeadTable = ({ userRole }) => {
   const [showSwitchModal, setShowSwitchModal] = useState(false);
   const [showForwardModal, setShowForwardModal] = useState(false);
   const [selectedLeadForActions, setSelectedLeadForActions] = useState(null);
+  
+  // Reassign state
+  const [showReassignModal, setShowReassignModal] = useState(false);
+  const [selectedLeadForReassign, setSelectedLeadForReassign] = useState(null);
+  const [reassignEmployeeId, setReassignEmployeeId] = useState('');
+  const [reassignReason, setReassignReason] = useState('');
+
+  const [showForwardNIModal, setShowForwardNIModal] = useState(false);
+  const [selectedLeadForForwardNI, setSelectedLeadForForwardNI] = useState(null);
+  const [selectedEmployee, setSelectedEmployee] = useState('');
+  const [forwardReason, setForwardReason] = useState('');
 
   const prevAssignedLeadIds = useRef(new Set());
   const currentUserId = localStorage.getItem("userId");
@@ -529,6 +540,147 @@ https://crm.100acress.com/login
     }
   };
 
+  const handleSubmitForwardLead = async () => {
+    if (!selectedLeadForForwardNI || !selectedEmployee) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const currentUserName = localStorage.getItem('userName') || localStorage.getItem('name') || 'Current User';
+      const employee = assignableUsers.find(u => u._id === selectedEmployee);
+
+      const response = await fetch(`${apiUrl}/api/lead-assignment/assign`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          leadId: selectedLeadForForwardNI._id,
+          assigneeId: selectedEmployee,
+          assigneeName: employee?.name,
+          assigneeRole: employee?.role,
+          notes: forwardReason || `Lead forwarded by ${currentUserName}`,
+        }),
+      });
+
+      if (response.ok) {
+        toast({ title: 'Success', description: 'Lead forwarded successfully' });
+        setShowForwardNIModal(false);
+        setSelectedLeadForForwardNI(null);
+        setSelectedEmployee('');
+        setForwardReason('');
+        // Refresh leads to show the change
+        // fetchLeads(); 
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to forward lead');
+      }
+    } catch (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    }
+  };
+
+  const handleReassignLead = async (leadId, employeeId, reason) => {
+    try {
+      setPatchingLead(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${apiUrl}/api/leads/${leadId}/reassign`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          assignedTo: employeeId,
+          reason: reason || 'Reassigned by admin'
+        })
+      });
+
+      if (response.ok) {
+        toast({
+          title: 'Success',
+          description: 'Lead reassigned successfully',
+          variant: 'default',
+        });
+        // Refresh leads after reassign
+        fetchLeads();
+        setShowReassignModal(false);
+        setSelectedLeadForReassign(null);
+        setReassignEmployeeId('');
+        setReassignReason('');
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to reassign lead');
+      }
+    } catch (error) {
+      console.error('Error reassigning lead:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to reassign lead',
+        variant: 'destructive',
+      });
+    } finally {
+      setPatchingLead(false);
+    }
+  };
+
+  const handleForwardPatchLead = async (leadId, selectedEmployeeId, reason) => {
+    try {
+      setPatchingLead(leadId);
+      const token = localStorage.getItem("token");
+
+      const res = await fetch(
+        `${apiUrl}/api/leads/${leadId}/forward-patch`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ selectedEmployee: selectedEmployeeId, reason }),
+        }
+      );
+
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        data = null;
+      }
+
+      if (!res.ok) {
+        throw new Error(data?.message || "Failed to reassign lead");
+      }
+
+      const leadsResponse = await fetch(`${apiUrl}/api/leads`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const leadsJson = await leadsResponse.json();
+      setLeadsList(leadsJson.data || []);
+
+      toast({
+        title: "Success",
+        description: data?.message || "Lead reassigned successfully",
+      });
+
+      setShowForwardPatch(false);
+      setSelectedLeadForForwardPatch(null);
+      setSelectedPatchEmployeeId('');
+      setForwardPatchReason('');
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: err.message || "Failed to reassign lead",
+        variant: "destructive",
+      });
+    } finally {
+      setPatchingLead(null);
+    }
+  };
+
   const confirmAndSaveCall = async () => {
     const data = callConfirmData;
     if (!data?.pending?.leadId) return;
@@ -782,63 +934,6 @@ https://crm.100acress.com/login
         return "status-not-interested";
       default:
         return "status-default";
-    }
-  };
-
-  const handleForwardPatchLead = async (leadId, selectedEmployeeId, reason) => {
-    try {
-      setPatchingLead(leadId);
-      const token = localStorage.getItem("token");
-
-      const res = await fetch(
-        `${apiUrl}/api/leads/${leadId}/forward-patch`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ selectedEmployee: selectedEmployeeId, reason }),
-        }
-      );
-
-      let data;
-      try {
-        data = await res.json();
-      } catch {
-        data = null;
-      }
-
-      if (!res.ok) {
-        throw new Error(data?.message || "Failed to reassign lead");
-      }
-
-      const leadsResponse = await fetch(`${apiUrl}/api/leads`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-      const leadsJson = await leadsResponse.json();
-      setLeadsList(leadsJson.data || []);
-
-      toast({
-        title: "Success",
-        description: data?.message || "Lead reassigned successfully",
-      });
-
-      setShowForwardPatch(false);
-      setSelectedLeadForForwardPatch(null);
-      setSelectedPatchEmployeeId('');
-      setForwardPatchReason('');
-    } catch (err) {
-      toast({
-        title: "Error",
-        description: err.message || "Failed to reassign lead",
-        variant: "destructive",
-      });
-    } finally {
-      setPatchingLead(null);
     }
   };
 
@@ -1626,10 +1721,8 @@ https://crm.100acress.com/login
           <option value="warm">Warm</option>
           <option value="cold">Cold</option>
           <option value="reassigned">Reassigned</option>
+          <option value="not-interested">Not Interested</option>
         </select>
-
-
-
 
         {(userRole === "boss" || userRole === "hod" || userRole === "bd") && (
           <button 
@@ -2004,14 +2097,30 @@ https://crm.100acress.com/login
 
                       {/* Reassign Button for Not-Interested Leads - Only for Boss/HOD */}
                       {lead.status === 'not-interested' && (userRole === 'boss' || userRole === 'hod' || userRole === 'super-admin' || userRole === 'head-admin') && (
-                        <button
-                          onClick={() => handleForwardLead(lead)}
-                          title="Reassign Lead"
-                          className="lead-action-button reassign-btn"
-                          style={{ backgroundColor: '#F59E0B', color: 'white' }}
-                        >
-                          <UserCheck size={16} />
-                        </button>
+                        <>
+                          <button
+                            onClick={() => {
+                              setSelectedLeadForReassign(lead);
+                              setShowReassignModal(true);
+                            }}
+                            title="Reassign Lead"
+                            className="lead-action-button reassign-btn"
+                            style={{ backgroundColor: '#F59E0B', color: 'white' }}
+                          >
+                            <UserCheck size={16} />
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setSelectedLeadForForwardNI(lead);
+                              setShowForwardNIModal(true);
+                            }}
+                            title="Forward Lead"
+                            className="lead-action-button forward-btn"
+                          >
+                            <ArrowRight size={16} />
+                          </button>
+                        </>
                       )}
 
                       {/* Lead Actions - Swap, Switch - Hide for not-interested leads */}
@@ -2161,7 +2270,6 @@ https://crm.100acress.com/login
                         }}
                       >
                         <Clock size={14} />
-                        Call History
                       </button>
                     );
                   }
@@ -2183,7 +2291,6 @@ https://crm.100acress.com/login
                         }}
                       >
                         <Clock size={14} />
-                        Call History
                       </button>
                     );
                   }
@@ -2198,7 +2305,6 @@ https://crm.100acress.com/login
                         }}
                       >
                         <PhoneCall size={14} />
-                        Call
                       </button>
                     );
                   }
@@ -2215,7 +2321,6 @@ https://crm.100acress.com/login
                     }}
                   >
                     <MessageSquare size={14} />
-                    Follow-up
                   </button>
                 )}
                 
@@ -2228,7 +2333,6 @@ https://crm.100acress.com/login
                     }}
                   >
                     <Eye size={14} />
-                    Details
                   </button>
                 )}
               </div>
@@ -2787,6 +2891,48 @@ https://crm.100acress.com/login
               <Button variant="outline" onClick={handleCloseAdvancedOptions}>
                 Close
               </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Forward Lead Modal for 'Not Interested' Leads */}
+      {showForwardNIModal && selectedLeadForForwardNI && (
+        <Dialog open={showForwardNIModal} onOpenChange={setShowForwardNIModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Forward Lead - {selectedLeadForForwardNI.name}</DialogTitle>
+              <DialogDescription>Select an employee to forward this lead to.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="employee-select" className="block text-sm font-medium text-gray-700">Employee</label>
+                <select
+                  id="employee-select"
+                  value={selectedEmployee}
+                  onChange={(e) => setSelectedEmployee(e.target.value)}
+                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                >
+                  <option value="">Select Employee</option>
+                  {assignableUsers.map((user) => (
+                    <option key={user._id} value={user._id}>{user.name} ({user.role})</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="forward-reason" className="block text-sm font-medium text-gray-700">Reason (Optional)</label>
+                <textarea
+                  id="forward-reason"
+                  value={forwardReason}
+                  onChange={(e) => setForwardReason(e.target.value)}
+                  rows={3}
+                  className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                />
+              </div>
+            </div>
+            <div className="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
+              <Button onClick={handleSubmitForwardLead} disabled={!selectedEmployee}>Forward</Button>
+              <Button onClick={() => setShowForwardNIModal(false)} variant="outline">Cancel</Button>
             </div>
           </DialogContent>
         </Dialog>
