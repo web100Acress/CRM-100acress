@@ -596,7 +596,7 @@ https://crm.100acress.com/login
                 <Save size={14} className="sm:hidden" />
                 <Save size={16} className="hidden sm:block" />
                 <span className="hidden sm:inline">Parse & Fill Form</span>
-                <span className="sm:hidden">Parse</span>
+                <span className="sm:hidden">Paste</span>
               </button>
             </div>
           )}

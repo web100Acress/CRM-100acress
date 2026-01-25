@@ -58,6 +58,7 @@ export const API_ENDPOINTS = {
   LEADS_BD_DETAILS: (bdId) => `${API_BASE_URL}/api/leads/bd-status/${bdId}`,
   LEADS_CALLS: `${API_BASE_URL}/api/leads/calls`,
   LEADS_CALL_HISTORY: (leadId) => `${API_BASE_URL}/api/leads/${leadId}/calls`,
+  LEADS_CHECK_DUPLICATE: `${API_BASE_URL}/api/leads/check-duplicate`,
 
   // WhatsApp
   WHATSAPP_MESSAGES: `${API_BASE_URL}/api/whatsapp/messages`,
