@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Briefcase, BarChart3, Users, Menu, Activity } from 'lucide-react';
+import { Home, Briefcase, BarChart3, Users, Menu, Activity, Calendar } from 'lucide-react';
 
 const roleNavItems = {
   'super-admin': [
@@ -22,25 +22,27 @@ const roleNavItems = {
   ],
   boss: [
     { label: 'Home', path: '/', icon: Home },
-    { label: 'Tasks', path: '/leads', icon: Briefcase },
-    { label: 'Analytics', path: '/admin/bd-analytics', icon: BarChart3 },
+    { label: 'Leads', path: '/leads', icon: Activity },
+    { label: 'Visits', path: '/site-visits', icon: Calendar },
     { label: 'Users', path: '/users', icon: Users },
   ],
   hod: [
     { label: 'Home', path: '/', icon: Home },
-    { label: 'Tasks', path: '/leads', icon: Briefcase },
-    { label: 'Analytics', path: '/admin/bd-analytics', icon: BarChart3 },
+    { label: 'Leads', path: '/leads', icon: Activity },
+    { label: 'Visits', path: '/site-visits', icon: Calendar },
     { label: 'Users', path: '/users', icon: Users },
   ],
 
   'team-leader': [
     { label: 'Home', path: '/employee-dashboard', icon: Home },
-    { label: 'Tasks', path: '/leads', icon: Briefcase },
+    { label: 'Leads', path: '/leads', icon: Briefcase },
+    { label: 'Visits', path: '/site-visits', icon: Calendar },
     { label: 'Team', path: '/team', icon: Users },
   ],
   bd: [
     { label: 'Home', path: '/employee-dashboard', icon: Home },
-    { label: 'Tasks', path: '/leads', icon: Briefcase },
+    { label: 'Leads', path: '/leads', icon: Briefcase },
+    { label: 'Visits', path: '/site-visits', icon: Calendar },
     { label: 'Team', path: '/team', icon: Users },
   ],
   employee: [
