@@ -10,6 +10,7 @@ import { Badge } from '@/layout/badge';
 import { Card, CardContent } from '@/layout/card';
 import { apiUrl, API_ENDPOINTS } from '@/config/apiConfig';
 import { Popover, PopoverContent, PopoverTrigger } from '@/layout/popover';
+import useProfileImage from '@/hooks/useProfileImage';
 
 const USERS_PER_PAGE_CONSTANT = 20; // Reduced for mobile
 
@@ -31,6 +32,7 @@ const UserManagementMobile = ({ userRole = 'super-admin' }) => {
   const [rightMenuOpen, setRightMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+  const profileImage = useProfileImage();
   const [stats, setStats] = useState({
     totalUsers: 0,
     activeUsers: 0,
@@ -183,9 +185,9 @@ const UserManagementMobile = ({ userRole = 'super-admin' }) => {
               onClick={() => navigate('/edit-profile')}
               className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-white/30 hover:bg-white/30 transition-all duration-200 overflow-hidden"
             >
-              {localStorage.getItem('userProfileImage') ? (
+              {profileImage ? (
                 <img
-                  src={localStorage.getItem('userProfileImage')}
+                  src={profileImage}
                   alt="Profile"
                   className="w-full h-full object-cover"
                 />
@@ -448,8 +450,16 @@ const UserManagementMobile = ({ userRole = 'super-admin' }) => {
               {/* User Header */}
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
-                    <span className="text-white text-lg font-bold">{getInitials(user.name)}</span>
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center overflow-hidden">
+                    {user.profileImage ? (
+                      <img
+                        src={user.profileImage}
+                        alt={user.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-white text-lg font-bold">{getInitials(user.name)}</span>
+                    )}
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">{user.name}</h3>

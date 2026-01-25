@@ -10,6 +10,7 @@ import { Button } from '@/layout/button';
 import MobileSidebar from '@/layout/MobileSidebar';
 import MobileBottomNav from '@/layout/MobileBottomNav';
 import { useToast } from '@/hooks/use-toast';
+import useProfileImage from '@/hooks/useProfileImage';
 import io from 'socket.io-client';
 import { Popover, PopoverContent, PopoverTrigger } from '@/layout/popover';
 import { API_ENDPOINTS, apiUrl } from '@/config/apiConfig';
@@ -18,6 +19,7 @@ const BDDashboardMobile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const userRole = localStorage.getItem('userRole') || 'bd';
+  const profileImage = useProfileImage();
   const [notifications, setNotifications] = useState([]);
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
 
@@ -579,9 +581,9 @@ const BDDashboardMobile = () => {
               onClick={() => navigate('/edit-profile')}
               className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-white/30 hover:bg-white/30 transition-all duration-200 overflow-hidden"
             >
-              {localStorage.getItem('userProfileImage') ? (
+              {profileImage ? (
                 <img
-                  src={localStorage.getItem('userProfileImage')}
+                  src={profileImage}
                   alt="Profile"
                   className="w-full h-full object-cover"
                 />

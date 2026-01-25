@@ -92,6 +92,7 @@ import { Badge } from '@/layout/badge';
 import { Card, CardContent } from '@/layout/card';
 import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@/layout/popover';
+import useProfileImage from '@/hooks/useProfileImage';
 import WhatsAppMessageModal from "../components/WhatsAppMessageModal";
 
 const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
@@ -110,6 +111,7 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
   const [messageRecipient, setMessageRecipient] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+  const profileImage = useProfileImage();
   const [stats, setStats] = useState({
     totalBDs: 0,
     activeBDs: 0,
@@ -207,6 +209,7 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
 
       const data = await response.json();
       const summaryData = data.data || [];
+      console.log('BD Summary Data:', summaryData); // Debug log to check profileImage field
       setBdSummary(summaryData);
 
       // Calculate stats
@@ -588,9 +591,9 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
               onClick={() => navigate('/edit-profile')}
               className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-white/30 hover:bg-white/30 transition-all duration-200 overflow-hidden"
             >
-              {localStorage.getItem('userProfileImage') ? (
+              {profileImage ? (
                 <img
-                  src={localStorage.getItem('userProfileImage')}
+                  src={profileImage}
                   alt="Profile"
                   className="w-full h-full object-cover"
                 />
@@ -774,16 +777,18 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
 
       {/* BD List */}
       <div className="p-4 space-y-3 pb-20 md:pb-4">
-        {filteredBDs.map((bd) => (
+        {filteredBDs.map((bd) => {
+          console.log('Rendering BD:', bd); // Debug log to check each BD's data
+          return (
           <Card key={bd.bdId} className="shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="p-4">
               {/* BD Header */}
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center overflow-hidden">
-                    {localStorage.getItem('userProfileImage') ? (
+                    {bd.profileImage ? (
                       <img
-                        src={localStorage.getItem('userProfileImage')}
+                        src={bd.profileImage}
                         alt={bd.name}
                         className="w-full h-full object-cover"
                       />
@@ -873,7 +878,8 @@ const BDStatusSummaryMobile = ({ userRole = 'super-admin' }) => {
               </div>
             </CardContent>
           </Card>
-        ))}
+          );
+        })}
       </div>
 
       {/* No Results */}

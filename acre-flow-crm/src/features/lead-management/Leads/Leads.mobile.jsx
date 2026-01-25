@@ -4,7 +4,7 @@ import {
   Search,
   Activity,
   RefreshCw,
-  Menu, X, Home, Settings, LogOut, BarChart3, Plus, Phone, Mail, MessageSquare, MessageCircle, Eye, User, Users, MapPin, UserCheck, Download, Trash2, ArrowRight, PhoneCall, PieChart, Calendar, Clock, TrendingUp, Activity, Target, Award, CheckCircle, XCircle, Building2, DollarSign, Mic, Volume2, Video, Edit, ArrowRight as ForwardIcon, Briefcase, Camera, Lock, ChevronRight, Bell
+  Menu, X, Home, Settings, LogOut, BarChart3, Plus, Phone, Mail, MessageSquare, MessageCircle, Eye, User, Users, MapPin, UserCheck, Download, Trash2, ArrowRight, PhoneCall, PieChart, Calendar, Clock, TrendingUp, Target, Award, CheckCircle, XCircle, Building2, DollarSign, Mic, Volume2, Video, Edit, ArrowRight as ForwardIcon, Briefcase, Camera, Lock, ChevronRight, Bell, Filter
 } from "lucide-react";
 import MobileBottomNav from '@/layout/MobileBottomNav';
 import MobileSidebar from '@/layout/MobileSidebar';
@@ -22,6 +22,7 @@ import LeadAdvancedOptionsMobile from '@/layout/LeadAdvancedOptions.mobile';
 import { apiUrl, API_ENDPOINTS } from '@/config/apiConfig';
 import io from 'socket.io-client';
 import { Popover, PopoverContent, PopoverTrigger } from '@/layout/popover';
+import useProfileImage from '@/hooks/useProfileImage';
 
 const LeadsMobile = ({ userRole = 'bd' }) => {
   const navigate = useNavigate();
@@ -95,6 +96,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
   const currentUserRole = localStorage.getItem('userRole');
   const [notifications, setNotifications] = useState([]);
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+  const profileImage = useProfileImage();
   const [showPostCallActions, setShowPostCallActions] = useState(false);
   const [postCallLead, setPostCallLead] = useState(null);
 
@@ -245,8 +247,9 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
   const fetchAssignableUsers = async () => {
     try {
       const token = localStorage.getItem('token');
+      // First try to get all users to ensure we have profile images
       const response = await fetch(
-        `${apiUrl}/api/leads/assignable-users`,
+        `${apiUrl}/api/users`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -257,14 +260,14 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       const json = await response.json();
       const users = json.data || [];
       setAssignableUsers(users);
-      console.log('Assignable users fetched:', users);
+      console.log('All users fetched with profile images:', users);
     } catch (error) {
-      console.error("Error fetching assignable users:", error);
-      // Fallback: try to fetch all users
+      console.error("Error fetching users:", error);
+      // Fallback: try assignable users endpoint
       try {
         const token = localStorage.getItem('token');
         const response = await fetch(
-          `${apiUrl}/api/users`,
+          `${apiUrl}/api/leads/assignable-users`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -275,9 +278,9 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         const json = await response.json();
         const users = json.data || [];
         setAssignableUsers(users);
-        console.log('Fallback users fetched:', users);
+        console.log('Fallback assignable users fetched:', users);
       } catch (fallbackError) {
-        console.error("Error fetching fallback users:", fallbackError);
+        console.error("Error fetching fallback assignable users:", fallbackError);
         setAssignableUsers([]);
       }
     }
@@ -1295,9 +1298,9 @@ https://crm.100acress.com/login
               onClick={() => navigate('/edit-profile')}
               className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-white/30 hover:bg-white/30 transition-all duration-200 overflow-hidden"
             >
-              {localStorage.getItem('userProfileImage') ? (
+              {profileImage ? (
                 <img
-                  src={localStorage.getItem('userProfileImage')}
+                  src={profileImage}
                   alt="Profile"
                   className="w-full h-full object-cover"
                 />
@@ -2724,8 +2727,21 @@ https://crm.100acress.com/login
                     })()}
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-white/30 shadow-lg">
-                          <span className="text-white text-xl font-bold">{getInitials(lead.name)}</span>
+                        <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-white/30 shadow-lg overflow-hidden">
+                          {(() => {
+                            // Find the creator of this lead
+                            const creator = assignableUsers.find(u => String(u._id) === String(lead.createdBy));
+                            console.log('Lead:', lead.name, 'CreatedBy:', lead.createdBy, 'Creator found:', creator);
+                            return creator?.profileImage ? (
+                              <img
+                                src={creator.profileImage}
+                                alt={creator.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-white text-xl font-bold">{getInitials(creator?.name || lead.name)}</span>
+                            );
+                          })()}
                         </div>
                         <div className="flex-1">
                           <h3 className="font-bold text-white text-lg">{lead.name}</h3>
