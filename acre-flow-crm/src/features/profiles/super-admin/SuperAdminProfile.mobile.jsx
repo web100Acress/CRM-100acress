@@ -9,7 +9,8 @@ import {
 
 import { Badge } from '@/layout/badge';
 import { Card, CardContent } from '@/layout/card';
-import MobileLayout from '@/layout/MobileLayout';
+
+import MobileBottomNav from '@/layout/MobileBottomNav';
 import io from 'socket.io-client';
 import { apiUrl } from '@/config/apiConfig';
 
@@ -511,58 +512,17 @@ const SuperAdminProfileMobile = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="pb-20 md:pb-0">
-        <MobileLayout userRole="super-admin" activeTab={activeTab} setActiveTab={setActiveTab}>
-          {activeTab === 'overview' && renderOverviewTab()}
-          {activeTab === 'users' && renderUsersTab()}
-          {activeTab === 'leads' && renderLeadsTab()}
-          {activeTab === 'settings' && renderSettingsTab()}
-        </MobileLayout>
+        {activeTab === 'overview' && renderOverviewTab()}
+        {activeTab === 'users' && renderUsersTab()}
+        {activeTab === 'leads' && renderLeadsTab()}
+        {activeTab === 'settings' && renderSettingsTab()}
       </div>
 
-      {/* Mobile Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg md:hidden">
-        <div className="flex justify-around items-center py-2">
-          <button
-            onClick={() => navigate('/super-admin-dashboard')}
-            className="flex flex-col items-center p-2 text-blue-600 hover:text-blue-700 transition-colors"
-          >
-            <Home size={20} />
-            <span className="text-xs mt-1">Home</span>
-          </button>
-
-          <button
-            onClick={() => navigate('/leads')}
-            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
-          >
-            <Activity size={20} />
-            <span className="text-xs mt-1">Leads</span>
-          </button>
-
-          <button
-            onClick={() => navigate('/users')}
-            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
-          >
-            <Users size={20} />
-            <span className="text-xs mt-1">Users</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('settings')}
-            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
-          >
-            <Settings size={20} />
-            <span className="text-xs mt-1">Settings</span>
-          </button>
-
-          <button
-            onClick={() => setShowMobileMenu(!showMobileMenu)}
-            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
-          >
-            <Menu size={20} />
-            <span className="text-xs mt-1">Menu</span>
-          </button>
-        </div>
-      </div>
+      <MobileBottomNav
+        userRole={localStorage.getItem('userRole')}
+        activePath="/super-admin-dashboard"
+        onMenuToggle={() => setShowMobileMenu(!showMobileMenu)}
+      />
     </div>
   );
 };

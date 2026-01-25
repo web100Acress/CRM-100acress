@@ -1,13 +1,14 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  User, Mail, Phone, Shield, Building2, Users, Ticket, Eye, Target, CheckCircle, TrendingUp, Briefcase, Menu, X, Home, BarChart3, Calendar, Clock, ArrowRight, PhoneCall, MessageSquare, MapPin, Star, Award, Bell, Settings, LogOut, ChevronRight, Activity, FileText, DollarSign, TrendingDown, AlertCircle, Search
+  User, Mail, Phone, Shield, Building2, Users, Ticket, Eye, Target, CheckCircle, TrendingUp, Briefcase, Menu, X, Home, BarChart3, Calendar, Clock, ArrowRight, PhoneCall, MessageSquare, MapPin, Star, Award, Bell, Settings, LogOut, ChevronRight, Activity, FileText, DollarSign, TrendingDown, AlertCircle, Search, Filter, Download
 } from 'lucide-react';
 import { Badge } from '@/layout/badge';
 import { Card, CardContent } from '@/layout/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/layout/dialog';
 import { Button } from '@/layout/button';
 import MobileSidebar from '@/layout/MobileSidebar';
+import MobileBottomNav from '@/layout/MobileBottomNav';
 import { useToast } from '@/hooks/use-toast';
 import io from 'socket.io-client';
 import { Popover, PopoverContent, PopoverTrigger } from '@/layout/popover';
@@ -953,42 +954,11 @@ const BDDashboardMobile = () => {
         </Dialog>
       )}
 
-      {/* Mobile Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg md:hidden">
-        <div className="flex justify-around items-center py-2">
-          <button
-            onClick={() => navigate('/employee-dashboard')}
-            className="flex flex-col items-center p-2 text-blue-600 hover:text-blue-700 transition-colors"
-          >
-            <Home size={20} />
-            <span className="text-xs mt-1">Home</span>
-          </button>
-
-          <button
-            onClick={() => navigate('/leads')}
-            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
-          >
-            <Briefcase size={20} />
-            <span className="text-xs mt-1">Tasks</span>
-          </button>
-
-          <button
-            onClick={() => navigate('/team')}
-            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
-          >
-            <Users size={20} />
-            <span className="text-xs mt-1">Team</span>
-          </button>
-
-          <button
-            onClick={() => setShowMobileMenu(!showMobileMenu)}
-            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
-          >
-            <Menu size={20} />
-            <span className="text-xs mt-1">Menu</span>
-          </button>
-        </div>
-      </div>
+      <MobileBottomNav
+        userRole={localStorage.getItem('userRole')}
+        activePath="/employee-dashboard"
+        onMenuToggle={() => setShowMobileMenu(!showMobileMenu)}
+      />
     </div>
   );
 };

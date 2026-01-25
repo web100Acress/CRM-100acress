@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, Filter, RefreshCw, Menu, X, Home, Settings, LogOut, BarChart3, Plus, Phone, Mail, MessageSquare, MessageCircle, Eye, User, Users, MapPin, UserCheck, Download, Trash2, ArrowRight, PhoneCall, PieChart, Calendar, Clock, TrendingUp, Activity, Target, Award, CheckCircle, XCircle, Building2, DollarSign, Mic, Volume2, Video, Edit, ArrowRight as ForwardIcon, Briefcase, Camera, Lock, ChevronRight, Bell } from 'lucide-react';
+import {
+  Search,
+  Activity,
+  RefreshCw,
+  Menu, X, Home, Settings, LogOut, BarChart3, Plus, Phone, Mail, MessageSquare, MessageCircle, Eye, User, Users, MapPin, UserCheck, Download, Trash2, ArrowRight, PhoneCall, PieChart, Calendar, Clock, TrendingUp, Activity, Target, Award, CheckCircle, XCircle, Building2, DollarSign, Mic, Volume2, Video, Edit, ArrowRight as ForwardIcon, Briefcase, Camera, Lock, ChevronRight, Bell
+} from "lucide-react";
+import MobileBottomNav from '@/layout/MobileBottomNav';
 import MobileSidebar from '@/layout/MobileSidebar';
 import { Badge } from '@/layout/badge';
 import { Card, CardContent } from '@/layout/card';
@@ -4334,42 +4340,11 @@ https://crm.100acress.com/login
 
       </div>
 
-      {/* Mobile Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg md:hidden">
-        <div className="flex justify-around items-center py-2">
-          <button
-            onClick={() => navigate('/employee-dashboard')}
-            className="flex flex-col items-center p-2 text-blue-600 hover:text-blue-700 transition-colors"
-          >
-            <Home size={20} />
-            <span className="text-xs mt-1">Home</span>
-          </button>
-
-          <button
-            onClick={() => navigate('/leads')}
-            className="flex flex-col items-center p-2 text-blue-600 hover:text-blue-700 transition-colors"
-          >
-            <Briefcase size={20} />
-            <span className="text-xs mt-1">Tasks</span>
-          </button>
-
-          <button
-            onClick={() => navigate('/team')}
-            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
-          >
-            <Users size={20} />
-            <span className="text-xs mt-1">Team</span>
-          </button>
-
-          <button
-            onClick={() => setRightMenuOpen(!rightMenuOpen)}
-            className="flex flex-col items-center p-2 text-gray-600 hover:text-blue-600 transition-colors"
-          >
-            <Menu size={20} />
-            <span className="text-xs mt-1">Menu</span>
-          </button>
-        </div>
-      </div>
+      <MobileBottomNav
+        userRole={localStorage.getItem('userRole')}
+        activePath="/leads"
+        onMenuToggle={() => setRightMenuOpen(!rightMenuOpen)}
+      />
 
       {/* Lead Analytics Modal */}
       <Dialog open={showLeadAnalytics} onOpenChange={setShowLeadAnalytics}>
