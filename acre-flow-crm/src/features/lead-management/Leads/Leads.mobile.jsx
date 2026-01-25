@@ -877,7 +877,7 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
         // If still no phone number found, show error
         if (!phoneNumber) {
           toast({
-            title: "⚠️ Phone Number Missing",
+            title: "Phone Number Missing",
             description: "No phone number found in database for current user or assigned user. Please update user profiles with phone numbers.",
             variant: "destructive",
             duration: 5000,
@@ -901,9 +901,9 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
       const loginUrl = `${productionUrl}/login`;
       
       const message = `
-🔔 Lead Notification
+ Lead Notification
 
-👤 *Lead Details:*
+*Lead Details:*
 • Name: ${lead.name}
 • Phone: ${lead.phone}
 • Location: ${lead.location || 'N/A'}
@@ -912,13 +912,13 @@ const LeadsMobile = ({ userRole = 'bd' }) => {
 • Property: ${lead.property || 'N/A'}
 • Status: ${lead.status || 'N/A'}
 
-👥 *Assignment:*
+*Assignment:*
 • Assigned To: ${assignedToInfo}
 
-🔗 *CRM Login*
+*CRM Login*
 https://crm.100acress.com/login
 
-📝 *Notes:* New lead assigned for follow-up
+*Notes:* New lead assigned for follow-up
       `.trim();
 
       const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
@@ -3167,7 +3167,7 @@ https://crm.100acress.com/login
               setShowLeadDetails(open);
               if (open && selectedLead?._id) {
                 // Fetch call history when modal opens
-                console.log('📞 Opening lead details modal, fetching call history for leadId:', selectedLead._id);
+                console.log('📞 Opening l modal, fetching call history for leadId:', selectedLead._id);
                 setTimeout(() => {
                   fetchLeadCallHistory(selectedLead._id);
                 }, 200);

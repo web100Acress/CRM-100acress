@@ -559,10 +559,10 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
 
       // Create WhatsApp message from Creator to Assigned User
       const message = `
-🔔 *New Lead Assigned by ${creatorName}*
+*New Lead Assigned by ${creatorName}*
 
 
-👤 *Lead Details:*
+*Lead Details:*
 • Name: ${leadData.name}
 • Phone: ${leadData.phone}
 • Email: ${leadData.email || "N/A"}
@@ -572,15 +572,15 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
 • Property: ${leadData.property || "N/A"}
 • Status: ${leadData.status || "Cold"}
 
-👥 *Assignment:*
+*Assignment:*
 • Assigned To: ${assignedUserName} (${assignedUserRole.toUpperCase()})
 • Assigned By: ${creatorName} (${creatorRole.toUpperCase()})
 
-📝 *Action Required:*
+*Action Required:*
 Please contact the lead immediately and update the status in CRM.
 
 
-🔗 *CRM Access:*
+*CRM Access:*
 https://crm.100acress.com/login
 
 ---
@@ -660,7 +660,7 @@ https://crm.100acress.com/login
 
         const shouldOpenWhatsAppAfterCreate = !!window.openWhatsAppAfterCreate;
 
-        // 🚀 AUTOMATIC ROLE-BASED WHATSAPP FORWARDING (skip if Create+WhatsApp button is used)
+        // AUTOMATIC ROLE-BASED WHATSAPP FORWARDING (skip if Create+WhatsApp button is used)
         if (formData.assignedTo && !shouldOpenWhatsAppAfterCreate) {
           console.log(
             "🔍 Lead assigned - checking for automatic WhatsApp forwarding",
@@ -700,7 +700,7 @@ https://crm.100acress.com/login
           const assignedUserId = createdLead.assignedTo || formData.assignedTo;
           if (!assignedUserId) {
             toast({
-              title: "⚠️ Lead Not Assigned",
+              title: "Lead Not Assigned",
               description:
                 "Please assign the lead to a user to send WhatsApp notification.",
               variant: "destructive",
@@ -771,9 +771,9 @@ Project: ${formData.projectName || "N/A"}
 Property: ${formData.property || "N/A"}
 Status: ${formData.status || "N/A"}
 
-👥 Assigned To: ${assignedToInfo}
+Assigned To: ${assignedToInfo}
 
-🔗 *View Lead in CRM*
+*View Lead in CRM*
 ${crmUrl}
 
 *CRM Login*

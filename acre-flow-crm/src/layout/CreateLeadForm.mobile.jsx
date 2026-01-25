@@ -433,9 +433,9 @@ Project: ${formData.projectName || "N/A"}
 Property: ${formData.property || "N/A"}
 Status: ${formData.status || "N/A"}
 
-👥 Assigned To: ${assignedToInfo}
+Assigned To: ${assignedToInfo}
 
-🔗 *View Lead in CRM*
+*View Lead in CRM*
 ${crmUrl}
 
 *CRM Login*
