@@ -96,6 +96,48 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
       ...prev,
       [name]: value
     }));
+
+    // Check for duplicates when phone or email changes
+    if (name === 'phone' || name === 'email') {
+      if (value.trim()) {
+        checkForDuplicates(name, value.trim());
+      } else {
+        setDuplicateLeads([]);
+        setShowDuplicateWarning(false);
+      }
+    }
+  };
+
+  const checkForDuplicates = async (fieldName, value) => {
+    if (!value) return;
+
+    setCheckingDuplicates(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(API_ENDPOINTS.LEADS_CHECK_DUPLICATE, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          [fieldName]: value
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok && data.data && data.data.length > 0) {
+        setDuplicateLeads(data.data);
+        setShowDuplicateWarning(true);
+      } else {
+        setDuplicateLeads([]);
+        setShowDuplicateWarning(false);
+      }
+    } catch (error) {
+      console.error('Error checking duplicates:', error);
+    } finally {
+      setCheckingDuplicates(false);
+    }
   };
 
   const handlePasteData = () => {
@@ -334,6 +376,17 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
         toast({
           title: "Validation Error",
           description: "Please enter a valid phone number",
+          variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Check for duplicates before submission
+      if (showDuplicateWarning && duplicateLeads.length > 0) {
+        toast({
+          title: "Duplicate Lead Detected",
+          description: "Please review the duplicate leads before creating a new one.",
           variant: "destructive"
         });
         setLoading(false);
