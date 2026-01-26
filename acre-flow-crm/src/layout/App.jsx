@@ -475,6 +475,16 @@ const App = () => {
 
                 {/* Site Visit Routes */}
                 <Route 
+                  path="/site-visit-dashboard" 
+                  element={
+                    isLoggedIn ? (
+                      <SiteVisitDashboard userRole={userRole} userId={localStorage.getItem('userId')} />
+                    ) : (
+                      <Navigate to="/login" replace />
+                    )
+                  } 
+                />
+                <Route 
                   path="/site-visits" 
                   element={
                     isLoggedIn ? (

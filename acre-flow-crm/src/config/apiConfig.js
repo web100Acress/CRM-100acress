@@ -10,7 +10,7 @@ const API_BASE_URL = (hostname === 'localhost' || hostname === '127.0.0.1')
 const SOCKET_URL = (hostname === 'localhost' || hostname === '127.0.0.1')
   ? 'http://localhost:5001'
   : hostname === '192.168.1.16'
-    ? 'http://192.168.1.16:5001'  // Use 5001 for socket as well, assuming it shares the server
+    ? 'http://192.168.1.16:5001'
     : 'https://bcrm.100acress.com';
 
 export const apiUrl = API_BASE_URL;
@@ -76,6 +76,8 @@ export const API_ENDPOINTS = {
   SITE_VISITS_RESCHEDULE: (id) => `${API_BASE_URL}/api/site-visits/${id}/reschedule`,
   SITE_VISITS_REMINDERS: `${API_BASE_URL}/api/site-visits/reminders`,
   SITE_VISITS_DASHBOARD: `${API_BASE_URL}/api/site-visits/dashboard`,
+  SITE_VISITS_RECENT: `${API_BASE_URL}/api/site-visits/recent`,
+  SITE_VISITS_TOP_PERFORMERS: `${API_BASE_URL}/api/site-visits/top-performers`,
 
   // WhatsApp
   WHATSAPP_MESSAGES: `${API_BASE_URL}/api/whatsapp/messages`,
@@ -150,6 +152,8 @@ export const API_ENDPOINTS = {
     RESCHEDULE: (id) => `${API_BASE_URL}/api/site-visits/${id}/reschedule`,
     REMINDERS: `${API_BASE_URL}/api/site-visits/reminders`,
     DASHBOARD: `${API_BASE_URL}/api/site-visits/dashboard`,
+    RECENT: `${API_BASE_URL}/api/site-visits/recent`,
+    TOP_PERFORMERS: `${API_BASE_URL}/api/site-visits/top-performers`,
   },
   TICKETS: {
     LIST: `${API_BASE_URL}/tickets`,

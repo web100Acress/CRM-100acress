@@ -10,8 +10,9 @@ import MobileBottomNav from '@/layout/MobileBottomNav';
 import MobileSidebar from '@/layout/MobileSidebar';
 import SiteVisitFeedbackModal from '../../components/SiteVisitFeedbackModal';
 import { ScheduleSiteVisitModal } from '../../components/ScheduleSiteVisit';
+import DashboardLayout from '@/layout/DashboardLayout';
 
-const AgentSiteVisitMobile = ({ userId, userName, userRole }) => {
+const AgentSiteVisitDesktop = ({ userId, userName, userRole }) => {
   const { toast } = useToast();
   const [todayVisits, setTodayVisits] = useState([]);
   const [upcomingVisits, setUpcomingVisits] = useState([]);
@@ -419,41 +420,10 @@ const AgentSiteVisitMobile = ({ userId, userName, userRole }) => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <DashboardLayout userRole={userRole}>
+      <div className="min-h-screen bg-gray-50">
       {/* Mobile Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 sticky top-0 z-10">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setRightMenuOpen(!rightMenuOpen)}
-              className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-            <div>
-              <h1 className="text-lg font-bold">
-                {userRole === 'bd' || userRole === 'employee' ? 'My Visits' : 
-                 userRole === 'team-leader' ? 'Team Visits' :
-                 userRole === 'hod' ? 'Department Visits' :
-                 'All Visits'}
-              </h1>
-              <p className="text-blue-100 text-sm">Welcome back, {userName}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {locationError && (
-              <div className="bg-yellow-500 text-white px-2 py-1 rounded text-xs">
-                <AlertCircle className="w-3 h-3 inline mr-1" />
-                {locationError}
-              </div>
-            )}
-            <button className="p-2 rounded-lg hover:bg-white/10 transition-colors">
-              <Bell className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      </div>
-
+   
       {/* Quick Stats */}
       <QuickStats />
 
@@ -695,8 +665,9 @@ const AgentSiteVisitMobile = ({ userId, userName, userRole }) => {
           />
         )}
       </div>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 };
 
-export default AgentSiteVisitMobile;
+export default AgentSiteVisitDesktop;
