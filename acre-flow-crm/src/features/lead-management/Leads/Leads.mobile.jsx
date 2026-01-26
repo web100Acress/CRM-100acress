@@ -3874,10 +3874,10 @@ https://crm.100acress.com/login
                         <div className="flex-1 space-y-1">
                           <div className="flex justify-between items-center">
                             <p className="font-medium text-gray-900">
-                              {chain.assignedBy?.name || chain.assignedByUser?.name || chain.forwardedBy?.name || chain.name || 'Unknown'}
+                              {chain.name || chain.assignedTo || 'Unknown'}
                             </p>
                             <span className="text-[11px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                              {chain.assignedBy?.role || chain.assignedByUser?.role || chain.forwardedBy?.role || chain.role || 'User'}
+                              {chain.role || chain.assignedToRole || 'User'}
                             </span>
                           </div>
 

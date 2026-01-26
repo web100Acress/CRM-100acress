@@ -25,6 +25,7 @@ import {
   CheckCircle,
   TrendingUp,
   Info,
+  MoreHorizontal,
 } from "lucide-react";
 
 // WhatsApp Icon Component
