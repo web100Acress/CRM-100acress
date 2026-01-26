@@ -1466,7 +1466,7 @@ https://crm.100acress.com/login
               className="flex items-center justify-center gap-2 px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
             >
               <RefreshCw size={16} />
-              <span className="text-sm">Debug</span>
+             
             </button>
           )}
         </div>
