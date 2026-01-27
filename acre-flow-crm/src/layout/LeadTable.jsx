@@ -122,9 +122,33 @@ const LeadTable = ({ userRole }) => {
       ? 'http://localhost:5001'
       : 'https://bcrm.100acress.com';
 
-    const s = io(socketUrl);
+    console.log('🔌 Desktop: Connecting to Socket.IO at:', socketUrl);
+    
+    const s = io(socketUrl, {
+      transports: ['websocket', 'polling'], // Fallback to polling if WebSocket fails
+      timeout: 10000,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000
+    });
+    
     setSocket(s);
-    console.log('Desktop LeadTable Socket.IO connected:', s.id);
+
+    // Connection events
+    s.on('connect', () => {
+      console.log('✅ Desktop: Socket.IO connected:', s.id);
+    });
+
+    s.on('connect_error', (error) => {
+      console.error('❌ Desktop: Socket.IO connection error:', error.message);
+      console.log('🔄 Desktop: Socket.IO will retry connection...');
+    });
+
+    s.on('disconnect', (reason) => {
+      console.log('🔌 Desktop: Socket.IO disconnected:', reason);
+    });
+
+    console.log('🔌 Desktop: Socket.IO connection initiated...');
 
     // Listen for real-time lead updates
     s.on('leadUpdate', (data) => {
@@ -190,8 +214,13 @@ const LeadTable = ({ userRole }) => {
         // Re-fetch leads to get latest data
         const fetchLeads = async () => {
           try {
-            setLoading(true);
-            const token = localStorage.getItem('token');
+            console.log('🔍 Desktop: Starting fetchLeads...');
+            console.log('🔍 Desktop: API URL:', apiUrl);
+            console.log('🔍 Desktop: Current hostname:', window.location.hostname);
+            
+            const token = localStorage.getItem("token");
+            console.log('🔍 Desktop: Token exists:', !!token);
+            
             const response = await fetch(`${apiUrl}/api/leads`, {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -201,7 +230,9 @@ const LeadTable = ({ userRole }) => {
             
             if (response.ok) {
               const data = await response.json();
-              const sortedLeads = (data.data || data.payload || data || []).sort((a, b) => {
+              // Handle different response formats safely
+              const leadsData = data && (data.data || data.payload || data);
+              const sortedLeads = (Array.isArray(leadsData) ? leadsData : []).sort((a, b) => {
                 const dateA = new Date(a.createdAt || 0);
                 const dateB = new Date(b.createdAt || 0);
                 return dateB - dateA;
@@ -794,11 +825,41 @@ https://crm.100acress.com/login
     const fetchLeads = async () => {
       try {
         console.log('🔍 Desktop: Starting to fetch leads...');
+        console.log('🔍 Desktop: API URL:', apiUrl);
+        console.log('🔍 Desktop: Current hostname:', window.location.hostname);
+        console.log('🔍 Desktop: User role (prop):', userRole);
+        console.log('🔍 Desktop: User role (localStorage):', localStorage.getItem("userRole"));
+        
+        // Test network connectivity first
+        console.log('🔍 Desktop: Testing network connectivity...');
+        const connectivityTest = await fetch(`${apiUrl}/health`, {
+          method: 'GET',
+          mode: 'cors'
+        }).catch(err => {
+          console.log('❌ Desktop: Health check failed:', err.message);
+          return null;
+        });
+        
+        if (connectivityTest) {
+          console.log('✅ Desktop: Backend is reachable');
+        } else {
+          console.log('❌ Desktop: Backend not reachable');
+        }
+        
+        const token = localStorage.getItem("token");
+        console.log('🔍 Desktop: Token exists:', !!token);
+        console.log('🔍 Desktop: Token length:', token?.length || 0);
+        console.log('🔍 Desktop: Token preview:', token ? `${token.substring(0, 20)}...` : 'none');
 
         // Fetch regular CRM leads - always fetch all for filtering
         const response = await apiCall('/api/leads?limit=10000&page=1');
+        console.log('🔍 Desktop: API response status:', response.status);
+        console.log('🔍 Desktop: API response ok:', response.ok);
+        
         const json = await response.json();
         console.log('📊 Desktop: Fetch leads response:', json);
+        console.log('📊 Desktop: Response success:', json.success);
+        console.log('📊 Desktop: Response data length:', json.data?.length || 0);
         
         const regularLeads = json.data || [];
         console.log('✅ Desktop: Regular leads loaded:', regularLeads.length, 'leads');
@@ -809,7 +870,10 @@ https://crm.100acress.com/login
           try {
             console.log('🔍 Desktop: Fetching website enquiries...');
             const enquiriesResponse = await apiCall('/api/website-enquiries?limit=10000');
+            console.log('🔍 Desktop: Website enquiries response status:', enquiriesResponse.status);
+            
             const enquiriesJson = await enquiriesResponse.json();
+            console.log('📊 Desktop: Website enquiries response:', enquiriesJson);
             
             if (enquiriesJson.success) {
               // Function to map website enquiry status to valid lead status
@@ -861,6 +925,20 @@ https://crm.100acress.com/login
             }
           } catch (enquiriesError) {
             console.error('❌ Desktop: Error fetching website enquiries:', enquiriesError);
+            console.error('❌ Desktop: Website enquiries error details:', {
+              message: enquiriesError.message,
+              status: enquiriesError.response?.status,
+              statusText: enquiriesError.response?.statusText
+            });
+            
+            // Show user-friendly notification but don't break the app
+            toast({
+              title: "Website Enquiries Unavailable",
+              description: "Unable to load website enquiries. Regular leads will still be displayed.",
+              variant: "warning",
+              duration: 5000,
+            });
+            
             // Continue with regular leads even if website enquiries fail
           }
         }
@@ -894,7 +972,23 @@ https://crm.100acress.com/login
         // --- End notification logic ---
       } catch (error) {
         console.error('❌ Desktop: Error fetching leads:', error);
-        alert("Error fetching leads: " + error.message);
+        console.error('❌ Desktop: Error details:', {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        });
+        
+        // Show user-friendly error in production
+        toast({
+          title: "Error Loading Data",
+          description: "Failed to load leads. Please check your connection and try again.",
+          variant: "destructive",
+        });
+        
+        // In development, show detailed error
+        if (window.location.hostname === 'localhost') {
+          alert("Error fetching leads: " + error.message);
+        }
       } finally {
         setLoading(false);
       }
