@@ -31,15 +31,15 @@ import {
 
 // WhatsApp Icon Component
 const WhatsAppIcon = ({ size = 20, className = "" }) => (
-  <svg 
-    width={size} 
-    height={size} 
-    viewBox="0 0 24 24" 
-    fill="currentColor" 
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="currentColor"
     className={className}
     style={{ color: "#25D366" }}
   >
-    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.149-.67.149-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414-.074-.123-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.149-.67.149-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414-.074-.123-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
   </svg>
 );
 import FollowUpModal from "@/features/employee/follow-up/FollowUpModal";
@@ -90,7 +90,7 @@ const LeadTable = ({ userRole }) => {
   const [showSwitchModal, setShowSwitchModal] = useState(false);
   const [showForwardModal, setShowForwardModal] = useState(false);
   const [selectedLeadForActions, setSelectedLeadForActions] = useState(null);
-  
+
   // Reassign state
   const [showReassignModal, setShowReassignModal] = useState(false);
   const [selectedLeadForReassign, setSelectedLeadForReassign] = useState(null);
@@ -123,7 +123,7 @@ const LeadTable = ({ userRole }) => {
       : 'https://bcrm.100acress.com';
 
     console.log('🔌 Desktop: Connecting to Socket.IO at:', socketUrl);
-    
+
     const s = io(socketUrl, {
       transports: ['websocket', 'polling'], // Fallback to polling if WebSocket fails
       timeout: 10000,
@@ -131,7 +131,7 @@ const LeadTable = ({ userRole }) => {
       reconnectionAttempts: 5,
       reconnectionDelay: 1000
     });
-    
+
     setSocket(s);
 
     // Connection events
@@ -157,7 +157,7 @@ const LeadTable = ({ userRole }) => {
       if (data && data.action) {
         // Auto-refresh leads on any lead activity
         console.log('Auto-refreshing desktop leads due to activity:', data.action);
-        
+
         // Show toast notification for the activity
         switch (data.action) {
           case 'followup_added':
@@ -210,24 +210,24 @@ const LeadTable = ({ userRole }) => {
             });
             break;
         }
-        
+
         // Re-fetch leads to get latest data
         const fetchLeads = async () => {
           try {
             console.log('🔍 Desktop: Starting fetchLeads...');
             console.log('🔍 Desktop: API URL:', apiUrl);
             console.log('🔍 Desktop: Current hostname:', window.location.hostname);
-            
+
             const token = localStorage.getItem("token");
             console.log('🔍 Desktop: Token exists:', !!token);
-            
+
             const response = await fetch(`${apiUrl}/api/leads`, {
               headers: {
                 Authorization: `Bearer ${token}`,
                 'Content-Type': 'application/json'
               }
             });
-            
+
             if (response.ok) {
               const data = await response.json();
               // Handle different response formats safely
@@ -359,20 +359,20 @@ const LeadTable = ({ userRole }) => {
           "Content-Type": "application/json",
         },
       });
-      
+
       let phoneNumber = null;
       let assignedUserInfo = null;
-      
+
       if (response.ok) {
         const data = await response.json();
         const users = data.data || [];
-        
+
         // Get assignment information with proper user name
         let assignedToInfo = 'Unassigned';
-        
+
         if (lead.assignedTo) {
           console.log('🔍 HOD → BD assignment detected, finding BD user phone...');
-          
+
           // Try to get user name from various sources
           if (lead.assignedToName) {
             assignedToInfo = lead.assignedToName;
@@ -395,7 +395,7 @@ const LeadTable = ({ userRole }) => {
               assignedToInfo = `User ID: ${lead.assignedTo}`;
             }
           }
-          
+
           // Try to find assigned user in database for phone number
           if (!assignedUserInfo || !assignedUserInfo.phone) {
             assignedUserInfo = users.find(u => String(u._id) === String(lead.assignedTo));
@@ -403,7 +403,7 @@ const LeadTable = ({ userRole }) => {
               console.log('✅ Found assigned user in users database:', assignedUserInfo.name);
             }
           }
-          
+
           // Use assigned user's phone number if available
           if (assignedUserInfo && assignedUserInfo.phone) {
             const digits = String(assignedUserInfo.phone).replace(/[^\d]/g, '');
@@ -414,19 +414,19 @@ const LeadTable = ({ userRole }) => {
             console.log('🔍 Available users with phones:', users.filter(u => u.phone).map(u => ({ name: u.name, role: u.role, phone: u.phone })));
           }
         }
-        
+
         // If no assigned user phone found, try to find current user's phone
         if (!phoneNumber) {
           const currentUserId = localStorage.getItem("userId");
           const currentUser = users.find(u => String(u._id) === String(currentUserId));
-          
+
           if (currentUser && currentUser.phone) {
             const digits = String(currentUser.phone).replace(/[^\d]/g, '');
             phoneNumber = digits.startsWith('91') ? digits : `91${digits}`;
             console.log('🔍 Using current user phone from database:', currentUser.name, phoneNumber);
           }
         }
-        
+
         // If still no phone number found, show detailed error
         if (!phoneNumber) {
           console.error('❌ WhatsApp Failed - No phone number found');
@@ -440,7 +440,7 @@ const LeadTable = ({ userRole }) => {
             totalUsers: users.length,
             usersWithPhones: users.filter(u => u.phone).length
           });
-          
+
           toast({
             title: "⚠️ Phone Number Missing",
             description: `No phone number found for ${assignedToInfo}. Please update user profile with phone number.`,
@@ -449,12 +449,12 @@ const LeadTable = ({ userRole }) => {
           });
           return;
         }
-        
+
         // Create CRM link - Use production URL with authentication flow
         const productionUrl = "https://crm.100acress.com";
         const crmUrl = `${productionUrl}/leads/${lead._id}`;
         const loginUrl = `${productionUrl}/login`;
-        
+
         const message = `
 Lead Notification
 
@@ -478,18 +478,18 @@ https://crm.100acress.com/login
 
         const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
         window.open(whatsappUrl, '_blank');
-        
+
         // Optional: Log the WhatsApp click
         console.log(`WhatsApp notification sent for lead: ${lead.name} (${lead._id})`);
         console.log(`Assigned to: ${assignedToInfo}`);
         console.log(`Phone used: ${phoneNumber}`);
-        
+
         toast({
           title: " WhatsApp Opened",
           description: `WhatsApp opened with lead details. Phone: ${phoneNumber}`,
           duration: 3000,
         });
-        
+
       } else {
         toast({
           title: "❌ Database Error",
@@ -499,7 +499,7 @@ https://crm.100acress.com/login
         });
         return;
       }
-        
+
     } catch (error) {
       console.error('Error in sendWhatsAppNotification:', error);
       toast({
@@ -515,10 +515,10 @@ https://crm.100acress.com/login
   const handleCreateLeadAndWhatsApp = () => {
     // Open create lead modal
     setShowCreateLead(true);
-    
+
     // Store a flag to indicate WhatsApp should be opened after lead creation
     window.openWhatsAppAfterCreate = true;
-    
+
     toast({
       title: "Create & WhatsApp Mode",
       description: "Fill lead details and submit. WhatsApp will open automatically.",
@@ -829,7 +829,7 @@ https://crm.100acress.com/login
         console.log('🔍 Desktop: Current hostname:', window.location.hostname);
         console.log('🔍 Desktop: User role (prop):', userRole);
         console.log('🔍 Desktop: User role (localStorage):', localStorage.getItem("userRole"));
-        
+
         // Test network connectivity first
         console.log('🔍 Desktop: Testing network connectivity...');
         const connectivityTest = await fetch(`${apiUrl}/health`, {
@@ -839,13 +839,13 @@ https://crm.100acress.com/login
           console.log('❌ Desktop: Health check failed:', err.message);
           return null;
         });
-        
+
         if (connectivityTest) {
           console.log('✅ Desktop: Backend is reachable');
         } else {
           console.log('❌ Desktop: Backend not reachable');
         }
-        
+
         const token = localStorage.getItem("token");
         console.log('🔍 Desktop: Token exists:', !!token);
         console.log('🔍 Desktop: Token length:', token?.length || 0);
@@ -855,12 +855,12 @@ https://crm.100acress.com/login
         const response = await apiCall('/api/leads?limit=10000&page=1');
         console.log('🔍 Desktop: API response status:', response.status);
         console.log('🔍 Desktop: API response ok:', response.ok);
-        
+
         const json = await response.json();
         console.log('📊 Desktop: Fetch leads response:', json);
         console.log('📊 Desktop: Response success:', json.success);
         console.log('📊 Desktop: Response data length:', json.data?.length || 0);
-        
+
         const regularLeads = json.data || [];
         console.log('✅ Desktop: Regular leads loaded:', regularLeads.length, 'leads');
 
@@ -871,16 +871,16 @@ https://crm.100acress.com/login
             console.log('🔍 Desktop: Fetching website enquiries...');
             const enquiriesResponse = await apiCall('/api/website-enquiries?limit=10000');
             console.log('🔍 Desktop: Website enquiries response status:', enquiriesResponse.status);
-            
+
             const enquiriesJson = await enquiriesResponse.json();
             console.log('📊 Desktop: Website enquiries response:', enquiriesJson);
-            
+
             if (enquiriesJson.success) {
               // Function to map website enquiry status to valid lead status
               const mapWebsiteStatusToLeadStatus = (status) => {
                 const statusMap = {
                   'pending': 'Cold',
-                  'new': 'Hot', 
+                  'new': 'Hot',
                   'hot': 'Hot',
                   'warm': 'Warm',
                   'cold': 'Cold',
@@ -930,64 +930,25 @@ https://crm.100acress.com/login
               status: enquiriesError.response?.status,
               statusText: enquiriesError.response?.statusText
             });
-            
-            // TEMPORARY FALLBACK: Show mock website enquiries when SERVICE_TOKEN fails
-            console.log('🔄 Desktop: Using temporary fallback for website enquiries...');
-            websiteEnquiries = [
-              {
-                _id: `temp_website_${Date.now()}_1`,
-                name: 'Website Enquiry Example 1',
-                email: 'customer1@example.com',
-                phone: '+91 9876543210',
-                projectName: '100acress Premium Project',
-                message: 'Interested in 2BHK apartment',
-                status: 'Hot',
-                source: 'Website',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                isWebsiteEnquiry: true,
-                assignedTo: null,
-                assignedToName: 'Not Assigned',
-                priority: 'High',
-                notes: 'Temporary fallback - SERVICE_TOKEN needs update'
-              },
-              {
-                _id: `temp_website_${Date.now()}_2`,
-                name: 'Website Enquiry Example 2',
-                email: 'customer2@example.com',
-                phone: '+91 9876543211',
-                projectName: '100acress Commercial Space',
-                message: 'Looking for office space',
-                status: 'Warm',
-                source: 'Website',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                isWebsiteEnquiry: true,
-                assignedTo: null,
-                assignedToName: 'Not Assigned',
-                priority: 'Medium',
-                notes: 'Temporary fallback - SERVICE_TOKEN needs update'
-              }
-            ];
-            
-            // Show user-friendly notification
+
+            // Show user-friendly notification but don't break the app
             toast({
-              title: "⚠️ Website Enquiries - Fallback Mode",
-              description: `Showing ${websiteEnquiries.length} sample enquiries. Update SERVICE_TOKEN for real data.`,
+              title: "Website Enquiries Unavailable",
+              description: "Unable to load website enquiries. Regular leads will still be displayed.",
               variant: "warning",
-              duration: 8000,
+              duration: 5000,
             });
-            
-            console.log(`✅ Desktop: Fallback website enquiries loaded: ${websiteEnquiries.length} enquiries`);
+
+            // Continue with regular leads even if website enquiries fail
           }
         }
 
         // Merge regular leads and website enquiries
         const allLeads = [...regularLeads, ...websiteEnquiries];
-        
+
         // Sort by creation date (newest first)
         allLeads.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        
+
         setLeadsList(allLeads);
         console.log('✅ Desktop: All leads loaded successfully:', allLeads.length, 'total leads');
 
@@ -1016,14 +977,14 @@ https://crm.100acress.com/login
           stack: error.stack,
           name: error.name
         });
-        
+
         // Show user-friendly error in production
         toast({
           title: "Error Loading Data",
           description: "Failed to load leads. Please check your connection and try again.",
           variant: "destructive",
         });
-        
+
         // In development, show detailed error
         if (window.location.hostname === 'localhost') {
           alert("Error fetching leads: " + error.message);
@@ -1101,7 +1062,7 @@ https://crm.100acress.com/login
       lead.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       lead.phone?.includes(searchTerm);
-    
+
     // Status filtering logic:
     // - If statusFilter is 'all', show only active leads (exclude not-interested)
     // - If statusFilter is 'not-interested', show only not-interested leads
@@ -1127,7 +1088,7 @@ https://crm.100acress.com/login
       // Show leads matching the specific status filter
       matchesStatus = lead.status?.toLowerCase() === statusFilter;
     }
-    
+
     // Source filtering logic:
     let matchesSource = false;
     if (sourceFilter === 'all') {
@@ -1146,16 +1107,16 @@ https://crm.100acress.com/login
       const leadDate = new Date(lead.createdAt);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
+
       const yesterday = new Date(today);
       yesterday.setDate(yesterday.getDate() - 1);
-      
+
       const weekStart = new Date(today);
       weekStart.setDate(today.getDate() - today.getDay());
-      
+
       const monthStart = new Date(today);
       monthStart.setDate(1);
-      
+
       if (dateFilter === 'today') {
         matchesDate = leadDate >= today;
       } else if (dateFilter === 'yesterday') {
@@ -1176,7 +1137,7 @@ https://crm.100acress.com/login
     } else if (assignedFilter === 'unassigned') {
       matchesAssigned = !lead.assignedTo || lead.assignedTo === ''; // Show only unassigned leads
     }
-    
+
     return matchesSearch && matchesStatus && matchesSource && matchesDate && matchesAssigned;
   });
 
@@ -1504,16 +1465,16 @@ https://crm.100acress.com/login
   const canUserAccessLead = (lead) => {
     // If lead is not-interested, check if current user is the one who marked it
     if (lead.status === 'not-interested' && lead.notInterestedBy) {
-      const notInterestedBy = typeof lead.notInterestedBy === 'string' 
-        ? lead.notInterestedBy 
+      const notInterestedBy = typeof lead.notInterestedBy === 'string'
+        ? lead.notInterestedBy
         : lead.notInterestedBy?._id;
-      
+
       // If current user is the one who marked it as not-interested, they cannot access it
       if (String(notInterestedBy) === String(currentUserId)) {
         return false;
       }
     }
-    
+
     // For all other cases, user can access the lead
     return true;
   };
@@ -1542,7 +1503,7 @@ https://crm.100acress.com/login
           description: "Lead has been marked as closed and is no longer available.",
           duration: 5000,
         });
-        
+
         // Refresh leads
         fetchLeads();
       } else {
@@ -1781,12 +1742,12 @@ https://crm.100acress.com/login
   const handleAssignLead = async (leadId, userId) => {
     try {
       const token = localStorage.getItem("token");
-      
+
       // Function to map website enquiry status to valid lead status
       const mapWebsiteStatusToLeadStatus = (status) => {
         const statusMap = {
           'pending': 'Cold',
-          'new': 'Hot', 
+          'new': 'Hot',
           'hot': 'Hot',
           'warm': 'Warm',
           'cold': 'Cold',
@@ -1796,14 +1757,14 @@ https://crm.100acress.com/login
         };
         return statusMap[status?.toLowerCase()] || 'Cold';
       };
-      
+
       // Find the lead to check if it's a website enquiry
       const lead = leadsList.find(l => l._id === leadId);
-      
+
       if (lead?.isWebsiteEnquiry) {
         // Handle website enquiry assignment - convert to actual lead
         console.log('🔄 Converting website enquiry to lead:', lead.name);
-        
+
         const createLeadData = {
           name: lead.name,
           email: lead.email,
@@ -1870,7 +1831,7 @@ https://crm.100acress.com/login
           },
           body: JSON.stringify({ assignedTo: userId }),
         });
-        
+
         if (!res.ok) {
           let errMsg = "Failed to assign lead";
           try {
@@ -1879,11 +1840,11 @@ https://crm.100acress.com/login
           } catch { }
           throw new Error(errMsg);
         }
-        
+
         // Get the updated lead data
         const updatedLeadData = await res.json();
         const updatedLead = updatedLeadData.data || updatedLeadData;
-        
+
         setLeadsList((prev) =>
           prev.map((lead) =>
             lead._id === leadId ? { ...lead, assignedTo: userId } : lead
@@ -1894,17 +1855,17 @@ https://crm.100acress.com/login
       // 🚀 Send WhatsApp notification when HOD or Boss assigns lead to BD
       const currentUserRole = localStorage.getItem("userRole");
       console.log('🔍 Checking WhatsApp notification - Current role:', currentUserRole, 'Assigning to user ID:', userId);
-      
+
       if ((currentUserRole === 'hod' || currentUserRole === 'boss') && userId) {
         console.log('✅ WhatsApp notification triggered - HOD/Boss assigning lead');
         // Find the assigned user (BD) details
         const assignedUser = assignableUsers.find(u => String(u._id) === String(userId));
-        
+
         if (assignedUser) {
-          const updatedLead = lead?.isWebsiteEnquiry ? 
+          const updatedLead = lead?.isWebsiteEnquiry ?
             leadsList.find(l => l._id !== leadId && l.assignedTo === userId) : // Find the newly created/updated lead
             leadsList.find(l => l._id === leadId);
-            
+
           // Send WhatsApp notification to BD
           console.log('📱 Sending WhatsApp notification to:', assignedUser.name, 'for lead:', updatedLead?.name || 'Unknown');
           setTimeout(() => {
@@ -1915,7 +1876,7 @@ https://crm.100acress.com/login
               assignedUserName: assignedUser.name
             });
           }, 1000);
-          
+
           toast({
             title: "✅ Lead Assigned & WhatsApp Sent",
             description: `Lead assigned to ${assignedUser.name} and WhatsApp notification sent.`,
@@ -2121,7 +2082,7 @@ https://crm.100acress.com/login
           <option value="unassigned">Unassigned</option>
         </select>
 
-        <button 
+        <button
           className={`lead-load-all-button ${showAllLeads ? 'active' : ''}`}
           onClick={() => {
             setShowAllLeads(!showAllLeads);
@@ -2133,8 +2094,8 @@ https://crm.100acress.com/login
         </button>
 
         {(userRole === "boss" || userRole === "hod" || userRole === "bd") && (
-          <button 
-            className="lead-create-button lead-create-whatsapp-button" 
+          <button
+            className="lead-create-button lead-create-whatsapp-button"
             onClick={handleCreateLeadAndWhatsApp}
             style={{
               background: 'linear-gradient(135deg, #25D366, #128C7E)',
@@ -2341,7 +2302,7 @@ https://crm.100acress.com/login
                             {canForwardLead(lead).canForward && (
                               <button
                                 className="lead-forward-button"
-                                
+
                                 disabled={forwardingLead === lead._id}
                                 title="Forward to next level"
                               >
@@ -2403,9 +2364,9 @@ https://crm.100acress.com/login
 
                       {/* Forward and Analytics Buttons - Same Row */}
                       {lead.status !== 'not-interested' && (
-                        <div style={{ 
-                          display: 'flex', 
-                          gap: '8px', 
+                        <div style={{
+                          display: 'flex',
+                          gap: '8px',
                           marginTop: '8px',
                           alignItems: 'center'
                         }}>
@@ -2416,8 +2377,8 @@ https://crm.100acress.com/login
                               title={lead.assignmentChain?.length > 0 ? "Already Forwarded" : "Forward Lead"}
                               className="lead-action-button forward-lead-btn"
                               disabled={lead.assignmentChain?.length > 0}
-                              style={{ 
-                                backgroundColor: lead.assignmentChain?.length > 0 ? '#10B981' : '#3B82F6', 
+                              style={{
+                                backgroundColor: lead.assignmentChain?.length > 0 ? '#10B981' : '#3B82F6',
                                 color: 'white',
                                 fontSize: '12px',
                                 padding: '4px 8px',
@@ -2440,8 +2401,8 @@ https://crm.100acress.com/login
                             onClick={() => handleLeadAnalytics(lead)}
                             title="Lead Performance & Analytics"
                             className="lead-action-button analytics-btn"
-                            style={{ 
-                              backgroundColor: '#8B5CF6', 
+                            style={{
+                              backgroundColor: '#8B5CF6',
                               color: 'white',
                               fontSize: '12px',
                               padding: '4px 8px',
@@ -2480,8 +2441,8 @@ https://crm.100acress.com/login
                           }}
                           title="Lead Details & Actions"
                           className="lead-action-button details-btn"
-                          style={{ 
-                            backgroundColor: '#6366F1', 
+                          style={{
+                            backgroundColor: '#6366F1',
                             color: 'white',
                             border: 'none',
                             cursor: 'pointer'
@@ -2795,7 +2756,7 @@ https://crm.100acress.com/login
                     <MessageSquare size={14} />
                   </button>
                 )}
-                
+
                 {lead.status !== 'not-interested' && (
                   <button
                     className="mobile-view-details-btn"

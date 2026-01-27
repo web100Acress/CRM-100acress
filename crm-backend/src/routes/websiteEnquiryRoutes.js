@@ -2,8 +2,11 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middlewares/auth');
 
-// 100acress.com API base URL - Support both production and development
-const WEBSITE_API_BASE = process.env.BACKEND_URL || 'http://localhost:3500';
+// 100acress.com API base URL - Production requires explicit BACKEND_URL
+if (!process.env.BACKEND_URL) {
+  throw new Error('BACKEND_URL is not defined in environment variables');
+}
+const WEBSITE_API_BASE = process.env.BACKEND_URL;
 
 // Production detection
 const isProduction = process.env.NODE_ENV === 'production' || !WEBSITE_API_BASE.includes('localhost');
@@ -35,39 +38,18 @@ router.get('/', auth, async (req, res) => {
       userRole
     });
 
-    // Multiple authentication methods for production
-    let serviceToken = process.env.SERVICE_TOKEN;
-    let authMethod = 'service-token';
+    // 🔥 PRODUCTION: SERVICE_TOKEN is REQUIRED (no fallback)
+    const serviceToken = process.env.SERVICE_TOKEN;
+    const authMethod = 'service-token';
 
-    // Method 1: Use service token if available
-    if (!serviceToken) {
-      console.log('⚠️ SERVICE_TOKEN not found, trying alternative auth methods...');
-      
-      // Method 2: Use current user's token (if they're admin)
-      if (req.user && allowedRoles.includes(userRole)) {
-        serviceToken = req.headers.authorization?.replace('Bearer ', '');
-        authMethod = 'user-token';
-        console.log('🔄 Using user token for authentication');
-      }
-      
-      // Method 3: Try without token (if 100acress allows public access for admins)
-      if (!serviceToken && isProduction) {
-        serviceToken = null;
-        authMethod = 'no-token';
-        console.log('🔄 Trying without token (public access)');
-      }
-    }
-
-    // Final check if we have any authentication method
-    if (!serviceToken && authMethod !== 'no-token') {
+    if (!process.env.SERVICE_TOKEN) {
       return res.status(500).json({
         success: false,
-        message: 'No authentication method available. Please configure SERVICE_TOKEN or ensure admin access.',
+        message: 'SERVICE_TOKEN missing in production. Contact administrator.',
         debug: {
-          hasServiceToken: !!process.env.SERVICE_TOKEN,
-          hasUserToken: !!req.headers.authorization,
-          isProduction,
-          userRole
+          hasServiceToken: false,
+          backendUrl: WEBSITE_API_BASE,
+          isProduction
         }
       });
     }
@@ -75,19 +57,11 @@ router.get('/', auth, async (req, res) => {
     // Get limit from query params (default to 10000)
     const limit = req.query.limit || 10000;
     
-    // Prepare request headers based on auth method
+    // Prepare request headers - only service-token for 100acress API
     const headers = {
       'Content-Type': 'application/json',
+      'x-access-token': process.env.SERVICE_TOKEN
     };
-
-    // Add authentication if available
-    if (serviceToken) {
-      if (authMethod === 'service-token') {
-        headers['x-access-token'] = serviceToken;
-      } else {
-        headers['Authorization'] = `Bearer ${serviceToken}`;
-      }
-    }
 
     console.log(`🌐 Fetching from: ${WEBSITE_API_BASE}/crm/enquiries?limit=${limit}`);
     console.log(`🔐 Auth method: ${authMethod}`);
