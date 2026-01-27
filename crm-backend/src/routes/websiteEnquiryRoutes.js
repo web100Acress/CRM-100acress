@@ -2,57 +2,137 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middlewares/auth');
 
-// 100acress.com API base URL
+// 100acress.com API base URL - Support both production and development
 const WEBSITE_API_BASE = process.env.BACKEND_URL || 'http://localhost:3500';
+
+// Production detection
+const isProduction = process.env.NODE_ENV === 'production' || !WEBSITE_API_BASE.includes('localhost');
 
 /**
  * @route GET /api/website-enquiries
- * @desc Proxy route to fetch enquiries from 100acress.com (Boss only)
- * @access Private (Boss only)
+ * @desc Proxy route to fetch enquiries from 100acress.com (Boss/Admin only)
+ * @access Private (Boss and Admin roles)
  */
 router.get('/', auth, async (req, res) => {
   try {
-    // Check if user is Boss
+    // Check if user has admin privileges (Boss, Admin, Super-Admin)
     const userRole = req.user?.role?.toLowerCase();
-    if (userRole !== 'boss' && userRole !== 'admin') {
+    const allowedRoles = ['boss', 'admin', 'super-admin', 'head-admin'];
+    
+    if (!allowedRoles.includes(userRole)) {
       return res.status(403).json({
         success: false,
-        message: 'Access denied. This feature is for Boss role only.'
+        message: 'Access denied. This feature is for Admin roles only (Boss, Admin, Super-Admin, Head-Admin).'
       });
     }
 
-    // Get service token for 100acress backend authentication
-    const serviceToken = process.env.SERVICE_TOKEN;
+    console.log(`🔍 Website Enquiries: User ${req.user.email} (${userRole}) requesting data`);
+    console.log(`🔧 Environment Check:`, {
+      hasServiceToken: !!process.env.SERVICE_TOKEN,
+      serviceTokenLength: process.env.SERVICE_TOKEN?.length || 0,
+      backendUrl: WEBSITE_API_BASE,
+      isProduction,
+      userRole
+    });
+
+    // Multiple authentication methods for production
+    let serviceToken = process.env.SERVICE_TOKEN;
+    let authMethod = 'service-token';
+
+    // Method 1: Use service token if available
     if (!serviceToken) {
+      console.log('⚠️ SERVICE_TOKEN not found, trying alternative auth methods...');
+      
+      // Method 2: Use current user's token (if they're admin)
+      if (req.user && allowedRoles.includes(userRole)) {
+        serviceToken = req.headers.authorization?.replace('Bearer ', '');
+        authMethod = 'user-token';
+        console.log('🔄 Using user token for authentication');
+      }
+      
+      // Method 3: Try without token (if 100acress allows public access for admins)
+      if (!serviceToken && isProduction) {
+        serviceToken = null;
+        authMethod = 'no-token';
+        console.log('🔄 Trying without token (public access)');
+      }
+    }
+
+    // Final check if we have any authentication method
+    if (!serviceToken && authMethod !== 'no-token') {
       return res.status(500).json({
         success: false,
-        message: 'Service token not configured. Please contact administrator.'
+        message: 'No authentication method available. Please configure SERVICE_TOKEN or ensure admin access.',
+        debug: {
+          hasServiceToken: !!process.env.SERVICE_TOKEN,
+          hasUserToken: !!req.headers.authorization,
+          isProduction,
+          userRole
+        }
       });
     }
 
     // Get limit from query params (default to 10000)
     const limit = req.query.limit || 10000;
     
+    // Prepare request headers based on auth method
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+
+    // Add authentication if available
+    if (serviceToken) {
+      if (authMethod === 'service-token') {
+        headers['x-access-token'] = serviceToken;
+      } else {
+        headers['Authorization'] = `Bearer ${serviceToken}`;
+      }
+    }
+
+    console.log(`🌐 Fetching from: ${WEBSITE_API_BASE}/crm/enquiries?limit=${limit}`);
+    console.log(`🔐 Auth method: ${authMethod}`);
+    
     // Fetch enquiries from 100acress backend
     const response = await fetch(`${WEBSITE_API_BASE}/crm/enquiries?limit=${limit}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-access-token': serviceToken
-      }
+      headers
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Error fetching enquiries from 100acress:', errorText);
+      console.error('❌ Error fetching enquiries from 100acress:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText,
+        authMethod,
+        apiBase: WEBSITE_API_BASE
+      });
+      
+      // Provide helpful error messages based on status
+      let errorMessage = 'Failed to fetch enquiries from 100acress.com';
+      if (response.status === 401) {
+        errorMessage = 'Authentication failed. Please check SERVICE_TOKEN or admin credentials.';
+      } else if (response.status === 403) {
+        errorMessage = 'Access denied. User does not have sufficient privileges in 100acress.';
+      } else if (response.status === 404) {
+        errorMessage = '100acress API endpoint not found. Check BACKEND_URL configuration.';
+      }
+      
       return res.status(response.status).json({
         success: false,
-        message: 'Failed to fetch enquiries from 100acress.com',
-        error: errorText
+        message: errorMessage,
+        error: errorText,
+        debug: {
+          authMethod,
+          apiBase: WEBSITE_API_BASE,
+          hasServiceToken: !!process.env.SERVICE_TOKEN,
+          isProduction
+        }
       });
     }
 
     const data = await response.json();
+    console.log(`✅ Successfully fetched ${data.data?.length || 0} enquiries from 100acress`);
     
     // Transform the data to match CRM lead structure
     const transformedEnquiries = (data.data || data.users || data || []).map(enquiry => ({
@@ -82,14 +162,126 @@ router.get('/', auth, async (req, res) => {
       success: true,
       message: 'Enquiries fetched successfully',
       data: transformedEnquiries,
-      total: transformedEnquiries.length
+      total: transformedEnquiries.length,
+      meta: {
+        source: '100acress.com',
+        authMethod,
+        apiBase: WEBSITE_API_BASE,
+        fetchedAt: new Date().toISOString(),
+        userRole,
+        isProduction
+      }
     });
 
   } catch (error) {
-    console.error('Error in website-enquiries route:', error);
+    console.error('❌ Error in website-enquiries route:', error);
+    console.error('❌ Full error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      code: error.code,
+      errno: error.errno,
+      syscall: error.syscall,
+      address: error.address,
+      port: error.port
+    });
+    
+    // Check if it's a network/connectivity error
+    if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+      return res.status(500).json({
+        success: false,
+        message: `Cannot connect to 100acress backend at ${WEBSITE_API_BASE}. Please check if the service is running.`,
+        error: error.message,
+        debug: {
+          apiBase: WEBSITE_API_BASE,
+          errorCode: error.code,
+          isNetworkError: true
+        }
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: 'Internal server error',
+      error: error.message,
+      debug: {
+        apiBase: WEBSITE_API_BASE,
+        hasServiceToken: !!process.env.SERVICE_TOKEN,
+        isProduction
+      }
+    });
+  }
+});
+
+/**
+ * @route GET /api/website-enquiries/debug
+ * @desc Debug endpoint to test SERVICE_TOKEN and backend connectivity
+ * @access Private (Admin only)
+ */
+router.get('/debug', auth, async (req, res) => {
+  try {
+    const userRole = req.user?.role?.toLowerCase();
+    const allowedRoles = ['boss', 'admin', 'super-admin', 'head-admin'];
+    
+    if (!allowedRoles.includes(userRole)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Admin role required.'
+      });
+    }
+
+    const debug = {
+      environment: {
+        NODE_ENV: process.env.NODE_ENV,
+        hasServiceToken: !!process.env.SERVICE_TOKEN,
+        serviceTokenLength: process.env.SERVICE_TOKEN?.length || 0,
+        serviceTokenPreview: process.env.SERVICE_TOKEN ? `${process.env.SERVICE_TOKEN.substring(0, 20)}...` : null,
+        backendUrl: WEBSITE_API_BASE,
+        isProduction: process.env.NODE_ENV === 'production' || !WEBSITE_API_BASE.includes('localhost')
+      },
+      user: {
+        email: req.user.email,
+        role: userRole,
+        userId: req.user._id
+      },
+      authentication: {
+        hasUserToken: !!req.headers.authorization,
+        userTokenLength: req.headers.authorization?.length || 0
+      }
+    };
+
+    // Test backend connectivity
+    let backendTest = null;
+    try {
+      const testResponse = await fetch(`${WEBSITE_API_BASE}/health`, {
+        method: 'GET',
+        timeout: 5000
+      });
+      backendTest = {
+        status: testResponse.status,
+        ok: testResponse.ok,
+        statusText: testResponse.statusText
+      };
+    } catch (testError) {
+      backendTest = {
+        error: testError.message,
+        code: testError.code
+      };
+    }
+
+    debug.backendTest = backendTest;
+
+    res.json({
+      success: true,
+      message: 'Debug information retrieved successfully',
+      debug
+    });
+
+  } catch (error) {
+    console.error('❌ Error in debug endpoint:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Debug endpoint error',
       error: error.message
     });
   }
