@@ -19,11 +19,13 @@ import {
   Building,
   Target,
   AlertCircle,
+  AlertTriangle,
+  Eye,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import "@/styles/CreateLeadForm.css";
 import { Badge } from "@/layout/badge";
-import { apiUrl } from "@/config/apiConfig";
+import { apiUrl, API_ENDPOINTS } from "@/config/apiConfig";
 
 const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
   const [formData, setFormData] = useState({
@@ -44,6 +46,9 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
   const [entryMode, setEntryMode] = useState("manual"); // "manual" or "paste"
   const [pasteData, setPasteData] = useState("");
   const [showParseButton, setShowParseButton] = useState(false);
+  const [duplicateLeads, setDuplicateLeads] = useState([]);
+  const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
+  const [checkingDuplicates, setCheckingDuplicates] = useState(false);
 
   useEffect(() => {
     const userRole = localStorage.getItem("userRole");
@@ -66,6 +71,8 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
       });
       setEntryMode("manual");
       setPasteData("");
+      setDuplicateLeads([]);
+      setShowDuplicateWarning(false);
       fetchAssignableUsers();
     }
   }, [isOpen]); // Depend on isOpen to refetch/reset when opened
@@ -141,6 +148,48 @@ const CreateLeadForm = ({ isOpen, onClose, onSave }) => {
       ...prev,
       [name]: value,
     }));
+
+    // Check for duplicates when phone or email changes
+    if (name === 'phone' || name === 'email') {
+      if (value.trim()) {
+        checkForDuplicates(name, value.trim());
+      } else {
+        setDuplicateLeads([]);
+        setShowDuplicateWarning(false);
+      }
+    }
+  };
+
+  const checkForDuplicates = async (fieldName, value) => {
+    if (!value) return;
+
+    setCheckingDuplicates(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(API_ENDPOINTS.LEADS_CHECK_DUPLICATE, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          [fieldName]: value
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok && data.data && data.data.length > 0) {
+        setDuplicateLeads(data.data);
+        setShowDuplicateWarning(true);
+      } else {
+        setDuplicateLeads([]);
+        setShowDuplicateWarning(false);
+      }
+    } catch (error) {
+      console.error('Error checking duplicates:', error);
+    } finally {
+      setCheckingDuplicates(false);
+    }
   };
 
   const handlePasteDataChange = (e) => {
@@ -632,6 +681,16 @@ https://crm.100acress.com/login
       return;
     }
 
+    // Check for duplicates before submission
+    if (showDuplicateWarning && duplicateLeads.length > 0) {
+      toast({
+        title: "Duplicate Lead Detected",
+        description: "Please review the duplicate leads before creating a new one.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
@@ -1056,6 +1115,9 @@ https://crm.100acress.com/login
                   <div className="form-group full-width">
                     <label htmlFor="phone" className="form-label">
                       Phone Number <span className="required">*</span>
+                      {checkingDuplicates && (
+                        <Loader2 size={14} className="animate-spin ml-2 text-blue-600" />
+                      )}
                     </label>
                     <div className="input-wrapper">
                       <Phone className="input-icon" />
@@ -1067,7 +1129,9 @@ https://crm.100acress.com/login
                         onChange={handleInputChange}
                         placeholder="Enter phone number"
                         required
-                        className="form-input enhanced"
+                        className={`form-input enhanced ${
+                          showDuplicateWarning ? 'border-red-300 bg-red-50' : ''
+                        }`}
                       />
                     </div>
                   </div>
@@ -1078,6 +1142,9 @@ https://crm.100acress.com/login
                     <label htmlFor="email" className="form-label">
                       <Mail className="input-icon" />
                       Email Address
+                      {checkingDuplicates && (
+                        <Loader2 size={14} className="animate-spin ml-2 text-blue-600" />
+                      )}
                     </label>
                     <div className="input-wrapper">
                       <Mail className="input-icon" />
@@ -1088,7 +1155,9 @@ https://crm.100acress.com/login
                         value={formData.email}
                         onChange={handleInputChange}
                         placeholder="Enter email address"
-                        className="form-input enhanced"
+                        className={`form-input enhanced ${
+                          showDuplicateWarning ? 'border-red-300 bg-red-50' : ''
+                        }`}
                       />
                     </div>
                   </div>
@@ -1238,6 +1307,80 @@ https://crm.100acress.com/login
                 </div>
               </div>
             </>
+          )}
+
+          {/* Duplicate Warning Section */}
+          {showDuplicateWarning && duplicateLeads.length > 0 && (
+            <div className="form-section">
+              <div className="duplicate-warning">
+                <div className="duplicate-warning-header">
+                  <AlertTriangle className="warning-icon" />
+                  <div className="warning-content">
+                    <h4 className="warning-title">
+                      Duplicate Lead{duplicateLeads.length > 1 ? 's' : ''} Found
+                    </h4>
+                    <p className="warning-description">
+                      Existing lead{duplicateLeads.length > 1 ? 's' : ''} with similar contact information found
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowDuplicateWarning(false)}
+                    className="warning-close"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+                
+                <div className="duplicate-list">
+                  {duplicateLeads.map((lead) => (
+                    <div key={lead._id} className="duplicate-item">
+                      <div className="duplicate-item-content">
+                        <div className="duplicate-item-info">
+                          <p className="duplicate-name">{lead.name}</p>
+                          <p className="duplicate-contact">{lead.phone}</p>
+                          {lead.email && (
+                            <p className="duplicate-email">{lead.email}</p>
+                          )}
+                          <div className="duplicate-meta">
+                            <Badge className={`status-badge ${
+                              lead.status === 'Cold' ? 'status-cold' :
+                              lead.status === 'Warm' ? 'status-warm' :
+                              lead.status === 'Hot' ? 'status-hot' :
+                              'status-default'
+                            }`}>
+                              {lead.status}
+                            </Badge>
+                            {lead.assignedTo && (
+                              <span className="assigned-info">
+                                Assigned: {typeof lead.assignedTo === 'object' ? lead.assignedTo.name : lead.assignedTo}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            // View lead details logic here
+                            toast({
+                              title: "Lead Details",
+                              description: `Viewing details for ${lead.name}`,
+                            });
+                          }}
+                          className="view-lead-btn"
+                        >
+                          <Eye size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="duplicate-footer">
+                  <p className="duplicate-footer-text">
+                    Please review the existing lead{duplicateLeads.length > 1 ? 's' : ''} before creating a new one.
+                  </p>
+                </div>
+              </div>
+            </div>
           )}
 
           <DialogFooter className="form-actions enhanced">

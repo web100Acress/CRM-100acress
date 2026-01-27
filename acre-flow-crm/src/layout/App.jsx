@@ -36,6 +36,12 @@ import BlogDashboard from "@/pages/BlogDashboard/BlogDashboard.container";
 import AdminUserManagement from "@/pages/UserManagement/UserManagement.container";
 import ViewPropertyAdmin from "@/pages/ViewPropertyDetails/ViewPropertyDetails.container";
 
+// Site Visit Components
+import SiteVisitList from '@/features/site-visit/components/SiteVisitList';
+import { AgentSiteVisitMobile, AgentSiteVisitDesktop } from '@/features/site-visit/views/SiteVisit';
+import SiteVisitDashboard from '@/features/site-visit/components/SiteVisitDashboard';
+import SiteVisitReminderSystem from '@/features/site-visit/components/SiteVisitReminderSystem';
+
 import CallLogs from "@/features/lead-management/CallLogs/CallLogs.container";
 import CallingSettings from '@/features/lead-management/CallingSettings/CallingSettings.container';
 import BDStatusSummary from '@/features/calling/pages/BDStatusSummary';
@@ -70,6 +76,7 @@ import EmployeeDashboardMobile from '@/features/employee/dashboard/EmployeeDashb
 import { useIsMobile } from '@/hooks/use-mobile';
 import EditProfileMobile from '@/pages/EditProfile/EditProfile.mobile';
 import WhatsAppChatPage from '@/features/chat/pages/WhatsAppChatPage';
+import WebsiteEnquiriesContainer from '@/pages/WebsiteEnquiries/WebsiteEnquiries.container';
 
 // Import Blog Components (temporarily disabled)
 // import BlogDashboard from "@/features/blog/pages/BlogDashboard";
@@ -467,6 +474,88 @@ const App = () => {
                 {/* WhatsApp Chat Routes */}
                 <Route path="/whatsapp-chat" element={isLoggedIn && (userRole === 'bd' || userRole === 'team-leader' || userRole === 'boss' || userRole === 'hod') ? <WhatsAppChatPage /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
 
+                {/* Site Visit Routes */}
+                <Route 
+                  path="/site-visit-dashboard" 
+                  element={
+                    isLoggedIn ? (
+                      <SiteVisitDashboard userRole={userRole} userId={localStorage.getItem('userId')} />
+                    ) : (
+                      <Navigate to="/login" replace />
+                    )
+                  } 
+                />
+                <Route 
+                  path="/site-visits" 
+                  element={
+                    isLoggedIn ? (
+                      isMobile ? (
+                        <AgentSiteVisitMobile 
+                          userId={localStorage.getItem('userId')} 
+                          userName={localStorage.getItem('userName')} 
+                          userRole={localStorage.getItem('userRole')} 
+                        />
+                      ) : (
+                        <AgentSiteVisitDesktop 
+                          userId={localStorage.getItem('userId')} 
+                          userName={localStorage.getItem('userName')} 
+                          userRole={localStorage.getItem('userRole')} 
+                        />
+                      )
+                    ) : (
+                      <Navigate to="/login" replace />
+                    )
+                  } 
+                />
+                <Route 
+                  path="/site-visits/desktop" 
+                  element={
+                    isLoggedIn ? (
+                      <AgentSiteVisitDesktop 
+                        userId={localStorage.getItem('userId')} 
+                        userName={localStorage.getItem('userName')} 
+                        userRole={localStorage.getItem('userRole')} 
+                      />
+                    ) : (
+                      <Navigate to="/login" replace />
+                    )
+                  } 
+                />
+                <Route 
+                  path="/site-visits/mobile" 
+                  element={
+                    isLoggedIn ? (
+                      <AgentSiteVisitMobile 
+                        userId={localStorage.getItem('userId')} 
+                        userName={localStorage.getItem('userName')} 
+                        userRole={localStorage.getItem('userRole')} 
+                      />
+                    ) : (
+                      <Navigate to="/login" replace />
+                    )
+                  } 
+                />
+                <Route 
+                  path="/site-visits/dashboard" 
+                  element={
+                    isLoggedIn ? (
+                      <SiteVisitDashboard userRole={userRole} userId={localStorage.getItem('userId')} />
+                    ) : (
+                      <Navigate to="/login" replace />
+                    )
+                  } 
+                />
+                <Route 
+                  path="/site-visits/reminders" 
+                  element={
+                    isLoggedIn && (userRole === 'boss' || userRole === 'hod' || userRole === 'team-leader') ? (
+                      <SiteVisitReminderSystem />
+                    ) : (
+                      <Navigate to={isLoggedIn ? "/" : "/login"} replace />
+                    )
+                  } 
+                />
+
                 {/* Blog Routes - Temporarily Disabled
             <Route
               path="/blog-dashboard"
@@ -617,6 +706,16 @@ const App = () => {
                       <Navigate to="/" replace />
                     )
                   }
+                />
+                <Route 
+                  path="/website-enquiries" 
+                  element={
+                    isLoggedIn && userRole === "boss" ? (
+                      <WebsiteEnquiriesContainer userRole={userRole} />
+                    ) : (
+                      <Navigate to="/login" replace />
+                    )
+                  } 
                 />
                 <Route path="/reset-password/:token" element={<ResetPassword />} />
                 <Route path="/edit-profile" element={isLoggedIn ? <EditProfileMobile /> : <Navigate to="/login" replace />} />

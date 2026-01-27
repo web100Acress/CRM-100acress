@@ -10,7 +10,7 @@ const API_BASE_URL = (hostname === 'localhost' || hostname === '127.0.0.1')
 const SOCKET_URL = (hostname === 'localhost' || hostname === '127.0.0.1')
   ? 'http://localhost:5001'
   : hostname === '192.168.1.16'
-    ? 'http://192.168.1.16:5001'  // Use 5001 for socket as well, assuming it shares the server
+    ? 'http://192.168.1.16:5001'
     : 'https://bcrm.100acress.com';
 
 export const apiUrl = API_BASE_URL;
@@ -58,6 +58,26 @@ export const API_ENDPOINTS = {
   LEADS_BD_DETAILS: (bdId) => `${API_BASE_URL}/api/leads/bd-status/${bdId}`,
   LEADS_CALLS: `${API_BASE_URL}/api/leads/calls`,
   LEADS_CALL_HISTORY: (leadId) => `${API_BASE_URL}/api/leads/${leadId}/calls`,
+  LEADS_CHECK_DUPLICATE: `${API_BASE_URL}/api/leads/check-duplicate`,
+
+  // Site Visits
+  SITE_VISITS: `${API_BASE_URL}/api/site-visits`,
+  SITE_VISITS_CREATE: `${API_BASE_URL}/api/site-visits`,
+  SITE_VISITS_BY_ID: (id) => `${API_BASE_URL}/api/site-visits/${id}`,
+  SITE_VISITS_UPDATE: (id) => `${API_BASE_URL}/api/site-visits/${id}`,
+  SITE_VISITS_DELETE: (id) => `${API_BASE_URL}/api/site-visits/${id}`,
+  SITE_VISITS_BY_LEAD: (leadId) => `${API_BASE_URL}/api/site-visits/lead/${leadId}`,
+  SITE_VISITS_BY_AGENT: (agentId) => `${API_BASE_URL}/api/site-visits/agent/${agentId}`,
+  SITE_VISITS_TODAY: `${API_BASE_URL}/api/site-visits/today`,
+  SITE_VISITS_UPCOMING: `${API_BASE_URL}/api/site-visits/upcoming`,
+  SITE_VISITS_FEEDBACK: (id) => `${API_BASE_URL}/api/site-visits/${id}/feedback`,
+  SITE_VISITS_COMPLETE: (id) => `${API_BASE_URL}/api/site-visits/${id}/complete`,
+  SITE_VISITS_CANCEL: (id) => `${API_BASE_URL}/api/site-visits/${id}/cancel`,
+  SITE_VISITS_RESCHEDULE: (id) => `${API_BASE_URL}/api/site-visits/${id}/reschedule`,
+  SITE_VISITS_REMINDERS: `${API_BASE_URL}/api/site-visits/reminders`,
+  SITE_VISITS_DASHBOARD: `${API_BASE_URL}/api/site-visits/dashboard`,
+  SITE_VISITS_RECENT: `${API_BASE_URL}/api/site-visits/recent`,
+  SITE_VISITS_TOP_PERFORMERS: `${API_BASE_URL}/api/site-visits/top-performers`,
 
   // WhatsApp
   WHATSAPP_MESSAGES: `${API_BASE_URL}/api/whatsapp/messages`,
@@ -116,6 +136,25 @@ export const API_ENDPOINTS = {
     BD_STATUS_SUMMARY: `${API_BASE_URL}/api/leads/bd-status-summary`,
     BD_STATUS: (bdId) => `${API_BASE_URL}/api/leads/bd-status/${bdId}`,
   },
+  SITE_VISITS: {
+    LIST: `${API_BASE_URL}/api/site-visits`,
+    CREATE: `${API_BASE_URL}/api/site-visits`,
+    GET_BY_ID: (id) => `${API_BASE_URL}/api/site-visits/${id}`,
+    UPDATE: (id) => `${API_BASE_URL}/api/site-visits/${id}`,
+    DELETE: (id) => `${API_BASE_URL}/api/site-visits/${id}`,
+    BY_LEAD: (leadId) => `${API_BASE_URL}/api/site-visits/lead/${leadId}`,
+    BY_AGENT: (agentId) => `${API_BASE_URL}/api/site-visits/agent/${agentId}`,
+    TODAY: `${API_BASE_URL}/api/site-visits/today`,
+    UPCOMING: `${API_BASE_URL}/api/site-visits/upcoming`,
+    FEEDBACK: (id) => `${API_BASE_URL}/api/site-visits/${id}/feedback`,
+    COMPLETE: (id) => `${API_BASE_URL}/api/site-visits/${id}/complete`,
+    CANCEL: (id) => `${API_BASE_URL}/api/site-visits/${id}/cancel`,
+    RESCHEDULE: (id) => `${API_BASE_URL}/api/site-visits/${id}/reschedule`,
+    REMINDERS: `${API_BASE_URL}/api/site-visits/reminders`,
+    DASHBOARD: `${API_BASE_URL}/api/site-visits/dashboard`,
+    RECENT: `${API_BASE_URL}/api/site-visits/recent`,
+    TOP_PERFORMERS: `${API_BASE_URL}/api/site-visits/top-performers`,
+  },
   TICKETS: {
     LIST: `${API_BASE_URL}/tickets`,
     CREATE: `${API_BASE_URL}/tickets`,
@@ -163,6 +202,10 @@ export const API_ENDPOINTS = {
     DELETE_TEMPLATE: (id) => `${API_BASE_URL}/api/email/templates/${id}`,
     LIST_MESSAGES: `${API_BASE_URL}/api/email/messages`,
     SEND: `${API_BASE_URL}/api/email/send`,
+  },
+  WEBSITE_ENQUIRIES: {
+    LIST: `${API_BASE_URL}/api/website-enquiries`,
+    DOWNLOAD: `${API_BASE_URL}/api/website-enquiries/download`,
   },
 };
 

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/layout/dialog';
 import { Button } from '@/layout/button';
-import { Save, Loader2, User, Mail, Phone, MapPin, Building2, DollarSign, Target } from 'lucide-react';
+import { Save, Loader2, User, Mail, Phone, MapPin, Building2, DollarSign, Target, AlertTriangle, Eye, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { apiUrl } from "@/config/apiConfig";
+import { apiUrl, API_ENDPOINTS } from "@/config/apiConfig";
+import { Badge } from '@/layout/badge';
 
 const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -23,6 +24,9 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
   const [currentUserRole, setCurrentUserRole] = useState('');
   const [entryMode, setEntryMode] = useState('manual'); // "manual" or "paste"
   const [pasteData, setPasteData] = useState('');
+  const [duplicateLeads, setDuplicateLeads] = useState([]);
+  const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
+  const [checkingDuplicates, setCheckingDuplicates] = useState(false);
 
   useEffect(() => {
     const userRole = localStorage.getItem('userRole');
@@ -45,6 +49,8 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
       });
       setEntryMode('manual');
       setPasteData('');
+      setDuplicateLeads([]);
+      setShowDuplicateWarning(false);
       fetchAssignableUsers();
     }
   }, [isOpen]);
@@ -90,6 +96,48 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
       ...prev,
       [name]: value
     }));
+
+    // Check for duplicates when phone or email changes
+    if (name === 'phone' || name === 'email') {
+      if (value.trim()) {
+        checkForDuplicates(name, value.trim());
+      } else {
+        setDuplicateLeads([]);
+        setShowDuplicateWarning(false);
+      }
+    }
+  };
+
+  const checkForDuplicates = async (fieldName, value) => {
+    if (!value) return;
+
+    setCheckingDuplicates(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(API_ENDPOINTS.LEADS_CHECK_DUPLICATE, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          [fieldName]: value
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok && data.data && data.data.length > 0) {
+        setDuplicateLeads(data.data);
+        setShowDuplicateWarning(true);
+      } else {
+        setDuplicateLeads([]);
+        setShowDuplicateWarning(false);
+      }
+    } catch (error) {
+      console.error('Error checking duplicates:', error);
+    } finally {
+      setCheckingDuplicates(false);
+    }
   };
 
   const handlePasteData = () => {
@@ -328,6 +376,17 @@ const CreateLeadFormMobile = ({ isOpen, onClose, onSuccess, onCancel }) => {
         toast({
           title: "Validation Error",
           description: "Please enter a valid phone number",
+          variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Check for duplicates before submission
+      if (showDuplicateWarning && duplicateLeads.length > 0) {
+        toast({
+          title: "Duplicate Lead Detected",
+          description: "Please review the duplicate leads before creating a new one.",
           variant: "destructive"
         });
         setLoading(false);
@@ -596,7 +655,7 @@ https://crm.100acress.com/login
                 <Save size={14} className="sm:hidden" />
                 <Save size={16} className="hidden sm:block" />
                 <span className="hidden sm:inline">Parse & Fill Form</span>
-                <span className="sm:hidden">Parse</span>
+                <span className="sm:hidden">Paste</span>
               </button>
             </div>
           )}
@@ -625,6 +684,9 @@ https://crm.100acress.com/login
             <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
               <Phone size={16} />
               Phone *
+              {checkingDuplicates && (
+                <Loader2 size={14} className="animate-spin text-blue-600" />
+              )}
             </label>
             <input
               type="tel"
@@ -632,7 +694,9 @@ https://crm.100acress.com/login
               value={formData.phone}
               onChange={handleChange}
               placeholder="Enter phone number"
-              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className={`w-full px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                showDuplicateWarning ? 'border-red-300 bg-red-50' : 'border-gray-300'
+              }`}
               required
             />
           </div>
@@ -641,6 +705,9 @@ https://crm.100acress.com/login
             <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
               <Mail size={16} />
               Email
+              {checkingDuplicates && (
+                <Loader2 size={14} className="animate-spin text-blue-600" />
+              )}
             </label>
             <input
               type="email"
@@ -648,7 +715,9 @@ https://crm.100acress.com/login
               value={formData.email}
               onChange={handleChange}
               placeholder="Enter email address"
-              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className={`w-full px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                showDuplicateWarning ? 'border-red-300 bg-red-50' : 'border-gray-300'
+              }`}
             />
           </div>
           {/* Location Field */}
@@ -800,6 +869,76 @@ https://crm.100acress.com/login
             )}
           </div>
           </> // Added closing JSX fragment tag
+          )}
+
+          {/* Duplicate Warning Section */}
+          {showDuplicateWarning && duplicateLeads.length > 0 && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-start gap-2 mb-2">
+                <AlertTriangle size={16} className="text-red-600 mt-0.5" />
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold text-red-800">
+                    Duplicate Lead{duplicateLeads.length > 1 ? 's' : ''} Found
+                  </h4>
+                  <p className="text-xs text-red-600 mt-1">
+                    Existing lead{duplicateLeads.length > 1 ? 's' : ''} with similar contact information found
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowDuplicateWarning(false)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+              
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {duplicateLeads.map((lead) => (
+                  <div key={lead._id} className="bg-white p-2 rounded border border-red-100">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{lead.name}</p>
+                        <p className="text-xs text-gray-600">{lead.phone}</p>
+                        {lead.email && (
+                          <p className="text-xs text-gray-600">{lead.email}</p>
+                        )}
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge className={`text-xs ${
+                            lead.status === 'Cold' ? 'bg-blue-100 text-blue-800' :
+                            lead.status === 'Warm' ? 'bg-orange-100 text-orange-800' :
+                            lead.status === 'Hot' ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {lead.status}
+                          </Badge>
+                          {lead.assignedTo && (
+                            <span className="text-xs text-gray-500">
+                              Assigned: {typeof lead.assignedTo === 'object' ? lead.assignedTo.name : lead.assignedTo}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          // View lead details logic here
+                          toast({
+                            title: "Lead Details",
+                            description: `Viewing details for ${lead.name}`,
+                          });
+                        }}
+                        className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                      >
+                        <Eye size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="mt-2 text-xs text-red-600">
+                Please review the existing lead{duplicateLeads.length > 1 ? 's' : ''} before creating a new one.
+              </div>
+            </div>
           )}
 
           {/* Action Buttons */}

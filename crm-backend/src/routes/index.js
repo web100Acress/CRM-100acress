@@ -14,5 +14,6 @@ router.use('/email', require('./emailRoutes'));
 router.use('/chats', require('./chatRoutes'));
 router.use('/lead-assignment', require('./leadAssignmentRoutes'));
 router.use('/api-tester', require('./apiTester.routes'));
+router.use('/website-enquiries', require('./websiteEnquiryRoutes'));
 
 module.exports = router;
