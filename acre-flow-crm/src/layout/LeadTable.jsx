@@ -2062,10 +2062,9 @@ https://crm.100acress.com/login
                       ) : (
                         <span>Unassigned</span>
                       )}
-                      {/* Assignment dropdown/buttons logic - Disabled for Boss and BD */}
+                      {/* Assignment dropdown/buttons logic - Enabled for Boss on unassigned leads */}
                       {(((!lead.assignedTo && canReassignLead(lead)) ||
                         String(lead.assignedTo) === String(currentUserId)) &&
-                        localStorage.getItem("userRole") !== 'boss' && userRole !== 'boss' &&
                         localStorage.getItem("userRole") !== 'bd' && userRole !== 'bd') && (
                           <>
                             <select
@@ -2488,6 +2487,37 @@ https://crm.100acress.com/login
                       >
                         <PhoneCall size={14} />
                       </button>
+                    );
+                  }
+
+                  // Assignment dropdown for unassigned leads - Boss can assign
+                  if (!lead.assignedTo && (currentUserRole === 'boss' || currentUserRole === 'super-admin' || currentUserRole === 'hod')) {
+                    return (
+                      <select
+                        value=""
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            handleAssignLead(lead._id, e.target.value);
+                          }
+                        }}
+                        className="mobile-assign-select"
+                        style={{
+                          padding: '4px 8px',
+                          fontSize: '12px',
+                          borderRadius: '4px',
+                          border: '1px solid #d1d5db',
+                          backgroundColor: '#f9fafb'
+                        }}
+                      >
+                        <option value="">Assign...</option>
+                        {assignableUsers
+                          .filter(user => user.role === 'hod' || user.role === 'team-leader' || user.role === 'bd')
+                          .map(user => (
+                            <option key={user._id} value={user._id}>
+                              {user.name} ({user.role})
+                            </option>
+                          ))}
+                      </select>
                     );
                   }
 
