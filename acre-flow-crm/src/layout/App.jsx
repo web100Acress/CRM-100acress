@@ -76,6 +76,7 @@ import EmployeeDashboardMobile from '@/features/employee/dashboard/EmployeeDashb
 import { useIsMobile } from '@/hooks/use-mobile';
 import EditProfileMobile from '@/pages/EditProfile/EditProfile.mobile';
 import WhatsAppChatPage from '@/features/chat/pages/WhatsAppChatPage';
+import WebsiteEnquiriesContainer from '@/pages/WebsiteEnquiries/WebsiteEnquiries.container';
 
 // Import Blog Components (temporarily disabled)
 // import BlogDashboard from "@/features/blog/pages/BlogDashboard";
@@ -705,6 +706,16 @@ const App = () => {
                       <Navigate to="/" replace />
                     )
                   }
+                />
+                <Route 
+                  path="/website-enquiries" 
+                  element={
+                    isLoggedIn && userRole === "boss" ? (
+                      <WebsiteEnquiriesContainer userRole={userRole} />
+                    ) : (
+                      <Navigate to="/login" replace />
+                    )
+                  } 
                 />
                 <Route path="/reset-password/:token" element={<ResetPassword />} />
                 <Route path="/edit-profile" element={isLoggedIn ? <EditProfileMobile /> : <Navigate to="/login" replace />} />

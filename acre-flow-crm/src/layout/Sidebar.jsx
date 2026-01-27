@@ -56,6 +56,7 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
   const navigationItems = {
     boss: [
       { path: '/', icon: Home, label: 'Dashboard' },
+      { path: '/website-enquiries', icon: Mail, label: 'Website Enquiries' },
       { path: '/site-visit-dashboard', icon: Calendar, label: 'Site Visit Dashboard' },
       { path: '/leads', icon: Building2, label: 'All Leads' },
       { path: '/site-visits', icon: Calendar, label: 'Site Visits' },

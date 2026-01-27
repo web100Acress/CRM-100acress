@@ -48,6 +48,7 @@
 
   .lead-role-filter-select,
   .lead-status-filter-select,
+  .lead-load-all-button,
   .lead-export-button,
   .lead-create-button {
     width: auto;
@@ -188,6 +189,37 @@
 
   .lead-create-button:hover .lead-create-icon {
     transform: rotate(90deg);
+  }
+
+  /* Load All Button */
+  .lead-load-all-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    background-color: #6b7280;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    white-space: nowrap;
+  }
+
+  .lead-load-all-button:hover {
+    background-color: #4b5563;
+    transform: translateY(-1px);
+  }
+
+  .lead-load-all-button.active {
+    background-color: #059669;
+  }
+
+  .lead-load-all-button.active:hover {
+    background-color: #047857;
   }
 
   /* Table Container */

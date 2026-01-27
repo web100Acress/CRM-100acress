@@ -203,6 +203,10 @@ export const API_ENDPOINTS = {
     LIST_MESSAGES: `${API_BASE_URL}/api/email/messages`,
     SEND: `${API_BASE_URL}/api/email/send`,
   },
+  WEBSITE_ENQUIRIES: {
+    LIST: `${API_BASE_URL}/api/website-enquiries`,
+    DOWNLOAD: `${API_BASE_URL}/api/website-enquiries/download`,
+  },
 };
 
 export default API_CONFIG;

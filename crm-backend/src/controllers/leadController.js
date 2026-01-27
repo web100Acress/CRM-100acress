@@ -74,7 +74,8 @@ exports.createLead = async (req, res, next) => {
 
 exports.getLeads = async (req, res, next) => {
   try {
-    const leads = await leadService.getLeadsForUser(req.user);
+    const { limit = 10000, page = 1 } = req.query; // Read query parameters with defaults
+    const leads = await leadService.getLeadsForUser(req.user, { limit, page });
     res.json({ success: true, data: leads });
   } catch (err) {
     next(err);

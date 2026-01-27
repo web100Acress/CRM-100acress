@@ -26,6 +26,7 @@ import {
   TrendingUp,
   Info,
   MoreHorizontal,
+  ExternalLink,
 } from "lucide-react";
 
 // WhatsApp Icon Component
@@ -55,6 +56,7 @@ const LeadTable = ({ userRole }) => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sourceFilter, setSourceFilter] = useState("all");
   const [selectedLead, setSelectedLead] = useState(null);
   const [showFollowUp, setShowFollowUp] = useState(false);
   const [showCreateLead, setShowCreateLead] = useState(false);
@@ -783,24 +785,80 @@ https://crm.100acress.com/login
   }, []);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const leadsPerPage = window.innerWidth <= 480 ? 30 : 100;
+  const [showAllLeads, setShowAllLeads] = useState(true); // Default to true to show all leads
+  const leadsPerPage = showAllLeads ? 10000 : (window.innerWidth <= 480 ? 500 : 500);
 
   useEffect(() => {
     const fetchLeads = async () => {
       try {
         console.log('🔍 Desktop: Starting to fetch leads...');
 
-        const response = await apiCall('/api/leads');
-
+        // Fetch regular CRM leads
+        const response = await apiCall('/api/leads?limit=10000&page=1');
         const json = await response.json();
         console.log('📊 Desktop: Fetch leads response:', json);
+        
+        const regularLeads = json.data || [];
+        console.log('✅ Desktop: Regular leads loaded:', regularLeads.length, 'leads');
 
-        setLeadsList(json.data || []);
+        // Fetch website enquiries if user is boss
+        let websiteEnquiries = [];
+        if (userRole === 'boss') {
+          try {
+            console.log('🔍 Desktop: Fetching website enquiries...');
+            const enquiriesResponse = await apiCall('/api/website-enquiries?limit=10000');
+            const enquiriesJson = await enquiriesResponse.json();
+            
+            if (enquiriesJson.success) {
+              websiteEnquiries = (enquiriesJson.data || []).map(enquiry => ({
+                ...enquiry,
+                _id: enquiry._id || `website_${Date.now()}_${Math.random()}`,
+                name: enquiry.name || 'Unknown',
+                email: enquiry.email || '',
+                phone: enquiry.phone || '',
+                projectName: enquiry.projectName || 'Not specified',
+                message: enquiry.message || '',
+                source: 'Website',
+                status: 'New',
+                priority: 'Medium',
+                assignedTo: null,
+                assignedToName: 'Not Assigned',
+                createdBy: enquiry.createdBy || null,
+                createdAt: enquiry.createdAt || new Date(),
+                updatedAt: enquiry.updatedAt || new Date(),
+                isWebsiteEnquiry: true,
+                // Map website enquiry fields to lead fields
+                budget: enquiry.budget || '',
+                location: enquiry.location || '',
+                leadType: 'Website Enquiry',
+                stage: 'New',
+                followUpRequired: true,
+                nextFollowUp: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
+                notes: enquiry.message || '',
+                tags: ['website', '100acress'],
+                // Additional fields for website enquiries
+                originalEnquiryId: enquiry._id,
+                enquirySource: '100acress.com'
+              }));
+              console.log('✅ Desktop: Website enquiries loaded:', websiteEnquiries.length, 'enquiries');
+            }
+          } catch (enquiriesError) {
+            console.error('❌ Desktop: Error fetching website enquiries:', enquiriesError);
+            // Continue with regular leads even if website enquiries fail
+          }
+        }
 
-        console.log('✅ Desktop: Leads loaded successfully:', (json.data || []).length, 'leads');
+        // Merge regular leads and website enquiries
+        const allLeads = [...regularLeads, ...websiteEnquiries];
+        
+        // Sort by creation date (newest first)
+        allLeads.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        
+        setLeadsList(allLeads);
+        console.log('✅ Desktop: All leads loaded successfully:', allLeads.length, 'total leads');
 
         // --- Notification logic ---
-        const newAssignedLeads = (json.data || []).filter(
+        const newAssignedLeads = allLeads.filter(
           (lead) => lead.assignedTo === currentUserId
         );
         const newAssignedIds = new Set(newAssignedLeads.map((l) => l._id));
@@ -920,7 +978,17 @@ https://crm.100acress.com/login
       matchesStatus = lead.status?.toLowerCase() === statusFilter;
     }
     
-    return matchesSearch && matchesStatus;
+    // Source filtering logic:
+    let matchesSource = false;
+    if (sourceFilter === 'all') {
+      matchesSource = true; // Show all sources
+    } else if (sourceFilter === 'website') {
+      matchesSource = lead.isWebsiteEnquiry === true; // Show only website enquiries
+    } else if (sourceFilter === 'crm') {
+      matchesSource = lead.isWebsiteEnquiry !== true; // Show only CRM created leads
+    }
+    
+    return matchesSearch && matchesStatus && matchesSource;
   });
 
   const getStatusClass = (status) => {
@@ -984,7 +1052,7 @@ https://crm.100acress.com/login
     // Refresh leads after any action completion
     try {
       console.log('🔄 Refreshing leads after action completion...');
-      const response = await apiCall('/api/leads');
+      const response = await apiCall('/api/leads?limit=10000&page=1');
       const json = await response.json();
       setLeadsList(json.data || []);
       console.log('✅ Leads refreshed successfully after action');
@@ -1524,32 +1592,100 @@ https://crm.100acress.com/login
   const handleAssignLead = async (leadId, userId) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${apiUrl}/api/leads/${leadId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ assignedTo: userId }),
-      });
-      if (!res.ok) {
-        let errMsg = "Failed to assign lead";
-        try {
-          const errData = await res.json();
-          if (errData && errData.message) errMsg += ": " + errData.message;
-        } catch { }
-        throw new Error(errMsg);
+      
+      // Find the lead to check if it's a website enquiry
+      const lead = leadsList.find(l => l._id === leadId);
+      
+      if (lead?.isWebsiteEnquiry) {
+        // Handle website enquiry assignment - convert to actual lead
+        console.log('🔄 Converting website enquiry to lead:', lead.name);
+        
+        const createLeadData = {
+          name: lead.name,
+          email: lead.email,
+          phone: lead.phone,
+          projectName: lead.projectName,
+          message: lead.message,
+          source: 'Website',
+          status: 'New',
+          priority: lead.priority || 'Medium',
+          assignedTo: userId,
+          createdBy: localStorage.getItem('userId'),
+          leadType: 'Website Enquiry',
+          stage: 'New',
+          followUpRequired: true,
+          nextFollowUp: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          notes: `Originally from website enquiry: ${lead.message}`,
+          tags: ['website', '100acress'],
+          originalEnquiryId: lead.originalEnquiryId,
+          enquirySource: lead.enquirySource,
+          budget: lead.budget,
+          location: lead.location
+        };
+
+        // Create new lead from website enquiry
+        const createRes = await fetch(`${apiUrl}/api/leads`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(createLeadData),
+        });
+
+        if (!createRes.ok) {
+          let errMsg = "Failed to create lead from website enquiry";
+          try {
+            const errData = await createRes.json();
+            if (errData && errData.message) errMsg += ": " + errData.message;
+          } catch { }
+          throw new Error(errMsg);
+        }
+
+        const newLeadData = await createRes.json();
+        const newLead = newLeadData.data || newLeadData;
+
+        // Remove the website enquiry from the list and add the new lead
+        setLeadsList((prev) => {
+          const filtered = prev.filter(l => l._id !== leadId);
+          return [...filtered, newLead].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        });
+
+        toast({
+          title: "✅ Website Enquiry Converted",
+          description: `Website enquiry converted to lead and assigned successfully.`,
+        });
+
+      } else {
+        // Handle regular lead assignment
+        const res = await fetch(`${apiUrl}/api/leads/${leadId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ assignedTo: userId }),
+        });
+        
+        if (!res.ok) {
+          let errMsg = "Failed to assign lead";
+          try {
+            const errData = await res.json();
+            if (errData && errData.message) errMsg += ": " + errData.message;
+          } catch { }
+          throw new Error(errMsg);
+        }
+        
+        // Get the updated lead data
+        const updatedLeadData = await res.json();
+        const updatedLead = updatedLeadData.data || updatedLeadData;
+        
+        setLeadsList((prev) =>
+          prev.map((lead) =>
+            lead._id === leadId ? { ...lead, assignedTo: userId } : lead
+          )
+        );
       }
-      
-      // Get the updated lead data
-      const updatedLeadData = await res.json();
-      const updatedLead = updatedLeadData.data || updatedLeadData;
-      
-      setLeadsList((prev) =>
-        prev.map((lead) =>
-          lead._id === leadId ? { ...lead, assignedTo: userId } : lead
-        )
-      );
 
       // 🚀 Send WhatsApp notification when HOD assigns lead to BD
       const currentUserRole = localStorage.getItem("userRole");
@@ -1558,6 +1694,10 @@ https://crm.100acress.com/login
         const assignedUser = assignableUsers.find(u => String(u._id) === String(userId));
         
         if (assignedUser) {
+          const updatedLead = lead?.isWebsiteEnquiry ? 
+            leadsList.find(l => l._id !== leadId && l.assignedTo === userId) : // Find the newly created/updated lead
+            leadsList.find(l => l._id === leadId);
+            
           // Send WhatsApp notification to BD
           setTimeout(() => {
             sendWhatsAppNotification({
@@ -1571,12 +1711,21 @@ https://crm.100acress.com/login
           toast({
             title: "✅ Lead Assigned & WhatsApp Sent",
             description: `Lead assigned to ${assignedUser.name} and WhatsApp notification sent.`,
-            duration: 4000,
           });
         }
+      } else {
+        toast({
+          title: "✅ Lead Assigned",
+          description: "Lead assigned successfully.",
+        });
       }
-    } catch (err) {
-      alert("Error: " + err.message);
+    } catch (error) {
+      console.error("Error assigning lead:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to assign lead",
+        variant: "destructive",
+      });
     }
   };
 
@@ -1585,7 +1734,12 @@ https://crm.100acress.com/login
     const currentUserRole = localStorage.getItem("userRole");
 
     if (currentUserRole === 'boss') return false;
-    // Only team-leader and employee can assign to themselves, and only if the lead is unassigned
+
+    // Users can assign unassigned leads to themselves
+    if (!lead.assignedTo && !lead.isWebsiteEnquiry) {
+      return ["team-leader", "employee"].includes(currentUserRole);
+    }
+
     return (
       ["team-leader", "employee"].includes(currentUserRole) && !lead.assignedTo
     );
@@ -1725,6 +1879,17 @@ https://crm.100acress.com/login
           <option value="not-interested">Not Interested</option>
         </select>
 
+        <select
+          value={sourceFilter}
+          onChange={(e) => setSourceFilter(e.target.value)}
+          className="lead-status-filter-select"
+        >
+          <option value="all">All Sources</option>
+          <option value="website">Website Enquiries</option>
+          <option value="crm">CRM Created</option>
+        </select>
+
+
         {(userRole === "boss" || userRole === "hod" || userRole === "bd") && (
           <button 
             className="lead-create-button lead-create-whatsapp-button" 
@@ -1759,7 +1924,15 @@ https://crm.100acress.com/login
               currentLeads.map((lead) => (
                 <tr key={lead._id}>
                   <td data-label="Lead Info">
-                    <div className="lead-info-display font-medium text-slate-900">{lead.name}</div>
+                    <div className="flex items-center gap-2">
+                      <div className="lead-info-display font-medium text-slate-900">{lead.name}</div>
+                      {lead.isWebsiteEnquiry && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                          <ExternalLink size={10} className="mr-1" />
+                          Website
+                        </span>
+                      )}
+                    </div>
                     <div className="lead-info-display text-xs text-slate-500">ID: #{generateShortId(lead._id)}</div>
                     <div className="flex flex-col gap-0.5 text-[10px] text-slate-400 mt-1">
                       <div>by: {(() => {
@@ -2220,7 +2393,15 @@ https://crm.100acress.com/login
                 </span>
               </div>
               <div className="mobile-lead-info">
-                <p className="mobile-lead-name">{lead.name}</p>
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="mobile-lead-name">{lead.name}</p>
+                  {lead.isWebsiteEnquiry && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                      <ExternalLink size={10} className="mr-1" />
+                      Website
+                    </span>
+                  )}
+                </div>
                 {lead.projectName && (
                   <p className="mobile-lead-project">
                     {(() => {
@@ -2955,7 +3136,7 @@ https://crm.100acress.com/login
           // Refresh leads list after creating new lead
           try {
             console.log('🔄 Refreshing leads after creating new lead...');
-            const response = await apiCall('/api/leads');
+            const response = await apiCall('/api/leads?limit=10000&page=1');
             const json = await response.json();
             setLeadsList(json.data || []);
             console.log('✅ Leads refreshed successfully after lead creation');

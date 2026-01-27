@@ -120,14 +120,17 @@ const getLeads = async () => {
   return await Lead.find();
 };
 
-const getLeadsForUser = async (user) => {
+const getLeadsForUser = async (user, options = {}) => {
+  const { limit = 10000, page = 1 } = options; // Extract limit and page with defaults
   const userRole = (user.role || '').toLowerCase();
   const userId = user._id.toString();
 
-  console.log('🔍 Fetching leads for user:', {
+  console.log('Fetching leads for user:', {
     userId,
     userRole,
-    email: user.email
+    email: user.email,
+    limit,
+    page
   });
 
   try {
@@ -153,12 +156,19 @@ const getLeadsForUser = async (user) => {
       query = { assignedTo: userId };
     }
 
-    const leads = await Lead.find(query).sort({ createdAt: -1 });
-    console.log(`📊 Total leads found for ${userRole}:`, leads.length);
+    // Calculate skip for pagination
+    const skip = (page - 1) * limit;
+
+    const leads = await Lead.find(query)
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .skip(skip);
+      
+    console.log(`Total leads found for ${userRole}:`, leads.length);
 
     return leads;
   } catch (error) {
-    console.error('❌ Error fetching leads:', error);
+    console.error('Error fetching leads:', error);
     return [];
   }
 };
