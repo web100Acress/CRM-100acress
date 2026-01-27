@@ -57,6 +57,8 @@ const LeadTable = ({ userRole }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("all");
+  const [assignedFilter, setAssignedFilter] = useState("all");
   const [selectedLead, setSelectedLead] = useState(null);
   const [showFollowUp, setShowFollowUp] = useState(false);
   const [showCreateLead, setShowCreateLead] = useState(false);
@@ -785,15 +787,15 @@ https://crm.100acress.com/login
   }, []);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [showAllLeads, setShowAllLeads] = useState(true); // Default to true to show all leads
-  const leadsPerPage = showAllLeads ? 10000 : (window.innerWidth <= 480 ? 500 : 500);
+  const [showAllLeads, setShowAllLeads] = useState(false); // Default to false for better performance
+  const leadsPerPage = 50; // Fixed 50 leads per page for pagination
 
   useEffect(() => {
     const fetchLeads = async () => {
       try {
         console.log('🔍 Desktop: Starting to fetch leads...');
 
-        // Fetch regular CRM leads
+        // Fetch regular CRM leads - always fetch all for filtering
         const response = await apiCall('/api/leads?limit=10000&page=1');
         const json = await response.json();
         console.log('📊 Desktop: Fetch leads response:', json);
@@ -987,8 +989,47 @@ https://crm.100acress.com/login
     } else if (sourceFilter === 'crm') {
       matchesSource = lead.isWebsiteEnquiry !== true; // Show only CRM created leads
     }
+
+    // Date filtering logic:
+    let matchesDate = false;
+    if (dateFilter === 'all') {
+      matchesDate = true; // Show all dates
+    } else {
+      const leadDate = new Date(lead.createdAt);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      const weekStart = new Date(today);
+      weekStart.setDate(today.getDate() - today.getDay());
+      
+      const monthStart = new Date(today);
+      monthStart.setDate(1);
+      
+      if (dateFilter === 'today') {
+        matchesDate = leadDate >= today;
+      } else if (dateFilter === 'yesterday') {
+        matchesDate = leadDate >= yesterday && leadDate < today;
+      } else if (dateFilter === 'week') {
+        matchesDate = leadDate >= weekStart;
+      } else if (dateFilter === 'month') {
+        matchesDate = leadDate >= monthStart;
+      }
+    }
+
+    // Assigned status filtering logic:
+    let matchesAssigned = false;
+    if (assignedFilter === 'all') {
+      matchesAssigned = true; // Show all leads
+    } else if (assignedFilter === 'assigned') {
+      matchesAssigned = lead.assignedTo && lead.assignedTo !== ''; // Show only assigned leads
+    } else if (assignedFilter === 'unassigned') {
+      matchesAssigned = !lead.assignedTo || lead.assignedTo === ''; // Show only unassigned leads
+    }
     
-    return matchesSearch && matchesStatus && matchesSource;
+    return matchesSearch && matchesStatus && matchesSource && matchesDate && matchesAssigned;
   });
 
   const getStatusClass = (status) => {
@@ -1749,7 +1790,8 @@ https://crm.100acress.com/login
     const currentUserId = localStorage.getItem("userId");
     const currentUserRole = localStorage.getItem("userRole");
 
-    if (currentUserRole === 'boss') return false;
+    // Boss can assign any unassigned lead
+    if (currentUserRole === 'boss' && !lead.assignedTo) return true;
 
     // Users can reassign leads they are assigned to
     // Or if they have higher role than the current assignee
@@ -1889,6 +1931,38 @@ https://crm.100acress.com/login
           <option value="crm">CRM Created</option>
         </select>
 
+        <select
+          value={dateFilter}
+          onChange={(e) => setDateFilter(e.target.value)}
+          className="lead-status-filter-select"
+        >
+          <option value="all">All Dates</option>
+          <option value="today">Today</option>
+          <option value="yesterday">Yesterday</option>
+          <option value="week">This Week</option>
+          <option value="month">This Month</option>
+        </select>
+
+        <select
+          value={assignedFilter}
+          onChange={(e) => setAssignedFilter(e.target.value)}
+          className="lead-status-filter-select"
+        >
+          <option value="all">All Leads</option>
+          <option value="assigned">Assigned</option>
+          <option value="unassigned">Unassigned</option>
+        </select>
+
+        <button 
+          className={`lead-load-all-button ${showAllLeads ? 'active' : ''}`}
+          onClick={() => {
+            setShowAllLeads(!showAllLeads);
+            setCurrentPage(1);
+          }}
+          title={showAllLeads ? "Show paginated view" : "Show all leads on one page"}
+        >
+          {showAllLeads ? "Show Pages" : "Show All"}
+        </button>
 
         {(userRole === "boss" || userRole === "hod" || userRole === "bd") && (
           <button 
@@ -1910,6 +1984,7 @@ https://crm.100acress.com/login
         <table className="lead-data-table">
           <thead>
             <tr>
+              <th>S.No</th>
               <th>Client Name</th>
               <th>Contact</th>
               <th>Property</th>
@@ -1921,18 +1996,17 @@ https://crm.100acress.com/login
           </thead>
           <tbody>
             {currentLeads.length > 0 ? (
-              currentLeads.map((lead) => (
+              currentLeads.map((lead, index) => (
                 <tr key={lead._id}>
+                  <td data-label="S.No">{index + 1}</td>
                   <td data-label="Lead Info">
-                    <div className="flex items-center gap-2">
-                      <div className="lead-info-display font-medium text-slate-900">{lead.name}</div>
-                      {lead.isWebsiteEnquiry && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
-                          <ExternalLink size={10} className="mr-1" />
-                          Website
-                        </span>
-                      )}
-                    </div>
+                    <div className="lead-info-display font-medium text-slate-900">{lead.name}</div>
+                    {lead.isWebsiteEnquiry && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700 border border-green-200 mt-1">
+                        <ExternalLink size={8} className="mr-1" />
+                        Website
+                      </span>
+                    )}
                     <div className="lead-info-display text-xs text-slate-500">ID: #{generateShortId(lead._id)}</div>
                     <div className="flex flex-col gap-0.5 text-[10px] text-slate-400 mt-1">
                       <div>by: {(() => {
@@ -2079,11 +2153,13 @@ https://crm.100acress.com/login
                               className="lead-assignment-select"
                             >
                               <option value="">Unassigned</option>
-                              {assignableUsers.map((u) => (
-                                <option key={u._id} value={u._id}>
-                                  {u.name} ({u.role})
-                                </option>
-                              ))}
+                              {assignableUsers
+                                .filter(user => user.role === 'hod')
+                                .map((u) => (
+                                  <option key={u._id} value={u._id}>
+                                    {u.name} ({u.role})
+                                  </option>
+                                ))}
                             </select>
                             {/* Forward button */}
                             {canForwardLead(lead).canForward && (
@@ -2511,7 +2587,7 @@ https://crm.100acress.com/login
                       >
                         <option value="">Assign...</option>
                         {assignableUsers
-                          .filter(user => user.role === 'hod' || user.role === 'team-leader' || user.role === 'bd')
+                          .filter(user => user.role === 'hod')
                           .map(user => (
                             <option key={user._id} value={user._id}>
                               {user.name} ({user.role})
