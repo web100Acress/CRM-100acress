@@ -6,6 +6,11 @@ services:
     restart: unless-stopped
     env_file:
       - ./crm-backend/.env
+    environment:
+      - NODE_ENV=production
+      - BACKEND_URL=https://api.100acress.com
+      - SERVICE_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OTU1MGYwNDYzNzU1MzU0Yzc4ZGFkN2YiLCJlbWFpbCI6ImluZm9AMTAwYWNyZXNzLmNvbSIsInJvbGUiOiJib3NzIiwiaWF0IjoxNzY5NDkyNjcxLCJleHAiOjE3Njk1NzkwNzF9.usmOH7Vgt17pMzaDd6mNDGPtwJ48GwtCi6L5j9dJky4
+      - FRONTEND_URL=https://bcrm.100acress.com
     ports:
       - "5001:5001"
 
