@@ -812,6 +812,21 @@ https://crm.100acress.com/login
             const enquiriesJson = await enquiriesResponse.json();
             
             if (enquiriesJson.success) {
+              // Function to map website enquiry status to valid lead status
+              const mapWebsiteStatusToLeadStatus = (status) => {
+                const statusMap = {
+                  'pending': 'Cold',
+                  'new': 'Hot', 
+                  'hot': 'Hot',
+                  'warm': 'Warm',
+                  'cold': 'Cold',
+                  'converted': 'closed',
+                  'closed': 'closed',
+                  'not-interested': 'not-interested'
+                };
+                return statusMap[status?.toLowerCase()] || 'Cold';
+              };
+
               websiteEnquiries = (enquiriesJson.data || []).map(enquiry => ({
                 ...enquiry,
                 _id: enquiry._id || `website_${Date.now()}_${Math.random()}`,
@@ -821,7 +836,7 @@ https://crm.100acress.com/login
                 projectName: enquiry.projectName || 'Not specified',
                 message: enquiry.message || '',
                 source: 'Website',
-                status: 'New',
+                status: mapWebsiteStatusToLeadStatus(enquiry.status),
                 priority: 'Medium',
                 assignedTo: null,
                 assignedToName: 'Not Assigned',
@@ -1634,6 +1649,21 @@ https://crm.100acress.com/login
     try {
       const token = localStorage.getItem("token");
       
+      // Function to map website enquiry status to valid lead status
+      const mapWebsiteStatusToLeadStatus = (status) => {
+        const statusMap = {
+          'pending': 'Cold',
+          'new': 'Hot', 
+          'hot': 'Hot',
+          'warm': 'Warm',
+          'cold': 'Cold',
+          'converted': 'closed',
+          'closed': 'closed',
+          'not-interested': 'not-interested'
+        };
+        return statusMap[status?.toLowerCase()] || 'Cold';
+      };
+      
       // Find the lead to check if it's a website enquiry
       const lead = leadsList.find(l => l._id === leadId);
       
@@ -1648,12 +1678,12 @@ https://crm.100acress.com/login
           projectName: lead.projectName,
           message: lead.message,
           source: 'Website',
-          status: 'New',
+          status: mapWebsiteStatusToLeadStatus(lead.status),
           priority: lead.priority || 'Medium',
           assignedTo: userId,
           createdBy: localStorage.getItem('userId'),
           leadType: 'Website Enquiry',
-          stage: 'New',
+          stage: 'new',
           followUpRequired: true,
           nextFollowUp: new Date(Date.now() + 24 * 60 * 60 * 1000),
           notes: `Originally from website enquiry: ${lead.message}`,
@@ -1728,9 +1758,12 @@ https://crm.100acress.com/login
         );
       }
 
-      // 🚀 Send WhatsApp notification when HOD assigns lead to BD
+      // 🚀 Send WhatsApp notification when HOD or Boss assigns lead to BD
       const currentUserRole = localStorage.getItem("userRole");
-      if (currentUserRole === 'hod' && userId) {
+      console.log('🔍 Checking WhatsApp notification - Current role:', currentUserRole, 'Assigning to user ID:', userId);
+      
+      if ((currentUserRole === 'hod' || currentUserRole === 'boss') && userId) {
+        console.log('✅ WhatsApp notification triggered - HOD/Boss assigning lead');
         // Find the assigned user (BD) details
         const assignedUser = assignableUsers.find(u => String(u._id) === String(userId));
         
@@ -1740,6 +1773,7 @@ https://crm.100acress.com/login
             leadsList.find(l => l._id === leadId);
             
           // Send WhatsApp notification to BD
+          console.log('📱 Sending WhatsApp notification to:', assignedUser.name, 'for lead:', updatedLead?.name || 'Unknown');
           setTimeout(() => {
             sendWhatsAppNotification({
               ...updatedLead,
@@ -1755,6 +1789,7 @@ https://crm.100acress.com/login
           });
         }
       } else {
+        console.log('❌ WhatsApp notification not sent - Role:', currentUserRole, 'User ID:', userId);
         toast({
           title: "✅ Lead Assigned",
           description: "Lead assigned successfully.",
@@ -2154,7 +2189,15 @@ https://crm.100acress.com/login
                             >
                               <option value="">Unassigned</option>
                               {assignableUsers
-                                .filter(user => user.role === 'hod')
+                                .filter(user => {
+                                  const currentUserRole = localStorage.getItem("userRole");
+                                  // If current user is HOD, show TL and BD users
+                                  if (currentUserRole === 'hod') {
+                                    return user.role === 'team-leader' || user.role === 'tl' || user.role === 'bd' || user.role === 'employee';
+                                  }
+                                  // Otherwise, show HOD users (existing logic)
+                                  return user.role === 'hod';
+                                })
                                 .map((u) => (
                                   <option key={u._id} value={u._id}>
                                     {u.name} ({u.role})
@@ -2587,7 +2630,15 @@ https://crm.100acress.com/login
                       >
                         <option value="">Assign...</option>
                         {assignableUsers
-                          .filter(user => user.role === 'hod')
+                          .filter(user => {
+                            const currentUserRole = localStorage.getItem("userRole");
+                            // If current user is HOD, show TL and BD users
+                            if (currentUserRole === 'hod') {
+                              return user.role === 'team-leader' || user.role === 'tl' || user.role === 'bd' || user.role === 'employee';
+                            }
+                            // Otherwise, show HOD users (existing logic)
+                            return user.role === 'hod';
+                          })
                           .map(user => (
                             <option key={user._id} value={user._id}>
                               {user.name} ({user.role})
