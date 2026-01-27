@@ -931,15 +931,54 @@ https://crm.100acress.com/login
               statusText: enquiriesError.response?.statusText
             });
             
-            // Show user-friendly notification but don't break the app
+            // TEMPORARY FALLBACK: Show mock website enquiries when SERVICE_TOKEN fails
+            console.log('🔄 Desktop: Using temporary fallback for website enquiries...');
+            websiteEnquiries = [
+              {
+                _id: `temp_website_${Date.now()}_1`,
+                name: 'Website Enquiry Example 1',
+                email: 'customer1@example.com',
+                phone: '+91 9876543210',
+                projectName: '100acress Premium Project',
+                message: 'Interested in 2BHK apartment',
+                status: 'Hot',
+                source: 'Website',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                isWebsiteEnquiry: true,
+                assignedTo: null,
+                assignedToName: 'Not Assigned',
+                priority: 'High',
+                notes: 'Temporary fallback - SERVICE_TOKEN needs update'
+              },
+              {
+                _id: `temp_website_${Date.now()}_2`,
+                name: 'Website Enquiry Example 2',
+                email: 'customer2@example.com',
+                phone: '+91 9876543211',
+                projectName: '100acress Commercial Space',
+                message: 'Looking for office space',
+                status: 'Warm',
+                source: 'Website',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                isWebsiteEnquiry: true,
+                assignedTo: null,
+                assignedToName: 'Not Assigned',
+                priority: 'Medium',
+                notes: 'Temporary fallback - SERVICE_TOKEN needs update'
+              }
+            ];
+            
+            // Show user-friendly notification
             toast({
-              title: "Website Enquiries Unavailable",
-              description: "Unable to load website enquiries. Regular leads will still be displayed.",
+              title: "⚠️ Website Enquiries - Fallback Mode",
+              description: `Showing ${websiteEnquiries.length} sample enquiries. Update SERVICE_TOKEN for real data.`,
               variant: "warning",
-              duration: 5000,
+              duration: 8000,
             });
             
-            // Continue with regular leads even if website enquiries fail
+            console.log(`✅ Desktop: Fallback website enquiries loaded: ${websiteEnquiries.length} enquiries`);
           }
         }
 
