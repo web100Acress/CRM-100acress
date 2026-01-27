@@ -477,18 +477,166 @@ https://crm.100acress.com/login
         `.trim();
 
         const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-        window.open(whatsappUrl, '_blank');
+        
+        // 🌍 Universal WhatsApp opening for ALL devices and browsers
+        console.log('🌍 Opening WhatsApp on device:', navigator.userAgent);
+        
+        // Detect device and browser
+        const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.userAgent);
+        const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        
+        try {
+          let whatsappOpened = false;
+          
+          // 📱 Mobile: Direct WhatsApp app opening
+          if (isMobile) {
+            console.log('📱 Mobile device detected, opening WhatsApp app...');
+            window.location.href = whatsappUrl;
+            whatsappOpened = true;
+            
+            toast({
+              title: "📱 WhatsApp Opening",
+              description: `Opening WhatsApp app... Phone: ${phoneNumber}`,
+              duration: 3000,
+            });
+          }
+          // 🍎 Mac + Safari: Special handling
+          else if (isMac && isSafari) {
+            console.log('🍎 Mac + Safari detected, using special method...');
+            
+            // Method 1: Try window.open with user gesture simulation
+            const newWindow = window.open(whatsappUrl, '_blank', 'noopener,noreferrer,width=800,height=600');
+            
+            if (newWindow && !newWindow.closed) {
+              whatsappOpened = true;
+              toast({
+                title: "✅ WhatsApp Opened",
+                description: `WhatsApp opened in new tab. Phone: ${phoneNumber}`,
+                duration: 3000,
+              });
+            } else {
+              // Method 2: Create visible button for user to click
+              const button = document.createElement('button');
+              button.textContent = `📱 Open WhatsApp - ${phoneNumber}`;
+              button.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                z-index: 9999;
+                padding: 15px 25px;
+                background: #25D366;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                font-size: 16px;
+                cursor: pointer;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+              `;
+              
+              button.onclick = () => {
+                window.open(whatsappUrl, '_blank');
+                document.body.removeChild(button);
+              };
+              
+              document.body.appendChild(button);
+              
+              // Auto-remove after 10 seconds
+              setTimeout(() => {
+                if (document.body.contains(button)) {
+                  document.body.removeChild(button);
+                }
+              }, 10000);
+              
+              toast({
+                title: "📱 Click Button Below",
+                description: `Please click the green button to open WhatsApp. Phone: ${phoneNumber}`,
+                duration: 8000,
+              });
+            }
+          }
+          // 🖥️ Desktop (Windows/Mac + Chrome/Firefox/Edge): Standard method
+          else {
+            console.log('🖥️ Desktop browser detected, using standard method...');
+            
+            const newWindow = window.open(whatsappUrl, '_blank', 'noopener,noreferrer,width=800,height=600');
+            
+            if (newWindow && !newWindow.closed) {
+              whatsappOpened = true;
+              toast({
+                title: "✅ WhatsApp Opened",
+                description: `WhatsApp opened in new tab. Phone: ${phoneNumber}`,
+                duration: 3000,
+              });
+            } else {
+              // Fallback: Create link element
+              const link = document.createElement('a');
+              link.href = whatsappUrl;
+              link.target = '_blank';
+              link.rel = 'noopener noreferrer';
+              link.download = ''; // Force download behavior
+              
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              
+              whatsappOpened = true;
+              
+              toast({
+                title: "📱 WhatsApp Opening...",
+                description: `If WhatsApp doesn't open, check your browser tabs. Phone: ${phoneNumber}`,
+                duration: 5000,
+              });
+            }
+          }
+          
+          // 🔄 Universal fallback if none of the methods worked
+          if (!whatsappOpened && !isMobile) {
+            setTimeout(() => {
+              toast({
+                title: "📱 Manual WhatsApp Open",
+                description: `Click here to open WhatsApp: ${phoneNumber}`,
+                action: {
+                  label: "Open WhatsApp",
+                  onClick: () => {
+                    const win = window.open(whatsappUrl, '_blank');
+                    if (!win || win.closed) {
+                      window.location.href = whatsappUrl;
+                    }
+                  }
+                },
+                duration: 10000,
+              });
+            }, 2000);
+          }
+          
+        } catch (error) {
+          console.error('🔄 Error opening WhatsApp:', error);
+          
+          // 🚨 Ultimate fallback
+          toast({
+            title: "📱 WhatsApp Link",
+            description: `Copy this link: ${whatsappUrl}`,
+            action: {
+              label: "Copy Link",
+              onClick: () => {
+                navigator.clipboard.writeText(whatsappUrl);
+                toast({
+                  title: "✅ Link Copied",
+                  description: "WhatsApp link copied to clipboard",
+                  duration: 3000,
+                });
+              }
+            },
+            duration: 10000,
+          });
+        }
 
         // Optional: Log the WhatsApp click
         console.log(`WhatsApp notification sent for lead: ${lead.name} (${lead._id})`);
         console.log(`Assigned to: ${assignedToInfo}`);
         console.log(`Phone used: ${phoneNumber}`);
-
-        toast({
-          title: " WhatsApp Opened",
-          description: `WhatsApp opened with lead details. Phone: ${phoneNumber}`,
-          duration: 3000,
-        });
 
       } else {
         toast({
