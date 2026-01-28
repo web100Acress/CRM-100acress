@@ -12,7 +12,13 @@
 const jwt = require('jsonwebtoken');
 
 // Configuration
-const ACRESS_API_BASE = process.env.BACKEND_URL || 'https://api.100acress.com';
+const DEFAULT_ACRESS_API_BASE = 'https://api.100acress.com';
+const RAW_BACKEND_URL = process.env.BACKEND_URL;
+// Prefer production API if BACKEND_URL points to localhost (so token refresh works without local backend)
+const ACRESS_API_BASE =
+    !RAW_BACKEND_URL || RAW_BACKEND_URL.includes('localhost') || RAW_BACKEND_URL.includes('127.0.0.1')
+        ? DEFAULT_ACRESS_API_BASE
+        : RAW_BACKEND_URL;
 const TOKEN_REFRESH_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
 
 // In-memory token storage

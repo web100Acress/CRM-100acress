@@ -3,14 +3,61 @@ const router = express.Router();
 const auth = require('../middlewares/auth');
 const { getValidToken, getTokenStatus } = require('../services/tokenRefreshService');
 
-// 100acress.com API base URL - Production requires explicit BACKEND_URL
-if (!process.env.BACKEND_URL) {
-  throw new Error('BACKEND_URL is not defined in environment variables');
+// 100acress.com API base URL
+// - In production: BACKEND_URL must be explicitly set
+// - In dev: fall back to the public API to avoid hard-crashing
+const DEFAULT_WEBSITE_API_BASE = 'https://api.100acress.com';
+const RAW_BACKEND_URL = process.env.BACKEND_URL;
+// If someone sets BACKEND_URL to localhost (common in dev docs), prefer production API
+// so CRM can fetch enquiries without requiring the local 100acress backend.
+const WEBSITE_API_BASE =
+  !RAW_BACKEND_URL || RAW_BACKEND_URL.includes('localhost') || RAW_BACKEND_URL.includes('127.0.0.1')
+    ? DEFAULT_WEBSITE_API_BASE
+    : RAW_BACKEND_URL;
+
+if (process.env.NODE_ENV === 'production' && !process.env.BACKEND_URL) {
+  throw new Error('BACKEND_URL is not defined in environment variables (required in production)');
 }
-const WEBSITE_API_BASE = process.env.BACKEND_URL;
 
 // Production detection
-const isProduction = process.env.NODE_ENV === 'production' || !WEBSITE_API_BASE.includes('localhost');
+const isProduction =
+  process.env.NODE_ENV === 'production' ||
+  (!WEBSITE_API_BASE.includes('localhost') && !WEBSITE_API_BASE.includes('127.0.0.1'));
+
+// Simple in-memory cache so production doesn't re-fetch on every boss login/page refresh
+// and users don't feel like "token bar bar mang raha hai".
+const WEBSITE_ENQUIRIES_CACHE_TTL_MS = Number(process.env.WEBSITE_ENQUIRIES_CACHE_TTL_MS || 2 * 60 * 1000); // 2 min default
+let enquiriesCache = {
+  fetchedAt: 0,
+  sourceBase: null,
+  data: null,
+};
+
+function extractNetworkErrorCode(err) {
+  // Node/undici often throws: TypeError('fetch failed') with `cause: AggregateError`
+  // where the real per-socket errors live at `err.cause.errors[]`.
+  const direct = err?.code;
+  if (direct) return direct;
+
+  const causeCode = err?.cause?.code;
+  if (causeCode) return causeCode;
+
+  const nestedErrors = err?.cause?.errors;
+  if (Array.isArray(nestedErrors) && nestedErrors.length) {
+    return nestedErrors.find(e => e?.code)?.code;
+  }
+
+  return undefined;
+}
+
+function isLocalhostUrl(url) {
+  return typeof url === 'string' && (url.includes('localhost') || url.includes('127.0.0.1'));
+}
+
+function isCacheFresh() {
+  if (!enquiriesCache?.data) return false;
+  return Date.now() - enquiriesCache.fetchedAt < WEBSITE_ENQUIRIES_CACHE_TTL_MS;
+}
 
 /**
  * @route GET /api/website-enquiries
@@ -39,15 +86,58 @@ router.get('/', auth, async (req, res) => {
       userRole
     });
 
+    // Serve cache immediately if still fresh
+    if (isCacheFresh()) {
+      return res.json({
+        success: true,
+        message: 'Enquiries fetched successfully (cache)',
+        data: enquiriesCache.data,
+        total: enquiriesCache.data.length,
+        meta: {
+          source: '100acress.com',
+          authMethod: 'cached',
+          apiBase: enquiriesCache.sourceBase || WEBSITE_API_BASE,
+          fetchedAt: new Date(enquiriesCache.fetchedAt).toISOString(),
+          userRole,
+          isProduction,
+          cache: {
+            ttlMs: WEBSITE_ENQUIRIES_CACHE_TTL_MS,
+            ageMs: Date.now() - enquiriesCache.fetchedAt
+          }
+        }
+      });
+    }
+
     // 🔥 Get valid token (auto-refreshes if expired)
     const serviceToken = await getValidToken();
     const authMethod = 'service-token (auto-refresh)';
 
     if (!serviceToken) {
       const tokenStatus = getTokenStatus();
-      return res.status(500).json({
+      // If we have a stale cache, serve it instead of failing the boss UI.
+      if (enquiriesCache?.data?.length) {
+        return res.status(200).json({
+          success: true,
+          message: 'Enquiries served from stale cache (token unavailable)',
+          data: enquiriesCache.data,
+          total: enquiriesCache.data.length,
+          meta: {
+            source: '100acress.com',
+            authMethod: 'stale-cache',
+            apiBase: enquiriesCache.sourceBase || WEBSITE_API_BASE,
+            fetchedAt: new Date(enquiriesCache.fetchedAt).toISOString(),
+            userRole,
+            isProduction,
+            tokenStatus
+          }
+        });
+      }
+
+      return res.status(503).json({
         success: false,
-        message: 'No valid token available. Add ACRESS_ADMIN_EMAIL and ACRESS_ADMIN_PASSWORD to .env for auto-refresh.',
+        message:
+          'Website enquiries temporarily unavailable (token missing/invalid). ' +
+          'Set SERVICE_TOKEN or ACRESS_ADMIN_EMAIL/ACRESS_ADMIN_PASSWORD on the CRM backend.',
         debug: {
           tokenStatus,
           backendUrl: WEBSITE_API_BASE,
@@ -68,11 +158,36 @@ router.get('/', auth, async (req, res) => {
     console.log(`🌐 Fetching from: ${WEBSITE_API_BASE}/crm/enquiries?limit=${limit}`);
     console.log(`🔐 Auth method: ${authMethod}`);
 
-    // Fetch enquiries from 100acress backend
-    const response = await fetch(`${WEBSITE_API_BASE}/crm/enquiries?limit=${limit}`, {
-      method: 'GET',
-      headers
-    });
+    const requestPath = `/crm/enquiries?limit=${limit}`;
+    let response;
+
+    // Fetch enquiries from 100acress backend (with localhost fallback)
+    try {
+      response = await fetch(`${WEBSITE_API_BASE}${requestPath}`, {
+        method: 'GET',
+        headers
+      });
+    } catch (fetchError) {
+      const code = extractNetworkErrorCode(fetchError);
+
+      // If dev env is pointing to localhost:3500 but that service is down,
+      // automatically fall back to the public API to keep CRM usable.
+      if (
+        code === 'ECONNREFUSED' &&
+        isLocalhostUrl(WEBSITE_API_BASE) &&
+        WEBSITE_API_BASE !== DEFAULT_WEBSITE_API_BASE
+      ) {
+        console.warn(
+          `⚠️ Website Enquiries: ${WEBSITE_API_BASE} refused connection; retrying with ${DEFAULT_WEBSITE_API_BASE}`
+        );
+        response = await fetch(`${DEFAULT_WEBSITE_API_BASE}${requestPath}`, {
+          method: 'GET',
+          headers
+        });
+      } else {
+        throw fetchError;
+      }
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -134,6 +249,13 @@ router.get('/', auth, async (req, res) => {
       originalEnquiry: enquiry
     }));
 
+    // Update cache
+    enquiriesCache = {
+      fetchedAt: Date.now(),
+      sourceBase: WEBSITE_API_BASE,
+      data: transformedEnquiries
+    };
+
     res.json({
       success: true,
       message: 'Enquiries fetched successfully',
@@ -151,11 +273,12 @@ router.get('/', auth, async (req, res) => {
 
   } catch (error) {
     console.error('❌ Error in website-enquiries route:', error);
+    const networkCode = extractNetworkErrorCode(error);
     console.error('❌ Full error details:', {
       message: error.message,
       stack: error.stack,
       name: error.name,
-      code: error.code,
+      code: networkCode || error.code,
       errno: error.errno,
       syscall: error.syscall,
       address: error.address,
@@ -163,14 +286,36 @@ router.get('/', auth, async (req, res) => {
     });
 
     // Check if it's a network/connectivity error
-    if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+    if (networkCode === 'ECONNREFUSED' || networkCode === 'ENOTFOUND') {
+      // Serve stale cache if available (keeps boss CRM usable in production)
+      if (enquiriesCache?.data?.length) {
+        return res.status(200).json({
+          success: true,
+          message: 'Enquiries served from stale cache (network error)',
+          data: enquiriesCache.data,
+          total: enquiriesCache.data.length,
+          meta: {
+            source: '100acress.com',
+            authMethod: 'stale-cache',
+            apiBase: enquiriesCache.sourceBase || WEBSITE_API_BASE,
+            fetchedAt: new Date(enquiriesCache.fetchedAt).toISOString(),
+            userRole: req.user?.role,
+            isProduction,
+            errorCode: networkCode
+          }
+        });
+      }
+
       return res.status(500).json({
         success: false,
-        message: `Cannot connect to 100acress backend at ${WEBSITE_API_BASE}. Please check if the service is running.`,
+        message:
+          `Cannot connect to 100acress backend at ${WEBSITE_API_BASE}. ` +
+          `If BACKEND_URL is set to http://localhost:3500, make sure the 100acress backend is running on port 3500 ` +
+          `or change BACKEND_URL to https://api.100acress.com.`,
         error: error.message,
         debug: {
           apiBase: WEBSITE_API_BASE,
-          errorCode: error.code,
+          errorCode: networkCode,
           isNetworkError: true
         }
       });
