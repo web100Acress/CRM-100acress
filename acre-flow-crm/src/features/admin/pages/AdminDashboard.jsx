@@ -1,0 +1,11 @@
+import React from 'react';
+
+const AdminDashboard = () => {
+  return (
+    <div className="p-4">
+      <h1 className="text-xl font-semibold">Admin Dashboard</h1>
+    </div>
+  );
+};
+
+export default AdminDashboard;

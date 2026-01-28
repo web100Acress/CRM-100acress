@@ -1,7 +1,8 @@
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react-swc";
+import react from "@vitejs/plugin-react";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
+import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -11,6 +12,18 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
+    VitePWA({
+      injectRegister: null,
+      registerType: "autoUpdate",
+      workbox: {
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,json,txt,woff2}"],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        navigateFallback: "/index.html",
+      },
+      devOptions: {
+        enabled: false,
+      },
+    }),
     mode === 'development' &&
     componentTagger(),
   ].filter(Boolean),
@@ -18,5 +31,10 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  test: {
+    globals: true,
+    environment: "happy-dom",
+    setupFiles: "./src/test/setup.ts",
   },
 }));

@@ -1,0 +1,18 @@
+console.log('🧹 Please clear your browser cache and localStorage:');
+console.log('');
+console.log('📱 Steps to fix HOD visibility:');
+console.log('1. Open browser DevTools (F12)');
+console.log('2. Go to Application/Storage tab');
+console.log('3. Click Clear Storage → Clear All');
+console.log('4. Refresh the page');
+console.log('5. Login again with: web.100acress@gmail.com');
+console.log('6. Password: @Engineering123');
+console.log('');
+console.log('🎯 Expected result:');
+console.log('- User role should show: boss');
+console.log('- Create Lead dropdown should show: 2 HOD users');
+console.log('- HOD users: Anurag Yadav, Aman Tiwari');
+console.log('');
+console.log('🔍 Alternative: Direct localStorage clear in console:');
+console.log('Copy and paste this in browser console:');
+console.log('localStorage.clear(); location.reload();');

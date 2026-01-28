@@ -1,0 +1,99 @@
+/* Developer Console Layout Fix */
+.dashboard-container {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.developer-main {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+  background-color: var(--bg-primary);
+}
+
+.content-card {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Ensure proper spacing and layout */
+.developer-tools,
+.system-monitor,
+.database-manager,
+.api-tester,
+.log-viewer,
+.performance-metrics,
+.deployment-panel,
+.security-audit,
+.backup-manager,
+.cache-manager,
+.queue-monitor,
+.error-handler {
+  min-height: 400px;
+}
+
+/* Grid layouts for tools */
+.tools-grid,
+.monitor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.db-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .developer-main {
+    padding: 1rem;
+  }
+  
+  .tools-grid,
+  .monitor-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Dark theme adjustments */
+:root.dark-theme .dashboard-container {
+  background-color: var(--bg-primary);
+}
+
+:root.dark-theme .content-card {
+  background-color: var(--bg-tertiary);
+  border-color: var(--border-secondary);
+}
+
+:root.dark-theme .developer-main {
+  background-color: var(--bg-primary);
+}
+
+/* Fix for any overflow issues */
+.dashboard-container,
+.main-content,
+.developer-main {
+  box-sizing: border-box;
+}
+
+/* Ensure content can scroll properly */
+.content-card {
+  overflow: visible;
+}
+
+.developer-main {
+  overflow-y: auto;
+}

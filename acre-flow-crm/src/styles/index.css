@@ -2,6 +2,57 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===== CRM GLOBAL INPUT FIX ===== */
+input,
+select,
+textarea {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border: 1px solid #d0d0d0;
+}
+
+/* Placeholder visible rahe */
+input::placeholder,
+textarea::placeholder {
+  color: #7a7a7a;
+  opacity: 1;
+}
+
+/* Dark mode inputs */
+.dark input,
+.dark select,
+.dark textarea,
+.dark-mode input,
+.dark-mode select,
+.dark-mode textarea {
+  background-color: #1f2937 !important;
+  color: #ffffff !important;
+  border: 1px solid #374151;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder,
+.dark-mode input::placeholder,
+.dark-mode textarea::placeholder {
+  color: #9ca3af !important;
+}
+
+/* Search bar specific fix */
+.search-input,
+input[type="search"],
+.lead-search-input {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border: 1px solid #d0d0d0;
+}
+
+/* CRM header inputs */
+.crm-header input,
+.header-search input {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */

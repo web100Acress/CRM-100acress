@@ -28,8 +28,8 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ style, children, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { hideCloseButton?: boolean }
+>(({ style, children, hideCloseButton = false, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
@@ -41,31 +41,34 @@ const DialogContent = React.forwardRef<
         transform: "translate(-50%, -50%)",
         zIndex: 50,
         width: "100%",
-        maxWidth: "600px",
+        maxWidth: "350px",
         backgroundColor: "#fff",
-        padding: "24px",
+        padding: "16px",
         borderRadius: "10px",
         boxShadow: "0 10px 25px rgba(0, 0, 0, 0.2)",
+        pointerEvents: "auto",
         ...style,
       }}
       {...props}
     >
       {children}
-      <DialogPrimitive.Close
-        style={{
-          position: "absolute",
-          top: "12px",
-          right: "12px",
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          opacity: 0.7,
-          transition: "opacity 0.3s ease",
-        }}
-      >
-        <X size={20} />
-        <span style={{ display: "none" }}>Close</span>
-      </DialogPrimitive.Close>
+      {!hideCloseButton && (
+        <DialogPrimitive.Close
+          style={{
+            position: "absolute",
+            top: "12px",
+            right: "12px",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            opacity: 0.7,
+            transition: "opacity 0.3s ease",
+          }}
+        >
+          <X size={20} />
+          <span style={{ display: "none" }}>Close</span>
+        </DialogPrimitive.Close>
+      )}
     </DialogPrimitive.Content>
   </DialogPortal>
 ));

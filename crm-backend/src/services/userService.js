@@ -1,8 +1,18 @@
 const User = require('../models/userModel');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const { mapAcressRoleToCRM } = require('./roleMappingService');
 
 const createUser = async (userData) => {
+  // Apply role mapping if role is provided
+  if (userData.role) {
+    userData.role = mapAcressRoleToCRM(userData.role);
+    console.log(' User Creation Role Mapping:', {
+      originalRole: userData.role,
+      mappedRole: userData.role
+    });
+  }
+
   if (userData.password) {
     const saltRounds = 10;
     userData.password = await bcrypt.hash(userData.password, saltRounds);
@@ -19,6 +29,14 @@ const getUserById = async (id) => {
 };
 
 const updateUser = async (id, updateData) => {
+  // Apply role mapping if role is being updated
+  if (updateData.role) {
+    updateData.role = mapAcressRoleToCRM(updateData.role);
+    console.log(' User Update Role Mapping:', {
+      originalRole: updateData.role,
+      mappedRole: updateData.role
+    });
+  }
   return await User.findByIdAndUpdate(id, updateData, { new: true });
 };
 
@@ -50,6 +68,26 @@ const resetPassword = async (token, newPassword) => {
   return user;
 };
 
+const updateUserStatus = async (id, status) => {
+  return await User.findByIdAndUpdate(
+    id,
+    { status },
+    { new: true, runValidators: true }
+  );
+};
+
+const updateProfile = async (userId, updateData) => {
+  return await User.findByIdAndUpdate(
+    userId,
+    updateData,
+    { new: true, runValidators: true, upsert: true, setDefaultsOnInsert: true }
+  );
+};
+
+const findUsers = async (criteria, projection = {}) => {
+  return await User.find(criteria, projection).limit(20);
+};
+
 module.exports = {
   createUser,
   getUsers,
@@ -58,4 +96,7 @@ module.exports = {
   deleteUser,
   setResetToken,
   resetPassword,
-}; 
+  updateUserStatus,
+  updateProfile,
+  findUsers
+};
