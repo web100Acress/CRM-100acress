@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middlewares/auth');
+const { getValidToken, getTokenStatus } = require('../services/tokenRefreshService');
 
 // 100acress.com API base URL - Production requires explicit BACKEND_URL
 if (!process.env.BACKEND_URL) {
@@ -21,7 +22,7 @@ router.get('/', auth, async (req, res) => {
     // Check if user has admin privileges (Boss, Admin, Super-Admin)
     const userRole = req.user?.role?.toLowerCase();
     const allowedRoles = ['boss', 'admin', 'super-admin', 'head-admin'];
-    
+
     if (!allowedRoles.includes(userRole)) {
       return res.status(403).json({
         success: false,
@@ -38,16 +39,17 @@ router.get('/', auth, async (req, res) => {
       userRole
     });
 
-    // 🔥 PRODUCTION: SERVICE_TOKEN is REQUIRED (no fallback)
-    const serviceToken = process.env.SERVICE_TOKEN;
-    const authMethod = 'service-token';
+    // 🔥 Get valid token (auto-refreshes if expired)
+    const serviceToken = await getValidToken();
+    const authMethod = 'service-token (auto-refresh)';
 
-    if (!process.env.SERVICE_TOKEN) {
+    if (!serviceToken) {
+      const tokenStatus = getTokenStatus();
       return res.status(500).json({
         success: false,
-        message: 'SERVICE_TOKEN missing in production. Contact administrator.',
+        message: 'No valid token available. Add ACRESS_ADMIN_EMAIL and ACRESS_ADMIN_PASSWORD to .env for auto-refresh.',
         debug: {
-          hasServiceToken: false,
+          tokenStatus,
           backendUrl: WEBSITE_API_BASE,
           isProduction
         }
@@ -56,16 +58,16 @@ router.get('/', auth, async (req, res) => {
 
     // Get limit from query params (default to 10000)
     const limit = req.query.limit || 10000;
-    
+
     // Prepare request headers - only service-token for 100acress API
     const headers = {
       'Content-Type': 'application/json',
-      'x-access-token': process.env.SERVICE_TOKEN
+      'x-access-token': serviceToken
     };
 
     console.log(`🌐 Fetching from: ${WEBSITE_API_BASE}/crm/enquiries?limit=${limit}`);
     console.log(`🔐 Auth method: ${authMethod}`);
-    
+
     // Fetch enquiries from 100acress backend
     const response = await fetch(`${WEBSITE_API_BASE}/crm/enquiries?limit=${limit}`, {
       method: 'GET',
@@ -81,7 +83,7 @@ router.get('/', auth, async (req, res) => {
         authMethod,
         apiBase: WEBSITE_API_BASE
       });
-      
+
       // Provide helpful error messages based on status
       let errorMessage = 'Failed to fetch enquiries from 100acress.com';
       if (response.status === 401) {
@@ -91,7 +93,7 @@ router.get('/', auth, async (req, res) => {
       } else if (response.status === 404) {
         errorMessage = '100acress API endpoint not found. Check BACKEND_URL configuration.';
       }
-      
+
       return res.status(response.status).json({
         success: false,
         message: errorMessage,
@@ -107,7 +109,7 @@ router.get('/', auth, async (req, res) => {
 
     const data = await response.json();
     console.log(`✅ Successfully fetched ${data.data?.length || 0} enquiries from 100acress`);
-    
+
     // Transform the data to match CRM lead structure
     const transformedEnquiries = (data.data || data.users || data || []).map(enquiry => ({
       _id: enquiry._id,
@@ -159,7 +161,7 @@ router.get('/', auth, async (req, res) => {
       address: error.address,
       port: error.port
     });
-    
+
     // Check if it's a network/connectivity error
     if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
       return res.status(500).json({
@@ -173,7 +175,7 @@ router.get('/', auth, async (req, res) => {
         }
       });
     }
-    
+
     res.status(500).json({
       success: false,
       message: 'Internal server error',
@@ -196,7 +198,7 @@ router.get('/debug', auth, async (req, res) => {
   try {
     const userRole = req.user?.role?.toLowerCase();
     const allowedRoles = ['boss', 'admin', 'super-admin', 'head-admin'];
-    
+
     if (!allowedRoles.includes(userRole)) {
       return res.status(403).json({
         success: false,
@@ -277,12 +279,12 @@ router.get('/download', auth, async (req, res) => {
       });
     }
 
-    // Get service token for 100acress backend authentication
-    const serviceToken = process.env.SERVICE_TOKEN;
+    // Get service token for 100acress backend authentication (auto-refreshes)
+    const serviceToken = await getValidToken();
     if (!serviceToken) {
       return res.status(500).json({
         success: false,
-        message: 'Service token not configured. Please contact administrator.'
+        message: 'No valid token available. Add ACRESS_ADMIN_EMAIL and ACRESS_ADMIN_PASSWORD to .env.'
       });
     }
 
@@ -308,7 +310,7 @@ router.get('/download', auth, async (req, res) => {
     // Set appropriate headers for file download
     const contentDisposition = response.headers.get('content-disposition');
     const contentType = response.headers.get('content-type') || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-    
+
     res.setHeader('Content-Type', contentType);
     if (contentDisposition) {
       res.setHeader('Content-Disposition', contentDisposition);
