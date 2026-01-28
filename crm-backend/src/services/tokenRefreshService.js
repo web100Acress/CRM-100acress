@@ -90,8 +90,13 @@ const loginAndGetToken = async () => {
         return null;
     }
 
-    // Try multiple possible login endpoints
+    // Try multiple possible login endpoints (100acress backend)
+    // NOTE: In the 100acress backend codebase, the working login is:
+    // POST /postPerson/verify_Login  (returns { token, User, ... })
     const loginEndpoints = [
+        `${ACRESS_API_BASE}/postPerson/verify_Login`,
+        `${ACRESS_API_BASE}/postPerson/verify_Login/`,
+        // legacy / alternate paths (kept as fallback)
         `${ACRESS_API_BASE}/api/auth/login`,
         `${ACRESS_API_BASE}/auth/login`,
         `${ACRESS_API_BASE}/api/user/login`,
