@@ -1,13 +1,13 @@
 /**
- * Token Refresh Service for 100acress API
- * Automatically manages JWT tokens for API authentication
- * 
- * Features:
- * - Auto-login on server start
- * - Token refresh every 6 hours (before 7-day expiration)
- * - Fallback to SERVICE_TOKEN from .env if auto-login fails
- * - In-memory token storage (no file writes)
- */
+* Token Refresh Service for 100acress API
+* Automatically manages JWT tokens for API authentication
+* 
+* Features:
+* - Auto-login on server start
+* - Token refresh every 6 hours (before 7-day expiration)
+* - Fallback to SERVICE_TOKEN from .env if auto-login fails
+* - In-memory token storage (no file writes)
+*/
 
 const jwt = require('jsonwebtoken');
 
