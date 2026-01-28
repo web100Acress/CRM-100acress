@@ -59,6 +59,15 @@ function isCacheFresh() {
   return Date.now() - enquiriesCache.fetchedAt < WEBSITE_ENQUIRIES_CACHE_TTL_MS;
 }
 
+function getBearerTokenFromRequest(req) {
+  const authHeader = req?.headers?.authorization || req?.headers?.Authorization;
+  if (!authHeader) return null;
+  const raw = String(authHeader).trim();
+  if (!raw) return null;
+  if (raw.toLowerCase().startsWith('bearer ')) return raw.slice(7).trim();
+  return raw; // if caller sends raw token
+}
+
 /**
  * @route GET /api/website-enquiries
  * @desc Proxy route to fetch enquiries from 100acress.com (Boss/Admin only)
@@ -108,11 +117,15 @@ router.get('/', auth, async (req, res) => {
       });
     }
 
-    // 🔥 Get valid token (auto-refreshes if expired)
-    const serviceToken = await getValidToken();
-    const authMethod = 'service-token (auto-refresh)';
+    // Prefer the caller's CRM login token for 100acress API auth.
+    // This removes the dependency on SERVICE_TOKEN in production for boss users.
+    const callerToken = getBearerTokenFromRequest(req);
 
-    if (!serviceToken) {
+    // Fallback to service token if caller token is missing
+    const serviceToken = callerToken ? null : await getValidToken();
+    const authMethod = callerToken ? 'user-token (from CRM login)' : 'service-token (auto-refresh)';
+
+    if (!callerToken && !serviceToken) {
       const tokenStatus = getTokenStatus();
       // If we have a stale cache, serve it instead of failing the boss UI.
       if (enquiriesCache?.data?.length) {
@@ -152,7 +165,7 @@ router.get('/', auth, async (req, res) => {
     // Prepare request headers - only service-token for 100acress API
     const headers = {
       'Content-Type': 'application/json',
-      'x-access-token': serviceToken
+      'x-access-token': callerToken || serviceToken
     };
 
     console.log(`🌐 Fetching from: ${WEBSITE_API_BASE}/crm/enquiries?limit=${limit}`);
@@ -191,8 +204,10 @@ router.get('/', auth, async (req, res) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      // If token is expired on production API, force-refresh and retry once automatically.
-      if (response.status === 401 && errorText && errorText.includes('Token expired')) {
+      // If token is expired on production API:
+      // - If using user-token, user needs to re-login (we cannot refresh their token here).
+      // - If using service-token, force-refresh and retry once automatically.
+      if (response.status === 401 && errorText && errorText.includes('Token expired') && !callerToken) {
         console.warn('🔄 Website Enquiries: Token expired; forcing refresh and retrying once...');
         const refreshed = await forceRefreshToken();
         if (refreshed) {
@@ -485,9 +500,10 @@ router.get('/download', auth, async (req, res) => {
       });
     }
 
-    // Get service token for 100acress backend authentication (auto-refreshes)
-    const serviceToken = await getValidToken();
-    if (!serviceToken) {
+    // Prefer caller token; fallback to service token
+    const callerToken = getBearerTokenFromRequest(req);
+    const serviceToken = callerToken ? null : await getValidToken();
+    if (!callerToken && !serviceToken) {
       return res.status(500).json({
         success: false,
         message: 'No valid token available. Add ACRESS_ADMIN_EMAIL and ACRESS_ADMIN_PASSWORD to .env.'
@@ -499,7 +515,7 @@ router.get('/download', auth, async (req, res) => {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'x-access-token': serviceToken
+        'x-access-token': callerToken || serviceToken
       }
     });
 
