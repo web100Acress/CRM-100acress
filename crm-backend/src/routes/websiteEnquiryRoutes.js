@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middlewares/auth');
-const { getValidToken, getTokenStatus } = require('../services/tokenRefreshService');
+const { getValidToken, getTokenStatus, forceRefreshToken } = require('../services/tokenRefreshService');
 
 // 100acress.com API base URL
 // - In production: BACKEND_URL must be explicitly set
@@ -191,6 +191,66 @@ router.get('/', auth, async (req, res) => {
 
     if (!response.ok) {
       const errorText = await response.text();
+      // If token is expired on production API, force-refresh and retry once automatically.
+      if (response.status === 401 && errorText && errorText.includes('Token expired')) {
+        console.warn('🔄 Website Enquiries: Token expired; forcing refresh and retrying once...');
+        const refreshed = await forceRefreshToken();
+        if (refreshed) {
+          const retryResponse = await fetch(`${WEBSITE_API_BASE}${requestPath}`, {
+            method: 'GET',
+            headers: {
+              ...headers,
+              'x-access-token': refreshed
+            }
+          });
+
+          if (retryResponse.ok) {
+            const retryData = await retryResponse.json();
+            const transformedRetry = (retryData.data || retryData.users || retryData || []).map(enquiry => ({
+              _id: enquiry._id,
+              name: enquiry.name || enquiry.firstName + ' ' + enquiry.lastName || 'Unknown',
+              email: enquiry.email || '',
+              phone: enquiry.mobile || enquiry.phone || '',
+              projectName: enquiry.projectName || enquiry.interestedProject || 'Not specified',
+              budget: enquiry.budget || '',
+              message: enquiry.message || enquiry.requirement || '',
+              status: enquiry.status || 'new',
+              source: '100acress.com',
+              createdAt: enquiry.createdAt || enquiry.created_at || new Date(),
+              updatedAt: enquiry.updatedAt || enquiry.updated_at || new Date(),
+              assignedTo: null,
+              assignedToName: 'Unassigned',
+              priority: enquiry.priority || 'medium',
+              followUpDate: null,
+              lastContactDate: enquiry.createdAt || new Date(),
+              notes: enquiry.message || enquiry.requirement || '',
+              originalEnquiry: enquiry
+            }));
+
+            enquiriesCache = {
+              fetchedAt: Date.now(),
+              sourceBase: WEBSITE_API_BASE,
+              data: transformedRetry
+            };
+
+            return res.json({
+              success: true,
+              message: 'Enquiries fetched successfully',
+              data: transformedRetry,
+              total: transformedRetry.length,
+              meta: {
+                source: '100acress.com',
+                authMethod: 'service-token (auto-refresh)',
+                apiBase: WEBSITE_API_BASE,
+                fetchedAt: new Date().toISOString(),
+                userRole,
+                isProduction,
+                retriedAfterRefresh: true
+              }
+            });
+          }
+        }
+      }
       console.error('❌ Error fetching enquiries from 100acress:', {
         status: response.status,
         statusText: response.statusText,

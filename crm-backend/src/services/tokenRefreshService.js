@@ -151,9 +151,11 @@ const refreshToken = async () => {
         currentToken = newToken;
         tokenExpiresAt = getTokenExpiration(newToken);
         console.log('✅ Token Service: Token refreshed successfully');
+        return currentToken;
     } else {
         console.warn('⚠️ Token Service: Refresh failed, will retry on next interval');
         // Keep using old token or fallback to env
+        return null;
     }
 };
 
@@ -248,10 +250,18 @@ const stopTokenService = () => {
     }
 };
 
+/**
+ * Force a refresh right now (used when API says "Token expired")
+ */
+const forceRefreshToken = async () => {
+    return await refreshToken();
+};
+
 module.exports = {
     initializeTokenService,
     getValidToken,
     getTokenStatus,
     stopTokenService,
     isTokenExpired,
+    forceRefreshToken,
 };
