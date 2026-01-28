@@ -209,6 +209,7 @@ router.get('/debug', auth, async (req, res) => {
     const debug = {
       environment: {
         NODE_ENV: process.env.NODE_ENV,
+        tokenStatus: getTokenStatus(),
         hasServiceToken: !!process.env.SERVICE_TOKEN,
         serviceTokenLength: process.env.SERVICE_TOKEN?.length || 0,
         serviceTokenPreview: process.env.SERVICE_TOKEN ? `${process.env.SERVICE_TOKEN.substring(0, 20)}...` : null,

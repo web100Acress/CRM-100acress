@@ -33,11 +33,18 @@ const isTokenExpired = (token) => {
         if (parts.length !== 3) return true;
 
         const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+
+        // If there's no expiration field, assume it doesn't expire (or we can't check)
+        if (!payload.exp) {
+            console.log('🔑 Token Service: Token has no expiration field, assuming valid.');
+            return false;
+        }
+
         const currentTime = Math.floor(Date.now() / 1000);
 
         // Consider expired if within 1 hour of expiration
         const expirationBuffer = 60 * 60; // 1 hour
-        return !payload.exp || (payload.exp - expirationBuffer) < currentTime;
+        return (payload.exp - expirationBuffer) < currentTime;
     } catch (error) {
         console.error('🔑 Token Service: Error checking token expiration:', error.message);
         return true;
