@@ -56,10 +56,10 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
   const navigationItems = {
     boss: [
       { path: '/', icon: Home, label: 'Dashboard' },
-      { path: '/website-enquiries', icon: Mail, label: 'Website Enquiries' },
-      { path: '/site-visit-dashboard', icon: Calendar, label: 'Site Visit Dashboard' },
+      // { path: '/website-enquiries', icon: Mail, label: 'Website Enquiries' },
+      // { path: '/site-visit-dashboard', icon: Calendar, label: 'Site Visit Dashboard' },
       { path: '/leads', icon: Building2, label: 'All Leads' },
-      { path: '/site-visits', icon: Calendar, label: 'Site Visits' },
+      // { path: '/site-visits', icon: Calendar, label: 'Site Visits' },
       { path: '/leads?status=not-interested', icon: X, label: 'Not Interested' },
       { path: '/users', icon: Users, label: 'Manage Users' },
       { path: '/admin/bd-analytics', icon: BarChart3, label: 'BD Analytics' },
@@ -67,7 +67,7 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
     ],
     admin: [
       { path: '/admin-dashboard', icon: Home, label: 'Admin Dashboard', permission: 'admin.dashboard' },
-      { path: '/site-visit-dashboard', icon: Calendar, label: 'Site Visit Dashboard', permission: 'admin.site_visits' },
+      // { path: '/site-visit-dashboard', icon: Calendar, label: 'Site Visit Dashboard', permission: 'admin.site_visits' },
       { path: '/admin/register-user', icon: Users, label: 'Register User', permission: 'admin.register_user' },
       { path: '/admin/project-enquiries', icon: Building2, label: 'Project Enquiries', permission: 'admin.project_enquiries' },
       { path: '/admin/listed-projects', icon: Building2, label: 'Listed Projects', permission: 'admin.listed_projects' },
@@ -75,7 +75,7 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
     ],
     hr: [
       { path: '/hr-dashboard', icon: Home, label: 'HR Dashboard', permission: 'hr.dashboard' },
-      { path: '/site-visit-dashboard', icon: Calendar, label: 'Site Visit Dashboard', permission: 'hr.site_visits' },
+      // { path: '/site-visit-dashboard', icon: Calendar, label: 'Site Visit Dashboard', permission: 'hr.site_visits' },
       { path: '/hr-all-users', icon: Users, label: 'All Users', permission: 'hr.all_users' },
       { path: '/hr-all-jobs', icon: Building2, label: 'All Jobs', permission: 'hr.all_jobs' },
       { path: '/hr/leave-management', icon: Building2, label: 'Leave Management', permission: 'hr.leave_management' },
@@ -84,7 +84,7 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
     ],
     blog: [
       { path: '/blog-dashboard', icon: Home, label: 'Blog Dashboard', permission: 'blog.dashboard' },
-      { path: '/site-visit-dashboard', icon: Calendar, label: 'Site Visit Dashboard', permission: 'blog.site_visits' },
+      // { path: '/site-visit-dashboard', icon: Calendar, label: 'Site Visit Dashboard', permission: 'blog.site_visits' },
       { path: '/blog-management', icon: Building2, label: 'Add Blog', permission: 'blog.add_blog' },
       { path: '/manage-blog', icon: Building2, label: 'Manage Blog', permission: 'blog.manage_blog' },
       { path: '/all-blogs', icon: Building2, label: 'All Blogs', permission: 'blog.all_blogs' },
@@ -92,15 +92,15 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
     ],
     sales: [
       { path: '/sales-head-dashboard', icon: Home, label: 'Sales Dashboard', permission: 'sales.dashboard' },
-      { path: '/site-visit-dashboard', icon: Calendar, label: 'Site Visit Dashboard', permission: 'sales.site_visits' },
+      // { path: '/site-visit-dashboard', icon: Calendar, label: 'Site Visit Dashboard', permission: 'sales.site_visits' },
       { path: '/leads', icon: Building2, label: 'Leads', permission: 'sales.leads' },
     ],
 
     hod: [
       { path: '/', icon: Home, label: 'Dashboard' },
-      { path: '/site-visit-dashboard', icon: Calendar, label: 'Site Visit Dashboard' },
+      // { path: '/site-visit-dashboard', icon: Calendar, label: 'Site Visit Dashboard' },
       { path: '/leads', icon: Building2, label: 'Leads Management' },
-      { path: '/site-visits', icon: Calendar, label: 'Site Visits' },
+      // { path: '/site-visits', icon: Calendar, label: 'Site Visits' },
       { path: '/leads?status=not-interested', icon: X, label: 'Not Interested' },
       { path: '/users', icon: Users, label: 'Manage Users' },
       { path: '/whatsapp-chat', icon: MessageCircle, label: 'Team Chat' },
@@ -108,9 +108,9 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
     ],
     'team-leader': [
       { path: '/', icon: Home, label: 'Dashboard' },
-      { path: '/site-visit-dashboard', icon: Calendar, label: 'Site Visit Dashboard' },
+      // { path: '/site-visit-dashboard', icon: Calendar, label: 'Site Visit Dashboard' },
       { path: '/leads', icon: Building2, label: 'Assigned Leads' },
-      { path: '/site-visits', icon: Calendar, label: 'Site Visits' },
+      // { path: '/site-visits', icon: Calendar, label: 'Site Visits' },
       { path: '/calls', icon: PhoneCall, label: 'Call Logs' },
       { path: '/leads?status=not-interested', icon: X, label: 'Not Interested' },
       { path: '/whatsapp-chat', icon: MessageCircle, label: 'Management Chat' },
@@ -118,9 +118,9 @@ const Sidebar = ({ userRole, isCollapsed, isMobile, isOpen, onToggle, onClose })
     ],
     bd: [
       { path: '/employee-dashboard', icon: Home, label: 'Dashboard' },
-      { path: '/site-visit-dashboard', icon: Calendar, label: 'Site Visit Dashboard' },
+      // { path: '/site-visit-dashboard', icon: Calendar, label: 'Site Visit Dashboard' },
       { path: '/leads', icon: Building2, label: 'My Leads' },
-      { path: '/site-visits', icon: Calendar, label: 'My Site Visits' },
+      // { path: '/site-visits', icon: Calendar, label: 'My Site Visits' },
       { path: '/leads?status=not-interested', icon: X, label: 'Not Interested' },
       { path: '/whatsapp-chat', icon: MessageCircle, label: 'Management Chat' },
     ]
