@@ -13,8 +13,8 @@
 }
 
 .dashboard-header {
-  background: linear-gradient(145deg, #1e293b, #111827);
-  border-bottom: 1px solid #f3f4f6;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
   padding: 1rem 1.5rem;
   display: flex;
   justify-content: space-between;
@@ -37,7 +37,7 @@
   padding: 0.5rem;
   border-radius: 0.5rem;
   background-color: #ffffff;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #e2e8f0;
   cursor: pointer;
   transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
   flex-shrink: 0;
@@ -55,13 +55,13 @@
 .menu-icon {
   width: 20px;
   height: 20px;
-  color: #4b5563;
+  color: #334155;
 }
 
 .user-greeting {
   font-size: 1.25rem;
   font-weight: 600;
-  color: white;
+  color: #0f172a;
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -97,7 +97,7 @@
 .search-input {
   width: 100%;
   padding: 0.5rem 1rem 0.5rem 2rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #e2e8f0;
   border-radius: 0.5rem;
   background-color: #f9fafb;
   outline: none;
@@ -111,7 +111,7 @@
 }
 
 .notification-button {
-  color: #9ca3af;
+  color: #64748b;
   position: relative;
   background: none;
   border: none;
@@ -123,14 +123,14 @@
 }
 
 .notification-button:hover {
-  background-color: #334155;
-  color: #ffffff;
+  background-color: #f1f5f9;
+  color: #0f172a;
 }
 
 .bell-icon {
   width: 20px;
   height: 20px;
-  color: white;
+  color: #334155;
 }
 
 .notification-dot {
@@ -141,6 +141,28 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
+}
+
+.install-button {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background-color: #2563eb;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+  font-size: 0.875rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.install-button:hover {
+  background-color: #1d4ed8;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.install-button:active {
+  transform: scale(0.98);
 }
 
 .main-content {

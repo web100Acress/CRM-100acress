@@ -4,121 +4,197 @@ const http = require('http');
 const cors = require('cors');
 const socketio = require('socket.io');
 
-const app = require('./app'); // app.js should export: const express = require('express')();
-const connectDB = require('./config/db'); // MongoDB connection function
-const { port } = require('./config/config'); // contains: exports.port = process.env.PORT || 5001;
+console.log('ENV CHECK MONGO_URI at startup:', process.env.MONGO_URI || '[UNDEFINED]');
+
+const app = require('./app'); // app.js = express instance
+const connectDB = require('./config/db'); // MongoDB connection
+const { port } = require('./config/config');
 const meetingController = require('./controllers/meetingController');
 const User = require('./models/userModel');
 const Lead = require('./models/leadModel');
-// If you have Ticket, Team, Approval, Task, FollowUp models, import them as needed:
-// const Ticket = require('./models/ticketModel');
-// const Team = require('./models/teamModel');
-// const Approval = require('./models/approvalModel');
-// const Task = require('./models/taskModel');
-// const FollowUp = require('./models/followUpModel');
+const ApiTesterRequest = require('./models/apiTesterRequestModel'); // ✅ Added
+const notificationService = require('./services/notificationService'); // ✅ Added
+const { initializeTokenService, getTokenStatus } = require('./services/tokenRefreshService'); // ✅ Token auto-refresh
 
-// ✅ Step 1: Connect to MongoDB
+// ✅ Connect to MongoDB
 connectDB();
 
-// ✅ Step 4: Set up HTTP server
+// ✅ Initialize Token Refresh Service for 100acress API
+initializeTokenService().then(() => {
+  console.log('🔑 Token Service Status:', getTokenStatus());
+}).catch(err => {
+  console.error('❌ Token Service initialization error:', err.message);
+});
+
+// ✅ Allowed Origins
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://localhost:5000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:3000',
+  'https://100acress.com',
+  'https://www.100acress.com',   // ✅ Added
+  'https://api.100acress.com',
+  'https://bcrm.100acress.com',
+  'https://crm.100acress.com',
+  'http://localhost:3500',
+  'https://crm-100acress-backend-2.onrender.com', // ✅ Added Render backend for Socket.IO
+  'https://bcrm.100acress.com',
+  'https://crm.100acress.com',
+  'http://192.168.1.16:5173',
+  'http://192.168.1.16:5001',
+  'http://192.168.1.16:5000'
+];
+
+// ✅ Apply CORS globally for Express
+// ✅ Create HTTP server
 const server = http.createServer(app);
 
-// ✅ Step 5: Setup Socket.IO with CORS
-// Use the same allowedOrigins as in app.js
-const allowedOrigins = [
-  'http://localhost:5001',
-  'http://localhost:5000',           // Local dev
-  'http://localhost:5173',           // Vite dev
-  'http://localhost:3000',           // React dev
-  'http://localhost:5001',       // Production frontend
-  'https://api.100acress.com',
-  'http://localhost:5001',
-  'https://100acress.com'         // (if used)
-];
+// ✅ Setup Socket.IO with same CORS rules
 const io = socketio(server, {
   cors: {
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.warn('Socket.IO CORS denied for origin:', origin);
-        callback(null, false); // Never throw!
-      }
-    },
+    origin: allowedOrigins,
     methods: ['GET', 'POST'],
     credentials: true
   }
 });
 
-
-// ✅ Step 6: Initialize socket controller
+// ✅ Attach SocketIO controller
 meetingController.setSocketIO(io);
+notificationService.setSocketIO(io); // ✅ Added
 
 io.on('connection', (socket) => {
-  socket.on('requestDashboardStats', async () => {
-    // Emit all users
-    const users = await User.find();
-    socket.emit('userUpdate', users); 
+  console.log('✅ New client connected:', socket.id);
 
-    // Emit all leads
+  socket.on('requestDashboardStats', async () => {
+    const users = await User.find();
     const leads = await Lead.find();
+
+    socket.emit('userUpdate', users);
     socket.emit('leadUpdate', leads);
 
-    // Emit dashboard stats
     const totalUsers = await User.countDocuments();
     const activeLeads = await Lead.countDocuments({ status: { $ne: 'Closed' } });
-    const allLeads = await Lead.find();
-    const leadsByStatus = allLeads.reduce((acc, lead) => {
+    const leadsByStatus = leads.reduce((acc, lead) => {
       acc[lead.status] = (acc[lead.status] || 0) + 1;
       return acc;
     }, {});
+
     socket.emit('dashboardUpdate', { totalUsers, activeLeads, leadsByStatus });
   });
 
   socket.on('requestRoleDashboardStats', async ({ role, userId }) => {
-    console.log('[Socket.IO] Received requestRoleDashboardStats:', { role, userId });
+    console.log('[Socket.IO] requestRoleDashboardStats:', { role, userId });
     let stats = {};
-    if (role === 'super-admin') {
+
+    if (role === 'boss') {
       stats = {
         totalLeads: await Lead.countDocuments(),
         activeUsers: await User.countDocuments({ status: 'active' }),
-        openTickets: 75, // Replace with: await Ticket.countDocuments({ status: 'open' })
-        monthlyRevenue: 125000000, // Example static value
+        openTickets: 75,
+        monthlyRevenue: 125000000
       };
-    } else if (role === 'head-admin') {
+    } else if (role === 'hod' || role === 'head-admin') {
       stats = {
         managedLeads: await Lead.countDocuments({ managedBy: userId }),
-        totalTeams: 8, // Replace with: await Team.countDocuments({ headAdmin: userId })
-        pendingApprovals: 15, // Replace with: await Approval.countDocuments({ status: 'pending', approver: userId })
-        overallConversion: 8.5, // Example static or calculated value
+        totalTeams: 8,
+        pendingApprovals: 15,
+        overallConversion: 8.5
       };
     } else if (role === 'team-leader') {
       stats = {
         myTeamLeads: await Lead.countDocuments({ teamLeader: userId }),
-        teamSize: 12, // Replace with: await User.countDocuments({ teamLeader: userId })
-        myPendingTasks: 7, // Replace with: await Task.countDocuments({ assignedTo: userId, status: 'pending' })
-        teamTargetAchieved: 8000000, // Example static value
+        teamSize: 12,
+        myPendingTasks: 7,
+        teamTargetAchieved: 8000000
       };
-    } else if (role === 'employee') {
+    } else if (role === 'bd') {
       stats = {
         assignedLeads: await Lead.countDocuments({ assignedTo: userId }),
-        todaysFollowups: 12, // Replace with: await FollowUp.countDocuments({ user: userId, date: new Date().toISOString().slice(0,10) })
-        myOpenTickets: 3, // Replace with: await Ticket.countDocuments({ assignedTo: userId, status: 'open' })
-        monthlyTargetProgress: 75, // Example static value
+        todaysFollowups: 12,
+        myOpenTickets: 3,
+        monthlyTargetProgress: 75
       };
     }
-    console.log('[Socket.IO] Emitting roleDashboardStats:', stats);
+
     socket.emit('roleDashboardStats', stats);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('❌ Client disconnected:', socket.id);
   });
 });
 
-// ✅ Step 7: API routes
+// ✅ API Routes
+app.use('/api/health', require('./routes/health'));
 app.use('/api/leads', require('./routes/leadRoutes'));
 app.use('/api/meetings', require('./routes/meetingRoutes'));
-app.use('/api/auth', require('./routes/auth')); // 👈 this is required for login
-app.use('/api/users', require('./routes/userRoutes')); // Optional: if you have users route
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/users', require('./routes/userRoutes'));
+app.use('/api/calls', require('./routes/callRoutes'));
+app.use('/api/comm-admin', require('./routes/commAdminRoutes'));
+app.use('/api/webhooks', require('./routes/callWebhookRoutes'));
+app.use('/api/whatsapp', require('./routes/whatsappRoutes'));
+app.use('/api/email', require('./routes/emailRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes')); // ✅ Added
+app.use('/api/direct-db', require('./routes/directDB')); // ✅ Added Direct DB Route
 
-// ✅ Step 8: Start server
+// ✅ Temporary route to seed last login data
+app.post('/api/admin/seed-last-login', async (req, res) => {
+  try {
+    console.log('Seeding last login data...');
+
+    // Update all users who don't have lastLogin
+    const result = await User.updateMany(
+      { lastLogin: { $exists: false } },
+      {
+        lastLogin: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000)
+      }
+    );
+
+    // Update users who don't have status
+    await User.updateMany(
+      { status: { $exists: false } },
+      { status: 'active' }
+    );
+
+    console.log(`Updated ${result.modifiedCount} users with last login`);
+
+    // Update specific user
+    const specificResult = await User.updateOne(
+      { email: 'devfoliomarketplace@gmail.com' },
+      { lastLogin: new Date() }
+    );
+
+    console.log(`Updated specific user: ${specificResult.modifiedCount} documents`);
+
+    // Get sample users
+    const users = await User.find({}).limit(5);
+    const userList = users.map(user => ({
+      email: user.email,
+      lastLogin: user.lastLogin,
+      status: user.status
+    }));
+
+    res.json({
+      success: true,
+      message: 'Last login data seeded successfully',
+      updatedCount: result.modifiedCount,
+      users: userList
+    });
+
+  } catch (error) {
+    console.error('Error seeding last login:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error seeding last login data',
+      error: error.message
+    });
+  }
+});
+
+// ✅ Start Server (single HTTP server used for both Express and Socket.IO)
 server.listen(port, '0.0.0.0', () => {
-  console.log(`✅ Server running on port ${port}`);
+  console.log(`🚀 Server running on port ${port}`);
 });

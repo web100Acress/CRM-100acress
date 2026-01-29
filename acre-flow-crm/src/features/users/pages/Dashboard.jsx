@@ -5,7 +5,10 @@ import DashboardLayout from '@/layout/DashboardLayout';
 import DashboardStats from '@/layout/DashboardStats';
 // import LeadTable from '../components/LeadTable';
 // import TicketBoard from '../components/TicketBoard';
-import SuperAdminProfile from '@/layout/SuperAdminProfile';
+import SuperAdminProfile from '@/features/profiles/super-admin/SuperAdminProfile';
+import HeadAdminProfile from '@/features/profiles/head-admin/HeadAdminProfile';
+import TeamLeaderProfile from '@/features/profiles/team-leader/TeamLeaderProfile';
+import EmployeeProfile from '@/features/profiles/employee/EmployeeProfile';
 
 const Dashboard = ({ userRole = 'employee' }) => {
   const navigate = useNavigate();
@@ -14,7 +17,7 @@ const Dashboard = ({ userRole = 'employee' }) => {
     navigate('/create-admin');
   };
 
-  // Show Super Admin Profile for super-admin role
+  // Show role-specific profile dashboards
   if (userRole === 'super-admin') {
     return (
       <DashboardLayout userRole={userRole}>
@@ -23,11 +26,36 @@ const Dashboard = ({ userRole = 'employee' }) => {
     );
   }
 
+  if (userRole === 'head-admin' || userRole === 'head') {
+    return (
+      <DashboardLayout userRole={userRole}>
+        <HeadAdminProfile />
+      </DashboardLayout>
+    );
+  }
+
+  if (userRole === 'team-leader') {
+    return (
+      <DashboardLayout userRole={userRole}>
+        <TeamLeaderProfile />
+      </DashboardLayout>
+    );
+  }
+
+  if (userRole === 'employee') {
+    return (
+      <DashboardLayout userRole={userRole}>
+        <EmployeeProfile />
+      </DashboardLayout>
+    );
+  }
+
   // Get role-specific dashboard title
   const getDashboardTitle = () => {
     switch (userRole) {
       case 'head-admin':
-        return '';
+      case 'head':
+        return 'Head Dashboard';
       case 'team-leader':
         return 'Team Leader Dashboard';
       case 'employee':
@@ -40,7 +68,8 @@ const Dashboard = ({ userRole = 'employee' }) => {
   const getDashboardDescription = () => {
     switch (userRole) {
       case 'head-admin':
-        return '';
+      case 'head':
+        return 'Manage your teams and track performance';
       case 'team-leader':
         return 'Lead your team and track performance';
       case 'employee':
@@ -54,10 +83,10 @@ const Dashboard = ({ userRole = 'employee' }) => {
   return (
     <DashboardLayout userRole={userRole}>
       <div className="space-y-6">
-        {/* <div>
+        <div>
           <h1 className="text-2xl font-bold text-gray-900">{getDashboardTitle()}</h1>
           <p className="text-gray-600">{getDashboardDescription()}</p>
-        </div> */}
+        </div>
 
         <DashboardStats userRole={userRole} />
 

@@ -1,21 +1,22 @@
 const leadService = require('../services/leadService');
 const User = require('../models/userModel');
+const notificationService = require('../services/notificationService'); // ✅ Added
 
 // Role hierarchy levels (lower index = higher level)
-const roleLevels = ['super-admin', 'head-admin', 'team-leader', 'employee'];
+const roleLevels = ['boss', 'hod', 'team-leader', 'bd'];
 
 async function isValidAssignment(requesterRole, assigneeId, requesterId) {
   if (!assigneeId) return false;
   const assignee = await User.findById(assigneeId);
   if (!assignee) return false;
-  
+
   // Get role levels
   const requesterLevel = roleLevels.indexOf(requesterRole);
   const assigneeLevel = roleLevels.indexOf(assignee.role);
 
-  // Allow self-assignment for team-leader and employee
+  // Allow self-assignment for team-leader and bd
   if (
-    (requesterRole === 'team-leader' || requesterRole === 'employee') &&
+    (requesterRole === 'team-leader' || requesterRole === 'bd') &&
     assigneeId === requesterId
   ) {
     return true;
@@ -37,6 +38,19 @@ exports.createLead = async (req, res, next) => {
     }
     const lead = await leadService.createLead(req.body, req.user);
     res.status(201).json({ success: true, data: lead });
+
+    // ✅ Trigger Notification for Super Admin (Boss)
+    try {
+      await notificationService.createNotification({
+        title: 'New Lead Created',
+        message: `A new lead "${lead.name}" has been created by ${req.user.name}.`,
+        type: 'lead_created',
+        recipientRole: 'boss',
+        data: { leadId: lead._id }
+      });
+    } catch (notifyErr) {
+      console.error('Failed to create notification:', notifyErr);
+    }
     // Real-time emit for leads and dashboard
     if (io) {
       const Lead = require('../models/leadModel');
@@ -60,7 +74,8 @@ exports.createLead = async (req, res, next) => {
 
 exports.getLeads = async (req, res, next) => {
   try {
-    const leads = await leadService.getLeadsForUser(req.user);
+    const { limit = 10000, page = 1 } = req.query; // Read query parameters with defaults
+    const leads = await leadService.getLeadsForUser(req.user, { limit, page });
     res.json({ success: true, data: leads });
   } catch (err) {
     next(err);
@@ -92,9 +107,46 @@ exports.updateLead = async (req, res, next) => {
     if (assignedTo && requesterRole && !(await isValidAssignment(requesterRole, assignedTo, req.user._id.toString()))) {
       return res.status(403).json({ success: false, message: 'You can only assign leads to users at your level or below.' });
     }
-    const updatedLead = await leadService.updateLead(req.params.id, req.body);
+    const updatedLead = await leadService.updateLead(req.params.id, req.body, req);
     if (!updatedLead) return res.status(404).json({ success: false, message: 'Lead not found' });
     res.json({ success: true, data: updatedLead });
+    // Real-time emit for leads and dashboard
+    if (io) {
+      const Lead = require('../models/leadModel');
+      const User = require('../models/userModel');
+      const allLeads = await Lead.find();
+      io.emit('leadUpdate', allLeads);
+      // Dashboard stats emit
+      const totalUsers = await User.countDocuments();
+      const activeLeads = await Lead.countDocuments({ status: { $ne: 'Closed' } });
+      const leads = await Lead.find();
+      const leadsByStatus = leads.reduce((acc, lead) => {
+        acc[lead.status] = (acc[lead.status] || 0) + 1;
+        return acc;
+      }, {});
+      io.emit('dashboardUpdate', { totalUsers, activeLeads, leadsByStatus });
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.updateLeadStatus = async (req, res, next) => {
+  try {
+    const { status } = req.body;
+    const leadId = req.params.id;
+
+    // Get the lead first
+    const lead = await leadService.getLeadById(leadId);
+    if (!lead) {
+      return res.status(404).json({ success: false, message: 'Lead not found' });
+    }
+
+    // Update only the status field
+    const updatedLead = await leadService.updateLead(leadId, { status });
+
+    res.json({ success: true, data: updatedLead });
+
     // Real-time emit for leads and dashboard
     if (io) {
       const Lead = require('../models/leadModel');
@@ -140,7 +192,7 @@ exports.deleteLead = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-}; 
+};
 
 exports.addFollowUp = async (req, res, next) => {
   try {
@@ -174,19 +226,138 @@ exports.getFollowUps = async (req, res, next) => {
 // New controller method for forwarding leads
 exports.forwardLead = async (req, res, next) => {
   try {
+    console.log('🔍 Forward Lead Debug:', {
+      params: req.params,
+      body: req.body,
+      user: req.user,
+      userId: req.user?._id,
+      userRole: req.user?.role
+    });
+
     const { id } = req.params;
-    const { action = 'forward' } = req.body;
-    
-    const lead = await leadService.forwardLead(id, req.user._id.toString(), action);
+    const { action = 'forward', selectedEmployee } = req.body;
+
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ success: false, message: 'User not authenticated' });
+    }
+
+    const lead = await leadService.forwardLead(id, req.user._id.toString(), action, selectedEmployee);
     if (!lead) {
       return res.status(404).json({ success: false, message: 'Lead not found' });
     }
 
-    res.status(200).json({ 
-      success: true, 
+    res.status(200).json({
+      success: true,
       data: lead,
       message: `Lead forwarded successfully to ${lead.assignedTo ? 'next assignee' : 'next level'}`
     });
+
+    // ✅ Trigger Notification for Super Admin (Boss)
+    try {
+      await notificationService.createNotification({
+        title: 'Lead Forwarded',
+        message: `Lead "${lead.name}" has been forwarded to the next level by ${req.user.name}.`,
+        type: 'lead_forwarded',
+        recipientRole: 'boss',
+        data: { leadId: lead._id }
+      });
+    } catch (notifyErr) {
+      console.error('Failed to create notification:', notifyErr);
+    }
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+exports.forwardPatchLead = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { selectedEmployee, reason = '' } = req.body;
+
+    const lead = await leadService.forwardPatchLead(
+      id,
+      req.user._id.toString(),
+      selectedEmployee,
+      reason
+    );
+    if (!lead) {
+      return res.status(404).json({ success: false, message: 'Lead not found' });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: lead,
+      message: 'Lead reassigned successfully',
+    });
+
+    // ✅ Trigger Notification for Super Admin (Boss)
+    try {
+      await notificationService.createNotification({
+        title: 'Lead Reassigned',
+        message: `Lead "${lead.name}" has been reassigned to ${selectedEmployee} by ${req.user.name}.`,
+        type: 'lead_forwarder',
+        recipientRole: 'boss',
+        data: { leadId: lead._id }
+      });
+    } catch (notifyErr) {
+      console.error('Failed to create notification:', notifyErr);
+    }
+
+    if (io) {
+      const Lead = require('../models/leadModel');
+      const User = require('../models/userModel');
+      const allLeads = await Lead.find();
+      io.emit('leadUpdate', allLeads);
+      const totalUsers = await User.countDocuments();
+      const activeLeads = await Lead.countDocuments({ status: { $ne: 'Closed' } });
+      const leads = await Lead.find();
+      const leadsByStatus = leads.reduce((acc, lead) => {
+        acc[lead.status] = (acc[lead.status] || 0) + 1;
+        return acc;
+      }, {});
+      io.emit('dashboardUpdate', { totalUsers, activeLeads, leadsByStatus });
+    }
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+exports.forwardSwapLead = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { swapLeadId, reason = '' } = req.body;
+
+    const result = await leadService.forwardSwapLead(
+      id,
+      req.user._id.toString(),
+      swapLeadId,
+      reason
+    );
+
+    if (!result) {
+      return res.status(404).json({ success: false, message: 'Lead not found' });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: result,
+      message: 'Leads swapped successfully',
+    });
+
+    if (io) {
+      const Lead = require('../models/leadModel');
+      const User = require('../models/userModel');
+      const allLeads = await Lead.find();
+      io.emit('leadUpdate', allLeads);
+      const totalUsers = await User.countDocuments();
+      const activeLeads = await Lead.countDocuments({ status: { $ne: 'Closed' } });
+      const leads = await Lead.find();
+      const leadsByStatus = leads.reduce((acc, lead) => {
+        acc[lead.status] = (acc[lead.status] || 0) + 1;
+        return acc;
+      }, {});
+      io.emit('dashboardUpdate', { totalUsers, activeLeads, leadsByStatus });
+    }
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
   }
@@ -199,5 +370,248 @@ exports.getAssignableUsers = async (req, res, next) => {
     res.status(200).json({ success: true, data: users });
   } catch (err) {
     next(err);
+  }
+};
+
+// BD Analytics - Get status summary for all BD users
+exports.getBDSummary = async (req, res, next) => {
+  try {
+    const summary = await leadService.getBDSummary();
+    res.status(200).json({ success: true, data: summary });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// BD Analytics - Get detailed status for specific BD
+exports.getBDDetails = async (req, res, next) => {
+  try {
+    const { bdId } = req.params;
+    const details = await leadService.getBDDetails(bdId);
+    res.status(200).json({ success: true, data: details });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Save call record
+exports.saveCallRecord = async (req, res, next) => {
+  try {
+    const { leadId, leadName, phone, startTime, endTime, duration, status } = req.body;
+    const userId = req.user?.userId || req.user?._id;
+    const userPhone = req.user?.phone;
+
+    // Import CallRecord model
+    const CallRecord = require('../models/callRecordModel');
+
+    // Create call record
+    const callRecord = new CallRecord({
+      userId,
+      userPhone,
+      leadId,
+      leadName,
+      phone,
+      startTime,
+      endTime,
+      duration,
+      callDate: new Date(),
+      type: 'outbound',
+      status: status || (Number(duration) > 0 ? 'completed' : 'missed')
+    });
+
+    // Save to database
+    const savedRecord = await callRecord.save();
+
+    console.log('Call record saved to database:', savedRecord);
+
+    res.status(201).json({
+      success: true,
+      message: 'Call record saved successfully',
+      data: savedRecord
+    });
+  } catch (err) {
+    console.error('Error saving call record:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to save call record'
+    });
+  }
+};
+
+// Get call records for a user - with assignment chain filtering
+exports.getCallRecords = async (req, res, next) => {
+  try {
+    const userId = req.user?.userId || req.user?._id;
+    const userRole = req.user?.role?.toLowerCase();
+    const { leadId } = req.query; // Optional: filter by specific lead
+
+    const CallRecord = require('../models/callRecordModel');
+    const Lead = require('../models/leadModel');
+
+    let query = {};
+
+    // Role-based filtering
+    if (userRole === 'boss' || userRole === 'super-admin') {
+      // Boss sees call records for leads they created
+      const userCreatedLeads = await Lead.find({ createdBy: userId }).select('_id');
+      const leadIds = userCreatedLeads.map(l => String(l._id));
+      if (leadId) {
+        // Check if this specific lead was created by this boss
+        if (!leadIds.includes(String(leadId))) {
+          return res.status(200).json({
+            success: true,
+            data: [],
+            count: 0
+          });
+        }
+        query.leadId = leadId;
+      } else {
+        if (leadIds.length > 0) {
+          query.leadId = { $in: leadIds };
+        } else {
+          return res.status(200).json({
+            success: true,
+            data: [],
+            count: 0
+          });
+        }
+      }
+    } else if (userRole === 'hod' || userRole === 'head-admin' || userRole === 'head') {
+      // HOD sees call records for leads they created
+      const userCreatedLeads = await Lead.find({ createdBy: userId }).select('_id');
+      const leadIds = userCreatedLeads.map(l => String(l._id));
+      if (leadId) {
+        // Check if this specific lead was created by this HOD
+        if (!leadIds.includes(String(leadId))) {
+          return res.status(200).json({
+            success: true,
+            data: [],
+            count: 0
+          });
+        }
+        query.leadId = leadId;
+      } else {
+        if (leadIds.length > 0) {
+          query.leadId = { $in: leadIds };
+        } else {
+          return res.status(200).json({
+            success: true,
+            data: [],
+            count: 0
+          });
+        }
+      }
+    } else {
+      // BD/TL sees only their own calls
+      query.userId = userId;
+      if (leadId) {
+        query.leadId = leadId;
+      }
+    }
+
+    const callRecords = await CallRecord.find(query)
+      .populate('leadId', 'name phone status assignedTo assignedBy assignmentChain')
+      .populate('userId', 'name role email')
+      .sort({ callDate: -1 })
+      .limit(500);
+
+    res.status(200).json({
+      success: true,
+      data: callRecords,
+      count: callRecords.length
+    });
+  } catch (err) {
+    console.error('Error fetching call records:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch call records'
+    });
+  }
+};
+
+// Get call history for specific lead - with assignment chain access control
+exports.getLeadCallHistory = async (req, res, next) => {
+  try {
+    const { leadId } = req.params;
+    const userId = req.user?.userId || req.user?._id;
+    const userRole = req.user?.role?.toLowerCase();
+
+    const CallRecord = require('../models/callRecordModel');
+    const Lead = require('../models/leadModel');
+
+    // Check if user has access to this lead's call history
+    const lead = await Lead.findById(leadId);
+    if (!lead) {
+      return res.status(404).json({
+        success: false,
+        message: 'Lead not found'
+      });
+    }
+
+    let hasAccess = false;
+
+    if (userRole === 'boss' || userRole === 'super-admin') {
+      // Boss has access to call history for leads they created
+      hasAccess = String(lead.createdBy) === String(userId);
+    } else if (userRole === 'hod' || userRole === 'head-admin' || userRole === 'head') {
+      // HOD has access if they created this lead
+      hasAccess = String(lead.createdBy) === String(userId);
+    } else {
+      // BD/TL has access if:
+      // 1. Lead is assigned to them, OR
+      // 2. They made any call for this lead, OR
+      // 3. They are in the assignment chain
+      const isAssignedTo = String(lead.assignedTo) === String(userId);
+
+      // Check if user made any call for this lead
+      const userMadeCall = await CallRecord.findOne({
+        leadId: leadId,
+        userId: userId
+      });
+
+      // Check if user is in assignment chain
+      const assignmentChain = Array.isArray(lead.assignmentChain) ? lead.assignmentChain : [];
+      const isInChain = assignmentChain.some(entry => {
+        const entryUserId = entry.userId?._id || entry.userId;
+        return String(entryUserId) === String(userId);
+      });
+
+      hasAccess = isAssignedTo || !!userMadeCall || isInChain;
+    }
+
+    console.log('Call history access check:', {
+      leadId,
+      userId,
+      userRole,
+      hasAccess,
+      assignedTo: lead.assignedTo
+    });
+
+    if (!hasAccess) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: You do not have permission to view this lead\'s call history'
+      });
+    }
+
+    const callRecords = await CallRecord.find({ leadId })
+      .populate('userId', 'name role email')
+      .populate('leadId', 'name phone status')
+      .sort({ callDate: -1 })
+      .limit(200);
+
+    console.log('Call records found:', callRecords.length);
+
+    res.status(200).json({
+      success: true,
+      data: callRecords,
+      count: callRecords.length
+    });
+  } catch (err) {
+    console.error('Error fetching lead call history:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch call history'
+    });
   }
 };

@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '@/layout/DashboardLayout';
 import '@/styles/UserManagement.css'
 
-const USERS_PER_PAGE_CONSTANT = 4;
+const USERS_PER_PAGE_CONSTANT = 100;
 
 const UserManagementContent = () => {
   const [users, setUsers] = useState([]);
@@ -17,6 +17,7 @@ const UserManagementContent = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [isExporting, setIsExporting] = useState(false);
@@ -27,7 +28,7 @@ const UserManagementContent = () => {
     const fetchUsers = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:5001/api/users', {
+        const response = await fetch('https://bcrm.100acress.com/api/users', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -50,10 +51,20 @@ const UserManagementContent = () => {
 
   const getRoleDisplayName = (role) => {
     switch (role) {
-      case 'super-admin': return 'Super Admin';
-      case 'head-admin': return 'Head Admin';
+      case 'super-admin': return 'BOSS';
+      case 'head-admin': return 'HOD';
       case 'team-leader': return 'Team Leader';
-      case 'employee': return 'Employee';
+      case 'employee': return 'BD';
+      case 'developer': return 'Developer';
+      case 'admin': return 'Admin';
+      case 'sales_head': return 'Sales Head';
+      case 'sales_executive': return 'Sales Executive';
+      case 'hr_manager': return 'HR Manager';
+      case 'hr_executive': return 'HR Executive';
+      case 'blog_manager': return 'Blog Manager';
+      case 'blog_writer': return 'Blog Writer';
+      case 'crm_admin': return 'CRM Admin';
+      case 'boss': return 'BOSS';
       default: return role;
     }
   };
@@ -159,7 +170,7 @@ const UserManagementContent = () => {
     const newStatus = userToToggle.status === 'active' ? 'inactive' : 'active';
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5001/api/users/${userToToggle._id}/status`, {
+      const response = await fetch(`https://bcrm.100acress.com/api/users/${userToToggle._id}/status`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -194,7 +205,7 @@ const UserManagementContent = () => {
     try {
       const token = localStorage.getItem('token');
       let response;
-      let url = 'http://localhost:5001/api/users';
+      let url = 'https://bcrm.100acress.com/api/users';
       let method = 'POST';
 
       if (selectedUser) {
@@ -222,7 +233,7 @@ const UserManagementContent = () => {
       const data = await response.json();
       if (response.ok && data.success) {
         // Re-fetch all users to ensure pagination and filters are up-to-date
-        const fetchResponse = await fetch('http://localhost:5001/api/users', {
+        const fetchResponse = await fetch('https://bcrm.100acress.com/api/users', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -259,7 +270,7 @@ const UserManagementContent = () => {
     if (!selectedUser?._id) return;
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5001/api/users/${selectedUser._id}`, {
+      const response = await fetch(`https://bcrm.100acress.com/api/users/${selectedUser._id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -269,7 +280,7 @@ const UserManagementContent = () => {
       const data = await response.json();
       if (response.ok && data.success) {
         // Re-fetch all users to ensure pagination and filters are up-to-date
-        const fetchResponse = await fetch('http://localhost:5001/api/users', {
+        const fetchResponse = await fetch('https://bcrm.100acress.com/api/users', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -305,6 +316,11 @@ const UserManagementContent = () => {
   const handleDeleteClick = (user) => {
     setSelectedUser(user);
     setShowDeleteModal(true);
+  };
+
+  const handleViewUser = (user) => {
+    setSelectedUser(user);
+    setShowViewModal(true);
   };
 
   const Pagination = () => {
@@ -395,10 +411,12 @@ const UserManagementContent = () => {
           </div>
           <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className="user-management-filter-select">
             <option value="all">All Roles</option>
-            <option value="super-admin">Super Admin</option>
-            <option value="head-admin">Head Admin</option>
+            <option value="super-admin">BOSS</option>
+            <option value="head-admin">HOD</option>
             <option value="team-leader">Team Leader</option>
-            <option value="employee">Employee</option>
+            <option value="employee">BD</option>
+            <option value="developer">Developer</option>
+            <option value="admin">Admin</option>
           </select>
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="user-management-filter-select">
             <option value="all">All Status</option>
@@ -422,59 +440,82 @@ const UserManagementContent = () => {
         </div>
       </div>
 
-      <div className="user-management-table-container">
-        <div className="user-management-table-info"></div>
+      <div className="user-management-data-section">
         {paginatedUsers.length === 0 ? (
           <div className="user-management-no-users-message">
             <p>No users found matching your criteria.</p>
           </div>
         ) : (
-          <div className="user-management-grid">
-            <div className="user-management-grid-header">
-              <div>User Info</div>
-              <div>Role</div>
-              <div>Department</div>
-              <div>Status</div>
-              <div>Last Login</div>
-              <div>Created At</div>
-              <div>Actions</div>
-            </div>
-            {paginatedUsers.map(user => (
-              <div key={user._id} className="user-management-grid-row">
-                <div data-label="User Info">
-                  <strong>{user.name || '-'}</strong>
-                  <br /><small>{user.email || '-'}</small>
-                  {user.phone ? <><br /><small>{user.phone}</small></> : null}
-                </div>
-                <div data-label="Role">
-                  <span className={`user-management-badge ${getRoleBadgeColor(user.role)}`}>{getRoleDisplayName(user.role) || '-'}</span>
-                </div>
-                <div data-label="Department">
-                  {user.department || '-'}
-                </div>
-                <div data-label="Status">
-                  <span className={`user-management-badge ${getStatusBadgeColor(user.status)}`}>{user.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : 'Unknown'}</span>
-                </div>
-                <div data-label="Last Login">
-                  {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : '-'}
-                </div>
-                <div data-label="Created At">
-                  {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'}
-                </div>
-                <div data-label="Actions" className="user-management-actions">
-                  <button onClick={handleToggleStatus(user)} className={`user-management-action-button user-management-toggle-status-button ${user.status === 'active' ? 'deactivate' : ''}`} title={user.status === 'active' ? 'Deactivate User' : 'Activate User'}>
-                    {user.status === 'active' ? <UserX size={18} /> : <UserCheck size={18} />}
-                  </button>
-                  <button onClick={() => handleEditUser(user)} className="user-management-action-button user-management-edit-button" title="Edit User">
-                    <Edit size={18} />
-                  </button>
-                  <button onClick={() => handleDeleteClick(user)} className="user-management-action-button user-management-delete-button" title="Delete User">
-                    <Trash2 size={18} />
-                  </button>
-                </div>
+          <>
+            {/* Desktop View */}
+            <div className="user-management-grid desktop-view">
+              <div className="user-management-grid-header">
+                <div>User Info</div>
+                <div>Role</div>
+                <div>Department</div>
+                <div>Status</div>
+                <div>Last Login</div>
+                <div>Created At</div>
+                <div>Actions</div>
               </div>
-            ))}
-          </div>
+              {paginatedUsers.map(user => (
+                <div key={user._id} className="user-management-grid-row">
+                  <div data-label="User Info">
+                    <strong>{user.name || '-'}</strong>
+                    <br /><small>{user.email || '-'}</small>
+                    {user.phone ? <><br /><small>{user.phone}</small></> : null}
+                  </div>
+                  <div data-label="Role">
+                    <span className={`user-management-badge ${getRoleBadgeColor(user.role)}`}>{getRoleDisplayName(user.role) || '-'}</span>
+                  </div>
+                  <div data-label="Department">
+                    {user.department || '-'}
+                  </div>
+                  <div data-label="Status">
+                    <span className={`user-management-badge ${getStatusBadgeColor(user.status)}`}>{user.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : 'Unknown'}</span>
+                  </div>
+                  <div data-label="Last Login">
+                    {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : '-'}
+                  </div>
+                  <div data-label="Created At">
+                    {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'}
+                  </div>
+                  <div data-label="Actions" className="user-management-actions">
+                    <button onClick={handleToggleStatus(user)} className={`user-management-action-button user-management-toggle-status-button ${user.status === 'active' ? 'deactivate' : ''}`} title={user.status === 'active' ? 'Deactivate User' : 'Activate User'}>
+                      {user.status === 'active' ? <UserX size={18} /> : <UserCheck size={18} />}
+                    </button>
+                    <button onClick={() => handleEditUser(user)} className="user-management-action-button user-management-edit-button" title="Edit User">
+                      <Edit size={18} />
+                    </button>
+                    <button onClick={() => handleDeleteClick(user)} className="user-management-action-button user-management-delete-button" title="Delete User">
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Mobile View */}
+            <div className="user-management-mobile-view mobile-view">
+              {paginatedUsers.map(user => (
+                <div key={user._id} className="user-management-mobile-card">
+                  <div className="user-management-mobile-header">
+                    <div className="user-management-mobile-info">
+                      <strong>{user.name || '-'}</strong>
+                      <span className={`user-management-badge ${getRoleBadgeColor(user.role)}`}>{getRoleDisplayName(user.role) || '-'}</span>
+                    </div>
+                    <button 
+                      onClick={() => handleViewUser(user)} 
+                      className="user-management-view-button"
+                      title="View Details"
+                    >
+                      View
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 
@@ -492,6 +533,98 @@ const UserManagementContent = () => {
         user={selectedUser}
         onConfirm={handleDeleteUser}
       />
+      
+      {/* View User Modal */}
+      {showViewModal && selectedUser && (
+        <div className="user-management-view-modal-overlay">
+          <div className="user-management-view-modal">
+            <div className="user-management-view-modal-header">
+              <h3>User Details</h3>
+              <button 
+                className="user-management-view-modal-close"
+                onClick={() => { setShowViewModal(false); setSelectedUser(null); }}
+              >
+                ×
+              </button>
+            </div>
+            <div className="user-management-view-modal-content">
+              <div className="user-management-view-section">
+                <h4>User Information</h4>
+                <div className="user-management-view-grid">
+                  <div className="user-management-view-item">
+                    <span className="user-management-view-label">Name:</span>
+                    <span className="user-management-view-value">{selectedUser.name || '-'}</span>
+                  </div>
+                  <div className="user-management-view-item">
+                    <span className="user-management-view-label">Email:</span>
+                    <span className="user-management-view-value">{selectedUser.email || '-'}</span>
+                  </div>
+                  <div className="user-management-view-item">
+                    <span className="user-management-view-label">Phone:</span>
+                    <span className="user-management-view-value">{selectedUser.phone || '-'}</span>
+                  </div>
+                  <div className="user-management-view-item">
+                    <span className="user-management-view-label">Role:</span>
+                    <span className={`user-management-badge ${getRoleBadgeColor(selectedUser.role)}`}>
+                      {getRoleDisplayName(selectedUser.role) || '-'}
+                    </span>
+                  </div>
+                  <div className="user-management-view-item">
+                    <span className="user-management-view-label">Department:</span>
+                    <span className="user-management-view-value">{selectedUser.department || '-'}</span>
+                  </div>
+                  <div className="user-management-view-item">
+                    <span className="user-management-view-label">Reporting To:</span>
+                    <span className="user-management-view-value">{selectedUser.reportingTo || '-'}</span>
+                  </div>
+                  <div className="user-management-view-item">
+                    <span className="user-management-view-label">Status:</span>
+                    <span className={`user-management-badge ${getStatusBadgeColor(selectedUser.status)}`}>
+                      {selectedUser.status ? selectedUser.status.charAt(0).toUpperCase() + selectedUser.status.slice(1) : 'Unknown'}
+                    </span>
+                  </div>
+                  <div className="user-management-view-item">
+                    <span className="user-management-view-label">Last Login:</span>
+                    <span className="user-management-view-value">
+                      {selectedUser.lastLogin ? new Date(selectedUser.lastLogin).toLocaleString() : 'Never'}
+                    </span>
+                  </div>
+                  <div className="user-management-view-item">
+                    <span className="user-management-view-label">Created At:</span>
+                    <span className="user-management-view-value">
+                      {selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString() : '-'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="user-management-view-modal-actions">
+                <button 
+                  onClick={handleToggleStatus(selectedUser)} 
+                  className={`user-management-action-button user-management-toggle-status-button ${selectedUser.status === 'active' ? 'deactivate' : ''}`}
+                >
+                  {selectedUser.status === 'active' ? <UserX size={16} /> : <UserCheck size={16} />}
+                  {selectedUser.status === 'active' ? 'Deactivate' : 'Activate'}
+                </button>
+                <button 
+                  onClick={() => { handleEditUser(selectedUser); setShowViewModal(false); }} 
+                  className="user-management-action-button user-management-edit-button"
+                >
+                  <Edit size={16} />
+                  Edit
+                </button>
+                <button 
+                  onClick={() => { handleDeleteClick(selectedUser); setShowViewModal(false); }} 
+                  className="user-management-action-button user-management-delete-button"
+                >
+                  <Trash2 size={16} />
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

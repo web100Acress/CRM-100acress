@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-const WS_URL = 'ws://localhost:4000';
+const WS_URL = 'ws://13.203.201.65:4000';
 
 const DeveloperChat = ({ developerName }) => {
   const [messages, setMessages] = useState([]);

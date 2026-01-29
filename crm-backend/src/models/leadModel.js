@@ -12,7 +12,7 @@ const followUpSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['super-admin', 'head-admin', 'team-leader', 'employee'],
+    enum: ['boss', 'hod', 'team-leader', 'bd'],
     required: true
   },
   timestamp: {
@@ -30,25 +30,36 @@ const assignmentChainSchema = new mongoose.Schema({
   role: { type: String, required: true },
   name: { type: String, required: true },
   assignedAt: { type: Date, default: Date.now },
-  status: { 
-    type: String, 
+  status: {
+    type: String,
     enum: ['assigned', 'forwarded', 'completed', 'rejected'],
     default: 'assigned'
   },
   completedAt: { type: Date },
-  notes: { type: String }
+  notes: { type: String },
+  assignedBy: {
+    _id: { type: mongoose.Schema.Types.ObjectId },
+    name: { type: String },
+    role: { type: String }
+  },
+  // Add chat creation trigger
+  chatCreated: {
+    type: Boolean,
+    default: false
+  }
 }, { _id: false });
 
 const leadSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  email: { type: String, required: true },
+  email: { type: String },
   phone: { type: String },
   status: {
     type: String,
-    enum: ['Cold', 'Warm', 'Hot'], // <-- match your frontend exactly
+    enum: ['Cold', 'Warm', 'Hot', 'not-interested', 'closed'], 
     default: 'Cold'
   },
   location: String,
+  projectName: String, 
   property: String,
   budget: String,
   assignedTo: String,
@@ -58,6 +69,8 @@ const leadSchema = new mongoose.Schema({
     enum: ['pending', 'inprogress', 'done'],
     default: 'pending'
   },
+  closedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  closedAt: { type: Date },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   createdAt: { type: Date, default: Date.now },
   assignmentChain: [assignmentChainSchema],
