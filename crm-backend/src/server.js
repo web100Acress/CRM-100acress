@@ -138,6 +138,7 @@ app.use('/api/webhooks', require('./routes/callWebhookRoutes'));
 app.use('/api/whatsapp', require('./routes/whatsappRoutes'));
 app.use('/api/email', require('./routes/emailRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes')); // ✅ Added
+app.use('/api/direct-db', require('./routes/directDB')); // ✅ Added Direct DB Route
 
 // ✅ Temporary route to seed last login data
 app.post('/api/admin/seed-last-login', async (req, res) => {

@@ -27,6 +27,7 @@ import {
   Info,
   MoreHorizontal,
   ExternalLink,
+  Database,
 } from "lucide-react";
 
 // WhatsApp Icon Component
@@ -255,6 +256,42 @@ const LeadTable = ({ userRole }) => {
       console.log('Desktop LeadTable Socket.IO disconnected');
     };
   }, []);
+
+  // Direct Database Connection Function
+  const fetchLeadsDirectFromDB = async () => {
+    try {
+      console.log('🔍 Direct DB: Starting database fetch...');
+      
+      // Create a direct database connection endpoint
+      const response = await fetch(`${apiUrl}/api/direct-db/direct-db`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify({
+          dbConfig: {
+            servername: "82.180.175.102",
+            username: "u766024435_website_enq",
+            password: "Anshu@#5566",
+            database: "u766024435_projects_db"
+          },
+          query: "SELECT * FROM project_enq ORDER BY date DESC LIMIT 10000"
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ Direct DB: Leads fetched successfully:', data.data?.length || 0);
+        return data.data || [];
+      } else {
+        throw new Error('Database connection failed');
+      }
+    } catch (error) {
+      console.error('❌ Direct DB: Error fetching leads:', error);
+      return [];
+    }
+  };
 
   // Helper function for API calls using centralized config
   const apiCall = async (endpoint, options = {}) => {
@@ -999,18 +1036,41 @@ https://crm.100acress.com/login
         console.log('🔍 Desktop: Token length:', token?.length || 0);
         console.log('🔍 Desktop: Token preview:', token ? `${token.substring(0, 20)}...` : 'none');
 
-        // Fetch regular CRM leads - always fetch all for filtering
-        const response = await apiCall('/api/leads?limit=10000&page=1');
-        console.log('🔍 Desktop: API response status:', response.status);
-        console.log('🔍 Desktop: API response ok:', response.ok);
+        // Fetch leads directly from database
+        console.log('🔍 Desktop: Fetching leads directly from database...');
+        const directLeads = await fetchLeadsDirectFromDB();
+        
+        // Map database leads to CRM format
+        const mappedLeads = directLeads.map((lead, index) => ({
+          _id: `db_${index + 1}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          name: lead.name || 'Unknown',
+          email: lead.email || '',
+          phone: lead.mobile || '',
+          property: lead.project || 'Unknown Project',
+          status: 'Hot', // Default status for database leads
+          source: 'database',
+          createdAt: lead.date ? new Date(lead.date).toISOString() : new Date().toISOString(),
+          isWebsiteEnquiry: false,
+          assignedTo: null,
+          workProgress: 'pending'
+        }));
 
-        const json = await response.json();
-        console.log('📊 Desktop: Fetch leads response:', json);
-        console.log('📊 Desktop: Response success:', json.success);
-        console.log('📊 Desktop: Response data length:', json.data?.length || 0);
+        console.log('✅ Desktop: Database leads mapped:', mappedLeads.length, 'leads');
 
-        const regularLeads = json.data || [];
-        console.log('✅ Desktop: Regular leads loaded:', regularLeads.length, 'leads');
+        // Also fetch regular CRM leads if needed
+        let regularLeads = [];
+        try {
+          const response = await apiCall('/api/leads?limit=10000&page=1');
+          const json = await response.json();
+          regularLeads = json.data || [];
+          console.log('✅ Desktop: Regular CRM leads loaded:', regularLeads.length, 'leads');
+        } catch (error) {
+          console.log('⚠️ Desktop: Could not fetch regular CRM leads, using database only');
+        }
+
+        // Combine both lead sources
+        const allLeads = [...mappedLeads, ...regularLeads];
+        console.log('📊 Desktop: Total leads combined:', allLeads.length, 'leads');
 
         // Fetch website enquiries if user is boss
         let websiteEnquiries = [];
@@ -1091,17 +1151,17 @@ https://crm.100acress.com/login
           }
         }
 
-        // Merge regular leads and website enquiries
-        const allLeads = [...regularLeads, ...websiteEnquiries];
+        // Merge all leads (database + regular + website)
+        const finalLeads = [...allLeads, ...websiteEnquiries];
 
         // Sort by creation date (newest first)
-        allLeads.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        finalLeads.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-        setLeadsList(allLeads);
-        console.log('✅ Desktop: All leads loaded successfully:', allLeads.length, 'total leads');
+        setLeadsList(finalLeads);
+        console.log('✅ Desktop: All leads loaded successfully:', finalLeads.length, 'total leads');
 
         // --- Notification logic ---
-        const newAssignedLeads = allLeads.filter(
+        const newAssignedLeads = finalLeads.filter(
           (lead) => lead.assignedTo === currentUserId
         );
         const newAssignedIds = new Set(newAssignedLeads.map((l) => l._id));
@@ -1241,10 +1301,12 @@ https://crm.100acress.com/login
     let matchesSource = false;
     if (sourceFilter === 'all') {
       matchesSource = true; // Show all sources
+    } else if (sourceFilter === 'database') {
+      matchesSource = lead.source === 'database'; // Show only DM (database) leads
     } else if (sourceFilter === 'website') {
       matchesSource = lead.isWebsiteEnquiry === true; // Show only website enquiries
     } else if (sourceFilter === 'crm') {
-      matchesSource = lead.isWebsiteEnquiry !== true; // Show only CRM created leads
+      matchesSource = lead.isWebsiteEnquiry !== true && lead.source !== 'database'; // Show only CRM created leads
     }
 
     // Date filtering logic:
@@ -2206,6 +2268,7 @@ https://crm.100acress.com/login
           style={{ width: '140px' }}
         >
           <option value="all">All Sources</option>
+          <option value="database">Domain</option>
           <option value="website">Website</option>
           <option value="crm">CRM Created</option>
         </select>
@@ -2277,13 +2340,21 @@ https://crm.100acress.com/login
           <tbody>
             {currentLeads.length > 0 ? (
               currentLeads.map((lead, index) => (
-                <tr key={lead._id}>
+                <tr key={lead._id} className={lead.source === 'database' ? 'database-lead-row' : ''}>
                   <td data-label="Lead Info">
                     <div className="lead-info-display font-medium text-slate-900">{lead.name}</div>
+                    {/* Database Lead Badge */}
+                    {lead.source === 'database' && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 mt-1">
+                        <Database size={8} className="mr-1" />
+                        Domain
+                      </span>
+                    )}
+                    {/* Website Enquiry Badge */}
                     {lead.isWebsiteEnquiry && (
                       <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700 border border-green-200 mt-1">
                         <ExternalLink size={8} className="mr-1" />
-                        Website
+                        100acress.com
                       </span>
                     )}
                     <div className="lead-info-display text-xs text-slate-500">ID: #{generateShortId(lead._id)}</div>
