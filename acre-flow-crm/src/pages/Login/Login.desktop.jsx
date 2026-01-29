@@ -374,8 +374,7 @@ const LoginDesktop = () => {
               localStorage.setItem("myToken", acressLoginData.token);
             }
           } catch (acressError) {
-            // If 100acress login fails, continue with CRM login
-            // User can still use CRM features, just won't have 100acress API access
+          
             console.warn("Could not get 100acress token:", acressError);
           }
         }

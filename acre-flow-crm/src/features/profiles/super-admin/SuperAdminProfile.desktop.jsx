@@ -1,4 +1,3 @@
-import React from 'react';
 import SuperAdminProfile from './SuperAdminProfile';
 
 const SuperAdminProfileDesktop = () => {
