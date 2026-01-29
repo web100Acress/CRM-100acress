@@ -10,7 +10,7 @@
 }
 
 .crm-sidebar.is-collapsed {
-  width: 72px;
+  width: 50px;
 }
 
 .crm-sidebar.is-light,
@@ -44,13 +44,13 @@
 }
 
 .crm-sidebar-rail {
-  width: 72px;
+  width: 55px;
   background: var(--rail-bg);
   border-right: 1px solid var(--rail-border);
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 14px 10px;
+  padding: 11px 7px;
 }
 
 .crm-rail-top {
@@ -157,7 +157,7 @@
 }
 
 .crm-sidebar-panel {
-  width: 260px;
+  width: 200px;
   background: var(--panel-bg);
   border-right: 1px solid var(--panel-border);
   box-shadow: var(--shadow);
@@ -506,7 +506,7 @@
 /* Tablet Responsiveness */
 @media (max-width: 1024px) {
   .crm-sidebar-panel {
-    width: 240px;
+    width: 160px;
   }
 }
 

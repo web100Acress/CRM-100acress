@@ -477,18 +477,166 @@ https://crm.100acress.com/login
         `.trim();
 
         const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-        window.open(whatsappUrl, '_blank');
+        
+        // 🌍 Universal WhatsApp opening for ALL devices and browsers
+        console.log('🌍 Opening WhatsApp on device:', navigator.userAgent);
+        
+        // Detect device and browser
+        const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.userAgent);
+        const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        
+        try {
+          let whatsappOpened = false;
+          
+          // 📱 Mobile: Direct WhatsApp app opening
+          if (isMobile) {
+            console.log('📱 Mobile device detected, opening WhatsApp app...');
+            window.location.href = whatsappUrl;
+            whatsappOpened = true;
+            
+            toast({
+              title: "📱 WhatsApp Opening",
+              description: `Opening WhatsApp app... Phone: ${phoneNumber}`,
+              duration: 3000,
+            });
+          }
+          // 🍎 Mac + Safari: Special handling
+          else if (isMac && isSafari) {
+            console.log('🍎 Mac + Safari detected, using special method...');
+            
+            // Method 1: Try window.open with user gesture simulation
+            const newWindow = window.open(whatsappUrl, '_blank', 'noopener,noreferrer,width=800,height=600');
+            
+            if (newWindow && !newWindow.closed) {
+              whatsappOpened = true;
+              toast({
+                title: "✅ WhatsApp Opened",
+                description: `WhatsApp opened in new tab. Phone: ${phoneNumber}`,
+                duration: 3000,
+              });
+            } else {
+              // Method 2: Create visible button for user to click
+              const button = document.createElement('button');
+              button.textContent = `📱 Open WhatsApp - ${phoneNumber}`;
+              button.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                z-index: 9999;
+                padding: 15px 25px;
+                background: #25D366;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                font-size: 16px;
+                cursor: pointer;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+              `;
+              
+              button.onclick = () => {
+                window.open(whatsappUrl, '_blank');
+                document.body.removeChild(button);
+              };
+              
+              document.body.appendChild(button);
+              
+              // Auto-remove after 10 seconds
+              setTimeout(() => {
+                if (document.body.contains(button)) {
+                  document.body.removeChild(button);
+                }
+              }, 10000);
+              
+              toast({
+                title: "📱 Click Button Below",
+                description: `Please click the green button to open WhatsApp. Phone: ${phoneNumber}`,
+                duration: 8000,
+              });
+            }
+          }
+          // 🖥️ Desktop (Windows/Mac + Chrome/Firefox/Edge): Standard method
+          else {
+            console.log('🖥️ Desktop browser detected, using standard method...');
+            
+            const newWindow = window.open(whatsappUrl, '_blank', 'noopener,noreferrer,width=800,height=600');
+            
+            if (newWindow && !newWindow.closed) {
+              whatsappOpened = true;
+              toast({
+                title: "✅ WhatsApp Opened",
+                description: `WhatsApp opened in new tab. Phone: ${phoneNumber}`,
+                duration: 3000,
+              });
+            } else {
+              // Fallback: Create link element
+              const link = document.createElement('a');
+              link.href = whatsappUrl;
+              link.target = '_blank';
+              link.rel = 'noopener noreferrer';
+              link.download = ''; // Force download behavior
+              
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              
+              whatsappOpened = true;
+              
+              toast({
+                title: "📱 WhatsApp Opening...",
+                description: `If WhatsApp doesn't open, check your browser tabs. Phone: ${phoneNumber}`,
+                duration: 5000,
+              });
+            }
+          }
+          
+          // 🔄 Universal fallback if none of the methods worked
+          if (!whatsappOpened && !isMobile) {
+            setTimeout(() => {
+              toast({
+                title: "📱 Manual WhatsApp Open",
+                description: `Click here to open WhatsApp: ${phoneNumber}`,
+                action: {
+                  label: "Open WhatsApp",
+                  onClick: () => {
+                    const win = window.open(whatsappUrl, '_blank');
+                    if (!win || win.closed) {
+                      window.location.href = whatsappUrl;
+                    }
+                  }
+                },
+                duration: 10000,
+              });
+            }, 2000);
+          }
+          
+        } catch (error) {
+          console.error('🔄 Error opening WhatsApp:', error);
+          
+          // 🚨 Ultimate fallback
+          toast({
+            title: "📱 WhatsApp Link",
+            description: `Copy this link: ${whatsappUrl}`,
+            action: {
+              label: "Copy Link",
+              onClick: () => {
+                navigator.clipboard.writeText(whatsappUrl);
+                toast({
+                  title: "✅ Link Copied",
+                  description: "WhatsApp link copied to clipboard",
+                  duration: 3000,
+                });
+              }
+            },
+            duration: 10000,
+          });
+        }
 
         // Optional: Log the WhatsApp click
         console.log(`WhatsApp notification sent for lead: ${lead.name} (${lead._id})`);
         console.log(`Assigned to: ${assignedToInfo}`);
         console.log(`Phone used: ${phoneNumber}`);
-
-        toast({
-          title: " WhatsApp Opened",
-          description: `WhatsApp opened with lead details. Phone: ${phoneNumber}`,
-          duration: 3000,
-        });
 
       } else {
         toast({
@@ -2028,11 +2176,11 @@ https://crm.100acress.com/login
     <div className="lead-table-container-wrapper">
       {/* --- Header Section --- */}
       <div className="lead-table-controls-header">
-        <div className="lead-search-input-group">
+        <div className="lead-search-input-group" style={{ width: '150px' }}>
           <Search size={18} />
           <input
             type="text"
-            placeholder="Search by name, email, or phone..."
+            placeholder="Search..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -2041,8 +2189,9 @@ https://crm.100acress.com/login
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           className="lead-status-filter-select"
+          style={{ width: '120px' }}
         >
-          <option value="all">All Statuses</option>
+          <option value="all">All Status</option>
           <option value="hot">Hot</option>
           <option value="warm">Warm</option>
           <option value="cold">Cold</option>
@@ -2054,9 +2203,10 @@ https://crm.100acress.com/login
           value={sourceFilter}
           onChange={(e) => setSourceFilter(e.target.value)}
           className="lead-status-filter-select"
+          style={{ width: '140px' }}
         >
           <option value="all">All Sources</option>
-          <option value="website">Website Enquiries</option>
+          <option value="website">Website</option>
           <option value="crm">CRM Created</option>
         </select>
 
@@ -2064,6 +2214,7 @@ https://crm.100acress.com/login
           value={dateFilter}
           onChange={(e) => setDateFilter(e.target.value)}
           className="lead-status-filter-select"
+          style={{ width: '120px' }}
         >
           <option value="all">All Dates</option>
           <option value="today">Today</option>
@@ -2076,12 +2227,13 @@ https://crm.100acress.com/login
           value={assignedFilter}
           onChange={(e) => setAssignedFilter(e.target.value)}
           className="lead-status-filter-select"
+          style={{ width: '120px' }}
         >
           <option value="all">All Leads</option>
           <option value="assigned">Assigned</option>
           <option value="unassigned">Unassigned</option>
         </select>
-
+{/* 
         <button
           className={`lead-load-all-button ${showAllLeads ? 'active' : ''}`}
           onClick={() => {
@@ -2091,7 +2243,7 @@ https://crm.100acress.com/login
           title={showAllLeads ? "Show paginated view" : "Show all leads on one page"}
         >
           {showAllLeads ? "Show Pages" : "Show All"}
-        </button>
+        </button> */}
 
         {(userRole === "boss" || userRole === "hod" || userRole === "bd") && (
           <button
@@ -2113,7 +2265,6 @@ https://crm.100acress.com/login
         <table className="lead-data-table">
           <thead>
             <tr>
-              <th>S.No</th>
               <th>Client Name</th>
               <th>Contact</th>
               <th>Property</th>
@@ -2127,7 +2278,6 @@ https://crm.100acress.com/login
             {currentLeads.length > 0 ? (
               currentLeads.map((lead, index) => (
                 <tr key={lead._id}>
-                  <td data-label="S.No">{index + 1}</td>
                   <td data-label="Lead Info">
                     <div className="lead-info-display font-medium text-slate-900">{lead.name}</div>
                     {lead.isWebsiteEnquiry && (
@@ -2258,7 +2408,7 @@ https://crm.100acress.com/login
                             const last =
                               lead.assignmentChain[lead.assignmentChain.length - 1];
                             return last
-                              ? `${last.name} (${last.role})`
+                              ? `${last.name.split(' ')[0]} (${last.role})`
                               : "Unassigned";
                           })()}
                         </span>
