@@ -13,7 +13,7 @@ import {
   AreaChart, Area, Cell
 } from 'recharts';
 import RightProfileSidebar from '@/layout/RightProfileSidebar';
-import { User as UserIcon } from 'lucide-react';
+import { User as UserIcon, Calendar } from 'lucide-react';
 
 const SuperAdminProfile = () => {
   const navigate = useNavigate();
@@ -30,7 +30,10 @@ const SuperAdminProfile = () => {
     // New lead source counts
     crmLeads: 0,
     dmLeads: 0,
-    websiteLeadsCount: 0
+    websiteLeadsCount: 0,
+    // Daily lead counts
+    todayLeads: 0,
+    yesterdayLeads: 0
   });
   const [currentTime, setCurrentTime] = useState(new Date());
   const [activeUsers, setActiveUsers] = useState([]);
@@ -257,6 +260,59 @@ const SuperAdminProfile = () => {
           
           const dmLeadsCount = databaseLeads.length;
 
+          // Calculate today's and yesterday's leads (total from all sources: website + domain + CRM)
+          const today = new Date();
+          today.setHours(0, 0, 0, 0); // Start of today
+          
+          const yesterday = new Date(today);
+          yesterday.setDate(yesterday.getDate() - 1); // Start of yesterday
+          
+          const tomorrow = new Date(today);
+          tomorrow.setDate(tomorrow.getDate() + 1); // Start of tomorrow
+
+          // Today's total leads from all sources (website + domain + CRM)
+          console.log('🔍 Today calculation debug:', {
+            today: today.toISOString(),
+            tomorrow: tomorrow.toISOString(),
+            combinedLeadsLength: combinedLeads.length,
+            sampleLeads: combinedLeads.slice(0, 3).map(lead => ({
+              name: lead.name,
+              createdAt: lead.createdAt,
+              createdDate: new Date(lead.createdAt).toISOString()
+            }))
+          });
+
+          const todayLeadsCount = combinedLeads.filter(lead => {
+            const leadDate = new Date(lead.createdAt);
+            return leadDate >= today && leadDate < tomorrow;
+          }).length;
+
+          console.log('🔍 Today leads found:', todayLeadsCount);
+
+          // Yesterday's total leads from all sources
+          const yesterdayLeadsCount = combinedLeads.filter(lead => {
+            const leadDate = new Date(lead.createdAt);
+            return leadDate >= yesterday && leadDate < today;
+          }).length;
+
+          console.log('🔍 Yesterday leads found:', yesterdayLeadsCount);
+
+          // Today's breakdown by source (for verification)
+          const todayCRM = allLeads.filter(lead => {
+            const leadDate = new Date(lead.createdAt);
+            return leadDate >= today && leadDate < tomorrow && !lead.isWebsiteEnquiry && lead.source !== 'database';
+          }).length;
+
+          const todayDM = databaseLeads.filter(lead => {
+            const leadDate = new Date(lead.createdAt);
+            return leadDate >= today && leadDate < tomorrow;
+          }).length;
+
+          const todayWebsite = websiteLeads.filter(lead => {
+            const leadDate = new Date(lead.createdAt);
+            return leadDate >= today && leadDate < tomorrow;
+          }).length;
+
           // Calculate real-time stats from actual data
           // Active leads are those where workProgress is NOT 'done'
           const activeLeadsCount = combinedLeads.filter(lead =>
@@ -303,6 +359,16 @@ const SuperAdminProfile = () => {
             websiteLeads: websiteLeadsCount,
             crmLeads: crmLeadsCount,
             dmLeads: dmLeadsCount,
+            todayLeads: todayLeadsCount,
+            yesterdayLeads: yesterdayLeadsCount,
+            // Today's breakdown for verification
+            todayBreakdown: {
+              total: todayLeadsCount,
+              crm: todayCRM,
+              dm: todayDM,
+              website: todayWebsite,
+              verification: todayCRM + todayDM + todayWebsite === todayLeadsCount
+            },
             leadsByOwner: leadsByOwnerArray
           });
 
@@ -317,7 +383,9 @@ const SuperAdminProfile = () => {
               leadsByOwner: leadsByOwnerArray,
               crmLeads: crmLeadsCount,
               dmLeads: dmLeadsCount,
-              websiteLeadsCount: websiteLeadsCount
+              websiteLeadsCount: websiteLeadsCount,
+              todayLeads: todayLeadsCount,
+              yesterdayLeads: yesterdayLeadsCount
             };
             console.log('Dashboard Stats after Leads update:', newStats);
             return newStats;
@@ -487,20 +555,20 @@ const SuperAdminProfile = () => {
             </div>
 
             {/* Lead Source Breakdown */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mt-6">
               <Card
                 className="border-0 shadow-lg bg-white group hover:shadow-xl transition-all duration-300 cursor-pointer"
                 onClick={() => navigate('/leads?source=crm')}
               >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-purple-50 group-hover:bg-purple-100 transition-colors flex items-center justify-center">
-                      <Briefcase className="text-purple-600" size={20} />
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="w-8 h-8 rounded-lg bg-purple-50 group-hover:bg-purple-100 transition-colors flex items-center justify-center">
+                      <Briefcase className="text-purple-600" size={16} />
                     </div>
-                    <span className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-1 rounded-lg">CRM</span>
+                    <span className="text-xs font-medium text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">CRM</span>
                   </div>
                   <p className="text-slate-500 text-xs mb-1">CRM Created</p>
-                  <p className="text-2xl font-bold text-slate-800">{dashboardStats.crmLeads}</p>
+                  <p className="text-xl font-bold text-slate-800">{dashboardStats.crmLeads}</p>
                 </CardContent>
               </Card>
 
@@ -508,15 +576,15 @@ const SuperAdminProfile = () => {
                 className="border-0 shadow-lg bg-white group hover:shadow-xl transition-all duration-300 cursor-pointer"
                 onClick={() => navigate('/leads?source=database')}
               >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 group-hover:bg-blue-100 transition-colors flex items-center justify-center">
-                      <Database className="text-blue-600" size={20} />
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 group-hover:bg-blue-100 transition-colors flex items-center justify-center">
+                      <Database className="text-blue-600" size={16} />
                     </div>
-                    <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">DM</span>
+                    <span className="text-xs font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">DM</span>
                   </div>
                   <p className="text-slate-500 text-xs mb-1">Database Leads</p>
-                  <p className="text-2xl font-bold text-slate-800">{dashboardStats.dmLeads}</p>
+                  <p className="text-xl font-bold text-slate-800">{dashboardStats.dmLeads}</p>
                 </CardContent>
               </Card>
 
@@ -524,15 +592,45 @@ const SuperAdminProfile = () => {
                 className="border-0 shadow-lg bg-white group hover:shadow-xl transition-all duration-300 cursor-pointer"
                 onClick={() => navigate('/leads?source=website')}
               >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-green-50 group-hover:bg-green-100 transition-colors flex items-center justify-center">
-                      <Share2 className="text-green-600" size={20} />
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="w-8 h-8 rounded-lg bg-green-50 group-hover:bg-green-100 transition-colors flex items-center justify-center">
+                      <Share2 className="text-green-600" size={16} />
                     </div>
-                    <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-lg">Web</span>
+                    <span className="text-xs font-medium text-green-600 bg-green-50 px-1.5 py-0.5 rounded">Web</span>
                   </div>
                   <p className="text-slate-500 text-xs mb-1">100acress.com</p>
-                  <p className="text-2xl font-bold text-slate-800">{dashboardStats.websiteLeadsCount}</p>
+                  <p className="text-xl font-bold text-slate-800">{dashboardStats.websiteLeadsCount}</p>
+                </CardContent>
+              </Card>
+
+              <Card
+                className="border-0 shadow-lg bg-white group hover:shadow-xl transition-all duration-300"
+              >
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="w-8 h-8 rounded-lg bg-orange-50 group-hover:bg-orange-100 transition-colors flex items-center justify-center">
+                      <Calendar className="text-orange-600" size={16} />
+                    </div>
+                    <span className="text-xs font-medium text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded">Today</span>
+                  </div>
+                  <p className="text-slate-500 text-xs mb-1">Today's Leads</p>
+                  <p className="text-xl font-bold text-slate-800">{dashboardStats.todayLeads || 0}</p>
+                </CardContent>
+              </Card>
+
+              <Card
+                className="border-0 shadow-lg bg-white group hover:shadow-xl transition-all duration-300"
+              >
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-50 group-hover:bg-indigo-100 transition-colors flex items-center justify-center">
+                      <Calendar className="text-indigo-600" size={16} />
+                    </div>
+                    <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">Yesterday</span>
+                  </div>
+                  <p className="text-slate-500 text-xs mb-1">Yesterday's Leads</p>
+                  <p className="text-xl font-bold text-slate-800">{dashboardStats.yesterdayLeads || 0}</p>
                 </CardContent>
               </Card>
             </div>
