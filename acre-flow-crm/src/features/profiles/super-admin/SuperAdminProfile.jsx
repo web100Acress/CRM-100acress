@@ -290,9 +290,29 @@ const SuperAdminProfile = () => {
           console.log('🔍 Today leads found:', todayLeadsCount);
 
           // Yesterday's total leads from all sources
+          console.log('🔍 Yesterday calculation debug:', {
+            yesterday: yesterday.toISOString(),
+            today: today.toISOString(),
+            combinedLeadsLength: combinedLeads.length,
+            sampleLeadsWithDates: combinedLeads.slice(0, 5).map(lead => ({
+              name: lead.name,
+              createdAt: lead.createdAt,
+              createdDate: new Date(lead.createdAt).toISOString(),
+              isYesterday: new Date(lead.createdAt) >= yesterday && new Date(lead.createdAt) < today
+            }))
+          });
+
           const yesterdayLeadsCount = combinedLeads.filter(lead => {
             const leadDate = new Date(lead.createdAt);
-            return leadDate >= yesterday && leadDate < today;
+            const isYesterday = leadDate >= yesterday && leadDate < today;
+            if (isYesterday) {
+              console.log('🔍 Found yesterday lead:', {
+                name: lead.name,
+                createdAt: lead.createdAt,
+                leadDate: leadDate.toISOString()
+              });
+            }
+            return isYesterday;
           }).length;
 
           console.log('🔍 Yesterday leads found:', yesterdayLeadsCount);
