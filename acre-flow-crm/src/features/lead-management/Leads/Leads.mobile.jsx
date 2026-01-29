@@ -1084,6 +1084,51 @@ https://crm.100acress.com/login
           return dateB - dateA; // Newest first
         });
 
+        // Fetch website enquiries for boss (mobile) and merge into leads list
+        let websiteEnquiries = [];
+        try {
+          const role = (localStorage.getItem('userRole') || userRole || '').toLowerCase();
+          if (role === 'boss' || role === 'super-admin') {
+            console.log('🔍 Mobile: Fetching website enquiries...');
+            const enquiriesRes = await fetch(`${apiUrl}/api/website-enquiries?limit=10000`, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+            });
+            console.log('🔍 Mobile: Website enquiries response status:', enquiriesRes.status);
+            const enquiriesJson = await enquiriesRes.json().catch(() => null);
+            console.log('📊 Mobile: Website enquiries response:', enquiriesJson);
+
+            if (enquiriesRes.ok && enquiriesJson?.success) {
+              websiteEnquiries = (enquiriesJson.data || []).map((enquiry) => ({
+                ...enquiry,
+                // Normalize a few fields so existing UI works smoothly
+                _id: enquiry._id || enquiry.id,
+                name: enquiry.name || enquiry.fullName || 'Unknown',
+                phone: enquiry.phone || enquiry.mobile || '',
+                email: enquiry.email || '',
+                location: enquiry.location || enquiry.city || '',
+                property: enquiry.property || enquiry.propertyType || enquiry.projectName || '',
+                budget: enquiry.budget || '',
+                status: enquiry.status || 'new',
+                isWebsiteEnquiry: true,
+                source: '100acress.com',
+              }));
+              console.log('✅ Mobile: Website enquiries loaded:', websiteEnquiries.length, 'enquiries');
+            }
+          }
+        } catch (enquiriesError) {
+          console.error('❌ Mobile: Error fetching website enquiries:', enquiriesError);
+          // Continue with regular leads even if website enquiries fail
+        }
+
+        const allLeads = [...sortedLeads, ...websiteEnquiries].sort((a, b) => {
+          const dateA = new Date(a.createdAt || a.created_at || 0);
+          const dateB = new Date(b.createdAt || b.created_at || 0);
+          return dateB - dateA;
+        });
+
         console.log('✅ Leads loaded successfully:', sortedLeads.length, 'leads');
 
         if (sortedLeads.length > 0) {
@@ -1106,15 +1151,15 @@ https://crm.100acress.com/login
           userName: localStorage.getItem('userName')
         });
 
-        setLeads(sortedLeads);
+        setLeads(allLeads);
 
         // Calculate stats (exclude not-interested leads from main counts)
-        const activeLeads = sortedLeads?.filter(lead => lead.status !== 'not-interested') || [];
+        const activeLeads = allLeads?.filter(lead => lead.status !== 'not-interested') || [];
         const totalLeads = activeLeads.length;
         const coldLeads = activeLeads.filter(lead => lead.status === 'Cold').length;
         const warmLeads = activeLeads.filter(lead => lead.status === 'Warm').length;
         const hotLeads = activeLeads.filter(lead => lead.status === 'Hot').length;
-        const notInterestedLeads = sortedLeads?.filter(lead => lead.status === 'not-interested').length || 0;
+        const notInterestedLeads = allLeads?.filter(lead => lead.status === 'not-interested').length || 0;
 
         console.log('📈 Stats calculated:', { 
           totalLeads, 
@@ -1122,7 +1167,7 @@ https://crm.100acress.com/login
           warmLeads, 
           hotLeads, 
           notInterestedLeads,
-          allLeads: sortedLeads?.length 
+          allLeads: allLeads?.length 
         });
 
         setStats({

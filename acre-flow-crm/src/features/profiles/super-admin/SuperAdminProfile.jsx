@@ -20,6 +20,7 @@ const SuperAdminProfile = () => {
   const [dashboardStats, setDashboardStats] = useState({
     totalUsers: 0,
     activeLeads: 0,
+    websiteLeads: 0,
     leadsOwned: 0,
     totalDistributions: 0,
     leadsByStatus: {},
@@ -98,6 +99,7 @@ const SuperAdminProfile = () => {
     const fetchRealTimeData = async () => {
       try {
         const token = localStorage.getItem('token');
+        const role = (localStorage.getItem('userRole') || '').toLowerCase();
         const BASE_URL = window.location.hostname === 'localhost'
           ? 'http://localhost:5001'
           : 'https://bcrm.100acress.com';
@@ -155,19 +157,62 @@ const SuperAdminProfile = () => {
           console.log('Processed allLeads array:', allLeads);
           console.log('allLeads.length:', allLeads.length);
 
+          // Optionally fetch website enquiries for Boss/Super-Admin and include in stats
+          let websiteLeads = [];
+          let websiteLeadsCount = 0;
+          if (role === 'boss' || role === 'super-admin') {
+            try {
+              const enquiriesRes = await fetch(`${BASE_URL}/api/website-enquiries?limit=10000`, {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                }
+              });
+              console.log('SuperAdminProfile: Website enquiries status:', enquiriesRes.status);
+              const enquiriesJson = await enquiriesRes.json().catch(() => null);
+              if (enquiriesRes.ok && enquiriesJson?.success) {
+                const mapWebsiteStatusToLeadStatus = (status) => {
+                  const statusMap = {
+                    pending: 'Cold',
+                    new: 'Hot',
+                    hot: 'Hot',
+                    warm: 'Warm',
+                    cold: 'Cold',
+                    converted: 'closed',
+                    closed: 'closed',
+                    'not-interested': 'not-interested'
+                  };
+                  return statusMap[(status || '').toLowerCase()] || 'Cold';
+                };
+
+                websiteLeads = (enquiriesJson.data || []).map((enquiry) => ({
+                  status: mapWebsiteStatusToLeadStatus(enquiry.status),
+                  workProgress: 'pending',
+                  assignedTo: enquiry.assignedTo || null,
+                  assignmentChain: enquiry.assignmentChain || [],
+                }));
+                websiteLeadsCount = websiteLeads.length;
+              }
+            } catch (weError) {
+              console.error('SuperAdminProfile: Error fetching website enquiries:', weError);
+            }
+          }
+
+          const combinedLeads = [...allLeads, ...websiteLeads];
+
           // Calculate real-time stats from actual data
           // Active leads are those where workProgress is NOT 'done'
-          const activeLeadsCount = allLeads.filter(lead =>
+          const activeLeadsCount = combinedLeads.filter(lead =>
             lead.workProgress !== 'done'
           ).length;
 
-          const totalDistributions = allLeads.filter(lead =>
+          const totalDistributions = combinedLeads.filter(lead =>
             lead.assignedTo || lead.assignmentChain?.length > 0
           ).length;
 
           // Calculate leads by owner
           const ownershipMap = {};
-          allLeads.forEach(lead => {
+          combinedLeads.forEach(lead => {
             if (lead.assignedTo) {
               let ownerName;
               // If assignedTo is an object with a name property
@@ -194,14 +239,21 @@ const SuperAdminProfile = () => {
             .sort((a, b) => b.value - a.value)
             .slice(0, 5);
 
-          console.log('Calculated Stats:', { activeLeads: activeLeadsCount, totalDistributions, totalLeads: allLeads.length, leadsByOwner: leadsByOwnerArray });
+          console.log('Calculated Stats:', {
+            activeLeads: activeLeadsCount,
+            totalDistributions,
+            totalLeads: combinedLeads.length,
+            websiteLeads: websiteLeadsCount,
+            leadsByOwner: leadsByOwnerArray
+          });
 
           setDashboardStats(prev => {
             const newStats = {
               ...prev,
               activeLeads: activeLeadsCount,
+              websiteLeads: websiteLeadsCount,
               totalDistributions: totalDistributions,
-              leadsOwned: allLeads.length,
+              leadsOwned: combinedLeads.length,
               openTickets: activeLeadsCount, // Using active leads as synonymous with open tickets for now
               leadsByOwner: leadsByOwnerArray
             };
@@ -423,6 +475,9 @@ const SuperAdminProfile = () => {
                   </div>
                   <p className="text-slate-500 text-sm mb-1">Active Leads</p>
                   <p className="text-3xl font-bold text-slate-800">{dashboardStats.activeLeads}</p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Website: {dashboardStats.websiteLeads || 0}
+                  </p>
                 </CardContent>
               </Card>
 

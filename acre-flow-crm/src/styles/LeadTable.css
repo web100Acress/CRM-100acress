@@ -24,9 +24,10 @@
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
     overflow: hidden;
     min-height: 0;
-    margin: 20px;
-    min-height: calc(100vh - 40px);
-    /* Adjust for margin */
+  width: 100%;
+  max-width: 1440px; /* Optimized for MacBook/laptop screens */
+  margin: 20px auto; /* Center on desktop */
+  min-height: calc(100vh - 40px); /* Adjust for margin */
   }
 
   /* Header Section */

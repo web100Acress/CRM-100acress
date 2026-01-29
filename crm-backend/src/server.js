@@ -14,9 +14,17 @@ const User = require('./models/userModel');
 const Lead = require('./models/leadModel');
 const ApiTesterRequest = require('./models/apiTesterRequestModel'); // ✅ Added
 const notificationService = require('./services/notificationService'); // ✅ Added
+const { initializeTokenService, getTokenStatus } = require('./services/tokenRefreshService'); // ✅ Token auto-refresh
 
 // ✅ Connect to MongoDB
 connectDB();
+
+// ✅ Initialize Token Refresh Service for 100acress API
+initializeTokenService().then(() => {
+  console.log('🔑 Token Service Status:', getTokenStatus());
+}).catch(err => {
+  console.error('❌ Token Service initialization error:', err.message);
+});
 
 // ✅ Allowed Origins
 const allowedOrigins = [
