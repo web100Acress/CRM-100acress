@@ -2176,11 +2176,11 @@ https://crm.100acress.com/login
     <div className="lead-table-container-wrapper">
       {/* --- Header Section --- */}
       <div className="lead-table-controls-header">
-        <div className="lead-search-input-group">
+        <div className="lead-search-input-group" style={{ width: '150px' }}>
           <Search size={18} />
           <input
             type="text"
-            placeholder="Search by name, email, or phone..."
+            placeholder="Search..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -2189,8 +2189,9 @@ https://crm.100acress.com/login
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           className="lead-status-filter-select"
+          style={{ width: '120px' }}
         >
-          <option value="all">All Statuses</option>
+          <option value="all">All Status</option>
           <option value="hot">Hot</option>
           <option value="warm">Warm</option>
           <option value="cold">Cold</option>
@@ -2202,9 +2203,10 @@ https://crm.100acress.com/login
           value={sourceFilter}
           onChange={(e) => setSourceFilter(e.target.value)}
           className="lead-status-filter-select"
+          style={{ width: '140px' }}
         >
           <option value="all">All Sources</option>
-          <option value="website">Website Enquiries</option>
+          <option value="website">Website</option>
           <option value="crm">CRM Created</option>
         </select>
 
@@ -2212,6 +2214,7 @@ https://crm.100acress.com/login
           value={dateFilter}
           onChange={(e) => setDateFilter(e.target.value)}
           className="lead-status-filter-select"
+          style={{ width: '120px' }}
         >
           <option value="all">All Dates</option>
           <option value="today">Today</option>
@@ -2224,12 +2227,13 @@ https://crm.100acress.com/login
           value={assignedFilter}
           onChange={(e) => setAssignedFilter(e.target.value)}
           className="lead-status-filter-select"
+          style={{ width: '120px' }}
         >
           <option value="all">All Leads</option>
           <option value="assigned">Assigned</option>
           <option value="unassigned">Unassigned</option>
         </select>
-
+{/* 
         <button
           className={`lead-load-all-button ${showAllLeads ? 'active' : ''}`}
           onClick={() => {
@@ -2239,7 +2243,7 @@ https://crm.100acress.com/login
           title={showAllLeads ? "Show paginated view" : "Show all leads on one page"}
         >
           {showAllLeads ? "Show Pages" : "Show All"}
-        </button>
+        </button> */}
 
         {(userRole === "boss" || userRole === "hod" || userRole === "bd") && (
           <button
@@ -2261,7 +2265,6 @@ https://crm.100acress.com/login
         <table className="lead-data-table">
           <thead>
             <tr>
-              <th>S.No</th>
               <th>Client Name</th>
               <th>Contact</th>
               <th>Property</th>
@@ -2275,7 +2278,6 @@ https://crm.100acress.com/login
             {currentLeads.length > 0 ? (
               currentLeads.map((lead, index) => (
                 <tr key={lead._id}>
-                  <td data-label="S.No">{index + 1}</td>
                   <td data-label="Lead Info">
                     <div className="lead-info-display font-medium text-slate-900">{lead.name}</div>
                     {lead.isWebsiteEnquiry && (
@@ -2406,7 +2408,7 @@ https://crm.100acress.com/login
                             const last =
                               lead.assignmentChain[lead.assignmentChain.length - 1];
                             return last
-                              ? `${last.name} (${last.role})`
+                              ? `${last.name.split(' ')[0]} (${last.role})`
                               : "Unassigned";
                           })()}
                         </span>

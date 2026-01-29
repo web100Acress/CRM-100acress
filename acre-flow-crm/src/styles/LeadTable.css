@@ -241,8 +241,8 @@
     width: 100%;
     border-collapse: collapse;
     font-size: 14px;
-    min-width: 800px;
-    /* Minimum width to prevent squishing on larger screens */
+    min-width: 850px;
+    /* Optimized minimum width for 150px screen ratio */
   }
 
   .lead-data-table thead {
@@ -250,49 +250,59 @@
   }
 
   .lead-data-table th {
-    padding: 14px 18px;
+    padding: 12px 14px;
     text-align: left;
-    font-weight: 700;
+    font-weight: 600;
     color: #4a5568;
     border-bottom: 2px solid #e2e8f0;
     border-right: 1px solid #e2e8f0;
     white-space: nowrap;
+    font-size: 13px;
   }
 
-  .lead-data-table th:nth-child(4) {
-    width: 150px;
-    min-width: 150px;
-    max-width: 150px;
-  }
-
-  .lead-data-table th:nth-child(3) {
-    width: 160px;
-    min-width: 160px;
-    max-width: 160px;
+  /* Optimized column widths for 150px screen ratio */
+  .lead-data-table th:nth-child(1) {
+    width: 180px;
+    min-width: 180px;
+    max-width: 180px;
   }
 
   .lead-data-table th:nth-child(2) {
-    width: 220px;
-    min-width: 220px;
-    max-width: 220px;
+    width: 140px;
+    min-width: 140px;
+    max-width: 140px;
   }
 
-  .lead-data-table th:nth-child(5) {
+  .lead-data-table th:nth-child(3) {
     width: 120px;
     min-width: 120px;
     max-width: 120px;
   }
 
+  .lead-data-table th:nth-child(4) {
+    width: 100px;
+    min-width: 100px;
+    max-width: 100px;
+  }
+
+  .lead-data-table th:nth-child(5) {
+    width: 110px;
+    min-width: 110px;
+    max-width: 110px;
+  }
+
   .lead-data-table th:nth-child(6) {
-    width: 130px;
-    min-width: 130px;
-    max-width: 130px;
+    width: 60px;
+    min-width: 60px;
+    max-width: 60px;
+    text-align: center;
   }
 
   .lead-data-table th:nth-child(7) {
     width: 80px;
     min-width: 80px;
     max-width: 80px;
+    text-align: center;
   }
 
   .lead-data-table th:last-child {
