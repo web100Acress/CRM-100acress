@@ -325,6 +325,16 @@
     background: #f5f8fa;
   }
 
+  /* Database lead row styling */
+  .lead-data-table tbody tr.database-lead-row {
+    background: #eff6ff; /* Light blue background for database leads */
+    border-left: 3px solid #3b82f6; /* Blue left border */
+  }
+
+  .lead-data-table tbody tr.database-lead-row:hover {
+    background: #dbeafe; /* Darker blue on hover */
+  }
+
   .lead-info-display {
     /* Unique class name for div inside td */
     display: flex;

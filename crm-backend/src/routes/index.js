@@ -15,5 +15,6 @@ router.use('/chats', require('./chatRoutes'));
 router.use('/lead-assignment', require('./leadAssignmentRoutes'));
 router.use('/api-tester', require('./apiTester.routes'));
 router.use('/website-enquiries', require('./websiteEnquiryRoutes'));
+router.use('/direct-db', require('./directDB'));
 
 module.exports = router;

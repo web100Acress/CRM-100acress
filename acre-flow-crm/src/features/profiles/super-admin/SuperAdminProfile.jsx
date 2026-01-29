@@ -26,7 +26,11 @@ const SuperAdminProfile = () => {
     leadsByStatus: {},
     openTickets: 0,
     leadsByOwner: [],
-    userIdToNameMap: {}
+    userIdToNameMap: {},
+    // New lead source counts
+    crmLeads: 0,
+    dmLeads: 0,
+    websiteLeadsCount: 0
   });
   const [currentTime, setCurrentTime] = useState(new Date());
   const [activeUsers, setActiveUsers] = useState([]);
@@ -157,6 +161,52 @@ const SuperAdminProfile = () => {
           console.log('Processed allLeads array:', allLeads);
           console.log('allLeads.length:', allLeads.length);
 
+          // Fetch database leads
+          let databaseLeads = [];
+          try {
+            const dbResponse = await fetch(`${BASE_URL}/api/direct-db/direct-db`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                dbConfig: {
+                  servername: "82.180.175.102",
+                  username: "u766024435_website_enq",
+                  password: "Anshu@#5566",
+                  database: "u766024435_projects_db"
+                },
+                query: "SELECT * FROM project_enq ORDER BY date DESC LIMIT 10000"
+              })
+            });
+
+            if (dbResponse.ok) {
+              const dbData = await dbResponse.json();
+              databaseLeads = (dbData.data || []).map((lead, index) => ({
+                _id: `db_${index + 1}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                name: lead.name || 'Unknown',
+                email: lead.email || '',
+                phone: lead.mobile || '',
+                property: lead.project || 'Unknown Project',
+                status: 'Hot',
+                source: 'database',
+                createdAt: lead.date ? new Date(lead.date).toISOString() : new Date().toISOString(),
+                isWebsiteEnquiry: false,
+                assignedTo: null,
+                workProgress: 'pending'
+              }));
+              console.log('✅ SuperAdminProfile: Database leads fetched:', databaseLeads.length);
+            } else {
+              console.log('⚠️ SuperAdminProfile: Could not fetch database leads');
+            }
+          } catch (dbError) {
+            console.error('❌ SuperAdminProfile: Error fetching database leads:', dbError);
+          }
+
+          // Combine all leads
+          const allLeadsCombined = [...allLeads, ...databaseLeads];
+
           // Optionally fetch website enquiries for Boss/Super-Admin and include in stats
           let websiteLeads = [];
           let websiteLeadsCount = 0;
@@ -198,7 +248,14 @@ const SuperAdminProfile = () => {
             }
           }
 
-          const combinedLeads = [...allLeads, ...websiteLeads];
+          const combinedLeads = [...allLeadsCombined, ...websiteLeads];
+
+          // Calculate leads by source
+          const crmLeadsCount = allLeads.filter(lead => 
+            !lead.isWebsiteEnquiry && lead.source !== 'database'
+          ).length;
+          
+          const dmLeadsCount = databaseLeads.length;
 
           // Calculate real-time stats from actual data
           // Active leads are those where workProgress is NOT 'done'
@@ -244,6 +301,8 @@ const SuperAdminProfile = () => {
             totalDistributions,
             totalLeads: combinedLeads.length,
             websiteLeads: websiteLeadsCount,
+            crmLeads: crmLeadsCount,
+            dmLeads: dmLeadsCount,
             leadsByOwner: leadsByOwnerArray
           });
 
@@ -255,7 +314,10 @@ const SuperAdminProfile = () => {
               totalDistributions: totalDistributions,
               leadsOwned: combinedLeads.length,
               openTickets: activeLeadsCount, // Using active leads as synonymous with open tickets for now
-              leadsByOwner: leadsByOwnerArray
+              leadsByOwner: leadsByOwnerArray,
+              crmLeads: crmLeadsCount,
+              dmLeads: dmLeadsCount,
+              websiteLeadsCount: websiteLeadsCount
             };
             console.log('Dashboard Stats after Leads update:', newStats);
             return newStats;
@@ -493,6 +555,57 @@ const SuperAdminProfile = () => {
                   </div>
                   <p className="text-slate-500 text-sm mb-1">Distributions</p>
                   <p className="text-3xl font-bold text-slate-800">{dashboardStats.totalDistributions}</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Lead Source Breakdown */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+              <Card
+                className="border-0 shadow-lg bg-white group hover:shadow-xl transition-all duration-300 cursor-pointer"
+                onClick={() => navigate('/leads?source=crm')}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-purple-50 group-hover:bg-purple-100 transition-colors flex items-center justify-center">
+                      <Briefcase className="text-purple-600" size={20} />
+                    </div>
+                    <span className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-1 rounded-lg">CRM</span>
+                  </div>
+                  <p className="text-slate-500 text-xs mb-1">CRM Created</p>
+                  <p className="text-2xl font-bold text-slate-800">{dashboardStats.crmLeads}</p>
+                </CardContent>
+              </Card>
+
+              <Card
+                className="border-0 shadow-lg bg-white group hover:shadow-xl transition-all duration-300 cursor-pointer"
+                onClick={() => navigate('/leads?source=database')}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 group-hover:bg-blue-100 transition-colors flex items-center justify-center">
+                      <Database className="text-blue-600" size={20} />
+                    </div>
+                    <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">DM</span>
+                  </div>
+                  <p className="text-slate-500 text-xs mb-1">Database Leads</p>
+                  <p className="text-2xl font-bold text-slate-800">{dashboardStats.dmLeads}</p>
+                </CardContent>
+              </Card>
+
+              <Card
+                className="border-0 shadow-lg bg-white group hover:shadow-xl transition-all duration-300 cursor-pointer"
+                onClick={() => navigate('/leads?source=website')}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-green-50 group-hover:bg-green-100 transition-colors flex items-center justify-center">
+                      <Share2 className="text-green-600" size={20} />
+                    </div>
+                    <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-lg">Web</span>
+                  </div>
+                  <p className="text-slate-500 text-xs mb-1">100acress.com</p>
+                  <p className="text-2xl font-bold text-slate-800">{dashboardStats.websiteLeadsCount}</p>
                 </CardContent>
               </Card>
             </div>
