@@ -1502,7 +1502,7 @@ https://crm.100acress.com/login
             <span className="text-sm">Export</span>
           </button>
           {/* Debug button for WhatsApp issues */}
-          {process.env.NODE_ENV === 'development' && (
+          {import.meta.env?.DEV && (
             <button
               onClick={() => {
                 console.log('Current assignable users:', assignableUsers);

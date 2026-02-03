@@ -61,7 +61,7 @@ const LoginDesktop = () => {
       case "admin":
       case "super_admin":
       case "superadmin":
-        window.location.href = "/admin-dashboard";
+        window.location.href = "/admin/dashboard";
         break;
       // Existing roles
       case "developer":
@@ -215,7 +215,7 @@ const LoginDesktop = () => {
         console.warn("Could not get 100acress token for static admin:", acressError);
       }
       
-      window.location.href = "/admin-dashboard";
+      window.location.href = "/admin/dashboard";
       return;
     }
 

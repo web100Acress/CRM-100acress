@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import api100acress from "../../admin/config/api100acressClient";
+// import api100acress from "../../admin/config/api100acressClient";
 import { 
   Eye, 
   ThumbsUp, 

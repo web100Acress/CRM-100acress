@@ -1,10 +1,10 @@
 import React from 'react';
-import ProjectOrderManager from '@/features/admin/pages/ProjectOrderManager';
+// import ProjectOrderManager from '@/features/admin/pages/ProjectOrderManager';
 
 const ProjectOrderManagerDesktop = () => {
   return (
     <div className="p-6">
-      <ProjectOrderManager />
+      {/* <ProjectOrderManager /> */}
     </div>
   );
 };

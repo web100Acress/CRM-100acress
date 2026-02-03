@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ReactQuill from 'react-quill';
-import api100acress from '../../admin/config/api100acressClient';
+// import api100acress from '../../admin/config/api100acressClient';
 import 'react-quill/dist/quill.snow.css';
 import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';

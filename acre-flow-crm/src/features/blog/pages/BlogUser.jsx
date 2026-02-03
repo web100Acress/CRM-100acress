@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import api100acress from "../../admin/config/api100acressClient"; // For 100acress backend
+// import api100acress from "../../admin/config/api100acressClient"; 
 import Tippy from "@tippyjs/react";
 import { Link } from "react-router-dom";
 import { MdPeople, MdSearch, MdVisibility } from "react-icons/md";

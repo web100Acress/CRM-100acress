@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { API_ENDPOINTS as ENDPOINTS } from '@/config/apiConfig';
-import store from '@/store';
+// import { API_ENDPOINTS as ENDPOINTS } from '@/config/apiConfig';
+// import store from '@/store';
 import { apiUrl } from '@/config/apiConfig';
 
 // Create axios instance for chat API

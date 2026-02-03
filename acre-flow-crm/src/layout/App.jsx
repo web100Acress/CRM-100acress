@@ -15,7 +15,8 @@ import Leads from "@/features/lead-management/Leads/Leads.container";
 import Tickets from "@/pages/Tickets/Tickets.container";
 import Login from "@/pages/Login/Login.container";
 import AdminDashboard from "@/pages/AdminDashboard/AdminDashboard.container";
-import HRDashboard from "@/pages/HRDashboard/HRDashboard.container";
+// import HRDashboard from "@/pages/HRDashboard/HRDashboard.container";
+import HrApp from "@/hr/app/HrApp";
 import SalesHeadDashboard from "@/pages/SalesHeadDashboard/SalesHeadDashboard.container";
 import CreateUser from "@/pages/CreateUser/CreateUser.container";
 import NotFound from "@/pages/NotFound/NotFound.container";
@@ -25,13 +26,13 @@ import Developer from "@/pages/Developer/Developer.container";
 import DeveloperDashboard from "@/pages/DeveloperDashboard/DeveloperDashboard.container";
 import ResetPassword from "@/pages/ResetPassword/ResetPassword.container";
 import ItInfrastructure from "@/pages/ItInfrastructure/ItInfrastructure.container";
-import HRAllUsers from "@/pages/HRAllUsers/HRAllUsers.container";
-import HRAllJobs from "@/pages/HRAllJobs/HRAllJobs.container";
-import JobApplications from "@/pages/JobApplications/JobApplications.container";
-import LeaveManagement from "@/pages/LeaveManagement/LeaveManagement.container";
-import Onboarding from "@/pages/Onboarding/Onboarding.container";
-import Offboarding from "@/pages/Offboarding/Offboarding.container";
-import CandidateDocumentUpload from "@/pages/CandidateDocumentUpload/CandidateDocumentUpload.container";
+// import HRAllUsers from "@/pages/HRAllUsers/HRAllUsers.container";
+// import HRAllJobs from "@/pages/HRAllJobs/HRAllJobs.container";
+// import JobApplications from "@/pages/JobApplications/JobApplications.container";
+// import LeaveManagement from "@/pages/LeaveManagement/LeaveManagement.container";
+// import Onboarding from "@/pages/Onboarding/Onboarding.container";
+// import Offboarding from "@/pages/Offboarding/Offboarding.container";
+// import CandidateDocumentUpload from "@/pages/CandidateDocumentUpload/CandidateDocumentUpload.container";
 import BlogDashboard from "@/pages/BlogDashboard/BlogDashboard.container";
 import AdminUserManagement from "@/pages/UserManagement/UserManagement.container";
 import ViewPropertyAdmin from "@/pages/ViewPropertyDetails/ViewPropertyDetails.container";
@@ -50,7 +51,7 @@ import WhatsAppLogs from "@/features/lead-management/WhatsAppLogs/WhatsAppLogs.c
 
 import ProjectEnquiries from '@/pages/ProjectEnquiries/ProjectEnquiries.container';
 import ListedProjects from '@/pages/ListedProjects/ListedProjects.container';
-import InsertProject from '@/pages/InsertProject/InsertProject.container';
+// import InsertProject from '@/pages/InsertProject/InsertProject.container'; // Component doesn't exist
 import ProjectView from '@/pages/ProjectView/ProjectView.container';
 import ProjectEdit from '@/pages/ProjectEdit/ProjectEdit.container';
 import ProjectsAddBhk from '@/pages/ProjectsAddBhk/ProjectsAddBhk.container';
@@ -68,7 +69,7 @@ import BlogPost from '@/pages/BlogPost/BlogPost.container';
 import BlogViewAdmin from '@/pages/BlogViewAdmin/BlogViewAdmin.container';
 import BlogEdit from '@/pages/BlogEdit/BlogEdit.container';
 import BannerManagement from '@/pages/BannerManagement/BannerManagement.container';
-import ShortSetting from '@/pages/ShortSetting/ShortSetting.container';
+// import ShortSetting from '@/pages/ShortSetting/ShortSetting.container';
 import BackToTopButton from '@/pages/BackToTopButton/BackToTopButton.container';
 import ActivityDashboard from '@/pages/ActivityDashboard/ActivityDashboard.container';
 import EmployeeDashboard from '@/features/employee/dashboard/EmployeeDashboard';
@@ -225,9 +226,12 @@ const App = () => {
   const isFullAccess = userRole === 'boss' || userRole === 'developer' || userRole === 'admin';
   const hasModule = (m) => isFullAccess || allowedModules.length === 0 || allowedModules.includes(m);
   const hasPermission = (p) => isFullAccess || permissions.length === 0 || permissions.includes(p);
+  const isHrStandaloneLoggedIn = localStorage.getItem('isHRLoggedIn') === 'true';
+  const canAccessHr = (isLoggedIn && hasModule('HR')) || isHrStandaloneLoggedIn;
+  const canAccessHrDashboard = (isLoggedIn && hasModule('HR') && hasPermission('hr.dashboard')) || isHrStandaloneLoggedIn;
   const pickDefaultModuleRoute = () => {
     if (hasModule('Admin')) return '/admin-dashboard';
-    if (hasModule('HR')) return '/hr-dashboard';
+    if (hasModule('HR')) return '/hr/dashboard';
     if (hasModule('Sales')) return '/sales-head-dashboard';
     if (hasModule('Blog')) return '/blog-dashboard';
     return '/leads';
@@ -423,17 +427,15 @@ const App = () => {
 
                 <Route path="/sales-head-dashboard" element={isLoggedIn && hasModule('Sales') && hasPermission('sales.dashboard') ? <SalesHeadDashboard /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
 
-                <Route path="/hr-dashboard" element={isLoggedIn && hasModule('HR') && hasPermission('hr.dashboard') ? <HRDashboard /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
-                <Route path="/hr-all-users" element={isLoggedIn && hasModule('HR') && hasPermission('hr.all_users') ? <HRAllUsers /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
-                <Route path="/hr-all-jobs" element={isLoggedIn && hasModule('HR') && hasPermission('hr.all_jobs') ? <HRAllJobs /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
-                <Route path="/hr/job-applications/:id" element={isLoggedIn && hasModule('HR') && hasPermission('hr.all_jobs') ? <JobApplications /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
-                <Route path="/hr/leave-management" element={isLoggedIn && hasModule('HR') && hasPermission('hr.leave_management') ? <LeaveManagement /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
-                <Route path="/hr/onboarding" element={isLoggedIn && hasModule('HR') && hasPermission('hr.onboarding') ? <Onboarding /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
-
-                {/* BD Analytics Route for boss and hod */}
-                <Route path="/admin/bd-analytics" element={isLoggedIn && (userRole === "boss" || userRole === "hod") ? <BDStatusSummary /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
-                <Route path="/hr/offboarding" element={isLoggedIn && hasModule('HR') && hasPermission('hr.offboarding') ? <Offboarding /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
-                <Route path="/upload-documents/:token" element={<CandidateDocumentUpload />} />
+                <Route path="/hr-dashboard" element={canAccessHrDashboard ? <Navigate to="/hr/dashboard" replace /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+                <Route path="/hr/*" element={canAccessHr ? <HrApp /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+                {/* <Route path="/hr-all-users" element={(isLoggedIn && hasModule('HR') && hasPermission('hr.all_users')) || isHrStandaloneLoggedIn ? <HRAllUsers /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} /> */}
+                {/* <Route path="/hr-all-jobs" element={(isLoggedIn && hasModule('HR') && hasPermission('hr.all_jobs')) || isHrStandaloneLoggedIn ? <HRAllJobs /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} /> */}
+                {/* <Route path="/hr/job-applications/:id" element={isLoggedIn && hasModule('HR') && hasPermission('hr.all_jobs') ? <JobApplications /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} /> */}
+                {/* <Route path="/hr/leave-management" element={isLoggedIn && hasModule('HR') && hasPermission('hr.leave_management') ? <LeaveManagement /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} /> */}
+                {/* <Route path="/hr/onboarding" element={(isLoggedIn && hasModule('HR') && hasPermission('hr.onboarding')) || isHrStandaloneLoggedIn ? <Onboarding /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} /> */}
+                {/* <Route path="/hr/offboarding" element={isLoggedIn && hasModule('HR') && hasPermission('hr.offboarding') ? <Offboarding /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} /> */}
+                {/* <Route path="/upload-documents/:token" element={<CandidateDocumentUpload />} /> */}
                 <Route path="/blog-dashboard" element={isLoggedIn && hasModule('Blog') && hasPermission('blog.dashboard') ? <BlogDashboard /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
                 <Route path="/blog-management" element={isLoggedIn && hasModule('Blog') && hasPermission('blog.add_blog') ? <ManageBlog /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
                 <Route path="/manage-blog" element={isLoggedIn && hasModule('Blog') && hasPermission('blog.manage_blog') ? <ManageBlog /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
@@ -451,7 +453,7 @@ const App = () => {
                 {/* New Admin Routes */}
                 <Route path="/admin/project-enquiries" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.project_enquiries') ? <ProjectEnquiries /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
                 <Route path="/admin/listed-projects" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.listed_projects') ? <ListedProjects /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
-                <Route path="/admin/project-insert" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.listed_projects') ? <InsertProject /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+                <Route path="/admin/project-insert" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.listed_projects') ? <ProjectsAddBhk /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
                 <Route path="/admin/project-order-manager" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.project_order_manager') ? <ProjectOrderManager /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
                 <Route path="/admin/project-order-management" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.project_order_management') ? <ProjectOrderManagement /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
                 <Route path="/admin/resale-enquiries" element={isLoggedIn && hasModule('Admin') && hasPermission('admin.resale_enquiries') ? <ResaleEnquiries /> : <Navigate to={isLoggedIn ? "/" : "/login"} replace />} />

@@ -12,7 +12,7 @@ const LOG_LEVELS = {
 };
 
 // Current log level (can be adjusted based on environment)
-const CURRENT_LOG_LEVEL = process.env.NODE_ENV === 'development' ? LOG_LEVELS.DEBUG : LOG_LEVELS.INFO;
+const CURRENT_LOG_LEVEL = import.meta.env?.DEV ? LOG_LEVELS.DEBUG : LOG_LEVELS.INFO;
 
 /**
  * Color-coded console logging
@@ -330,7 +330,7 @@ export const auditTrail = new ActionAuditTrail();
 /**
  * Development helper - expose logs to window for debugging
  */
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+if (typeof window !== 'undefined' && import.meta.env?.DEV) {
   window.LeadActionLogger = ActionLogger;
   window.LeadActionAuditTrail = auditTrail;
   window.LeadActionPerformance = PerformanceMonitor;

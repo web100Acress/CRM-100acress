@@ -1,10 +1,10 @@
 import React from 'react';
-import ProjectEdit from '@/features/admin/pages/ProjectEdit';
+// import ProjectEdit from '@/features/admin/pages/ProjectEdit';
 
 const ProjectEditDesktop = () => {
   return (
     <div className="p-6">
-      <ProjectEdit />
+      {/* <ProjectEdit /> */}
     </div>
   );
 };
